@@ -24,6 +24,8 @@ import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 const PlayerNameScreen: React.FC = () => {
   const [useGallery, setUseGallery] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // State for sound mute
+  const [showIcons, setShowIcons] = useState(true); // Toggle to show/hide icons
+
   const {
     selectedImages,
     imageNames,
@@ -33,12 +35,11 @@ const PlayerNameScreen: React.FC = () => {
     closeAlertModal,
     handleAlertConfirm,
     modalVisible,
-    infoModalVisible,
     confirmChangeVisible,
     alertMessage,
     setInfoModalVisible,
     setConfirmChangeVisible,
-    closeInfoAddMoreModal,  // Function to close the "Add more avatars" modal
+    closeInfoAddMoreModal,
     handleSelectedImageClick,
     infoAddMoreVisible,
   } = usePlayerNameScreen();
@@ -75,9 +76,12 @@ const PlayerNameScreen: React.FC = () => {
           resizeMode="cover"
         >
           <View style={styles.headerButtonsContainer}>
+            {/* Settings Button */}
             <TouchableOpacity style={styles.headerButton}>
               <Ionicons name="settings" size={24} color="#FFF" />
             </TouchableOpacity>
+
+            {/* Mute Button */}
             <TouchableOpacity
               style={styles.headerButton}
               onPress={() => setIsMuted((prev) => !prev)} // Toggle sound mute
@@ -88,11 +92,26 @@ const PlayerNameScreen: React.FC = () => {
                 color="#FFF"
               />
             </TouchableOpacity>
+
+            {/* Share Button */}
+            <TouchableOpacity style={styles.headerButton}>
+              <Ionicons name="share-social" size={24} color="#FFF" />
+            </TouchableOpacity>
+
+            {/* Rate Us Button */}
+            <TouchableOpacity style={styles.headerButton}>
+              <MaterialIcons name="star-rate" size={24} color="#FFF" />
+            </TouchableOpacity>
+
+            {/* Challenge Button */}
+            <TouchableOpacity style={styles.headerButton}>
+              <MaterialIcons name="group" size={24} color="#FFF" />
+            </TouchableOpacity>
           </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }} 
           >
             {/* Avatar Selection Toggle */}
             <View style={styles.toggleContainer}>
@@ -185,8 +204,8 @@ const PlayerNameScreen: React.FC = () => {
 
       {/* CustomModal for "Add 3 more avatars to play" message */}
       <CustomModal
-        visible={infoAddMoreVisible}  // Show modal when infoAddMoreModalVisible is true
-        onClose={closeInfoAddMoreModal}  // Close modal on button press
+        visible={infoAddMoreVisible} // Show modal when infoAddMoreModalVisible is true
+        onClose={closeInfoAddMoreModal} // Close modal on button press
         title="Info"
         content="Add 3 more avatars to play"
         buttons={[{ text: "OK", onPress: closeInfoAddMoreModal }]}

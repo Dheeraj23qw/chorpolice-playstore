@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { styles } from "@/screens/RajaMantriGameScreen/styles";
-import { playerImages } from "@/constants/playerData";
 import { selectSelectedImages } from "@/redux/slices/selectors";
+import { RootState } from "@/redux/store";
 
 interface PlayerCardProps {
   index: number;
@@ -36,6 +36,7 @@ const getImageSource = (imageData: { type: string; src: any }) => {
 const PlayerCard: React.FC<PlayerCardProps> = React.memo(
   ({ index, role, playerName, flipped, clicked, onClick, animatedStyle }) => {
     const selectedImages = useSelector(selectSelectedImages);
+    const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
 
     const renderContent = () => {
       if (flipped) {

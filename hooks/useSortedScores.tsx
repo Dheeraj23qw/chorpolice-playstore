@@ -48,7 +48,7 @@ export const useSortedScores = () => {
     dispatch(resetGame());
     setTimeout(() => {
       router.push("/playerName");
-    }, 0.01);
+    }, 0.06);
   }, [dispatch, router, isButtonDisabled]);
 
   // Handler for sharing the screenshot of the game results

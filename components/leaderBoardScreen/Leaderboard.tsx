@@ -1,7 +1,9 @@
 import React from "react";
 import { View, Image, Text } from "react-native";
 import { ChorPoloceLeaderboardStyles } from "@/screens/ResultScreen/leaderboardStyle";
-import { playerImages } from "@/constants/playerData";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+
 
 interface PlayerScore {
   playerName: string;
@@ -19,6 +21,7 @@ const PlayerItem: React.FC<{
   playerIndex: number;
   playerNames: { name: string }[];
 }> = ({ player, playerIndex, playerNames }) => {
+  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
   const playerImage = playerImages[playerIndex].src;
 
   return (

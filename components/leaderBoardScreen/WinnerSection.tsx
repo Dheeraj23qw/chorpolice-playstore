@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
 import { View, Image, Text } from "react-native";
 import { ChorPoloceLeaderboardStyles } from "@/screens/ResultScreen/leaderboardStyle";
-import { playerImages } from "@/constants/playerData";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 interface WinnerSectionProps {
   sortedScores: { playerName: string; totalScore: number }[];
@@ -16,6 +17,7 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
 }) => {
   // Determine the top winner
   const winner = sortedScores[0] ?? { playerName: "", totalScore: 0 };
+  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
 
   // Memoize the winner's name for performance optimization
   const winnerName = useMemo(() => {

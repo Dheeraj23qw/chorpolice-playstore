@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { updatePlayerScores, resetGame } from "@/redux/slices/playerSlice";
-import { playerImages } from "@/constants/playerData";
 import { BackHandler } from "react-native";
 import { playSound } from "@/redux/slices/soundSlice";
 
@@ -18,6 +17,7 @@ const useQuizLogic = (router: any) => {
   const playerScores = useSelector(
     (state: RootState) => state.player.playerScores
   );
+  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);

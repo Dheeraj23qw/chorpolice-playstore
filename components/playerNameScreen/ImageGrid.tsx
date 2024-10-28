@@ -1,7 +1,8 @@
 import React, { memo } from "react";
 import { Pressable, ScrollView, StyleSheet, View, Image } from "react-native";
+import { useSelector } from "react-redux"; // Import useSelector to access Redux state
 import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
-import { playerImages } from "@/constants/playerData";
+import { RootState } from "@/redux/store";
 
 interface ImageGridProps {
   selectedImages: number[];
@@ -21,6 +22,9 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   selectedImages,
   handleImageSelect,
 }) => {
+  // Fetch playerImages from Redux store
+  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
+
   const imagesArray = Object.entries(playerImages).map(([key, image]) => ({
     id: Number(key),
     // Use either `src` for local or URI for gallery

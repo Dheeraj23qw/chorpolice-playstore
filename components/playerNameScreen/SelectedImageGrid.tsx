@@ -8,7 +8,8 @@ import {
   View,
 } from "react-native";
 import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
-import { playerImages } from "@/constants/playerData";
+import { useSelector } from "react-redux"; // Import useSelector
+import { RootState } from "@/redux/store";
 
 interface SelectedImageGridProps {
   selectedImages: number[];
@@ -17,19 +18,25 @@ interface SelectedImageGridProps {
   handleSelectedImageClick: (imageId: number) => void;
 }
 
-// Create imagesArray outside of the component
-const imagesArray = Object.entries(playerImages).map(([key, image]) => ({
-  id: Number(key),
-  // Use either `src` for local or URI for gallery
-  image: image.type === "local" ? image.src : { uri: image.src },
-}));
-
+// SelectedImageGridComponent
 const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
   selectedImages,
   imageNames,
   handleNameChange,
   handleSelectedImageClick,
 }) => {
+  // Fetch playerImages from Redux store
+  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust path according to your state shape
+
+  // Create imagesArray from Redux data
+  const imagesArray = useMemo(() => {
+    return Object.entries(playerImages).map(([key, image]) => ({
+      id: Number(key),
+      // Use either `src` for local or URI for gallery
+      image: image.type === "local" ? image.src : { uri: image.src },
+    }));
+  }, [playerImages]);
+
   const handleTextChange = (imgId: number) => (text: string) => {
     handleNameChange(imgId, text);
   };
@@ -59,7 +66,7 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
         </TouchableOpacity>
       );
     });
-  }, [selectedImages, imageNames, handleNameChange, handleSelectedImageClick]);
+  }, [selectedImages, imageNames, handleNameChange, handleSelectedImageClick, imagesArray]);
 
   return (
     <View style={playerNameStyles.selectedImageGrid}>
