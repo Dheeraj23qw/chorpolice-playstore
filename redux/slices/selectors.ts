@@ -1,6 +1,6 @@
 // redux/slices/selectors.ts
-import { createSelector } from '@reduxjs/toolkit';
-import { RootState } from '../store'; // Adjust the import path according to your project structure
+import { createSelector } from "@reduxjs/toolkit";
+import { RootState } from "../store"; // Adjust the import path according to your project structure
 
 const selectPlayerState = (state: RootState) => state.player;
 
@@ -32,8 +32,10 @@ export const selectWinner = createSelector(
   [selectPlayerScores],
   (playerScores) => {
     if (playerScores.length === 0) return null;
-    return playerScores.reduce((highestScorer, currentPlayer) => 
-      currentPlayer.totalScore > highestScorer.totalScore ? currentPlayer : highestScorer
+    return playerScores.reduce((highestScorer, currentPlayer) =>
+      currentPlayer.totalScore > highestScorer.totalScore
+        ? currentPlayer
+        : highestScorer
     );
   }
 );

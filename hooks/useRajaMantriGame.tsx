@@ -5,7 +5,6 @@ import { useDispatch } from "react-redux";
 import { updatePlayerScores } from "@/redux/slices/playerSlice";
 import { useRouter, useNavigation } from "expo-router";
 
-
 import {
   playSound,
   stopQuizSound,
@@ -108,7 +107,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const handlePlay = () => {
     dispatch(playSound("level"));
 
-    
     const randomIndex = Math.floor(Math.random() * 4);
     setSelectedPlayer(randomIndex + 1);
     setIsPlayButtonDisabled(true);
@@ -178,8 +176,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const handleCardClick = (index: number) => {
-
-    
     if (
       !areCardsClickable ||
       !isPlayButtonDisabled ||
@@ -251,14 +247,11 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const flipCard = (index: number, toValue: number, duration: number) => {
+    dispatch(playSound("spin"));
 
-   
-      dispatch(playSound("spin"));
-
-    
     Animated.timing(flipAnims[index], {
       toValue,
-      duration:2000,
+      duration: 2000,
       useNativeDriver: true,
     }).start(() => {
       setFlippedStates((prev) => {
@@ -316,7 +309,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const resetForNextRound = () => {
-    if (round == 7) {
+    if (round == 2) {
       dispatch(playSound("next"));
       calculateTotalScores();
       setTimeout(() => {

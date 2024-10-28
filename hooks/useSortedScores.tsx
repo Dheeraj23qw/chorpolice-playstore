@@ -21,7 +21,7 @@ export const useSortedScores = () => {
 
   const router = useRouter();
   const dispatch = useDispatch();
-  
+
   // State to manage the disabled state of buttons
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
@@ -89,6 +89,6 @@ export const useSortedScores = () => {
     handlePlayAgain,
     handleBack,
     handleShare,
-    isButtonDisabled,  // return this to manage the button's disabled state in the component
+    isButtonDisabled, // return this to manage the button's disabled state in the component
   };
 };

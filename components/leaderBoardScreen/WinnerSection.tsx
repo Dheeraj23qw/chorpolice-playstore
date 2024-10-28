@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
-import { View, Image, Text } from 'react-native';
-import { ChorPoloceLeaderboardStyles } from '@/screens/ResultScreen/leaderboardStyle';
-import { playerImages } from '@/constants/playerData';
+import React, { useMemo } from "react";
+import { View, Image, Text } from "react-native";
+import { ChorPoloceLeaderboardStyles } from "@/screens/ResultScreen/leaderboardStyle";
+import { playerImages } from "@/constants/playerData";
 
 interface WinnerSectionProps {
   sortedScores: { playerName: string; totalScore: number }[];
@@ -9,32 +9,53 @@ interface WinnerSectionProps {
   selectedImages: number[];
 }
 
-export const WinnerSection: React.FC<WinnerSectionProps> = ({ sortedScores, playerNames, selectedImages }) => {
+export const WinnerSection: React.FC<WinnerSectionProps> = ({
+  sortedScores,
+  playerNames,
+  selectedImages,
+}) => {
   // Determine the top winner
-  const winner = sortedScores[0] ?? { playerName: '', totalScore: 0 };
+  const winner = sortedScores[0] ?? { playerName: "", totalScore: 0 };
 
   // Memoize the winner's name for performance optimization
   const winnerName = useMemo(() => {
-    return playerNames.find(player => player.name === winner.playerName)?.name || 'Unknown Player';
+    return (
+      playerNames.find((player) => player.name === winner.playerName)?.name ||
+      "Unknown Player"
+    );
   }, [winner.playerName, playerNames]);
 
   // Memoize the winner's image based on their index
   const winnerImage = useMemo(() => {
-    const winnerIndex = playerNames.findIndex(player => player.name === winner.playerName);
+    const winnerIndex = playerNames.findIndex(
+      (player) => player.name === winner.playerName
+    );
+
     // Ensure the selectedImages array has valid indexes
-    return playerImages[selectedImages[winnerIndex] || 0] ?? playerImages[0];
+    if (winnerIndex >= 0 && winnerIndex < selectedImages.length) {
+      const image = playerImages[selectedImages[winnerIndex]];
+      return image ? image.src : playerImages[0].src; // Fallback to default image if not found
+    }
+
+    return playerImages[0].src; // Fallback to default image if index is invalid
   }, [winner.playerName, selectedImages, playerNames]);
 
   return (
     <View style={ChorPoloceLeaderboardStyles.winnerContainer}>
       <Image
-        source={winnerImage}
+        source={
+          typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage
+        } // Ensure the source is an object with uri
         style={ChorPoloceLeaderboardStyles.winnerImage}
         accessibilityLabel={`Image of ${winnerName}`}
       />
-      <Text style={ChorPoloceLeaderboardStyles.congratulations}>🎉 Congratulations! </Text>
+      <Text style={ChorPoloceLeaderboardStyles.congratulations}>
+        🎉 Congratulations!{" "}
+      </Text>
       <Text style={ChorPoloceLeaderboardStyles.winnerName}>{winnerName}</Text>
-      <Text style={ChorPoloceLeaderboardStyles.winnerScore}>Score: {winner.totalScore}</Text>
+      <Text style={ChorPoloceLeaderboardStyles.winnerScore}>
+        Score: {winner.totalScore}
+      </Text>
     </View>
   );
 };

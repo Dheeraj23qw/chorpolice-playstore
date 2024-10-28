@@ -1,5 +1,11 @@
 import React, { memo, useCallback } from "react";
-import { SafeAreaView, ScrollView, StatusBar, View, ImageBackground } from "react-native";
+import {
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  View,
+  ImageBackground,
+} from "react-native";
 import { globalstyles } from "@/styles/global";
 import ScreenHeader from "@/components/_screenHeader";
 import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
@@ -24,7 +30,6 @@ const ChorPoliceResult = () => {
   const onPlayAgain = useCallback(handlePlayAgain, [handlePlayAgain]);
   const onBack = useCallback(handleBack, [handleBack]);
   const onShare = useCallback(handleShare, [handleShare]);
-
   return (
     <SafeAreaView style={globalstyles.container}>
       <StatusBar backgroundColor="#8E5DE9" barStyle="dark-content" />

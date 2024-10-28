@@ -1,7 +1,7 @@
-import React, { memo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, Image } from 'react-native';
-import { playerNameStyles } from '@/screens/playerNameScreen/playerNameCss';
-import { playerImages } from '@/constants/playerData';
+import React, { memo } from "react";
+import { Pressable, ScrollView, StyleSheet, View, Image } from "react-native";
+import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
+import { playerImages } from "@/constants/playerData";
 
 interface ImageGridProps {
   selectedImages: number[];
@@ -17,12 +17,17 @@ const chunkArray = (array: any[], chunkSize: number) => {
   return chunks;
 };
 
-const ImageGridComponent: React.FC<ImageGridProps> = ({ selectedImages, handleImageSelect }) => {
+const ImageGridComponent: React.FC<ImageGridProps> = ({
+  selectedImages,
+  handleImageSelect,
+}) => {
   const imagesArray = Object.entries(playerImages).map(([key, image]) => ({
     id: Number(key),
-    image,
+    // Use either `src` for local or URI for gallery
+    image: image.type === "local" ? image.src : { uri: image.src },
   }));
-  const rows = chunkArray(imagesArray, 12); // Split images into 3 rows with 12 images each
+
+  const rows = chunkArray(imagesArray, 12); // Split images into rows with 12 images each
 
   const handlePress = (imageId: number) => {
     handleImageSelect(imageId); // Directly call the select handler
@@ -69,12 +74,12 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   rowContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   selectedImageContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: 5,
   },
 });

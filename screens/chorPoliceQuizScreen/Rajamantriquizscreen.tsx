@@ -30,7 +30,6 @@ const ChorPoliceQuiz: React.FC = () => {
     () => <PlayerInfo playerImage={playerImage} />,
     [playerImage]
   );
-
   const MemoizedFeedbackMessage = useMemo(
     () => (
       <FeedbackMessage

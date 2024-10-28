@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
-import { updatePlayerScores,resetGame } from "@/redux/slices/playerSlice";
+import { updatePlayerScores, resetGame } from "@/redux/slices/playerSlice";
 import { playerImages } from "@/constants/playerData";
 import { BackHandler } from "react-native";
-import {  playSound } from "@/redux/slices/soundSlice";
-
+import { playSound } from "@/redux/slices/soundSlice";
 
 const useQuizLogic = (router: any) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -28,10 +27,6 @@ const useQuizLogic = (router: any) => {
   const [isContentVisible, setIsContentVisible] = useState(true);
   const [isOptionDisabled, setIsOptionDisabled] = useState(false); // New state for disabling options
 
-
-
- 
-
   // Handle the hardware back button press (Android)
   useEffect(() => {
     const backAction = () => {
@@ -43,11 +38,9 @@ const useQuizLogic = (router: any) => {
       "hardwareBackPress",
       backAction
     );
-  
+
     return () => backHandler.remove(); // Cleanup on unmount
   }, []);
-
-
 
   useEffect(() => {
     generateOptionsForPlayer();
@@ -96,10 +89,10 @@ const useQuizLogic = (router: any) => {
     setSelectedOption(score);
     if (score === correctScore) {
       updateScore(currentPlayerName, 2000);
-      setFeedback(true, "2000 points added!", 'win');
+      setFeedback(true, "2000 points added!", "win");
     } else {
       updateScore(currentPlayerName, -2000);
-      setFeedback(false, "2000 points deducted!", 'lose');
+      setFeedback(false, "2000 points deducted!", "lose");
     }
   };
 
@@ -121,7 +114,7 @@ const useQuizLogic = (router: any) => {
   const setFeedback = (
     isCorrectAnswer: boolean,
     message: string,
-    soundName: 'win' | 'lose'
+    soundName: "win" | "lose"
   ) => {
     setIsCorrect(isCorrectAnswer);
     setFeedbackMessage(message);
@@ -154,10 +147,8 @@ const useQuizLogic = (router: any) => {
   };
 
   const currentPlayer = playerNames[currentPlayerIndex] || {};
-  const playerImage = playerImages[selectedImages[currentPlayerIndex]] ?? playerImages[0]
-
-
-
+  const playerImage =
+    playerImages[selectedImages[currentPlayerIndex]] ?? playerImages[0];
 
   return {
     currentPlayer,
