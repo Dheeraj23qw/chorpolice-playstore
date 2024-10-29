@@ -17,14 +17,13 @@ import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGr
 import CustomModal from "@/modal/CustomModal";
 import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionButtons";
 import { responsiveHeight } from "react-native-responsive-dimensions";
-import GalleryPicker from "@/components/playerNameScreen/GalleryPicker";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
+import useGalleryPicker from "@/hooks/useGalleryPicker";
 
 const PlayerNameScreen: React.FC = () => {
   const [useGallery, setUseGallery] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // State for sound mute
-  const [showIcons, setShowIcons] = useState(true); // Toggle to show/hide icons
 
   const {
     selectedImages,
@@ -37,12 +36,13 @@ const PlayerNameScreen: React.FC = () => {
     modalVisible,
     confirmChangeVisible,
     alertMessage,
-    setInfoModalVisible,
     setConfirmChangeVisible,
     closeInfoAddMoreModal,
     handleSelectedImageClick,
     infoAddMoreVisible,
   } = usePlayerNameScreen();
+
+  const { pickImage } = useGalleryPicker();
 
   // Animation for the options
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -111,7 +111,7 @@ const PlayerNameScreen: React.FC = () => {
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ flexGrow: 1 }} 
+            contentContainerStyle={{ flexGrow: 1 }}
           >
             {/* Avatar Selection Toggle */}
             <View style={styles.toggleContainer}>
@@ -119,7 +119,7 @@ const PlayerNameScreen: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => {
                     setUseGallery(false);
-                    fadeIn(); // Re-trigger animation
+                    fadeIn();
                   }}
                   style={[
                     styles.optionButton,
@@ -138,6 +138,7 @@ const PlayerNameScreen: React.FC = () => {
                   onPress={() => {
                     setUseGallery(true);
                     fadeIn(); // Re-trigger animation
+                    pickImage(); // Call pickImage here
                   }}
                   style={[
                     styles.optionButton,
@@ -154,29 +155,22 @@ const PlayerNameScreen: React.FC = () => {
               </Animated.View>
             </View>
 
-            {/* Gallery Picker or Predefined Avatars */}
-            {useGallery ? (
-              <GalleryPicker />
-            ) : (
-              <>
-                <ImageGrid
-                  selectedImages={selectedImages}
-                  handleImageSelect={handleImageSelect}
-                />
+            <ImageGrid
+              selectedImages={selectedImages}
+              handleImageSelect={handleImageSelect}
+            />
 
-                <SelectedImageGrid
-                  selectedImages={selectedImages}
-                  imageNames={imageNames}
-                  handleNameChange={handleNameChange}
-                  handleSelectedImageClick={handleSelectedImageClick}
-                />
+            <SelectedImageGrid
+              selectedImages={selectedImages}
+              imageNames={imageNames}
+              handleNameChange={handleNameChange}
+              handleSelectedImageClick={handleSelectedImageClick}
+            />
 
-                {selectedImages.length === 4 && (
-                  <PlayernameActionButtons
-                    handleStartAdventure={handleStartAdventure}
-                  />
-                )}
-              </>
+            {selectedImages.length === 4 && (
+              <PlayernameActionButtons
+                handleStartAdventure={handleStartAdventure}
+              />
             )}
           </ScrollView>
         </ImageBackground>

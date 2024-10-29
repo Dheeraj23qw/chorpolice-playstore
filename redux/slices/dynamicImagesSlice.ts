@@ -43,28 +43,11 @@ const initialState: PlayerImagesState = {
     29: { type: "local", src: require("@/assets/images/chorsipahi/kid29.png") },
     30: { type: "local", src: require("@/assets/images/chorsipahi/kid30.png") },
     31: { type: "local", src: require("@/assets/images/chorsipahi/kid31.png") },
-    32: {
-      type: "gallery",
-      src: "https://static.wikia.nocookie.net/naruto/images/d/dc/Naruto%27s_Sage_Mode.png/revision/latest/scale-to-width-down/985?cb=20150124180545",
-    },
-    33: {
-      type: "gallery",
-      src: "https://static.wikia.nocookie.net/naruto/images/d/dc/Naruto%27s_Sage_Mode.png/revision/latest/scale-to-width-down/985?cb=20150124180545",
-    },
-    34: {
-      type: "gallery",
-      src: "https://static.wikia.nocookie.net/naruto/images/d/dc/Naruto%27s_Sage_Mode.png/revision/latest/scale-to-width-down/985?cb=20150124180545",
-    },
-    35: {
-      type: "gallery",
-      src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQihK1GY1rv2V0Di2INYm81aN-RkAZXTnyyw&shttps://store-images.s-microsoft.com/image/apps.39852.14455250034361967.824623c3-91b6-402f-9a68-c66bfac9bc20.7bfae929-5b2a-4efe-9639-5ffd1e2de297?q=90&w=480&h=270://static.wikia.nocookie.net/naruto/images/d/dc/Naruto%27s_Sage_Mode.png/revision/latest/scale-to-width-down/985?cb=20150124180545",
-    },
-
-    36: { type: "local", src: require("@/assets/images/chorsipahi/kid32.png") },
-    37: { type: "local", src: require("@/assets/images/chorsipahi/kid33.png") },
-    38: { type: "local", src: require("@/assets/images/chorsipahi/kid34.png") },
-    39: { type: "local", src: require("@/assets/images/chorsipahi/kid35.png") },
-    40: { type: "local", src: require("@/assets/images/chorsipahi/kid36.png") },
+    32: { type: "local", src: require("@/assets/images/chorsipahi/kid32.png") },
+    33: { type: "local", src: require("@/assets/images/chorsipahi/kid33.png") },
+    34: { type: "local", src: require("@/assets/images/chorsipahi/kid34.png") },
+    35: { type: "local", src: require("@/assets/images/chorsipahi/kid35.png") },
+    36: { type: "local", src: require("@/assets/images/chorsipahi/kid36.png") },
   },
 };
 
