@@ -2,7 +2,7 @@
 import { Animated } from "react-native";
 import { Dispatch, SetStateAction } from "react";
 import { playSound } from "@/redux/slices/soundSlice";
-
+import { AppDispatch } from "@/redux/store";
 export const flipCard = (
   index: number,
   toValue: number,
@@ -14,7 +14,7 @@ export const flipCard = (
   clickedCards: boolean[],
   setRound: Dispatch<SetStateAction<number>>,
   resetForNextRound: () => void,
-  dispatch:any
+  dispatch:AppDispatch
 ) => {
 
   dispatch(playSound("spin"));

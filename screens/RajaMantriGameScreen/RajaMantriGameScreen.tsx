@@ -112,7 +112,7 @@ const RajaMantriGameScreen: React.FC = () => {
                         {
                           rotateY: flipAnims[index + 2].interpolate({
                             inputRange: [0, 1],
-                            outputRange: ["0deg", "7200deg"],
+                            outputRange: ["0deg", "14400deg"],
                           }),
                         },
                       ],
