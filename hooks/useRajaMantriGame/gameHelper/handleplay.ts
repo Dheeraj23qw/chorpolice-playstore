@@ -64,7 +64,7 @@ export const handlePlayHelper = (
     setTimeout(() => {
       setMessage(`${policePlayerName},catch the thief`);
       setTimeout(() => setMessage(""), 12000);
-    }, 6000);
+    }, 3700);
   }
 
   setAreCardsClickable(false);
@@ -85,7 +85,7 @@ export const handlePlayHelper = (
         dispatch
       );
 
-      setTimeout(() => setAreCardsClickable(true), 5000);
+      setTimeout(() => setAreCardsClickable(true), 3300);
     }, 2000);
   }
 };

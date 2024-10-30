@@ -184,7 +184,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         setTimeout(() => {
           setVideoIndex(2);
           setIsPlaying(true);
-        }, 4000);
+        }, 3500);
 
         updateScore(thiefIndex, 0, round - 1);
         updateScore(policeIndex, 500, round - 1);
@@ -197,7 +197,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         setTimeout(() => {
           setVideoIndex(3);
           setIsPlaying(true);
-        }, 4000);
+        }, 3500);
 
         updateScore(thiefIndex, 500, round - 1);
         updateScore(policeIndex, 0, round - 1);

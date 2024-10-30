@@ -33,5 +33,5 @@ export const revealAllCards = (
         );
       }
     });
-  }, 900);
+  }, 100);
 };
