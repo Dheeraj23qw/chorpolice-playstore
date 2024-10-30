@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useEffect, useState } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useRouter } from "expo-router";
@@ -45,10 +45,14 @@ export const useSortedScores = () => {
   const handleBack = useCallback(() => {
     if (isButtonDisabled) return;
     setIsButtonDisabled(true);
+
+    // Dispatch resetGame action
     dispatch(resetGame());
+
+    // Delay navigation to ensure state is updated
     setTimeout(() => {
-      router.push("/playerName");
-    }, 0.06);
+      router.push("/playerName"); // Navigate to playerName without checking isReady
+    }, 100); // Adjust delay as necessary
   }, [dispatch, router, isButtonDisabled]);
 
   // Handler for sharing the screenshot of the game results

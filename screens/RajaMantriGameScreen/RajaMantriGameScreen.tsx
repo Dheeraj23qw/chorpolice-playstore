@@ -12,7 +12,7 @@ import { styles } from "./styles";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import ScoreTable from "@/components/RajamantriGameScreen/scoretable";
-import useRajaMantriGame from "@/hooks/useRajaMantriGame";
+import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 import { selectPlayerNames } from "@/redux/slices/selectors";
 

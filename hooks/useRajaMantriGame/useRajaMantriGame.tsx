@@ -4,6 +4,9 @@ import { BackHandler } from "react-native";
 import { useDispatch } from "react-redux";
 import { updatePlayerScores } from "@/redux/slices/playerSlice";
 import { useRouter, useNavigation } from "expo-router";
+import { shuffleArray } from "./utils/suffleArrayUtils";
+import { resetGame } from "./utils/resetGameUtils";
+import { flipCard } from "./utils/flipCardUtil";
 
 import {
   playSound,
@@ -52,20 +55,12 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   );
   const [round, setRound] = useState<number>(1);
   const [videoIndex, setVideoIndex] = useState<number>(1);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [areCardsClickable, setAreCardsClickable] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    resetGame();
-    return () => {
-      dispatch(stopQuizSound());
-      dispatch(unloadSounds());
-    };
-  }, [dispatch]);
 
   useEffect(() => {
     const handleBackButton = () => {
@@ -79,30 +74,34 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     return () => unsubscribe.remove();
   }, []);
 
-  const navigation = useNavigation();
-
-  const resetGame = () => {
-    setFlipAnims(initialFlipAnims.map(() => new Animated.Value(0)));
-    setFlippedStates(initialFlippedStates);
-    setClickedCards(initialClickedCards);
-    setSelectedPlayer(1);
-    setIsPlayButtonDisabled(false);
-    setRound(1);
-    setMessage("");
-    setPoliceClickCount(0);
-    setAdvisorIndex(null);
-    setThiefIndex(null);
-    setKingIndex(null);
-    setPoliceIndex(null);
-    setVideoIndex(1);
-    setIsPlaying(true);
-    setPlayerScores(
-      playerNames.map((name) => ({
-        playerName: name,
-        scores: Array.from({ length: 10 }, () => 0),
-      }))
+  useEffect(() => {
+    resetGame(
+      initialFlippedStates,
+      initialClickedCards,
+      initialFlipAnims,
+      playerNames,
+      setFlipAnims,
+      setFlippedStates,
+      setClickedCards,
+      setSelectedPlayer,
+      setIsPlayButtonDisabled,
+      setRound,
+      setMessage,
+      setPoliceClickCount,
+      setAdvisorIndex,
+      setThiefIndex,
+      setKingIndex,
+      setPoliceIndex,
+      setVideoIndex,
+      setIsPlaying,
+      setPlayerScores
     );
-  };
+
+    return () => {
+      dispatch(stopQuizSound());
+      dispatch(unloadSounds());
+    };
+  }, [dispatch]);
 
   const handlePlay = () => {
     dispatch(playSound("level"));
@@ -129,7 +128,19 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     setPolicePlayerName(policePlayerName);
 
     if (kingIndex !== -1) {
-      flipCard(kingIndex, 1, 1800);
+      flipCard(
+        kingIndex,
+        1,
+        1800,
+        flipAnims,
+        setFlippedStates,
+        flippedStates,
+        roles,
+        clickedCards,
+        setRound,
+        resetForNextRound,
+        dispatch
+      );
       setTimeout(() => {
         setMessage(`${policePlayerName},catch the thief`);
         setTimeout(() => setMessage(""), 7000);
@@ -140,7 +151,19 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
     if (policeIndex !== -1) {
       setTimeout(() => {
-        flipCard(policeIndex, 1, 1800);
+        flipCard(
+          policeIndex,
+          1,
+          1800,
+          flipAnims,
+          setFlippedStates,
+          flippedStates,
+          roles,
+          clickedCards,
+          setRound,
+          resetForNextRound,
+          dispatch
+        );
 
         setTimeout(() => setAreCardsClickable(true), 2000);
       }, 2000);
@@ -229,14 +252,38 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         roles[index] !== "Police" &&
         !clickedCards[index]
       ) {
-        flipCard(index, 1, 500);
+        flipCard(
+          index,
+          1,
+          500,
+          flipAnims,
+          setFlippedStates,
+          flippedStates,
+          roles,
+          clickedCards,
+          setRound,
+          resetForNextRound,
+          dispatch
+        );
         setClickedCards((prev) => {
           const newClickedCards = [...prev];
           newClickedCards[index] = true;
           return newClickedCards;
         });
       } else if (flippedStates[index] && roles[index] !== "Police") {
-        flipCard(index, 0, 500);
+        flipCard(
+          index,
+          0,
+          500,
+          flipAnims,
+          setFlippedStates,
+          flippedStates,
+          roles,
+          clickedCards,
+          setRound,
+          resetForNextRound,
+          dispatch
+        );
         setClickedCards((prev) => {
           const newClickedCards = [...prev];
           newClickedCards[index] = false;
@@ -246,38 +293,23 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     }
   };
 
-  const flipCard = (index: number, toValue: number, duration: number) => {
-    dispatch(playSound("spin"));
-
-    Animated.timing(flipAnims[index], {
-      toValue,
-      duration: 2000,
-      useNativeDriver: true,
-    }).start(() => {
-      setFlippedStates((prev) => {
-        const newFlippedStates = [...prev];
-        newFlippedStates[index] = toValue === 1;
-        return newFlippedStates;
-      });
-
-      const allNonPoliceFlipped = [...flippedStates].every(
-        (flipped, idx) =>
-          roles[idx] === "Police" || clickedCards[idx] || index === idx
-      );
-      if (allNonPoliceFlipped) {
-        setRound((prevRound) => prevRound + 1);
-        setTimeout(() => {
-          resetForNextRound();
-        }, 8000);
-      }
-    });
-  };
-
   const revealAllCards = () => {
     setTimeout(() => {
       roles.forEach((_, index) => {
         if (!flippedStates[index]) {
-          flipCard(index, 1, 500);
+          flipCard(
+            index,
+            1,
+            500,
+            flipAnims,
+            setFlippedStates,
+            flippedStates,
+            roles,
+            clickedCards,
+            setRound,
+            resetForNextRound,
+            dispatch
+          );
         }
       });
     }, 100);
@@ -309,7 +341,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const resetForNextRound = () => {
-    if (round == 2) {
+    if (round == 7) {
       dispatch(playSound("next"));
       calculateTotalScores();
       setTimeout(() => {
@@ -331,18 +363,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setPoliceIndex(null);
     }
   };
-
-  function shuffleArray(array: string[]): string[] {
-    const shuffledArray = array.slice();
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [
-        shuffledArray[j],
-        shuffledArray[i],
-      ];
-    }
-    return shuffledArray;
-  }
 
   return {
     flipAnims,

@@ -7,7 +7,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Animated,
 } from "react-native";
 import { globalstyles } from "@/styles/global";
 import ScreenHeader from "@/components/_screenHeader";
@@ -19,14 +18,14 @@ import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionBut
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
-import { responsiveFontSize,responsiveHeight } from "react-native-responsive-dimensions";
+import { responsiveFontSize, responsiveHeight } from "react-native-responsive-dimensions";
 import { useRouter } from "expo-router";
+
 const PlayerNameScreen: React.FC = () => {
   const [useGallery, setUseGallery] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // State for sound mute
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  
-  
+
   const {
     selectedImages,
     imageNames,
@@ -45,26 +44,7 @@ const PlayerNameScreen: React.FC = () => {
   } = usePlayerNameScreen();
 
   const { pickImage } = useGalleryPicker();
-
-  // Animation for the options
-  const [fadeAnim] = useState(new Animated.Value(0));
-
-  // Function to trigger animation
-  const fadeIn = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  React.useEffect(() => {
-    fadeIn(); // Trigger animation on component mount
-  }, []);
-
-
   const router = useRouter();
-
 
   return (
     <SafeAreaView style={globalstyles.container}>
@@ -75,10 +55,7 @@ const PlayerNameScreen: React.FC = () => {
       <View style={[globalstyles.Container2, { flex: 10 }]}>
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
-          style={[
-            chorPoliceQuizstyles.overlay,
-            chorPoliceQuizstyles.imageBackground,
-          ]}
+          style={[chorPoliceQuizstyles.overlay, chorPoliceQuizstyles.imageBackground]}
           resizeMode="cover"
         >
           <View style={styles.headerButtonsContainer}>
@@ -121,56 +98,53 @@ const PlayerNameScreen: React.FC = () => {
           >
             {/* Avatar Selection Toggle */}
             <View style={styles.toggleContainer}>
-        <Animated.View style={{ opacity: fadeAnim }}>
-          <TouchableOpacity
-            onPress={() => {
-              if (selectedOption === 'bots') {
-                setSelectedOption(null); // Deselect if already selected
-              } else {
-                setSelectedOption('bots'); // Select 'Play with Bots'
-              }
-              setUseGallery(false);
-              fadeIn();
-              router.navigate("/playwithbot")
-            }}
-            style={[
-              styles.optionButton,
-              selectedOption === 'bots' && styles.selectedOption,
-            ]}
-          >
-            <MaterialIcons
-              name="check-circle"
-              size={24}
-              color={selectedOption === 'bots' ? "#FFD700" : "#ccc"}
-            />
-            <Text style={styles.optionText}>Play with Bots!          </Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedOption === 'bots') {
+                    setSelectedOption(null); // Deselect if already selected
+                  } else {
+                    setSelectedOption('bots'); // Select 'Play with Bots'
+                  }
+                  setUseGallery(false);
+                  router.navigate("/playwithbot");
+                }}
+                style={[
+                  styles.optionButton,
+                  selectedOption === 'bots' && styles.selectedOption,
+                ]}
+              >
+                <MaterialIcons
+                  name="check-circle"
+                  size={24}
+                  color={selectedOption === 'bots' ? "#FFD700" : "#ccc"}
+                />
+                <Text style={styles.optionText}>Play with Bots!</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => {
-              if (selectedOption === 'gallery') {
-                setSelectedOption(null); // Deselect if already selected
-              } else {
-                setSelectedOption('gallery'); // Select 'Upload from Gallery'
-                pickImage(); // Call pickImage here
-              }
-              setUseGallery(true);
-              fadeIn(); // Re-trigger animation
-            }}
-            style={[
-              styles.optionButton,
-              selectedOption === 'gallery' && styles.selectedOption,
-            ]}
-          >
-            <MaterialIcons
-              name="check-circle"
-              size={24}
-              color={selectedOption === 'gallery' ? "#FFD700" : "#ccc"}
-            />
-            <Text style={styles.optionText}>Upload from Gallery</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedOption === 'gallery') {
+                    setSelectedOption(null); // Deselect if already selected
+                  } else {
+                    setSelectedOption('gallery'); // Select 'Upload from Gallery'
+                    pickImage(); // Call pickImage here
+                  }
+                  setUseGallery(true);
+                }}
+                style={[
+                  styles.optionButton,
+                  selectedOption === 'gallery' && styles.selectedOption,
+                ]}
+              >
+                <MaterialIcons
+                  name="check-circle"
+                  size={24}
+                  color={selectedOption === 'gallery' ? "#FFD700" : "#ccc"}
+                />
+                <Text style={styles.optionText}>Upload from Gallery</Text>
+              </TouchableOpacity>
+            </View>
+
             <ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
@@ -278,4 +252,3 @@ const styles = StyleSheet.create({
     fontFamily: "outfit-bold",
   },
 });
-
