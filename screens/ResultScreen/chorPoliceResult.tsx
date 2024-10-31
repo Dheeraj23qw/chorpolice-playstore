@@ -7,10 +7,7 @@ import {
   ImageBackground,
 } from "react-native";
 import { globalstyles } from "@/styles/global";
-import ScreenHeader from "@/components/_screenHeader";
-import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
-import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
-import { ActionButtons } from "@/components/leaderBoardScreen/ActionButtons";
+import { Components } from "@/imports/allComponentImports";
 import { useSortedScores } from "@/hooks/useSortedScores";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
@@ -34,7 +31,7 @@ const ChorPoliceResult = () => {
     <SafeAreaView style={globalstyles.container}>
       <StatusBar backgroundColor="#8E5DE9" barStyle="dark-content" />
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-        <ScreenHeader name="Game Result" showBackButton={false} />
+        < Components.ScreenHeader name="Game Result" showBackButton={false} />
       </View>
       <View style={[globalstyles.Container2, { flex: 10 }]}>
         <View style={chorPoliceQuizstyles.overlay} />
@@ -69,8 +66,8 @@ const ChorPoliceResult = () => {
 };
 
 // Memoize components to prevent unnecessary re-renders
-const MemoizedWinnerSection = memo(WinnerSection);
-const MemoizedLeaderboard = memo(Leaderboard);
-const MemoizedActionButtons = memo(ActionButtons);
+const MemoizedWinnerSection = memo(Components.WinnerSection);
+const MemoizedLeaderboard = memo(Components.Leaderboard);
+const MemoizedActionButtons = memo(Components.ActionButtons);
 
 export default memo(ChorPoliceResult);

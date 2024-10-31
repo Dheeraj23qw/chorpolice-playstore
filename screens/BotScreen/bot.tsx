@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { globalstyles } from "@/styles/global";
 import ScreenHeader from "@/components/_screenHeader";
@@ -24,6 +25,7 @@ import {
   responsiveHeight,
 } from "react-native-responsive-dimensions";
 import { useRouter } from "expo-router";
+import LoadingIndicator from "@/components/LoadingIndicator";
 const BotScreen: React.FC = () => {
   const [useGallery, setUseGallery] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // State for sound mute
@@ -46,7 +48,7 @@ const BotScreen: React.FC = () => {
     infoAddMoreVisible,
   } = usePlayerNameScreen();
 
-  const { pickImage } = useGalleryPicker();
+  const { pickImage,loading } = useGalleryPicker();
 
   // Animation for the options
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -161,6 +163,11 @@ const BotScreen: React.FC = () => {
                 </TouchableOpacity>
               </Animated.View>
             </View>
+
+             {/* Loading Indicator */}
+        
+           <LoadingIndicator loading={loading} message="Loading, please wait..." />
+    
             <ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
@@ -223,6 +230,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: responsiveHeight(2),
    
+  },  loadingIndicator: {
+    marginVertical: responsiveHeight(2),
   },
   backButton: {
     padding: responsiveHeight(1),

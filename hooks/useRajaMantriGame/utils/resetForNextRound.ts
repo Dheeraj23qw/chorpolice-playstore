@@ -26,7 +26,7 @@ export const resetForNextRound = (
 
 
 
-  if (round == 7) {
+  if (round == 2) {
     dispatch(playSound("next"));
     calculateTotalScores();
     setTimeout(() => {

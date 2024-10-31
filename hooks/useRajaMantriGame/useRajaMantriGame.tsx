@@ -7,15 +7,16 @@ import { useRouter, useNavigation } from "expo-router";
 import { shuffleArray } from "./utils/suffleArrayUtils";
 import { resetGame } from "./utils/resetGameUtils";
 import { flipCard } from "./utils/flipCardUtil";
-
+import { calculateTotalScores } from "./utils/totalScoreUtils";
 import {
   playSound,
   stopQuizSound,
   unloadSounds,
 } from "@/redux/slices/soundSlice";
-import { revealAllCards } from "./utils/revealAllCards";
+import { revealAllCards } from "./utils/revealAllCardsUtils";
 import { resetForNextRound } from "./utils/resetForNextRound";
 import { handlePlayHelper } from "./gameHelper/handleplay";
+import { updateScoreUtil } from "./utils/updateScoreUtil";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
@@ -136,27 +137,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     newScore: number,
     roundIndex: number
   ) => {
-    setPlayerScores((prevScores) => {
-      if (playerIndex >= 0 && playerIndex < prevScores.length) {
-        const newPlayerScores = prevScores.map((player, index) => {
-          if (index === playerIndex) {
-            const updatedScores = [...player.scores];
-            updatedScores[roundIndex] = newScore;
-
-            return {
-              ...player,
-              scores: updatedScores,
-            };
-          } else {
-            return player;
-          }
-        });
-
-        return newPlayerScores;
-      } else {
-        return prevScores;
-      }
-    });
+    setPlayerScores((prevScores) => 
+      updateScoreUtil(prevScores, playerIndex, newScore, roundIndex)
+    );
   };
 
   const handleCardClick = (index: number) => {
@@ -266,29 +249,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
   };
 
-  const calculateTotalScores = () => {
-    setPlayerScores((prevScores) => {
-      const updatedScores = prevScores.map((player) => {
-        const totalScore = player.scores.reduce((sum, score) => sum + score, 0);
-        return {
-          ...player,
-          totalScore,
-        };
-      });
-
-      // Create an array with only player names and total scores
-      const totalScoresArray = updatedScores.map((player) => ({
-        playerName: player.playerName,
-        totalScore: player.totalScore,
-      }));
-
-      // Dispatch the array with only player names and total scores to the store
-      setTimeout(() => {
-        dispatch(updatePlayerScores(totalScoresArray));
-      }, 1000);
-
-      return updatedScores;
-    });
+  const calculateTotalScoresHandler = () => {
+    setPlayerScores((prevScores) => calculateTotalScores(prevScores, dispatch));
   };
 
   const resetForNextRoundHandler = () => {
@@ -309,7 +271,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setKingIndex,
       setPoliceIndex,
       dispatch,
-      calculateTotalScores,
+      calculateTotalScoresHandler,
       router // Pass router here
     );
   };

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, memo } from 'react';
 import { Modal, Text, Pressable, View, Animated } from 'react-native';
 import { playerNameStyles } from '@/screens/playerNameScreen/playerNameCss';
 
@@ -26,19 +26,23 @@ const CustomModal: React.FC<CustomModalProps> = ({
   const opacityAnim = useRef(new Animated.Value(0)).current; // Initial opacity value
 
   useEffect(() => {
+    const animationConfig = {
+      useNativeDriver: true,
+    };
+
     if (visible) {
       // Start animation when modal is visible
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
-          friction: 3, // Adjusts the bounce effect
-          tension: 100, // Adjusts how fast it reaches the final value
-          useNativeDriver: true,
+          friction: 3, 
+          tension: 100, 
+          ...animationConfig,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 500, // Longer duration for a smoother fade
-          useNativeDriver: true,
+          duration: 500, 
+          ...animationConfig,
         }),
       ]).start();
     } else {
@@ -46,33 +50,35 @@ const CustomModal: React.FC<CustomModalProps> = ({
       Animated.parallel([
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 300, // Shorter fade-out duration
-          useNativeDriver: true,
+          duration: 300, 
+          ...animationConfig,
         }),
         Animated.timing(scaleAnim, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          ...animationConfig,
         }),
       ]).start();
     }
   }, [visible, scaleAnim, opacityAnim]);
+
+  const handleButtonPress = useCallback((onPress: () => void) => {
+    onPress();
+    onClose(); // Close the modal when a button is pressed
+  }, [onClose]);
 
   const renderButtons = useCallback(() => (
     buttons.map((button, index) => (
       <Pressable
         key={index}
         style={playerNameStyles.modalButton}
-        onPress={() => {
-          button.onPress();
-          onClose(); // Close the modal when a button is pressed
-        }}
+        onPress={() => handleButtonPress(button.onPress)}
         accessibilityLabel={button.text}
       >
         <Text style={playerNameStyles.modalButtonText}>{button.text}</Text>
       </Pressable>
     ))
-  ), [buttons, onClose]);
+  ), [buttons, handleButtonPress]);
 
   return (
     <Modal
@@ -89,12 +95,8 @@ const CustomModal: React.FC<CustomModalProps> = ({
             opacity: opacityAnim,
           },
         ]}>
-          <Text style={playerNameStyles.modaltitle}>
-            {title}
-          </Text>
-          <Text style={playerNameStyles.modalText}>
-            {content}
-          </Text>
+          <Text style={playerNameStyles.modaltitle}>{title}</Text>
+          <Text style={playerNameStyles.modalText}>{content}</Text>
           <View style={playerNameStyles.buttonRow}>
             {renderButtons()}
           </View>
@@ -104,4 +106,5 @@ const CustomModal: React.FC<CustomModalProps> = ({
   );
 };
 
-export default CustomModal;
+// Memoize the component to prevent unnecessary re-renders
+export default memo(CustomModal);
