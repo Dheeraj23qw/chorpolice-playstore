@@ -47,13 +47,14 @@ export const useSortedScores = () => {
     if (isButtonDisabled) return;
     setIsButtonDisabled(true);
 
-    // Dispatch resetGame action
-    dispatch(resetGame());
 
     // Delay navigation to ensure state is updated
-    setTimeout(() => {
       router.push("/playerName"); // Navigate to playerName without checking isReady
-    }, 500); // Adjust delay as necessary
+    
+    setTimeout(() => {
+      dispatch(resetGame());
+    }, 500);
+    // Dispatch resetGame action
   }, [dispatch, router, isButtonDisabled]);
 
   // Handler for sharing the screenshot of the game results

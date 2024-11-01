@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: responsiveWidth(6),
     justifyContent: 'flex-start',
-    gap: responsiveWidth(6),
+    gap: responsiveWidth(9),
     marginTop: responsiveWidth(2),
   },
   headerTitle: {

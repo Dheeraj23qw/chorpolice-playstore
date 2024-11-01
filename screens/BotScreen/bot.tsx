@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { ImageBackground, SafeAreaView, ScrollView, View } from "react-native";
+import {
+  ImageBackground,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 import { responsiveHeight } from "react-native-responsive-dimensions";
@@ -17,8 +23,6 @@ import CustomAlertModal from "../playerNameScreen/modals/CustomAlertModal";
 import ConfirmChangeModal from "../playerNameScreen/modals/ConfirmChangeModal";
 import InfoAddMoreModal from "../playerNameScreen/modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
-
-
 
 const BotScreen: React.FC = () => {
   // Local State
@@ -44,19 +48,26 @@ const BotScreen: React.FC = () => {
   } = usePlayerNameScreen();
 
   // Custom Hook - Gallery Picker
-  const { pickImage, loading, isModalVisible, modalTitle, modalContent, setIsModalVisible  } = useGalleryPicker();
+  const {
+    pickImage,
+    loading,
+    isModalVisible,
+    modalTitle,
+    modalContent,
+    setIsModalVisible,
+  } = useGalleryPicker();
+
+  const options = [
+    { label: "Upload from Gallery", value: "gallery"},  
+    { label: "Choose your Avatar", value: "predefined" },
+  ];
   
-  // Expo Router
-  const router = useRouter();
 
   return (
     <SafeAreaView style={globalstyles.container}>
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-        <Components.ScreenHeader
-          name="Choose Your Avatars!"
-          showBackButton={false}
-        />
+        <Components.ScreenHeader name="Play With Bots!" showBackButton={true} />
       </View>
 
       {/* Main Content Container */}
@@ -78,30 +89,27 @@ const BotScreen: React.FC = () => {
             contentContainerStyle={{ flexGrow: 1 }}
           >
             {/* Avatar Selection */}
-            <Components.AvatarSelectionMemo
-              selectedOption={selectedOption}
-              setSelectedOption={setSelectedOption}
-              pickImage={pickImage}
-            />
-
+            <Text style={{ color: "white", textAlign: "center", fontSize: 20 }}>
+              choose Bots avatar
+            </Text>
             {/* Loading Indicator */}
             <Components.LoadingIndicator
               loading={loading}
               message="Loading, please wait..."
             />
-
+            {/* Avatar Selection */}
+            <Components.AvatarSelectionMemo
+              selectedOption={selectedOption}
+              setSelectedOption={setSelectedOption}
+              pickImage={pickImage}
+              options={options} // Pass the dynamic options array
+            />
             {/* Image Grid for Selected Images */}
             <Components.ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
-            />
-
-            {/* Selected Image Grid with Name Change and Click Handling */}
-            <Components.SelectedImageGrid
-              selectedImages={selectedImages}
-              imageNames={imageNames}
-              handleNameChange={handleNameChange}
-              handleSelectedImageClick={handleSelectedImageClick}
+              imagesPerRow={12}
+              type="bots-offline"
             />
 
             {/* Action Buttons for Starting Adventure - Show only if 4 images selected */}

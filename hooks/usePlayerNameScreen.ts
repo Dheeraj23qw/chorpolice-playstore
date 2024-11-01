@@ -8,6 +8,10 @@ import { RootState } from '@/redux/store';
 const MAX_SELECTED_IMAGES = 4;
 const MAX_NAME_LENGTH = 8;
 const DEFAULT_PLAYER_NAME = 'player_';
+const DEFAULT_BOT_NAME = 'bot_';
+const MAX_SELECTEDBOTS_IMAGES = 3;
+const MIN_SELECTEDBOTS_IMAGES = 1;
+
 
 interface ImageNames {
   [key: number]: string;
@@ -24,6 +28,7 @@ export const usePlayerNameScreen = () => {
   });
   const [alertMessage, setAlertMessage] = useState<string>('');
   const [currentImageId, setCurrentImageId] = useState<number | null>(null);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -99,16 +104,20 @@ export const usePlayerNameScreen = () => {
   }, [imageNames]);
 
   const handleStartAdventure = useCallback(async () => {
+    setIsButtonDisabled(true); // Disable the button after click
     try {
       if (checkForDuplicateNames()) {
         setAlertMessage('Please make sure each superhero has a unique name.');
         setModals(prev => ({ ...prev, modalVisible: true }));
+        setIsButtonDisabled(false); // Re-enable button on error
         return;
       }
 
       if (selectedImages.length < MAX_SELECTED_IMAGES) {
         setAlertMessage('Add 3 more avatars to play');
         setModals(prev => ({ ...prev, infoAddMoreVisible: true }));
+        setIsButtonDisabled(false); // Re-enable button on error
+
         return;
       }
 
@@ -131,6 +140,8 @@ export const usePlayerNameScreen = () => {
         setAlertMessage('An unexpected error occurred. Please try again.');
       }
       setModals(prev => ({ ...prev, modalVisible: true }));
+    }finally {
+      setIsButtonDisabled(false); // Re-enable the button after task completion
     }
   }, [selectedImages, imageNames, getDefaultNames, checkForDuplicateNames, dispatch, router]);
 
@@ -184,5 +195,6 @@ export const usePlayerNameScreen = () => {
     setModalVisible: (visible: boolean) => setModals(prev => ({ ...prev, modalVisible: visible })),
     setInfoAddMoreVisible: (visible: boolean) => setModals(prev => ({ ...prev, infoAddMoreVisible: visible })),
     setAlertMessage,
+    isButtonDisabled
   };
 };

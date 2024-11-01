@@ -7,9 +7,11 @@ import { RootState } from "@/redux/store";
 interface ImageGridProps {
   selectedImages: number[];
   handleImageSelect: (imageId: number) => void;
+  type: string;
+  imagesPerRow: number; // New prop for number of images per row
 }
 
-// Utility function to split images array into chunks of 12
+// Utility function to split images array into chunks of imagesPerRow size
 const chunkArray = (array: any[], chunkSize: number) => {
   const chunks = [];
   for (let i = 0; i < array.length; i += chunkSize) {
@@ -21,6 +23,8 @@ const chunkArray = (array: any[], chunkSize: number) => {
 const ImageGridComponent: React.FC<ImageGridProps> = ({
   selectedImages,
   handleImageSelect,
+  type,
+  imagesPerRow // Destructure the new prop
 }) => {
   // Fetch playerImages from Redux store
   const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
@@ -31,8 +35,8 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
     image: image.type === "local" ? image.src : { uri: image.src },
   }));
 
-  // Split images into rows with 12 images each
-  const rows = chunkArray(imagesArray, 12);
+  // Split images into rows with imagesPerRow images each
+  const rows = chunkArray(imagesArray, imagesPerRow);
 
   const handlePress = (imageId: number) => {
     handleImageSelect(imageId); // Directly call the select handler

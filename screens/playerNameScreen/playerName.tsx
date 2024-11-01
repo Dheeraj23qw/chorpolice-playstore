@@ -18,8 +18,6 @@ import ConfirmChangeModal from "./modals/ConfirmChangeModal";
 import InfoAddMoreModal from "./modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
 
-
-
 const PlayerNameScreen: React.FC = () => {
   // Local State
   const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
@@ -41,13 +39,23 @@ const PlayerNameScreen: React.FC = () => {
     closeInfoAddMoreModal,
     handleSelectedImageClick,
     infoAddMoreVisible,
+    isButtonDisabled
   } = usePlayerNameScreen();
 
   // Custom Hook - Gallery Picker
-  const { pickImage, loading, isModalVisible, modalTitle, modalContent, setIsModalVisible  } = useGalleryPicker();
-  
-  // Expo Router
-  const router = useRouter();
+  const {
+    pickImage,
+    loading,
+    isModalVisible,
+    modalTitle,
+    modalContent,
+    setIsModalVisible,
+  } = useGalleryPicker();
+
+  const options = [
+    { label: "Play with Bots!", value: "bots" },
+    { label: "Upload from Gallery", value: "gallery" },
+  ];
 
   return (
     <SafeAreaView style={globalstyles.container}>
@@ -82,6 +90,7 @@ const PlayerNameScreen: React.FC = () => {
               selectedOption={selectedOption}
               setSelectedOption={setSelectedOption}
               pickImage={pickImage}
+              options={options} // Pass the dynamic options array
             />
 
             {/* Loading Indicator */}
@@ -94,6 +103,8 @@ const PlayerNameScreen: React.FC = () => {
             <Components.ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
+              imagesPerRow={12}
+              type="offline"
             />
 
             {/* Selected Image Grid with Name Change and Click Handling */}
@@ -108,6 +119,7 @@ const PlayerNameScreen: React.FC = () => {
             {selectedImages.length === 4 && (
               <Components.PlayernameActionButtons
                 handleStartAdventure={handleStartAdventure}
+                disabled={isButtonDisabled}
               />
             )}
           </ScrollView>

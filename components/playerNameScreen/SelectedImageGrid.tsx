@@ -18,6 +18,11 @@ interface SelectedImageGridProps {
   handleSelectedImageClick: (imageId: number) => void;
 }
 
+// Helper function to get the correct image source
+const getImageSource = (imageData: { type: string; src: any }) => {
+  return imageData.type === "local" ? imageData.src : { uri: imageData.src };
+};
+
 // SelectedImageGridComponent
 const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
   selectedImages,
@@ -32,8 +37,8 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
   const imagesArray = useMemo(() => {
     return Object.entries(playerImages).map(([key, image]) => ({
       id: Number(key),
-      // Use either `src` for local or URI for gallery
-      image: image.type === "local" ? image.src : { uri: image.src },
+      // Use the getImageSource helper function to handle image sources
+      image: getImageSource(image),
     }));
   }, [playerImages]);
 
@@ -45,7 +50,6 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
     return selectedImages.map((imgId) => {
       const imgData = imagesArray.find((img) => img.id === imgId);
       if (!imgData) return null; // Skip if image data is not found
-
       return (
         <TouchableOpacity
           key={imgData.id}
@@ -53,7 +57,7 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
           onPress={() => handleSelectedImageClick(imgData.id)}
         >
           <Image
-            source={imgData.image}
+            source={imgData.image} // Use the handled image source
             style={playerNameStyles.selectedImage}
           />
           <TextInput
@@ -79,7 +83,7 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
         <View style={playerNameStyles.selectedImageRow}>
           {selectedImagesContent}
         </View>
-      </ScrollView>
+      </ScrollView>  
     </View>
   );
 };

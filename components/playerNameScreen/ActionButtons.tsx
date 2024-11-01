@@ -3,22 +3,17 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { playerNameStyles } from '@/screens/playerNameScreen/playerNameCss';
 
 interface ActionButtonsProps {
-  showGameInfo?: () => void;
   handleStartAdventure?: () => void;
+  disabled?: boolean; // Add disabled property
 }
 
-const PlayernameActionButtonsComponent: React.FC<ActionButtonsProps> = ({ showGameInfo, handleStartAdventure }) => (
+const PlayernameActionButtonsComponent: React.FC<ActionButtonsProps> = ({ handleStartAdventure, disabled }) => (
   <View style={playerNameStyles.infoButtonContainer}>
-    {showGameInfo && (
-      <TouchableOpacity style={playerNameStyles.infoButton} onPress={showGameInfo}>
-        <Text style={playerNameStyles.infoButtonText}>🎮 Game Info</Text>
-      </TouchableOpacity>
-    )}
-
     {handleStartAdventure && (
       <TouchableOpacity
-        style={playerNameStyles.startGameButton}
+        style={[playerNameStyles.startGameButton, disabled && { opacity: 0.5 }]} // Change style based on disabled state
         onPress={handleStartAdventure}
+        disabled={disabled} // Disable the button if disabled is true
       >
         <Text style={playerNameStyles.startGameButtonText}>Start Adventure 🚀</Text>
       </TouchableOpacity>
