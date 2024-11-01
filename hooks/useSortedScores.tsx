@@ -18,6 +18,7 @@ export const useSortedScores = () => {
   const playerScores = useSelector(
     (state: RootState) => state.player.playerScores
   );
+  //const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -52,7 +53,7 @@ export const useSortedScores = () => {
     // Delay navigation to ensure state is updated
     setTimeout(() => {
       router.push("/playerName"); // Navigate to playerName without checking isReady
-    }, 100); // Adjust delay as necessary
+    }, 500); // Adjust delay as necessary
   }, [dispatch, router, isButtonDisabled]);
 
   // Handler for sharing the screenshot of the game results

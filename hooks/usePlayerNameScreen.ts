@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
 import { setPlayerNames, setSelectedImages } from '@/redux/slices/playerSlice';
-import { playerImages as playerImagesData } from '@/constants/playerData';
+import { playSound } from '@/redux/slices/soundSlice';
+import { RootState } from '@/redux/store';
 
 const MAX_SELECTED_IMAGES = 4;
 const MAX_NAME_LENGTH = 8;
@@ -12,12 +13,6 @@ interface ImageNames {
   [key: number]: string;
 }
 
-import {
-  playSound,
-  stopQuizSound,
-  unloadSounds,
-} from "@/redux/slices/soundSlice";
-
 export const usePlayerNameScreen = () => {
   const [selectedImages, setSelectedImagesState] = useState<number[]>([]);
   const [imageNames, setImageNamesState] = useState<ImageNames>({});
@@ -25,7 +20,7 @@ export const usePlayerNameScreen = () => {
     modalVisible: false,
     infoModalVisible: false,
     confirmChangeVisible: false,
-    infoAddMoreVisible: false, // New modal state
+    infoAddMoreVisible: false,
   });
   const [alertMessage, setAlertMessage] = useState<string>('');
   const [currentImageId, setCurrentImageId] = useState<number | null>(null);
@@ -33,7 +28,8 @@ export const usePlayerNameScreen = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const playerImages = useMemo(() => playerImagesData, []);
+  // Use player images from Redux state
+  const playerImages = useSelector((state: RootState) => state.playerImages.images);
 
   const handleImageSelect = useCallback(
     (imageId: number) => {
@@ -42,19 +38,19 @@ export const usePlayerNameScreen = () => {
         setModals(prev => ({ ...prev, modalVisible: true }));
         return;
       }
-  
+
       if (selectedImages.includes(imageId)) {
         setAlertMessage('Do you want to change this superhero?');
         setCurrentImageId(imageId);
         setModals(prev => ({ ...prev, confirmChangeVisible: true }));
         return;
       }
-  
+
       if (selectedImages.length < MAX_SELECTED_IMAGES) {
         dispatch(playSound("level"));
         setSelectedImagesState(prevSelectedImages => [...prevSelectedImages, imageId]);
         setImageNamesState(prevNames => ({ ...prevNames, [imageId]: '' }));
-  
+
         // Notify the user to add more avatars
         if (selectedImages.length === 0) {
           setAlertMessage('Add 3 more avatars to play');
@@ -67,7 +63,6 @@ export const usePlayerNameScreen = () => {
     },
     [selectedImages, playerImages, dispatch]
   );
-  
 
   const handleSelectedImageClick = useCallback((imageId: number) => {
     if (selectedImages.includes(imageId)) {
@@ -76,7 +71,7 @@ export const usePlayerNameScreen = () => {
       setCurrentImageId(imageId);
       setModals(prev => ({ ...prev, confirmChangeVisible: true }));
     }
-  }, [selectedImages,dispatch]);
+  }, [selectedImages, dispatch]);
 
   const handleNameChange = useCallback((imageId: number, name: string) => {
     if (name.length > MAX_NAME_LENGTH) {
@@ -142,7 +137,7 @@ export const usePlayerNameScreen = () => {
   const showGameInfo = useCallback(() => {
     dispatch(playSound('select')); 
     setModals(prev => ({ ...prev, infoModalVisible: true }));
-  }, []);
+  }, [dispatch]);
 
   const closeAlertModal = useCallback(() => {
     setModals(prev => ({ ...prev, modalVisible: false }));
@@ -166,7 +161,7 @@ export const usePlayerNameScreen = () => {
     }
     closeAlertModal();
     setModals(prev => ({ ...prev, confirmChangeVisible: false }));
-  }, [currentImageId, closeAlertModal,dispatch]);
+  }, [currentImageId, closeAlertModal, dispatch]);
 
   return {
     selectedImages,
@@ -177,17 +172,17 @@ export const usePlayerNameScreen = () => {
     handleStartAdventure,
     showGameInfo,
     closeAlertModal,
-    closeInfoAddMoreModal, // Close infoAddMore modal
+    closeInfoAddMoreModal,
     handleAlertConfirm,
     modalVisible: modals.modalVisible,
     infoModalVisible: modals.infoModalVisible,
     confirmChangeVisible: modals.confirmChangeVisible,
-    infoAddMoreVisible: modals.infoAddMoreVisible, // New modal visibility state
+    infoAddMoreVisible: modals.infoAddMoreVisible,
     alertMessage,
     setInfoModalVisible: (visible: boolean) => setModals(prev => ({ ...prev, infoModalVisible: visible })),
     setConfirmChangeVisible: (visible: boolean) => setModals(prev => ({ ...prev, confirmChangeVisible: visible })),
     setModalVisible: (visible: boolean) => setModals(prev => ({ ...prev, modalVisible: visible })),
-    setInfoAddMoreVisible: (visible: boolean) => setModals(prev => ({ ...prev, infoAddMoreVisible: visible })), // Setter for infoAddMore modal
+    setInfoAddMoreVisible: (visible: boolean) => setModals(prev => ({ ...prev, infoAddMoreVisible: visible })),
     setAlertMessage,
   };
 };

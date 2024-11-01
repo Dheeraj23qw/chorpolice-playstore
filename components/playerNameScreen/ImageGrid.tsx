@@ -25,13 +25,14 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   // Fetch playerImages from Redux store
   const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
 
+  // Transforming the playerImages into an array format
   const imagesArray = Object.entries(playerImages).map(([key, image]) => ({
     id: Number(key),
-    // Use either `src` for local or URI for gallery
     image: image.type === "local" ? image.src : { uri: image.src },
   }));
 
-  const rows = chunkArray(imagesArray, 12); // Split images into rows with 12 images each
+  // Split images into rows with 12 images each
+  const rows = chunkArray(imagesArray, 12);
 
   const handlePress = (imageId: number) => {
     handleImageSelect(imageId); // Directly call the select handler
