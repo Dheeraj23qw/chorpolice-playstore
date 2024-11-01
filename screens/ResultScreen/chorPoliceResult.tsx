@@ -7,7 +7,8 @@ import {
   ImageBackground,
 } from "react-native";
 import { globalstyles } from "@/styles/global";
-import { Components } from "@/hooks/allComponentImports";
+import { Components } from "@/imports/allComponentImports";
+
 import { useSortedScores } from "@/hooks/useSortedScores";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";

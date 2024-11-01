@@ -19,6 +19,9 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
   const winner = sortedScores[0] ?? { playerName: "", totalScore: 0 };
   const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
 
+  // Define a fallback image source
+  const fallbackImage = require('@/assets/images/chorsipahi/kid2.png'); // Update this path to your fallback image
+
   // Memoize the winner's name for performance optimization
   const winnerName = useMemo(() => {
     return (
@@ -36,18 +39,18 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
     // Ensure the selectedImages array has valid indexes
     if (winnerIndex >= 0 && winnerIndex < selectedImages.length) {
       const image = playerImages[selectedImages[winnerIndex]];
-      return image ? image.src : playerImages[0].src; // Fallback to default image if not found
+      return image && image.src ? image.src : fallbackImage; // Use fallback image if not found
     }
 
-    return playerImages[0].src; // Fallback to default image if index is invalid
-  }, [winner.playerName, selectedImages, playerNames]);
+    return fallbackImage; // Fallback to default image if index is invalid
+  }, [winner.playerName, selectedImages, playerNames, playerImages]);
 
   return (
     <View style={ChorPoloceLeaderboardStyles.winnerContainer}>
       <Image
         source={
-          typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage
-        } // Ensure the source is an object with uri
+          typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage // Ensure the source is an object with uri
+        }
         style={ChorPoloceLeaderboardStyles.winnerImage}
         accessibilityLabel={`Image of ${winnerName}`}
       />

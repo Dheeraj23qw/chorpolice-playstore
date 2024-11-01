@@ -16,28 +16,41 @@ export default function Index() {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load sounds on mount
   useEffect(() => {
-    // Load sounds
-    dispatch(loadSounds() as any).then(() => dispatch(playSound("quiz")));
+    async function initializeSounds() {
+      try {
+        await dispatch(loadSounds() as any);
+        dispatch(playSound("quiz"));
+      } catch (error) {
+        console.error("Failed to load or play sounds:", error);
+      }
+    }
+    initializeSounds();
+
     return () => {
       dispatch(stopQuizSound());
       dispatch(unloadSounds());
     };
   }, [dispatch]);
 
+  // Set navigation options to hide header
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, [navigation]);
 
+  // Handle video end callback to hide splash screen
   const handleVideoEnd = () => {
-    setIsLoading(false); // Hide splash screen
+    setIsLoading(false);
   };
 
+  // Render splash screen video if loading
   if (isLoading) {
     return <VideoPlayerComponent videoIndex={1} onVideoEnd={handleVideoEnd} />;
   }
 
+  // Render main content after video ends
   return <PlayerNameScreen />;
 }
