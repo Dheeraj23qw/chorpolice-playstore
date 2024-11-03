@@ -50,41 +50,45 @@ export const usePlayerNameScreen = () => {
     if (gameModeStatus !== null) {
       dispatch(setGameMode(gameModeStatus));
     }
-  }, [gameModeStatus,dispatch]);
+  }, [gameModeStatus, dispatch]);
 
   const handleImageSelect = useCallback(
     (imageId: number, isBot: boolean, gameMode: GameMode) => {
       setGameModeStatus(gameMode);
-  
+
       if (!playerImages[imageId]) {
         setAlertMessage("Selected image is not available.");
         setModals((prev) => ({ ...prev, modalVisible: true }));
         return;
       }
-  
+
       if (isBot && botCount >= 3) {
-        setAlertMessage("You can only select a maximum of 3 bots.please choose your Avatar to start the game");
+        setAlertMessage(
+          "You can only select a maximum of 3 bots.please choose your Avatar to start the game"
+        );
         setModals((prev) => ({ ...prev, modalVisible: true }));
         return;
       }
-  
+
       // In non-OFFLINE modes, limit the human count to 3 and prompt user to add at least one bot
       if (gameMode !== "OFFLINE" && !isBot && humanCount >= 3) {
         setAlertMessage("Please choose at least one bot to start the game.");
         setModals((prev) => ({ ...prev, modalVisible: true }));
         return;
       }
-  
+
       if (selectedImages.includes(imageId)) {
-        setAlertMessage("You've already selected this superhero! Would you like to change it?");
+        setAlertMessage(
+          "You've already selected this superhero! Would you like to change it?"
+        );
         setCurrentImageId(imageId);
         setModals((prev) => ({ ...prev, confirmChangeVisible: true }));
         return;
       }
-  
+
       if (selectedImages.length < MAX_SELECTED_IMAGES) {
         dispatch(playSound("level"));
-  
+
         if (selectedImages.length === 0) {
           // Check if `gameModeStatus` is OFFLINE and show appropriate message
           const alertMsg =
@@ -94,21 +98,21 @@ export const usePlayerNameScreen = () => {
           setAlertMessage(alertMsg);
           setModals((prev) => ({ ...prev, infoAddMoreVisible: true }));
         }
-  
+
         setSelectedImagesState((prevSelectedImages) => [
           ...prevSelectedImages,
           imageId,
         ]);
-  
+
         if (isBot) {
           setBotCount((prev) => prev + 1);
         } else {
           setHumanCount((prev) => prev + 1);
         }
-  
+
         const newPlayer = { id: imageId, name: "", isBot };
         setPlayerNamesState((prevNames) => [...prevNames, newPlayer]);
-  
+
         dispatch(setPlayerNames([...playerNames, newPlayer]));
       } else {
         setAlertMessage("You can only pick 4 superheroes.");
@@ -125,8 +129,6 @@ export const usePlayerNameScreen = () => {
       humanCount, // Include humanCount in dependencies
     ]
   );
-  
-  
 
   const handleSelectedImageClick = useCallback(
     (imageId: number) => {
@@ -174,6 +176,7 @@ export const usePlayerNameScreen = () => {
   const handleStartAdventure = useCallback(async () => {
     setIsButtonDisabled(true); // Disable the button after click
     try {
+      // Check for duplicate names
       if (checkForDuplicateNames()) {
         setAlertMessage("Please make sure each superhero has a unique name.");
         setModals((prev) => ({ ...prev, modalVisible: true }));
@@ -188,7 +191,7 @@ export const usePlayerNameScreen = () => {
       const imagesWithDetails = selectedImages.map((id) => ({
         id,
         name: updatedImageNames[id],
-        isBot: playerNames.find((player) => player.id === id)?.isBot || false, // Retrieve isBot status
+        isBot: playerNames.find((player) => player.id === id)?.isBot || false,
       }));
 
       await dispatch(setSelectedImages(selectedImages));

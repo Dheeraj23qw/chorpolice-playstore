@@ -31,8 +31,7 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
   handleSelectedImageClick,
 }) => {
   // Fetch playerImages from Redux store
-  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust path according to your state shape
-
+  const playerImages = useSelector((state: RootState) => state.playerImages.images); 
   // Create imagesArray from Redux data
   const imagesArray = useMemo(() => {
     return Object.entries(playerImages).map(([key, image]) => ({

@@ -143,6 +143,7 @@ const BotScreen: React.FC = () => {
                         imagesPerRow={36}
                         isBot={false}
                         gameMode="OFFLINE_WITH_BOTS"
+                        selectedOption={selectedOption}
                       />
                     </>
                   ) : null}
