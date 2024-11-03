@@ -3,12 +3,14 @@ import { Pressable, ScrollView, StyleSheet, View, Image } from "react-native";
 import { useSelector } from "react-redux"; // Import useSelector to access Redux state
 import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
 import { RootState } from "@/redux/store";
+import { GameMode } from "@/redux/slices/playerSlice";
 
 interface ImageGridProps {
   selectedImages: number[];
-  handleImageSelect: (imageId: number) => void;
-  type: string;
-  imagesPerRow: number; // New prop for number of images per row
+  handleImageSelect: (imageId: number,isBot: boolean,gameMode:GameMode) => void;
+  isBot?: boolean;
+  imagesPerRow: number;
+  gameMode?:GameMode;
 }
 
 // Utility function to split images array into chunks of imagesPerRow size
@@ -23,13 +25,22 @@ const chunkArray = (array: any[], chunkSize: number) => {
 const ImageGridComponent: React.FC<ImageGridProps> = ({
   selectedImages,
   handleImageSelect,
-  type,
-  imagesPerRow // Destructure the new prop
+  isBot=true,
+  imagesPerRow,
+  gameMode="OFFLINE"
 }) => {
   // Fetch playerImages from Redux store
-  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images
+  );
 
-  // Transforming the playerImages into an array format
+
+
+  /* yha pr basically ham store se playerImages ko lae h jisme hmare bydefault player's avtars saved hai chahe wo
+   gallary se ho aur chahe assets se wo sare images store hai
+   const playerImages: { [key: number]: PlayerImage;  } is format me */
+
+  // yha par ham playerImages object ko array me convert kr rhe hai......
   const imagesArray = Object.entries(playerImages).map(([key, image]) => ({
     id: Number(key),
     image: image.type === "local" ? image.src : { uri: image.src },
@@ -38,8 +49,8 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   // Split images into rows with imagesPerRow images each
   const rows = chunkArray(imagesArray, imagesPerRow);
 
-  const handlePress = (imageId: number) => {
-    handleImageSelect(imageId); // Directly call the select handler
+  const handlePress = (imageId: number,isBot:boolean,gameMode:GameMode) => {
+    handleImageSelect(imageId,isBot,gameMode); // Directly call the select handler
   };
 
   return (
@@ -56,7 +67,7 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
             return (
               <Pressable
                 key={`row-${rowIndex}-image-${item.id}`} // Unique key combining rowIndex and item.id
-                onPress={() => handlePress(item.id)}
+                onPress={() => handlePress(item.id,isBot,gameMode)}
                 style={[
                   playerNameStyles.imageContainer,
                   isSelected && styles.selectedImageContainer,

@@ -27,7 +27,10 @@ import CustomModal from "@/modal/CustomModal";
 const BotScreen: React.FC = () => {
   // Local State
   const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
-  const [selectedOption, setSelectedOption] = useState<string | null>(null); // For avatar selection
+  const [selectedOption, setSelectedOption] = useState<string | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false); // New loading state
 
   // Custom Hook - Player Name Screen
   const {
@@ -50,18 +53,36 @@ const BotScreen: React.FC = () => {
   // Custom Hook - Gallery Picker
   const {
     pickImage,
-    loading,
+    loading: galleryLoading, // To manage loading from gallery picker
     isModalVisible,
     modalTitle,
     modalContent,
     setIsModalVisible,
   } = useGalleryPicker();
 
+  // Initial options
   const options = [
-    { label: "Upload from Gallery", value: "gallery"},  
-    { label: "Choose your Avatar", value: "predefined" },
+    { label: "Choose Bot Avatar", value: "Bots-Avatar" },
+    { label: "Choose your Avatar", value: "player-Avatar" },
   ];
-  
+
+  // Add "Upload from Gallery" option if an avatar option is selected
+  const additionalOption = selectedOption
+    ? [{ label: "Upload from Gallery", value: "gallery" }]
+    : [];
+
+  // Check if the image grid should be shown
+  const showImageGrid = selectedOption && additionalOption.length > 0;
+
+  // Function to handle option change and show loading
+  const handleOptionChange = (option: string | null) => {
+    setLoading(true); // Start loading
+    setSelectedOption(option); // This will be compatible with the new type
+    // Simulate a delay for loading images
+    setTimeout(() => {
+      setLoading(false); // Stop loading after a delay
+    }, 1000); // Adjust delay as necessary
+  };
 
   return (
     <SafeAreaView style={globalstyles.container}>
@@ -88,28 +109,51 @@ const BotScreen: React.FC = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1 }}
           >
-            {/* Avatar Selection */}
-            <Text style={{ color: "white", textAlign: "center", fontSize: 20 }}>
-              choose Bots avatar
-            </Text>
-            {/* Loading Indicator */}
-            <Components.LoadingIndicator
-              loading={loading}
-              message="Loading, please wait..."
-            />
-            {/* Avatar Selection */}
+            {/* Avatar Selection Component */}
             <Components.AvatarSelectionMemo
               selectedOption={selectedOption}
-              setSelectedOption={setSelectedOption}
+              setSelectedOption={handleOptionChange} // Pass the handler for option change
               pickImage={pickImage}
-              options={options} // Pass the dynamic options array
+              options={[...options, ...additionalOption]} // Combine options here
             />
-            {/* Image Grid for Selected Images */}
-            <Components.ImageGrid
+            {/* Loading Indicator */}
+            {loading && (
+              <Components.LoadingIndicator
+                loading={true}
+                message="Loading, please wait..."
+              />
+            )}
+            {/* Conditional Image Grid for Avatar Selection */}
+            {!loading &&
+              showImageGrid && ( // Don't show grid while loading
+                <>
+                  {selectedOption === "Bots-Avatar" ? (
+                    <Components.ImageGrid
+                      selectedImages={selectedImages}
+                      handleImageSelect={handleImageSelect}
+                      imagesPerRow={36}
+                      isBot={true}
+                      gameMode="OFFLINE_WITH_BOTS"
+                    />
+                  ) : selectedOption === "player-Avatar" ? (
+                    <>
+                      <Components.ImageGrid
+                        selectedImages={selectedImages}
+                        handleImageSelect={handleImageSelect}
+                        imagesPerRow={36}
+                        isBot={false}
+                        gameMode="OFFLINE_WITH_BOTS"
+                      />
+                    </>
+                  ) : null}
+                </>
+              )}
+
+            <Components.SelectedImageGrid
               selectedImages={selectedImages}
-              handleImageSelect={handleImageSelect}
-              imagesPerRow={12}
-              type="bots-offline"
+              imageNames={imageNames}
+              handleNameChange={handleNameChange}
+              handleSelectedImageClick={handleSelectedImageClick}
             />
 
             {/* Action Buttons for Starting Adventure - Show only if 4 images selected */}
@@ -145,7 +189,7 @@ const BotScreen: React.FC = () => {
         onClose={() => setIsModalVisible(false)}
         title={modalTitle}
         content={modalContent}
-        buttons={[{ text: "OK", onPress: () => setIsModalVisible(false) }]} // Button to close modal
+        buttons={[{ text: "OK", onPress: () => setIsModalVisible(false) }]}
       />
     </SafeAreaView>
   );

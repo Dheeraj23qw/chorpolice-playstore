@@ -4,18 +4,16 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { styles } from "./_css/optionbarcss";
 import { useRouter } from "expo-router";
 
-// Define a type for ButtonOption
 interface ButtonOption {
-  label: string;
-  value: string;
+  label: string; // Label for the button to be displayed
+  value: string; // Value associated with the button option
 }
 
-// Define a type for AvatarSelectionProps for better type safety
 interface AvatarSelectionProps {
-  selectedOption: string | null;
-  setSelectedOption: React.Dispatch<React.SetStateAction<string | null>>;
-  pickImage: () => Promise<void>;
-  options: ButtonOption[]; // Accept an array of options
+  selectedOption: string | null; 
+  setSelectedOption: (option: string | null) => void; 
+  pickImage: () => Promise<void>; 
+  options: ButtonOption[];
 }
 
 // Create the AvatarSelection component
@@ -23,28 +21,31 @@ const AvatarSelection: React.FC<AvatarSelectionProps> = ({
   selectedOption,
   setSelectedOption,
   pickImage,
-  options, // Destructure options
+  options,
 }) => {
   const router = useRouter();
 
-  // Toggle the selected option and navigate to corresponding route
+  // Toggle the selected option and navigate to the corresponding route
   const handleOptionSelect = (option: ButtonOption) => {
-    setSelectedOption((prev) => (prev === option.value ? null : option.value));
-
-    // Example routing logic, adjust based on your actual routes
-    if (option.value === "bots") {
-      router.push("/playwithbot");
-    } else if (option.value === "gallery") {
-      // Handle gallery option
+    if (option.value === "gallery") {
       handleGallerySelection();
+    } else {
+      // Set the selected option directly based on whether it is currently selected or not
+      const newSelection = selectedOption === option.value ? null : option.value;
+      setSelectedOption(newSelection);
+
+      // Example routing logic, adjust based on your actual routes
+      if (option.value === "bots") {
+        router.push("/playwithbot");
+      }
     }
   };
 
   // Handle selection from the gallery and ensure pickImage is awaited
   const handleGallerySelection = async () => {
     try {
-      setSelectedOption((prev) => (prev === "gallery" ? null : "gallery"));
-      await pickImage();
+      setSelectedOption("gallery"); // Set the option as selected
+      await pickImage(); // Await the image picking process
     } catch (error) {
       console.error("Error picking image: ", error);
     }

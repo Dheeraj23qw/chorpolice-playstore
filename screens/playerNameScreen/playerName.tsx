@@ -104,7 +104,6 @@ const PlayerNameScreen: React.FC = () => {
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
               imagesPerRow={12}
-              type="offline"
             />
 
             {/* Selected Image Grid with Name Change and Click Handling */}
