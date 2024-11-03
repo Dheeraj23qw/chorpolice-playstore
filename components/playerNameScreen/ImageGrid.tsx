@@ -8,7 +8,7 @@ import { GameMode } from "@/redux/slices/playerSlice";
 interface ImageGridProps {
   selectedImages: number[];
   handleImageSelect: (imageId: number,isBot: boolean,gameMode:GameMode) => void;
-  isBot?: boolean;
+  isBot: boolean;
   imagesPerRow: number;
   gameMode?:GameMode;
 }
@@ -25,7 +25,7 @@ const chunkArray = (array: any[], chunkSize: number) => {
 const ImageGridComponent: React.FC<ImageGridProps> = ({
   selectedImages,
   handleImageSelect,
-  isBot=true,
+  isBot,
   imagesPerRow,
   gameMode="OFFLINE"
 }) => {

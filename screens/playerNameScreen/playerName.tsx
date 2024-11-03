@@ -104,6 +104,8 @@ const PlayerNameScreen: React.FC = () => {
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
               imagesPerRow={12}
+              gameMode="OFFLINE"
+              isBot={false}
             />
 
             {/* Selected Image Grid with Name Change and Click Handling */}
@@ -136,11 +138,13 @@ const PlayerNameScreen: React.FC = () => {
         visible={confirmChangeVisible}
         onClose={() => setConfirmChangeVisible(false)}
         onConfirm={handleAlertConfirm}
+        content={alertMessage}
       />
 
       <InfoAddMoreModal
         visible={infoAddMoreVisible}
         onClose={closeInfoAddMoreModal}
+        content={alertMessage}
       />
 
       <CustomModal

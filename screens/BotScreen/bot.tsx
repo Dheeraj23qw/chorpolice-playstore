@@ -177,11 +177,15 @@ const BotScreen: React.FC = () => {
         visible={confirmChangeVisible}
         onClose={() => setConfirmChangeVisible(false)}
         onConfirm={handleAlertConfirm}
+        content={alertMessage}
+
       />
 
       <InfoAddMoreModal
         visible={infoAddMoreVisible}
         onClose={closeInfoAddMoreModal}
+        content={alertMessage}
+
       />
 
       <CustomModal

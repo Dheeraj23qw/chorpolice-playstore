@@ -11,7 +11,7 @@ interface PlayerScore {
 interface PlayerName {
   id: number;
   name: string;
-  isBot?: boolean;
+  isBot: boolean;
 }
 
 // Define the GameMode type
