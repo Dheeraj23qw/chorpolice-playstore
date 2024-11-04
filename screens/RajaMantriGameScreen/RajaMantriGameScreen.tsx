@@ -83,7 +83,7 @@ const RajaMantriGameScreen: React.FC = () => {
                     key={index}
                     index={index}
                     role={roles[index]} // Assign role to player card
-                    playerName={playerNames[index] || "Player"} // Fallback player name
+                    playerName={playerNames[index]} // Fallback player name
                     flipped={flippedStates[index]} // Check if card is flipped
                     clicked={clickedCards[index]} // Check if card is clicked
                     onClick={handleCardClick} // Handle card click
@@ -106,7 +106,7 @@ const RajaMantriGameScreen: React.FC = () => {
                     key={index + 2}
                     index={index + 2}
                     role={roles[index + 2]} // Assign role to player card
-                    playerName={playerNames[index + 2] || "Player"} // Fallback player name
+                    playerName={playerNames[index + 2]} // Fallback player name
                     flipped={flippedStates[index + 2]} // Check if card is flipped
                     clicked={clickedCards[index + 2]} // Check if card is clicked
                     onClick={handleCardClick} // Handle card click

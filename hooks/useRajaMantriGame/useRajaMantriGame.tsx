@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { Animated } from "react-native";
 import { BackHandler } from "react-native";
-import { useDispatch } from "react-redux";
-import { updatePlayerScores } from "@/redux/slices/playerSlice";
-import { useRouter, useNavigation } from "expo-router";
-import { shuffleArray } from "./utils/suffleArrayUtils";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter} from "expo-router";
 import { resetGame } from "./utils/resetGameUtils";
 import { flipCard } from "./utils/flipCardUtil";
 import { calculateTotalScores } from "./utils/totalScoreUtils";
@@ -17,6 +15,7 @@ import { revealAllCards } from "./utils/revealAllCardsUtils";
 import { resetForNextRound } from "./utils/resetForNextRound";
 import { handlePlayHelper } from "./gameHelper/handleplay";
 import { updateScoreUtil } from "./utils/updateScoreUtil";
+import { RootState } from "@/redux/store";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
@@ -78,6 +77,17 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     return () => unsubscribe.remove();
   }, []);
 
+
+  const playerData = useSelector((state: RootState) => state.player);
+
+  useEffect(() => {
+    const botIds = playerData.playerNames
+      .filter(({ isBot }) => isBot) // Filter to get only the bot players
+      .map(({ id }) => id); // Map to extract only the IDs
+  }, [playerData]);
+
+
+
   useEffect(() => {
     resetGame(
       initialFlippedStates,
@@ -107,6 +117,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     };
   }, [dispatch]);
 
+   //isse se hai matlab
+
   const handlePlay = () => {
     handlePlayHelper(
       dispatch,
@@ -132,6 +144,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
   };
 
+  // koi matlab nhi isse
   const updateScore = (
     playerIndex: number,
     newScore: number,
@@ -142,6 +155,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
   };
 
+  //isse se hai matlab
   const handleCardClick = (index: number) => {
     if (
       !areCardsClickable ||
@@ -245,7 +259,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       clickedCards,
       setRound,
       resetForNextRoundHandler,
-      dispatch // Pass dispatch here
+      dispatch 
     );
   };
 
@@ -272,7 +286,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setPoliceIndex,
       dispatch,
       calculateTotalScoresHandler,
-      router // Pass router here
+      router 
     );
   };
 

@@ -17,7 +17,7 @@ const useQuizLogic = (router: any) => {
   const playerScores = useSelector(
     (state: RootState) => state.player.playerScores
   );
-  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
+  const playerImages = useSelector((state: RootState) => state.playerImages.images);
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -25,7 +25,7 @@ const useQuizLogic = (router: any) => {
   const [options, setOptions] = useState<number[]>([]);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [isContentVisible, setIsContentVisible] = useState(true);
-  const [isOptionDisabled, setIsOptionDisabled] = useState(false); // New state for disabling options
+  const [isOptionDisabled, setIsOptionDisabled] = useState(false);
 
   // Handle the hardware back button press (Android)
   useEffect(() => {
@@ -45,6 +45,14 @@ const useQuizLogic = (router: any) => {
   useEffect(() => {
     generateOptionsForPlayer();
   }, [currentPlayerIndex]);
+
+  useEffect(() => {
+    if (currentPlayerIsBot) {
+      simulateBotOptionSelection();
+    }
+  }, [currentPlayerIndex]);
+
+  const currentPlayerIsBot = playerNames[currentPlayerIndex]?.isBot;
 
   const generateOptionsForPlayer = () => {
     if (playerNames.length === 0) return;
@@ -78,10 +86,11 @@ const useQuizLogic = (router: any) => {
   };
 
   const handleOptionPress = (score: number) => {
-    if (isOptionDisabled || playerNames.length === 0) return; // Prevent double-clicking
-    setIsOptionDisabled(true); // Disable options after the first click
+    if (isOptionDisabled) return;
+    
+    setIsOptionDisabled(true);
 
-    const currentPlayerName = playerNames[currentPlayerIndex]?.name;
+    const currentPlayerName = playerNames[currentPlayerIndex].name;
     const correctScore =
       playerScores.find((score) => score.playerName === currentPlayerName)
         ?.totalScore ?? 0;
@@ -94,6 +103,13 @@ const useQuizLogic = (router: any) => {
       updateScore(currentPlayerName, -2000);
       setFeedback(false, "2000 points deducted!", "lose");
     }
+  };
+
+  const simulateBotOptionSelection = () => {
+    setTimeout(() => {
+      const botChoice = options[Math.floor(Math.random() * options.length)];
+      handleOptionPress(botChoice);
+    }, 2000); 
   };
 
   const updateScore = (playerName: string, points: number) => {
@@ -118,11 +134,11 @@ const useQuizLogic = (router: any) => {
   ) => {
     setIsCorrect(isCorrectAnswer);
     setFeedbackMessage(message);
-    dispatch(playSound(soundName)); // This will replay the sound each time
+    dispatch(playSound(soundName));
     setIsContentVisible(false);
     setTimeout(() => {
       moveToNextPlayer();
-    }, 6000);
+    }, 4000);
   };
 
   const moveToNextPlayer = () => {
@@ -130,14 +146,13 @@ const useQuizLogic = (router: any) => {
     setIsCorrect(false);
     setFeedbackMessage("");
     setIsContentVisible(true);
-    setIsOptionDisabled(false); // Re-enable options for the next question
+    setIsOptionDisabled(false);
 
     setCurrentPlayerIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
       if (nextIndex < playerNames.length) {
         return nextIndex;
       } else {
-        // Delayed navigation to avoid updating state during render
         setTimeout(() => {
           router.push("/chorpoliceResult");
         }, 10);
@@ -160,6 +175,7 @@ const useQuizLogic = (router: any) => {
     handleOptionPress,
     moveToNextPlayer,
     isOptionDisabled,
+    currentPlayerIsBot
   };
 };
 

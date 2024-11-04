@@ -20,6 +20,7 @@ const ChorPoliceQuiz: React.FC = () => {
     isContentVisible,
     handleOptionPress,
     isOptionDisabled,
+    currentPlayerIsBot
   } = useQuizLogic(router);
 
   // Memoize components that don't need to re-render often
@@ -45,6 +46,7 @@ const ChorPoliceQuiz: React.FC = () => {
           options={options}
           onOptionPress={handleOptionPress}
           isOptionDisabled={isOptionDisabled}
+          currentPlayerIsBot={currentPlayerIsBot}
         />
       ),
     [
@@ -53,6 +55,7 @@ const ChorPoliceQuiz: React.FC = () => {
       options,
       handleOptionPress,
       isOptionDisabled,
+      currentPlayerIsBot
     ]
   );
 

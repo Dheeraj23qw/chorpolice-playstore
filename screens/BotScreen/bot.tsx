@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ImageBackground,
   SafeAreaView,
@@ -9,7 +9,6 @@ import {
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 import { responsiveHeight } from "react-native-responsive-dimensions";
-import { useRouter } from "expo-router";
 
 // Custom Hooks
 import { usePlayerNameScreen } from "@/hooks/usePlayerNameScreen";
@@ -23,6 +22,8 @@ import CustomAlertModal from "../playerNameScreen/modals/CustomAlertModal";
 import ConfirmChangeModal from "../playerNameScreen/modals/ConfirmChangeModal";
 import InfoAddMoreModal from "../playerNameScreen/modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
+import { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
 
 const BotScreen: React.FC = () => {
   // Local State
@@ -76,13 +77,22 @@ const BotScreen: React.FC = () => {
 
   // Function to handle option change and show loading
   const handleOptionChange = (option: string | null) => {
-    setLoading(true); // Start loading
-    setSelectedOption(option); // This will be compatible with the new type
-    // Simulate a delay for loading images
+    setLoading(true); 
+    setSelectedOption(option); 
     setTimeout(() => {
-      setLoading(false); // Stop loading after a delay
-    }, 1000); // Adjust delay as necessary
+      setLoading(false); 
+    }, 1000); 
   };
+
+  // const playerData = useSelector((state: RootState) => state.player);
+
+  // useEffect(() => {
+  //   const botIds = playerData.playerNames
+  //     .filter(({ isBot }) => isBot) // Filter to get only the bot players
+  //     .map(({ id }) => id); // Map to extract only the IDs
+  
+  //   console.log(botIds); // This will log the IDs of the bots
+  // }, [playerData]);
 
   return (
     <SafeAreaView style={globalstyles.container}>
