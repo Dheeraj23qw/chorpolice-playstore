@@ -30,6 +30,8 @@ export const handlePlayHelper = (
   const randomIndex = Math.floor(Math.random() * 4);
   setSelectedPlayer(randomIndex + 1);
   setIsPlayButtonDisabled(true);
+
+  // Shuffle and assign roles
   const shuffledRoles = shuffleArray(["King", "Advisor", "Thief", "Police"]);
   setRoles(shuffledRoles);
 
@@ -43,15 +45,16 @@ export const handlePlayHelper = (
   setAdvisorIndex(advisorIndex);
   setThiefIndex(thiefIndex);
 
-  // Set player names for Police and King
+  // Set player name for Police
   const policePlayerName = policeIndex !== -1 ? playerNames[policeIndex] : null;
   setPolicePlayerName(policePlayerName);
 
-  if (kingIndex !== -1) {
+  // Flip both King and Police cards simultaneously
+  if (kingIndex !== -1 && policeIndex !== -1) {
     flipCard(
       kingIndex,
       1,
-      4000,
+      5000,
       flipAnims,
       setFlippedStates,
       flippedStates,
@@ -61,31 +64,28 @@ export const handlePlayHelper = (
       resetForNextRoundHandler,
       dispatch
     );
+
+    flipCard(
+      policeIndex,
+      1,
+      5000,
+      flipAnims,
+      setFlippedStates,
+      flippedStates,
+      roles,
+      clickedCards,
+      setRound,
+      resetForNextRoundHandler,
+      dispatch
+    );
+
+    // Set message and re-enable card clicks after flip
     setTimeout(() => {
-      setMessage(`${policePlayerName},catch the thief`);
+      setMessage(`${policePlayerName}, catch the thief`);
       setTimeout(() => setMessage(""), 12000);
-    }, 3700);
-  }
-
-  setAreCardsClickable(false);
-
-  if (policeIndex !== -1) {
-    setTimeout(() => {
-      flipCard(
-        policeIndex,
-        1,
-        3700,
-        flipAnims,
-        setFlippedStates,
-        flippedStates,
-        roles,
-        clickedCards,
-        setRound,
-        resetForNextRoundHandler,
-        dispatch
-      );
-
-      setTimeout(() => setAreCardsClickable(true), 3300);
-    }, 2000);
+      setAreCardsClickable(true);
+    }, 4000);
+  } else {
+    setAreCardsClickable(true);
   }
 };

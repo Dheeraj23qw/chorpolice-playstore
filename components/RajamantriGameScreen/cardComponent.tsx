@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Text,
   TouchableOpacity,
@@ -20,6 +20,11 @@ interface PlayerCardProps {
   clicked: boolean;
   onClick: (index: number) => void;
   animatedStyle: any;
+  roles: string[];
+  policeIndex: number | null;
+  advisorIndex: number | null;
+  thiefIndex: number | null;
+  kingIndex: number | null;
 }
 
 const roleImages: { [key: string]: any } = {
@@ -34,22 +39,78 @@ const getImageSource = (imageData: { type: string; src: any }) => {
 };
 
 const PlayerCard: React.FC<PlayerCardProps> = React.memo(
-  ({ index, role, playerName, flipped, clicked, onClick, animatedStyle }) => {
+  ({
+    index,
+    role,
+    playerName,
+    flipped,
+    clicked,
+    onClick,
+    animatedStyle,
+    policeIndex,
+    advisorIndex,
+    thiefIndex,
+  }) => {
     const selectedImages = useSelector(selectSelectedImages);
-    const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
+    const playerImages = useSelector(
+      (state: RootState) => state.playerImages.images
+    );
+
+    const playerData = useSelector((state: RootState) => state.player);
+    const botIndexes = playerData.playerNames
+      .map((player, idx) => (player.isBot ? idx : -1))
+      .filter((idx) => idx !== -1);
+
+    const isPoliceBot = policeIndex !== null && botIndexes.includes(policeIndex);
+
+    const handleClick = (idx: number) => {
+      // Allow click only if the current police is not a bot
+      if (!isPoliceBot) {
+        onClick(idx);
+      }
+    };
+
+    // Automatic response for bots with "Advisor" or "Thief" role
+    useEffect(() => {
+      if (botIndexes.includes(index)) {
+        // Bot action with a random delay for Advisor or Thief
+        if (role === "Advisor" || role === "Thief") {
+          const timeout = setTimeout(() => {
+            handleClick(index); // Automatically send the index for Advisor or Thief bots
+          }, Math.random() * 2000 + 6000); // Random delay between 6 to 8 seconds
+
+          return () => clearTimeout(timeout);
+        }
+
+        // For Police bot
+        if (role === "Police") {
+          const targetIndex = advisorIndex !== null ? advisorIndex : thiefIndex;
+          if (targetIndex !== null) {
+            const timeout = setTimeout(() => {
+              onClick(targetIndex); // Automatically send the index of Advisor or Thief
+            }, Math.random() * 2000 + 6000); // Random delay between 1 to 3 seconds
+
+            return () => clearTimeout(timeout);
+          }
+        }
+      }
+    }, [flipped, botIndexes, index, role, advisorIndex, thiefIndex, handleClick]);
 
     const renderContent = () => {
       if (flipped) {
-        if (role === "Police") {
-          return <Image source={roleImages.Police} style={styles.cardImage} />;
+        if (role === "Police" || role === "King") {
+          // Display the image for Police or King without interaction
+          return <Image source={roleImages[role]} style={styles.cardImage} />;
         } else {
+          // For other roles, display image with potential interactivity
           return (
-            <TouchableOpacity onPress={() => onClick(index)}>
+            <TouchableOpacity onPress={() => handleClick(index)}>
               <Image source={roleImages[role]} style={styles.cardImage} />
             </TouchableOpacity>
           );
         }
       } else {
+        // When not flipped, show the player's image and name
         const playerImage = selectedImages[index]
           ? getImageSource(playerImages[selectedImages[index]])
           : getImageSource(playerImages[index + 1]);
@@ -60,7 +121,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
             style={styles.playerNmaeCardImage}
           >
             <View style={styles.overlay}>
-              <TouchableOpacity onPress={() => onClick(index)}>
+              <TouchableOpacity onPress={() => handleClick(index)}>
                 <Text style={styles.cardText}>{playerName}</Text>
               </TouchableOpacity>
             </View>
@@ -71,8 +132,8 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
 
     return (
       <TouchableOpacity
-        onPress={() => onClick(index)}
-        disabled={flipped || clicked}
+        onPress={() => handleClick(index)}
+        disabled={flipped || clicked || botIndexes.includes(index)}
       >
         <Animated.View style={[styles.card, animatedStyle]}>
           {renderContent()}

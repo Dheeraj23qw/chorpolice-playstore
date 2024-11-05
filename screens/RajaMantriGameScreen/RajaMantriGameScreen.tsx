@@ -37,6 +37,10 @@ const RajaMantriGameScreen: React.FC = () => {
     handlePlay,            // Function to handle play button press
     setIsPlaying,          // Function to set playing state
     handleCardClick,       // Function to handle card click
+    policeIndex,
+    kingIndex,
+    advisorIndex,
+    thiefIndex,
   } = useRajaMantriGame({ playerNames });
 
   return (
@@ -87,6 +91,11 @@ const RajaMantriGameScreen: React.FC = () => {
                     flipped={flippedStates[index]} // Check if card is flipped
                     clicked={clickedCards[index]} // Check if card is clicked
                     onClick={handleCardClick} // Handle card click
+                    roles ={roles}
+                    policeIndex={policeIndex}
+                    kingIndex={kingIndex}
+                    advisorIndex={advisorIndex}
+                    thiefIndex={thiefIndex}
                     animatedStyle={{
                       transform: [
                         {
@@ -110,6 +119,11 @@ const RajaMantriGameScreen: React.FC = () => {
                     flipped={flippedStates[index + 2]} // Check if card is flipped
                     clicked={clickedCards[index + 2]} // Check if card is clicked
                     onClick={handleCardClick} // Handle card click
+                    roles ={roles}
+                    policeIndex={policeIndex}
+                    kingIndex={kingIndex}
+                    advisorIndex={advisorIndex}
+                    thiefIndex={thiefIndex}
                     animatedStyle={{
                       transform: [
                         {

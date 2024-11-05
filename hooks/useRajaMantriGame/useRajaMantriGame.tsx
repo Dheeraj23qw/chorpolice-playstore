@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Animated } from "react-native";
 import { BackHandler } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { useRouter} from "expo-router";
+import { useRouter } from "expo-router";
 import { resetGame } from "./utils/resetGameUtils";
 import { flipCard } from "./utils/flipCardUtil";
 import { calculateTotalScores } from "./utils/totalScoreUtils";
@@ -77,16 +77,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     return () => unsubscribe.remove();
   }, []);
 
-
   const playerData = useSelector((state: RootState) => state.player);
-
-  useEffect(() => {
-    const botIds = playerData.playerNames
-      .filter(({ isBot }) => isBot) // Filter to get only the bot players
-      .map(({ id }) => id); // Map to extract only the IDs
-  }, [playerData]);
-
-
 
   useEffect(() => {
     resetGame(
@@ -117,7 +108,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     };
   }, [dispatch]);
 
-   //isse se hai matlab
+  //isse se hai matlab
 
   const handlePlay = () => {
     handlePlayHelper(
@@ -150,7 +141,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     newScore: number,
     roundIndex: number
   ) => {
-    setPlayerScores((prevScores) => 
+    setPlayerScores((prevScores) =>
       updateScoreUtil(prevScores, playerIndex, newScore, roundIndex)
     );
   };
@@ -179,29 +170,35 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         handleRevealAllCards();
 
         setTimeout(() => {
+          dispatch(playSound("win"));
+        }, 4600);
+
+        setTimeout(() => {
           setVideoIndex(2);
           setIsPlaying(true);
-        }, 3500);
+        }, 6800);
 
         updateScore(thiefIndex, 0, round - 1);
         updateScore(policeIndex, 500, round - 1);
         updateScore(advisorIndex, 800, round - 1);
         updateScore(kingIndex, 1000, round - 1);
         setTimeout(() => resetForNextRoundHandler(), 7000);
-        dispatch(playSound("win"));
       } else {
         handleRevealAllCards();
+
+        setTimeout(() => {
+          dispatch(playSound("lose"));
+        }, 4600);
         setTimeout(() => {
           setVideoIndex(3);
           setIsPlaying(true);
-        }, 3500);
+        }, 6800);
 
         updateScore(thiefIndex, 500, round - 1);
         updateScore(policeIndex, 0, round - 1);
         updateScore(advisorIndex, 800, round - 1);
         updateScore(kingIndex, 1000, round - 1);
         setTimeout(() => resetForNextRoundHandler(), 7000);
-        dispatch(playSound("lose"));
       }
 
       if (
@@ -212,7 +209,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         flipCard(
           index,
           1,
-          4500,
+          4600,
           flipAnims,
           setFlippedStates,
           flippedStates,
@@ -259,7 +256,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       clickedCards,
       setRound,
       resetForNextRoundHandler,
-      dispatch 
+      dispatch
     );
   };
 
@@ -286,7 +283,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setPoliceIndex,
       dispatch,
       calculateTotalScoresHandler,
-      router 
+      router
     );
   };
 

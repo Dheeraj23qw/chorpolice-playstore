@@ -21,7 +21,7 @@ export const revealAllCards = (
         flipCard(
           index,
           1,
-          500,
+          4500,
           flipAnims,
           setFlippedStates,
           flippedStates,
