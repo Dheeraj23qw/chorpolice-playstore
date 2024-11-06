@@ -18,7 +18,7 @@ import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
 
 interface UseRajaMantriGameOptions {
-  playerNames: string[];
+  playerNames: string[] ;
 }
 
 const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
@@ -65,6 +65,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   const router = useRouter();
   const dispatch = useDispatch();
+  
 
   useEffect(() => {
     const handleBackButton = () => {
@@ -124,7 +125,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setThiefIndex,
       setPolicePlayerName,
       flipCard,
-      setMessage,
       setAreCardsClickable,
       setRound,
       resetForNextRoundHandler,
@@ -132,7 +132,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       flippedStates,
       roles,
       clickedCards,
-      setFlippedStates
+      setFlippedStates,
+      setPopupIndex,
     );
   };
 
@@ -172,11 +173,10 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
         setTimeout(() => {
           dispatch(playSound("win"));
-        }, 4600);
+        }, 2000);
 
         setTimeout(() => {
-          // setVideoIndex(2);
-          setPopupIndex(4);
+          setPopupIndex(5);
         }, 6800);
 
         updateScore(thiefIndex, 0, round - 1);
@@ -189,10 +189,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
         setTimeout(() => {
           dispatch(playSound("lose"));
-        }, 4600);
+        }, 2000);
         setTimeout(() => {
-          // setVideoIndex(3);
-          setPopupIndex(5);
+          setPopupIndex(4);
         }, 6800);
 
         updateScore(thiefIndex, 500, round - 1);
@@ -210,7 +209,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         flipCard(
           index,
           1,
-          4600,
+          1500,
           flipAnims,
           setFlippedStates,
           flippedStates,

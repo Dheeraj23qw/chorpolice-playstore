@@ -15,7 +15,6 @@ export const handlePlayHelper = (
   setThiefIndex: React.Dispatch<SetStateAction<number | null>>,
   setPolicePlayerName: React.Dispatch<React.SetStateAction<string | null>>,
   flipCard: Function,
-  setMessage: React.Dispatch<React.SetStateAction<string>>,
   setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>,
   setRound: React.Dispatch<React.SetStateAction<number>>,
   resetForNextRoundHandler: Function,
@@ -23,7 +22,9 @@ export const handlePlayHelper = (
   flippedStates: boolean[],
   roles: string[],
   clickedCards: boolean[],
-  setFlippedStates: Dispatch<SetStateAction<boolean[]>>
+  setFlippedStates: Dispatch<SetStateAction<boolean[]>>,
+  setPopupIndex:React.Dispatch<React.SetStateAction<number | null>>,
+
 ) => {
   dispatch(playSound("level"));
 
@@ -79,12 +80,20 @@ export const handlePlayHelper = (
       dispatch
     );
 
-    // Set message and re-enable card clicks after flip
+  // After the flip animation finishes (6 seconds), set popupIndex to 1
+  setTimeout(() => {
+    setPopupIndex(1);
+
+    // After an additional 5 seconds, set popupIndex to 2
     setTimeout(() => {
-      setMessage(`${policePlayerName}, catch the thief`);
-      setTimeout(() => setMessage(""), 12000);
-      setAreCardsClickable(true);
-    }, 4000);
+      setPopupIndex(2);
+
+      // After 6 seconds in total (flip + popup 2), make the cards clickable
+      setTimeout(() => {
+        setAreCardsClickable(true);
+      }, 1000); // Short delay after popup 2
+    }, 5200); // Delay for popup 2
+  }, 6000); // Flip animation duration
   } else {
     setAreCardsClickable(true);
   }
