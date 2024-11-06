@@ -21,11 +21,10 @@ export const resetForNextRound = (
   setPoliceIndex: React.Dispatch<React.SetStateAction<number | null>>,
   dispatch: AppDispatch,
   calculateTotalScores: () => void,
-  router: Router
+  router: Router,
+  setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
+  setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
-
-
-
   if (round == 7) {
     dispatch(playSound("next"));
     calculateTotalScores();
@@ -46,5 +45,7 @@ export const resetForNextRound = (
     setThiefIndex(null);
     setKingIndex(null);
     setPoliceIndex(null);
+    setFirstCardClicked(false)
+    setAreCardsClickable(false)
   }
 };

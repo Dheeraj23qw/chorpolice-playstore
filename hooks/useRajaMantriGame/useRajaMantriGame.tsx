@@ -18,7 +18,7 @@ import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
 
 interface UseRajaMantriGameOptions {
-  playerNames: string[] ;
+  playerNames: string[];
 }
 
 const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
@@ -61,11 +61,11 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [areCardsClickable, setAreCardsClickable] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [popupIndex, setPopupIndex] = useState<number| null>(null);
+  const [popupIndex, setPopupIndex] = useState<number | null>(null);
+  const [firstCardClicked, setFirstCardClicked] = useState<boolean>(false);
 
   const router = useRouter();
   const dispatch = useDispatch();
-  
 
   useEffect(() => {
     const handleBackButton = () => {
@@ -133,7 +133,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       roles,
       clickedCards,
       setFlippedStates,
-      setPopupIndex,
+      setPopupIndex
     );
   };
 
@@ -150,15 +150,24 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   //isse se hai matlab
   const handleCardClick = (index: number) => {
+    console.log(index);
+
+    console.log(index);
+
     if (
       !areCardsClickable ||
       !isPlayButtonDisabled ||
-      flippedStates[index] ||
-      clickedCards[index]
+      flippedStates[index] || // Prevent clicking flipped cards
+      clickedCards[index] // Prevent clicking already clicked cards
     ) {
-      return;
+      return; // Exit if the card is flipped or already clicked
     }
 
+    if (firstCardClicked) {
+      return; // If the first card has already been clicked, do nothing on the second card
+    }
+
+    setFirstCardClicked(true); // Mark the first card as clicked
     if (
       isPlayButtonDisabled &&
       thiefIndex !== null &&
@@ -240,7 +249,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         );
         setClickedCards((prev) => {
           const newClickedCards = [...prev];
-          newClickedCards[index] = false;
+          newClickedCards[index] = true;
           return newClickedCards;
         });
       }
@@ -283,7 +292,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setPoliceIndex,
       dispatch,
       calculateTotalScoresHandler,
-      router
+      router,
+      setFirstCardClicked,
+      setAreCardsClickable,
     );
   };
 
@@ -312,8 +323,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     resetGame,
     resetForNextRound,
     isModalVisible,
-    popupIndex, 
-   };
+    popupIndex,
+  };
 };
 
 export default useRajaMantriGame;

@@ -23,16 +23,17 @@ export const handlePlayHelper = (
   roles: string[],
   clickedCards: boolean[],
   setFlippedStates: Dispatch<SetStateAction<boolean[]>>,
-  setPopupIndex:React.Dispatch<React.SetStateAction<number | null>>,
-
+  setPopupIndex: React.Dispatch<React.SetStateAction<number | null>>,
 ) => {
+  // Play the sound at the start of the turn
   dispatch(playSound("level"));
 
-  const randomIndex = Math.floor(Math.random() * 4);
+  // Select a random player and disable the play button
+  const randomIndex = Math.floor(Math.random() * playerNames.length);
   setSelectedPlayer(randomIndex + 1);
   setIsPlayButtonDisabled(true);
 
-  // Shuffle and assign roles
+  // Shuffle roles and assign indices
   const shuffledRoles = shuffleArray(["King", "Advisor", "Thief", "Police"]);
   setRoles(shuffledRoles);
 
@@ -46,55 +47,64 @@ export const handlePlayHelper = (
   setAdvisorIndex(advisorIndex);
   setThiefIndex(thiefIndex);
 
-  // Set player name for Police
+  // Set the police player name
   const policePlayerName = policeIndex !== -1 ? playerNames[policeIndex] : null;
   setPolicePlayerName(policePlayerName);
 
-  // Flip both King and Police cards simultaneously
-  if (kingIndex !== -1 && policeIndex !== -1) {
-    flipCard(
-      kingIndex,
-      1,
-      5000,
-      flipAnims,
-      setFlippedStates,
-      flippedStates,
-      roles,
-      clickedCards,
-      setRound,
-      resetForNextRoundHandler,
-      dispatch
-    );
+  // Sequentially execute actions for King and Police card flip and popups
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    flipCard(
-      policeIndex,
-      1,
-      5000,
-      flipAnims,
-      setFlippedStates,
-      flippedStates,
-      roles,
-      clickedCards,
-      setRound,
-      resetForNextRoundHandler,
-      dispatch
-    );
+  (async () => {
+    // Flip King and Police cards simultaneously if they exist
+    if (kingIndex !== -1 && policeIndex !== -1) {
+      flipCard(
+        kingIndex,
+        1,
+        4000,
+        flipAnims,
+        setFlippedStates,
+        flippedStates,
+        roles,
+        clickedCards,
+        setRound,
+        resetForNextRoundHandler,
+        dispatch
+      );
 
-  // After the flip animation finishes (6 seconds), set popupIndex to 1
-  setTimeout(() => {
-    setPopupIndex(1);
+      flipCard(
+        policeIndex,
+        1,
+        4000,
+        flipAnims,
+        setFlippedStates,
+        flippedStates,
+        roles,
+        clickedCards,
+        setRound,
+        resetForNextRoundHandler,
+        dispatch
+      );
 
-    // After an additional 5 seconds, set popupIndex to 2
-    setTimeout(() => {
+      // Wait for flip animations to complete
+      await delay(5000);
+      
+      // Display popup 2
       setPopupIndex(2);
 
-      // After 6 seconds in total (flip + popup 2), make the cards clickable
-      setTimeout(() => {
-        setAreCardsClickable(true);
-      }, 1000); // Short delay after popup 2
-    }, 5200); // Delay for popup 2
-  }, 6000); // Flip animation duration
-  } else {
-    setAreCardsClickable(true);
-  }
+      // Wait for popup 2 display duration
+      await delay(6000);
+      
+      // Display popup 1
+      setPopupIndex(1);
+
+      // Wait for popup 1 display duration
+      await delay(5000);
+      
+      // Make the cards clickable after all animations and popups
+      setAreCardsClickable(true);
+    } else {
+      // If King or Police index is not found, make cards clickable immediately
+      setAreCardsClickable(true);
+    }
+  })();
 };

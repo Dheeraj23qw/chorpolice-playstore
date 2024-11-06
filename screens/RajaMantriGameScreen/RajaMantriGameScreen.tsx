@@ -53,11 +53,8 @@ const RajaMantriGameScreen: React.FC = () => {
 
   // Use the custom hook to handle back button press and modal
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
-    onExit: () => {
-      // Custom exit logic, e.g., exit the app
-      BackHandler.exitApp();
-    }
-  });
+    navigateToScreen: '/playerName',
+    });
 
   return (
     <>
@@ -74,8 +71,6 @@ const RajaMantriGameScreen: React.FC = () => {
        kingIndex={kingIndex}
        advisorIndex={advisorIndex}
        thiefIndex={thiefIndex}
-      
-      
       />}
 
       <View style={[styles.container]}>
