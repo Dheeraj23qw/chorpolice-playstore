@@ -15,6 +15,8 @@ import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 
 // Components
 import { Components } from "@/imports/allComponentImports";
+import OverlayPopUp from "@/modal/overlaypop";
+import { responsiveHeight } from "react-native-responsive-dimensions";
 
 const RajaMantriGameScreen: React.FC = () => {
   // Select player names from the Redux store and map to an array
@@ -24,29 +26,30 @@ const RajaMantriGameScreen: React.FC = () => {
 
   // Custom hook to manage game state and actions
   const {
-    flipAnims,             // Animation states for card flipping
-    flippedStates,         // States to check if cards are flipped
-    clickedCards,          // Track clicked cards
-    message,               // Message to display
-    roles,                 // Roles assigned to players
-    isPlayButtonDisabled,  // Flag to disable play button
-    playerScores,          // Scores of players
-    round,                 // Current round number
-    videoIndex,            // Index of the video to play
-    isPlaying,             // Flag to check if video is playing
-    handlePlay,            // Function to handle play button press
-    setIsPlaying,          // Function to set playing state
-    handleCardClick,       // Function to handle card click
+    flipAnims, // Animation states for card flipping
+    flippedStates, // States to check if cards are flipped
+    clickedCards, // Track clicked cards
+    message, // Message to display
+    roles, // Roles assigned to players
+    isPlayButtonDisabled, // Flag to disable play button
+    playerScores, // Scores of players
+    round, // Current round number
+    videoIndex, // Index of the video to play
+    isPlaying, // Flag to check if video is playing
+    handlePlay, // Function to handle play button press
+    setIsPlaying, // Function to set playing state
+    handleCardClick, // Function to handle card click
     policeIndex,
     kingIndex,
     advisorIndex,
     thiefIndex,
+    popupIndex,
   } = useRajaMantriGame({ playerNames });
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Status bar configuration */}
-      <StatusBar backgroundColor="#8E5DE9" barStyle="dark-content" />
+    <View style={[styles.container]}>
+      {popupIndex && <OverlayPopUp index={popupIndex} />}
+
       {isPlaying ? (
         // Render video player component if video is playing
         <Components.VideoPlayerComponent
@@ -66,7 +69,7 @@ const RajaMantriGameScreen: React.FC = () => {
               resizeMode="cover"
             >
               <View style={chorPoliceQuizstyles.overlay} />
-              
+
               {/* Play button for starting the game */}
               <Components.PlayButton
                 disabled={isPlayButtonDisabled}
@@ -79,7 +82,7 @@ const RajaMantriGameScreen: React.FC = () => {
                     : `Press me to play!` // Button text when active
                 }
               />
-              
+
               {/* Render player cards in two rows */}
               <View style={styles.cardRow}>
                 {roles.slice(0, 2).map((_, index) => (
@@ -91,7 +94,7 @@ const RajaMantriGameScreen: React.FC = () => {
                     flipped={flippedStates[index]} // Check if card is flipped
                     clicked={clickedCards[index]} // Check if card is clicked
                     onClick={handleCardClick} // Handle card click
-                    roles ={roles}
+                    roles={roles}
                     policeIndex={policeIndex}
                     kingIndex={kingIndex}
                     advisorIndex={advisorIndex}
@@ -119,7 +122,7 @@ const RajaMantriGameScreen: React.FC = () => {
                     flipped={flippedStates[index + 2]} // Check if card is flipped
                     clicked={clickedCards[index + 2]} // Check if card is clicked
                     onClick={handleCardClick} // Handle card click
-                    roles ={roles}
+                    roles={roles}
                     policeIndex={policeIndex}
                     kingIndex={kingIndex}
                     advisorIndex={advisorIndex}
@@ -149,7 +152,7 @@ const RajaMantriGameScreen: React.FC = () => {
           </ScrollView>
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 

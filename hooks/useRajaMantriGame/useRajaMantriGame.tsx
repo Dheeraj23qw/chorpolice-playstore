@@ -61,6 +61,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [areCardsClickable, setAreCardsClickable] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [popupIndex, setPopupIndex] = useState<number| null>(null);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -174,8 +175,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         }, 4600);
 
         setTimeout(() => {
-          setVideoIndex(2);
-          setIsPlaying(true);
+          // setVideoIndex(2);
+          setPopupIndex(4);
         }, 6800);
 
         updateScore(thiefIndex, 0, round - 1);
@@ -190,8 +191,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           dispatch(playSound("lose"));
         }, 4600);
         setTimeout(() => {
-          setVideoIndex(3);
-          setIsPlaying(true);
+          // setVideoIndex(3);
+          setPopupIndex(5);
         }, 6800);
 
         updateScore(thiefIndex, 500, round - 1);
@@ -312,7 +313,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     resetGame,
     resetForNextRound,
     isModalVisible,
-  };
+    popupIndex, 
+   };
 };
 
 export default useRajaMantriGame;

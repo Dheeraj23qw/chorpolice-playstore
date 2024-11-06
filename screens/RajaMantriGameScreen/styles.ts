@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     padding: responsiveWidth(8),
     backgroundColor: '#48b340', 
     alignItems: 'center',
-    marginVertical: responsiveHeight(4),
+    marginVertical: responsiveHeight(10),
     borderRadius: responsiveWidth(10),
     borderWidth: 9,
     borderColor: '#296F00', 

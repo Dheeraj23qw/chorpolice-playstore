@@ -106,10 +106,14 @@ const useQuizLogic = (router: any) => {
   };
 
   const simulateBotOptionSelection = () => {
+    const minDelay = 2000; // Minimum delay of 2 seconds
+    const maxDelay = 6000; // Maximum delay of 6 seconds
+    const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay between 2000 and 6000
+  
     setTimeout(() => {
       const botChoice = options[Math.floor(Math.random() * options.length)];
       handleOptionPress(botChoice);
-    }, 2000); 
+    }, randomDelay);
   };
 
   const updateScore = (playerName: string, points: number) => {
