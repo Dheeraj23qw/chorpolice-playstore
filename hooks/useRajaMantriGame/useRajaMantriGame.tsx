@@ -186,7 +186,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
         setTimeout(() => {
           setPopupIndex(5);
-        }, 6800);
+          dispatch(playSound("police"));
+
+        }, 5800);
 
         updateScore(thiefIndex, 0, round - 1);
         updateScore(policeIndex, 500, round - 1);
@@ -201,7 +203,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         }, 2000);
         setTimeout(() => {
           setPopupIndex(4);
-        }, 6800);
+          dispatch(playSound("thief"));
+        }, 5800);
 
         updateScore(thiefIndex, 500, round - 1);
         updateScore(policeIndex, 0, round - 1);

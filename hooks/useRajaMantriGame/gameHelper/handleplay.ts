@@ -90,12 +90,16 @@ export const handlePlayHelper = (
       
       // Display popup 2
       setPopupIndex(2);
+      dispatch(playSound("police"));
 
       // Wait for popup 2 display duration
       await delay(6000);
       
       // Display popup 1
+
       setPopupIndex(1);
+      dispatch(playSound("king"));
+
 
       // Wait for popup 1 display duration
       await delay(5000);

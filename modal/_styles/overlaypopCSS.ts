@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { responsiveFontSize, responsiveHeight } from "react-native-responsive-dimensions";
+import { responsiveFontSize, responsiveHeight, responsiveWidth } from "react-native-responsive-dimensions";
 
 export const styles = StyleSheet.create({
     overlay: {
@@ -54,6 +54,17 @@ export const styles = StyleSheet.create({
     marginVertical: 4, 
     textAlign: "center", 
     fontFamily:"outfit-bold"
+  },
+
+  media: {
+    width: responsiveWidth(80), // Adjust the width to 80% of the screen width
+    height: responsiveHeight(40), // Adjust the height to 40% of the screen height
+    marginVertical: 20, // Space between media and other content
+    borderRadius: 10, // Rounded corners for a more playful look
+    backgroundColor: 'rgba(255, 255, 255, 0.7)', // Semi-transparent background
+    borderWidth: 2, // Border around the media
+    borderColor: '#FFD700', // Gold color border for a fun touch
+    alignSelf: 'center', // Center the media horizontally
   },
 
   });

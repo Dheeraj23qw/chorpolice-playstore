@@ -7,7 +7,7 @@ import {
 export const globalstyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#8E5DE9",
+    backgroundColor: "#7653ec",
     overflow: "hidden",
   },
 

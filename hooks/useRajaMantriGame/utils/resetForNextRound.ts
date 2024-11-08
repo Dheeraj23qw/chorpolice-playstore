@@ -25,7 +25,7 @@ export const resetForNextRound = (
   setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
   setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
-  if (round == 7) {
+  if (round == 1) {
     dispatch(playSound("next"));
     calculateTotalScores();
     setTimeout(() => {

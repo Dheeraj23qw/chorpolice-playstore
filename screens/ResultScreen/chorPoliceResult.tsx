@@ -30,7 +30,7 @@ const ChorPoliceResult = () => {
   const onShare = useCallback(handleShare, [handleShare]);
   return (
     <SafeAreaView style={globalstyles.container}>
-      <StatusBar backgroundColor="#8E5DE9" barStyle="dark-content" />
+      <StatusBar backgroundColor="#7653ec" barStyle="dark-content" />
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
         < Components.ScreenHeader name="Game Result" showBackButton={false} />
       </View>

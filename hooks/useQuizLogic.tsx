@@ -17,7 +17,9 @@ const useQuizLogic = (router: any) => {
   const playerScores = useSelector(
     (state: RootState) => state.player.playerScores
   );
-  const playerImages = useSelector((state: RootState) => state.playerImages.images);
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images
+  );
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -26,7 +28,11 @@ const useQuizLogic = (router: any) => {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [isContentVisible, setIsContentVisible] = useState(true);
   const [isOptionDisabled, setIsOptionDisabled] = useState(false);
-
+  const [isPopUp, setIsPopUp] = useState(false);
+  const [mediaId, setMediaId] = useState<number>(1);
+  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
+    "image"
+  );
   // Handle the hardware back button press (Android)
   useEffect(() => {
     const backAction = () => {
@@ -87,7 +93,7 @@ const useQuizLogic = (router: any) => {
 
   const handleOptionPress = (score: number) => {
     if (isOptionDisabled) return;
-    
+
     setIsOptionDisabled(true);
 
     const currentPlayerName = playerNames[currentPlayerIndex].name;
@@ -98,9 +104,15 @@ const useQuizLogic = (router: any) => {
     setSelectedOption(score);
     if (score === correctScore) {
       updateScore(currentPlayerName, 2000);
+      setIsPopUp(true);
+      setMediaId(2);
+      setMediaType("gif");
       setFeedback(true, "2000 points added!", "win");
     } else {
       updateScore(currentPlayerName, -2000);
+      setIsPopUp(true);
+      setMediaId(1);
+      setMediaType("gif");
       setFeedback(false, "2000 points deducted!", "lose");
     }
   };
@@ -108,8 +120,9 @@ const useQuizLogic = (router: any) => {
   const simulateBotOptionSelection = () => {
     const minDelay = 2000; // Minimum delay of 2 seconds
     const maxDelay = 6000; // Maximum delay of 6 seconds
-    const randomDelay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay between 2000 and 6000
-  
+    const randomDelay =
+      Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay between 2000 and 6000
+
     setTimeout(() => {
       const botChoice = options[Math.floor(Math.random() * options.length)];
       handleOptionPress(botChoice);
@@ -151,6 +164,9 @@ const useQuizLogic = (router: any) => {
     setFeedbackMessage("");
     setIsContentVisible(true);
     setIsOptionDisabled(false);
+    setIsPopUp(false);
+    setMediaId(1);
+    setMediaType("image");
 
     setCurrentPlayerIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
@@ -166,8 +182,12 @@ const useQuizLogic = (router: any) => {
   };
 
   const currentPlayer = playerNames[currentPlayerIndex] || {};
-  const playerImage =
-    playerImages[selectedImages[currentPlayerIndex]] ?? playerImages[0];
+  const playerImage =  playerImages[selectedImages[currentPlayerIndex]] ?? playerImages[0];
+
+  const currentPlayerName=playerNames[currentPlayerIndex]?.name;
+  const currentPlayerImage= playerImages[selectedImages[currentPlayerIndex]] ?.src;
+  const currentPlayerImageType= playerImages[selectedImages[currentPlayerIndex]]?.type;
+
 
   return {
     currentPlayer,
@@ -179,7 +199,13 @@ const useQuizLogic = (router: any) => {
     handleOptionPress,
     moveToNextPlayer,
     isOptionDisabled,
-    currentPlayerIsBot
+    currentPlayerIsBot,
+    isPopUp,
+    mediaType,
+    mediaId,
+    currentPlayerImage,
+    currentPlayerName,
+    currentPlayerImageType
   };
 };
 

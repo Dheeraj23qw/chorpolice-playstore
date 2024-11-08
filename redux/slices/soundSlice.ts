@@ -1,21 +1,35 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { Audio } from 'expo-av';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { Audio } from "expo-av";
 
 // Define sound names
-type SoundName = 'win' | 'lose' | 'spin' | 'next' | 'quiz' | 'level' | 'start' | 'select' | 'selected';
+type SoundName =
+  | "win"
+  | "lose"
+  | "spin"
+  | "next"
+  | "quiz"
+  | "level"
+  | "start"
+  | "select"
+  | "selected"
+  | "king"
+  | "police"
+  | "thief";
 
 // Define paths to your sound files
 const soundPaths: Record<SoundName, any> = {
-  win: require('@/assets/audio/chorPolice/won.mp3'),
-  lose: require('@/assets/audio/QuizScreen/wrong.mp3'),
-  spin: require('@/assets/audio/chorPolice/spin.mp3'),
-  next: require('@/assets/audio/chorPolice/round.mp3'),
-  quiz: require('@/assets/audio/chorPolice/quiz.mp3'),
-  level: require('@/assets/audio/chorPolice/level.mp3'),
-  start: require('@/assets/audio/chorPolice/start.mp3'),
-  select: require('@/assets/audio/chorPolice/select.mp3'),
-  selected: require('@/assets/audio/chorPolice/selected.mp3'),
-
+  win: require("@/assets/audio/chorPolice/won.mp3"),
+  lose: require("@/assets/audio/QuizScreen/wrong.mp3"),
+  spin: require("@/assets/audio/chorPolice/spin.mp3"),
+  next: require("@/assets/audio/chorPolice/round.mp3"),
+  quiz: require("@/assets/audio/chorPolice/quiz.mp3"),
+  level: require("@/assets/audio/chorPolice/level.mp3"),
+  start: require("@/assets/audio/chorPolice/start.mp3"),
+  select: require("@/assets/audio/chorPolice/select.mp3"),
+  selected: require("@/assets/audio/chorPolice/selected.mp3"),
+  king: require("@/assets/audio/maingame/king.mp3"),
+  police: require("@/assets/audio/maingame/police.mp3"),
+  thief: require("@/assets/audio/maingame/thief.mp3"),
 };
 
 // Object to store loaded sounds
@@ -29,11 +43,14 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   start: null,
   select: null,
   selected: null,
+  king: null,
+  police: null,
+  thief: null,
 };
 
 // Thunk to load sounds asynchronously with error handling
 export const loadSounds = createAsyncThunk(
-  'sound/loadSounds',
+  "sound/loadSounds",
   async (_, { rejectWithValue }) => {
     try {
       for (const key of Object.keys(soundPaths) as SoundName[]) {
@@ -57,25 +74,29 @@ const initialState: SoundState = {
 };
 
 const soundSlice = createSlice({
-  name: 'sound',
+  name: "sound",
   initialState,
   reducers: {
     playSound: (state, action) => {
       const soundName: SoundName = action.payload;
       const sound = sounds[soundName];
       if (sound) {
-        if (soundName === 'quiz') {
+        if (soundName === "quiz") {
           // Set the quiz sound to loop indefinitely
           sound.setIsLoopingAsync(true).catch((error: unknown) => {
-            console.error(`Failed to set loop for quiz sound:`, (error as Error).message);
+            console.error(
+              `Failed to set loop for quiz sound:`,
+              (error as Error).message
+            );
           });
         }
 
-        sound
-          .replayAsync()
-          .catch((error: unknown) => {
-            console.error(`Failed to play sound ${soundName}:`, (error as Error).message);
-          });
+        sound.replayAsync().catch((error: unknown) => {
+          console.error(
+            `Failed to play sound ${soundName}:`,
+            (error as Error).message
+          );
+        });
       } else {
         console.warn(`Sound ${soundName} is not loaded.`);
       }
@@ -83,21 +104,17 @@ const soundSlice = createSlice({
     stopQuizSound: () => {
       const quizSound = sounds.quiz;
       if (quizSound) {
-        quizSound
-          .stopAsync()
-          .catch((error: unknown) => {
-            console.error('Failed to stop quiz sound:', (error as Error).message);
-          });
+        quizSound.stopAsync().catch((error: unknown) => {
+          console.error("Failed to stop quiz sound:", (error as Error).message);
+        });
       }
     },
     unloadSounds: () => {
       Object.values(sounds).forEach((sound) => {
         if (sound) {
-          sound
-            .unloadAsync()
-            .catch((error: unknown) => {
-              console.error('Failed to unload sound:', (error as Error).message);
-            });
+          sound.unloadAsync().catch((error: unknown) => {
+            console.error("Failed to unload sound:", (error as Error).message);
+          });
         }
       });
     },
@@ -113,7 +130,7 @@ const soundSlice = createSlice({
       })
       .addCase(loadSounds.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string || 'Failed to load sounds';
+        state.error = (action.payload as string) || "Failed to load sounds";
       });
   },
 });

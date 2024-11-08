@@ -6,6 +6,7 @@ export interface DataItem {
   image: ImageSourcePropType;
   message: string;
   point: string;
+  
 }
 
 export const data: DataItem[] = [

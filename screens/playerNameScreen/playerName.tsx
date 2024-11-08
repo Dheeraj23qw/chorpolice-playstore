@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ImageBackground, SafeAreaView, ScrollView, View } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 import { responsiveHeight } from "react-native-responsive-dimensions";
-import { useRouter } from "expo-router";
 
 // Custom Hooks
 import { usePlayerNameScreen } from "@/hooks/usePlayerNameScreen";
@@ -23,7 +22,6 @@ const PlayerNameScreen: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
   const [selectedOption, setSelectedOption] = useState<string | null>(null); // For avatar selection
 
-  // Custom Hook - Player Name Screen
   const {
     selectedImages,
     imageNames,
@@ -39,7 +37,7 @@ const PlayerNameScreen: React.FC = () => {
     closeInfoAddMoreModal,
     handleSelectedImageClick,
     infoAddMoreVisible,
-    isButtonDisabled
+    isButtonDisabled,
   } = usePlayerNameScreen();
 
   // Custom Hook - Gallery Picker

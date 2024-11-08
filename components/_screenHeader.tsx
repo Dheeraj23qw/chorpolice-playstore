@@ -40,7 +40,7 @@ export default ScreenHeader;
 const styles = StyleSheet.create({
   header: {
     flex: 1,
-    backgroundColor: '#8E5DE9',
+    backgroundColor: '#7653ec',
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: responsiveWidth(6),
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   },
   header1: {
     flex: 1,
-    backgroundColor: '#8E5DE9',
+    backgroundColor: '#7653ec',
     flexDirection: 'row',
     alignItems: 'center',
   
