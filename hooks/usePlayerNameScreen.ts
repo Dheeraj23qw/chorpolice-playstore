@@ -174,6 +174,7 @@ export const usePlayerNameScreen = () => {
   }, [imageNames]);
 
   const handleStartAdventure = useCallback(async () => {
+    dispatch(playSound("select"))
     setIsButtonDisabled(true); // Disable the button after click
     try {
       // Check for duplicate names

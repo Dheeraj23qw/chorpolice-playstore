@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { SafeAreaView, View, ImageBackground } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "./quizStyle";
@@ -7,6 +7,13 @@ import { Components } from "@/imports/allComponentImports";
 import useQuizLogic from "@/hooks/useQuizLogic";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+import { Ionicons } from "@expo/vector-icons";
+import ScoreTable from "@/modal/ShowTableModal";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
+import { selectPlayerNames } from "@/redux/slices/selectors";
+import { playerNamesArray, PlayerScoresArray } from "@/redux/slices/selectors"; // Adjust the import path as necessary
 
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
@@ -24,11 +31,24 @@ const ChorPoliceQuiz: React.FC = () => {
     currentPlayerName,
     currentPlayerImage,
     currentPlayerImageType,
-    feedbackMessage
+    feedbackMessage,
   } = useQuizLogic(router);
 
+  const [popupTable, setPopupTable] = useState(false);
+  const playerNames = useSelector(playerNamesArray);
+  const playerScores = useSelector(PlayerScoresArray);
+
+
+  const toggleModal = () => {
+    setPopupTable(!popupTable);
+  };
   return (
     <>
+      <ScoreTable
+        playerNames={playerNames}
+        playerScores={playerScores}
+        popupTable={popupTable} // Control modal visibility
+      />
       {isPopUp ? (
         // Show only the background and popup when isPopUp is true
         <ImageBackground
@@ -52,7 +72,10 @@ const ChorPoliceQuiz: React.FC = () => {
         // Show quiz content when isPopUp is false
         <SafeAreaView style={globalstyles.container}>
           <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-            <Components.ScreenHeader name="Quiz Time" showBackButton={false} />
+            <Components.ScreenHeader
+              name="Boost Your Score!"
+              showBackButton={false}
+            />
           </View>
 
           <View style={[globalstyles.Container2, { flex: 10 }]}>
@@ -63,6 +86,11 @@ const ChorPoliceQuiz: React.FC = () => {
               resizeMode="cover"
             >
               <View style={chorPoliceQuizstyles.overlay} />
+              <Ionicons
+                name="bulb" // "bulb" represents a light bulb in Ionicons
+                style={chorPoliceQuizstyles.bulbIcon}
+                onPress={toggleModal} // Toggling the modal when the bulb is clicked
+              />
               <View style={chorPoliceQuizstyles.quizContainer}>
                 {/* Player Info */}
                 <Components.PlayerInfo playerImage={playerImage} />

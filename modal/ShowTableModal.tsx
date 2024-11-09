@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Text, View, TouchableWithoutFeedback } from "react-native";
 import { styles} from"@/modal/_styles/showTableCSS";
+import { playSound } from "@/redux/slices/soundSlice";
+import { useDispatch } from "react-redux";
 
 interface ScoreTableProps {
   playerNames: string[];
@@ -11,11 +13,14 @@ interface ScoreTableProps {
 const ScoreTable: React.FC<ScoreTableProps> = ({ playerNames, playerScores, popupTable = false }) => {
   const [isModalVisible, setIsModalVisible] = useState(popupTable);
   const maxRounds = 7;
+  const dispatch = useDispatch();
 
   // Use useEffect to open or close the modal when popupTable changes
   useEffect(() => {
+    dispatch(playSound("select"))
+
     setIsModalVisible(popupTable);
-  }, [popupTable]);
+  }, [popupTable,dispatch]);
 
   // Function to handle modal close
   const handleModalClose = () => {

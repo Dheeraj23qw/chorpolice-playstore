@@ -13,7 +13,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         marginBottom: responsiveHeight(2),
         textAlign: 'center',
         fontFamily: "outfit-bold", // Using outfit-bold
-        textShadowColor: '#D3B5FF', // Light purple shadow for subtle effect
+        textShadowColor: '#FFD700', // Golden shadow for subtle effect
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
@@ -23,13 +23,13 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         backgroundColor: '#E5E8F0', // Soft blue-gray for a more playful look
         padding: responsiveWidth(4),
         borderRadius: 20,
-        shadowColor: '#BCC6D2', // Light blue-gray shadow
+        shadowColor: '#FFD700', // Golden shadow
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
         elevation: 12,
-        borderWidth: 1,
-        borderColor: '#BCC6D2', // Matches the shadow for a cohesive look
+        borderWidth: 4, // Slightly thicker border
+        borderColor: '#FFD700', // Golden border to enhance the look
     },
     winnerImage: {
         width: responsiveWidth(35), 
@@ -50,7 +50,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#8E5DE9', // Vibrant purple for a cohesive look
         marginBottom: responsiveHeight(1),
-        textShadowColor: '#D3B5FF', // Light purple shadow for consistency
+        textShadowColor: '#FFD700', // Golden text shadow for consistency
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
@@ -59,7 +59,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#4B0082', // Darker indigo for contrast
         margin: responsiveHeight(2),
-        textShadowColor: '#DCDCDC', // Gainsboro shadow for subtle contrast
+        textShadowColor: '#FFD700', // Golden text shadow
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
@@ -68,13 +68,13 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         backgroundColor: '#E8F4FD', // Light pastel blue for a soft touch
         padding: responsiveWidth(4),
         borderRadius: 20,
-        shadowColor: '#BCC6D2', // Light blue-gray shadow
+        shadowColor: '#FFD700', // Golden shadow
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
         elevation: 12,
-        borderWidth: 1,
-        borderColor: '#BCC6D2', // Matches the shadow for a cohesive look
+        borderWidth: 4, // Thicker border for a bolder effect
+        borderColor: '#FFD700', // Golden border
         overflow: 'hidden', // Adds a nice rounded corner effect
     },
     
@@ -85,7 +85,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         backgroundColor: '#F0F8FF', // Very light blue for a friendly and playful touch
         padding: responsiveWidth(2),
         borderRadius: 10,
-        shadowColor: '#BCC6D2', // Light blue-gray shadow
+        shadowColor: '#FFD700', // Golden shadow
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
@@ -98,10 +98,10 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         height: responsiveWidth(16), 
         borderRadius: responsiveWidth(8),
         marginRight: responsiveWidth(3),
-        borderColor: '#8E5DE9', // Vibrant purple border
+        borderColor: '#FFD700', // Gold border for the player image
         borderWidth: 3,
         transform: [{ scale: 1.05 }], // Adds a slight zoom effect
-        shadowColor: '#BCC6D2', // Light blue-gray shadow
+        shadowColor: '#FFD700', // Golden shadow
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
@@ -114,7 +114,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         color: '#333333', // Dark gray for readability
         flex: 1,
         fontFamily: 'outfit-medium', // Using outfit-medium
-        textShadowColor: '#BCC6D2', // Light blue-gray text shadow
+        textShadowColor: '#FFD700', // Golden text shadow
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -123,7 +123,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         fontSize: responsiveFontSize(2.5), 
         color: '#FF4500', // Orange red for a bright look
         fontFamily: "outfit-bold", // Using outfit-bold
-        textShadowColor: '#FFC080', // Light orange text shadow
+        textShadowColor: '#FFD700', // Golden shadow for text
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -133,7 +133,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
         color: '#4B0082', // Indigo for a distinct rank color
         fontFamily: "outfit-medium",
         marginLeft: responsiveWidth(3),
-        textShadowColor: '#BCC6D2', // Light blue-gray text shadow
+        textShadowColor: '#FFD700', // Golden text shadow
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },

@@ -229,6 +229,9 @@ const useQuizLogic = (router: any) => {
     currentPlayerImage,
     currentPlayerName,
     currentPlayerImageType,
+    playerNames,
+    playerScores,
+  
   };
 };
 

@@ -40,3 +40,20 @@ export const selectWinner = createSelector(
   }
 );
 
+export const playerNamesArray = createSelector(
+  [selectPlayerState],
+  (playerState) => playerState.playerNames.map((player) => player.name)
+);
+
+
+
+export const PlayerScoresArray = createSelector(
+  [selectPlayerState],
+  (playerState) => 
+    playerState.playerNames.map((player) => ({
+      playerName: player.name,
+      scores: playerState.playerScores
+        .filter((score) => score.playerName === player.name)  // Filter scores by player name
+        .map((score) => score.totalScore),  // Extracting the scores for each player
+    }))
+);

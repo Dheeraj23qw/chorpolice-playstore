@@ -25,7 +25,7 @@ export const resetForNextRound = (
   setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
   setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
-  if (round == 7) {
+  if (round == 1) {
     dispatch(playSound("next"));
     calculateTotalScores();
     setTimeout(() => {
@@ -34,6 +34,7 @@ export const resetForNextRound = (
 
     return;
   } else {
+
     setRound((count) => count + 1);
     setFlipAnims(initialFlipAnims.map(() => new Animated.Value(0)));
     setFlippedStates(initialFlippedStates);
@@ -47,5 +48,7 @@ export const resetForNextRound = (
     setPoliceIndex(null);
     setFirstCardClicked(false)
     setAreCardsClickable(false)
+    dispatch(playSound("next"));
+
   }
 };

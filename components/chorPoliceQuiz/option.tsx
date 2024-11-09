@@ -24,7 +24,7 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
     <>
       <View style={chorPoliceQuizstyles.questionBox}>
         <Text style={chorPoliceQuizstyles.question}>
-          <Text style={chorPoliceQuizstyles.playerName}>{playerName}</Text>, Can you Guess your Score?
+          <Text style={chorPoliceQuizstyles.playerName}>{playerName}</Text>,Guess your Score?
         </Text>
       </View>
       {options.map((score, index) => (

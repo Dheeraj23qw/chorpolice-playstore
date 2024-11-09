@@ -113,28 +113,29 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   //isse se hai matlab
 
   const handlePlay = () => {
-    handlePlayHelper(
-      dispatch,
-      playerNames,
-      setSelectedPlayer,
-      setIsPlayButtonDisabled,
-      setRoles,
-      setPoliceIndex,
-      setKingIndex,
-      setAdvisorIndex,
-      setThiefIndex,
-      setPolicePlayerName,
-      flipCard,
-      setAreCardsClickable,
-      setRound,
-      resetForNextRoundHandler,
-      flipAnims,
-      flippedStates,
-      roles,
-      clickedCards,
-      setFlippedStates,
-      setPopupIndex
-    );
+    dispatch(playSound("select"));
+      handlePlayHelper(
+        dispatch,
+        playerNames,
+        setSelectedPlayer,
+        setIsPlayButtonDisabled,
+        setRoles,
+        setPoliceIndex,
+        setKingIndex,
+        setAdvisorIndex,
+        setThiefIndex,
+        setPolicePlayerName,
+        flipCard,
+        setAreCardsClickable,
+        setRound,
+        resetForNextRoundHandler,
+        flipAnims,
+        flippedStates,
+        roles,
+        clickedCards,
+        setFlippedStates,
+        setPopupIndex
+      );
   };
 
   // koi matlab nhi isse
@@ -150,6 +151,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   //isse se hai matlab
   const handleCardClick = (index: number) => {
+    dispatch(playSound("select"));
     if (
       !areCardsClickable ||
       !isPlayButtonDisabled ||

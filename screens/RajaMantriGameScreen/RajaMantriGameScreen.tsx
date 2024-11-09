@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 // Redux
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectPlayerNames } from "@/redux/slices/selectors";
 
 // Hooks
@@ -25,6 +25,7 @@ import useBackHandlerModal from "@/hooks/useBackHandlerModal";
 import CustomModal from "@/modal/CustomModal";
 import CustomButton from "@/components/CustomButton";
 import ScoreTable from "@/modal/ShowTableModal";
+import { playSound } from "@/redux/slices/soundSlice";
 const RajaMantriGameScreen: React.FC = () => {
   // Select player names from the Redux store and map to an array
   const playerNames = useSelector(selectPlayerNames).map(
@@ -58,6 +59,8 @@ const RajaMantriGameScreen: React.FC = () => {
     navigateToScreen: "/playerName",
   });
   const [popupTable, setPopupTable] = useState(false);
+
+  const dispatch =useDispatch()
   // Function to toggle the modal visibility
   const toggleModal = () => {
     setPopupTable(!popupTable);
