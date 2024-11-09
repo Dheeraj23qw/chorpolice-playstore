@@ -13,6 +13,7 @@ interface CustomModalProps {
   title: string;
   content: string;
   buttons: CustomModalButtonProps[];
+  children?: React.ReactNode; // Optional children prop if you need to pass custom content
 }
 
 const CustomModal: React.FC<CustomModalProps> = ({
@@ -20,7 +21,8 @@ const CustomModal: React.FC<CustomModalProps> = ({
   onClose,
   title,
   content,
-  buttons
+  buttons,
+  children,  // Include children if needed for flexible content
 }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current; // Initial scale value
   const opacityAnim = useRef(new Animated.Value(0)).current; // Initial opacity value
@@ -97,6 +99,10 @@ const CustomModal: React.FC<CustomModalProps> = ({
         ]}>
           <Text style={playerNameStyles.modaltitle}>{title}</Text>
           <Text style={playerNameStyles.modalText}>{content}</Text>
+          
+          {/* Render children passed to the modal */}
+          {children && <View>{children}</View>}
+          
           <View style={playerNameStyles.buttonRow}>
             {renderButtons()}
           </View>
