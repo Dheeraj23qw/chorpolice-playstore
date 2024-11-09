@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     padding: responsiveHeight(2),
-    marginTop: responsiveHeight(2),
+    marginVertical: responsiveHeight(2),
     zIndex: 1,
   },
   headerButton: {

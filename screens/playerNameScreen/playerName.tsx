@@ -51,7 +51,7 @@ const PlayerNameScreen: React.FC = () => {
   } = useGalleryPicker();
 
   const options = [
-    { label: "Play with Bots!", value: "bots" },
+    { label: "Play with Computer!", value: "bots" },
     { label: "Upload from Gallery", value: "gallery" },
   ];
 

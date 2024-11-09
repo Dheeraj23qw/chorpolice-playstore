@@ -50,7 +50,7 @@ export const styles = StyleSheet.create({
   } , 
   roleMessage: {
     fontSize: responsiveFontSize(2.8), 
-    color: "#4CAF50", 
+    color: "#FFD700", 
     marginVertical: 4, 
     textAlign: "center", 
     fontFamily:"outfit-bold"

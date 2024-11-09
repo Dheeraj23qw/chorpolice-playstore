@@ -150,10 +150,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   //isse se hai matlab
   const handleCardClick = (index: number) => {
-    console.log(index);
-
-    console.log(index);
-
     if (
       !areCardsClickable ||
       !isPlayButtonDisabled ||
@@ -187,7 +183,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         setTimeout(() => {
           setPopupIndex(5);
           dispatch(playSound("police"));
-
         }, 5800);
 
         updateScore(thiefIndex, 0, round - 1);
@@ -297,7 +292,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       calculateTotalScoresHandler,
       router,
       setFirstCardClicked,
-      setAreCardsClickable,
+      setAreCardsClickable
     );
   };
 

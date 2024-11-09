@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import {
   View,
-  ScrollView,
   StatusBar,
   ImageBackground,
   BackHandler,
+  ScrollView,
 } from "react-native";
 
 // Redux
@@ -96,18 +96,14 @@ const RajaMantriGameScreen: React.FC = () => {
           />
         ) : (
           <>
-            <ScrollView
-              style={styles.scrollView}
-              showsVerticalScrollIndicator={false}
+            {/* Background image overlay for the game */}
+            <ImageBackground
+              source={require("../../assets/images/bg/quiz.png")}
+              style={chorPoliceQuizstyles.imageBackground}
+              resizeMode="cover"
             >
-              {/* Background image overlay for the game */}
-              <ImageBackground
-                source={require("../../assets/images/bg/quiz.png")}
-                style={chorPoliceQuizstyles.imageBackground}
-                resizeMode="cover"
-              >
-                <View style={chorPoliceQuizstyles.overlay} />
-
+              <View style={chorPoliceQuizstyles.overlay} />
+              <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                 {/* Play button for starting the game */}
                 <Components.PlayButton
                   disabled={isPlayButtonDisabled}
@@ -187,8 +183,8 @@ const RajaMantriGameScreen: React.FC = () => {
                 >
                   <CustomButton label="Scoreboard" onPress={toggleModal} />
                 </View>
-              </ImageBackground>
-            </ScrollView>
+              </ScrollView>
+            </ImageBackground>
           </>
         )}
       </View>

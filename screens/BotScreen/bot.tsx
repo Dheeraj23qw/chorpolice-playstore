@@ -63,7 +63,7 @@ const BotScreen: React.FC = () => {
 
   // Initial options
   const options = [
-    { label: "Choose Bot Avatar", value: "Bots-Avatar" },
+    { label: "Choose Computer Avatar", value: "Bots-Avatar" },
     { label: "Choose your Avatar", value: "player-Avatar" },
   ];
 
