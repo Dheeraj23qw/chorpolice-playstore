@@ -33,6 +33,33 @@ const useQuizLogic = (router: any) => {
   const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
     "image"
   );
+
+  const winMessages = [
+    "Great job, {name}!",
+    "Well done, {name}!",
+    "You nailed it, {name}!",
+    "Awesome, {name}!",
+    "You did it, {name}!",
+  ];
+
+  const lossMessages = [
+    "Better luck next time, {name}!",
+    "Nice try, {name}!",
+    "Almost there, {name}!",
+    "You gave it your best, {name}!",
+    "Good effort, {name}!",
+  ];
+
+  const getRandomMessage = (status: string) => {
+    if (status === "win") {
+      const randomIndex = Math.floor(Math.random() * winMessages.length);
+      return winMessages[randomIndex].replace("{name}", currentPlayerName);
+    } else {
+      const randomIndex = Math.floor(Math.random() * lossMessages.length);
+      return lossMessages[randomIndex].replace("{name}", currentPlayerName);
+    }
+  };
+
   // Handle the hardware back button press (Android)
   useEffect(() => {
     const backAction = () => {
@@ -107,13 +134,13 @@ const useQuizLogic = (router: any) => {
       setIsPopUp(true);
       setMediaId(2);
       setMediaType("gif");
-      setFeedback(true, "2000 points added!", "win");
+      setFeedback(getRandomMessage("win"), "win");
     } else {
       updateScore(currentPlayerName, -2000);
       setIsPopUp(true);
       setMediaId(1);
       setMediaType("gif");
-      setFeedback(false, "2000 points deducted!", "lose");
+      setFeedback(getRandomMessage("loose"), "lose");
     }
   };
 
@@ -144,12 +171,7 @@ const useQuizLogic = (router: any) => {
     );
   };
 
-  const setFeedback = (
-    isCorrectAnswer: boolean,
-    message: string,
-    soundName: "win" | "lose"
-  ) => {
-    setIsCorrect(isCorrectAnswer);
+  const setFeedback = (message: string, soundName: "win" | "lose") => {
     setFeedbackMessage(message);
     dispatch(playSound(soundName));
     setIsContentVisible(false);
@@ -182,18 +204,19 @@ const useQuizLogic = (router: any) => {
   };
 
   const currentPlayer = playerNames[currentPlayerIndex] || {};
-  const playerImage =  playerImages[selectedImages[currentPlayerIndex]] ?? playerImages[0];
+  const playerImage =
+    playerImages[selectedImages[currentPlayerIndex]] ?? playerImages[0];
 
-  const currentPlayerName=playerNames[currentPlayerIndex]?.name;
-  const currentPlayerImage= playerImages[selectedImages[currentPlayerIndex]] ?.src;
-  const currentPlayerImageType= playerImages[selectedImages[currentPlayerIndex]]?.type;
-
+  const currentPlayerName = playerNames[currentPlayerIndex]?.name;
+  const currentPlayerImage =
+    playerImages[selectedImages[currentPlayerIndex]]?.src;
+  const currentPlayerImageType =
+    playerImages[selectedImages[currentPlayerIndex]]?.type;
 
   return {
     currentPlayer,
     playerImage,
     feedbackMessage,
-    isCorrect,
     options,
     isContentVisible,
     handleOptionPress,
@@ -205,7 +228,7 @@ const useQuizLogic = (router: any) => {
     mediaId,
     currentPlayerImage,
     currentPlayerName,
-    currentPlayerImageType
+    currentPlayerImageType,
   };
 };
 

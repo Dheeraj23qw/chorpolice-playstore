@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { SafeAreaView, View, ImageBackground, StatusBar } from "react-native";
-
+import React from "react";
+import { SafeAreaView, View, ImageBackground } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "./quizStyle";
 import { useRouter } from "expo-router";
@@ -25,23 +24,32 @@ const ChorPoliceQuiz: React.FC = () => {
     currentPlayerName,
     currentPlayerImage,
     currentPlayerImageType,
+    feedbackMessage
   } = useQuizLogic(router);
+
   return (
     <>
       {isPopUp ? (
-        <>
+        // Show only the background and popup when isPopUp is true
+        <ImageBackground
+          source={require("../../assets/images/bg/quiz.png")}
+          style={chorPoliceQuizstyles.imageBackground}
+          resizeMode="cover"
+        >
           <DynamicOverlayPopUp
             isPopUp={isPopUp}
             mediaId={mediaId}
             mediaType={mediaType}
+            closeVisibleDelay={3000}
             playerData={{
               image: currentPlayerImage,
-              message: `Congratulation! \n${currentPlayerName}`,
+              message: feedbackMessage,
               imageType: currentPlayerImageType,
             }}
           />
-        </>
+        </ImageBackground>
       ) : (
+        // Show quiz content when isPopUp is false
         <SafeAreaView style={globalstyles.container}>
           <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
             <Components.ScreenHeader name="Quiz Time" showBackButton={false} />

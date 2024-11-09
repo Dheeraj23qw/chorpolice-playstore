@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   ScrollView,
@@ -23,6 +23,8 @@ import { Components } from "@/imports/allComponentImports";
 import OverlayPopUp from "@/modal/overlaypop";
 import useBackHandlerModal from "@/hooks/useBackHandlerModal";
 import CustomModal from "@/modal/CustomModal";
+import CustomButton from "@/components/CustomButton";
+import ScoreTable from "@/modal/ShowTableModal";
 const RajaMantriGameScreen: React.FC = () => {
   // Select player names from the Redux store and map to an array
   const playerNames = useSelector(selectPlayerNames).map(
@@ -53,11 +55,21 @@ const RajaMantriGameScreen: React.FC = () => {
 
   // Use the custom hook to handle back button press and modal
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
-    navigateToScreen: '/playerName',
-    });
+    navigateToScreen: "/playerName",
+  });
+  const [popupTable, setPopupTable] = useState(false);
+  // Function to toggle the modal visibility
+  const toggleModal = () => {
+    setPopupTable(!popupTable);
+  };
 
   return (
     <>
+      <ScoreTable
+        playerNames={playerNames}
+        playerScores={playerScores}
+        popupTable={popupTable} // Control modal visibility
+      />
       <CustomModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -65,13 +77,15 @@ const RajaMantriGameScreen: React.FC = () => {
         content="Do you want to exit the game?"
         buttons={modalButtons}
       />
-      {popupIndex && <OverlayPopUp
-       index={popupIndex} 
-       policeIndex={policeIndex}
-       kingIndex={kingIndex}
-       advisorIndex={advisorIndex}
-       thiefIndex={thiefIndex}
-      />}
+      {popupIndex && (
+        <OverlayPopUp
+          index={popupIndex}
+          policeIndex={policeIndex}
+          kingIndex={kingIndex}
+          advisorIndex={advisorIndex}
+          thiefIndex={thiefIndex}
+        />
+      )}
 
       <View style={[styles.container]}>
         {isPlaying ? (
@@ -164,15 +178,16 @@ const RajaMantriGameScreen: React.FC = () => {
                     />
                   ))}
                 </View>
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <CustomButton label="Scoreboard" onPress={toggleModal} />
+                </View>
               </ImageBackground>
-
-              {/* Score table displaying player scores */}
-              <View style={styles.scrollView}>
-                <Components.ScoreTable
-                  playerNames={playerNames}
-                  playerScores={playerScores} // Pass scores to the score table
-                />
-              </View>
             </ScrollView>
           </>
         )}

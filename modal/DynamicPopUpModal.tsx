@@ -1,31 +1,44 @@
-import React, { useState } from "react";
-import { View, Text, Image, Modal, Pressable } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, Image, Modal, Pressable, Animated, TouchableWithoutFeedback } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 import { videoData, gifData, imageData } from "@/constants/DynamicPopUpData";
 import { styles } from "@/modal/_styles/DynamicOverlayPopCSS";
 import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/quizStyle";
 
 interface PlayerData {
-  image?: any; // URL or local image source
+  image?: any;
   name?: string | null;
   message?: any;
-  imageType?: any; // Indicates if image is local or a URI
+  imageType?: any;
 }
 
 interface OverlayPopUpProps {
   isPopUp: boolean;
   mediaId: number;
   mediaType: "image" | "video" | "gif";
-  playerData?: PlayerData; // Optional playerData prop
+  playerData?: PlayerData;
+  closeVisibleDelay: number; // Time in milliseconds before "Tap to Close" becomes visible
 }
 
 const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   isPopUp,
   mediaId,
   mediaType,
-  playerData = {} as PlayerData, // Default to an empty object if not provided
+  playerData = {} as PlayerData,
+  closeVisibleDelay,
 }) => {
   const [modalVisible, setModalVisible] = useState(isPopUp);
+  const [showCloseText, setShowCloseText] = useState(false);
+
+  // Animation references for main media types
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(300)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
+
+  // Additional animations
+  const playerDataAnim = useRef(new Animated.Value(0)).current;  // for player data
+  const closeTextAnim = useRef(new Animated.Value(0)).current;    // for close text
+  const descriptionAnim = useRef(new Animated.Value(-50)).current; // for description
 
   const getMediaData = (id: number, type: "image" | "video" | "gif") => {
     switch (type) {
@@ -54,68 +67,85 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   };
 
   const closeModal = () => {
-    setModalVisible(false); // Close the modal by setting the state to false
+    setModalVisible(false);
   };
+
+  // Start animations when modal becomes visible
+  useEffect(() => {
+    if (modalVisible) {
+      // Main content animation based on mediaType
+      const mainAnimation =
+        mediaType === "image"
+          ? Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true })
+          : mediaType === "video"
+          ? Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true })
+          : Animated.spring(scaleAnim, { toValue: 1, friction: 5, useNativeDriver: true });
+
+      // Additional animations
+      const playerDataAnimation = Animated.timing(playerDataAnim, { toValue: 1, duration: 500, useNativeDriver: true });
+      const closeTextBounce = Animated.spring(closeTextAnim, { toValue: 1, friction: 3, useNativeDriver: true });
+      const descriptionSlide = Animated.spring(descriptionAnim, { toValue: 0, useNativeDriver: true });
+
+      // Start all animations together
+      Animated.parallel([mainAnimation, playerDataAnimation, closeTextBounce, descriptionSlide]).start();
+
+      // Show "Tap to Close" text after a specific delay
+      const timer = setTimeout(() => {
+        setShowCloseText(true);
+      }, closeVisibleDelay);
+
+      return () => clearTimeout(timer); // Clean up the timeout on unmount
+    }
+  }, [modalVisible, mediaType, fadeAnim, slideAnim, scaleAnim, playerDataAnim, closeTextAnim, descriptionAnim, closeVisibleDelay]);
 
   return (
     <Modal visible={modalVisible} animationType="fade" transparent>
-      <View style={styles.overlay}>
-        {/* Player Data Section */}
-        {playerData && (
-          <View style={chorPoliceQuizstyles.playerInfo}>
-            {playerData?.image && (
-              <Image
-                source={getPlayerImageSource(
-                  playerData.image,
-                  playerData.imageType || "uri"
-                )}
-                style={chorPoliceQuizstyles.playerImage}
-              />
-            )}
-            {playerData?.name && (
-              <Text style={chorPoliceQuizstyles.playerName}>
-                {playerData.name}
-              </Text>
-            )}
-            {playerData?.message && (
-              <Text style={chorPoliceQuizstyles.question}>
-                {playerData.message}
-              </Text>
-            )}
-          </View>
-        )}
-        <View
-          style={[
-            styles.container,
-            mediaType === "video"
-              ? styles.videoContainer
-              : styles.defaultContainer,
-          ]}
-        >
-          <Text style={styles.description}>{description}</Text>
+      <TouchableWithoutFeedback onPress={() => {}}>
+        <View style={styles.overlay}>
+          {/* Player Data Section */}
+          {playerData && (
+            <Animated.View style={[chorPoliceQuizstyles.playerInfo, { opacity: playerDataAnim }]}>
+              {playerData.image && (
+                <Image
+                  source={getPlayerImageSource(playerData.image, playerData.imageType || "uri")}
+                  style={chorPoliceQuizstyles.playerImage}
+                />
+              )}
+              {playerData.name && <Text style={styles.playerNameStyle}>{playerData.name}</Text>}
+              {playerData.message && <Text style={styles.playerNameStyle}>{playerData.message}</Text>}
+            </Animated.View>
+          )}
 
-          {mediaType === "image" || mediaType === "gif" ? (
-            <Image
-              source={getSource(url)}
-              style={styles.media}
-              resizeMode="contain"
-            />
-          ) : mediaType === "video" ? (
-            <Video
-              source={getSource(url)}
-              style={styles.fullMedia}
-              useNativeControls
-              resizeMode={ResizeMode.CONTAIN}
-              shouldPlay
-            />
-          ) : null}
+          <Animated.View
+            style={[
+              styles.container,
+              mediaType === "video" ? styles.videoContainer : styles.defaultContainer,
+              mediaType === "image" && { opacity: fadeAnim },
+              mediaType === "video" && { transform: [{ translateY: slideAnim }] },
+              mediaType === "gif" && { transform: [{ scale: scaleAnim }] },
+            ]}
+          >
+            <Animated.Text style={[styles.description, { transform: [{ translateY: descriptionAnim }] }]}>
+              {description}
+            </Animated.Text>
 
-          {/* Tap to close text */}
-          <Pressable onPress={closeModal}>
-            <Text style={styles.closeText}>Tap to Close</Text>
-          </Pressable>
+            {mediaType === "image" || mediaType === "gif" ? (
+              <Image source={getSource(url)} style={styles.media} resizeMode="contain" />
+            ) : mediaType === "video" ? (
+              <Video source={getSource(url)} style={styles.fullMedia} useNativeControls resizeMode={ResizeMode.CONTAIN} shouldPlay />
+            ) : null}
+
+            {/* Tap to close text */}
+            {showCloseText && (
+              <Pressable onPress={closeModal}>
+                <Animated.Text style={[styles.closeText, { transform: [{ scale: closeTextAnim }] }]}>
+                  Tap to Close
+                </Animated.Text>
+              </Pressable>
+            )}
+          </Animated.View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
