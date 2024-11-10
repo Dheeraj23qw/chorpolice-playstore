@@ -62,7 +62,7 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
     const timeout = setTimeout(() => {
       setShowCloseButton(true); // Show the "Tap to close" button after 5 seconds
       setCanClose(true); // Allow the modal to be closed
-    }, 5000);
+    }, 3000);
 
     if (index >= 1 && index <= data.length) {
       const selectedItem = data[index - 1];

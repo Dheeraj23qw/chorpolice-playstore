@@ -114,28 +114,28 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   const handlePlay = () => {
     dispatch(playSound("select"));
-      handlePlayHelper(
-        dispatch,
-        playerNames,
-        setSelectedPlayer,
-        setIsPlayButtonDisabled,
-        setRoles,
-        setPoliceIndex,
-        setKingIndex,
-        setAdvisorIndex,
-        setThiefIndex,
-        setPolicePlayerName,
-        flipCard,
-        setAreCardsClickable,
-        setRound,
-        resetForNextRoundHandler,
-        flipAnims,
-        flippedStates,
-        roles,
-        clickedCards,
-        setFlippedStates,
-        setPopupIndex
-      );
+    handlePlayHelper(
+      dispatch,
+      playerNames,
+      setSelectedPlayer,
+      setIsPlayButtonDisabled,
+      setRoles,
+      setPoliceIndex,
+      setKingIndex,
+      setAdvisorIndex,
+      setThiefIndex,
+      setPolicePlayerName,
+      flipCard,
+      setAreCardsClickable,
+      setRound,
+      resetForNextRoundHandler,
+      flipAnims,
+      flippedStates,
+      roles,
+      clickedCards,
+      setFlippedStates,
+      setPopupIndex
+    );
   };
 
   // koi matlab nhi isse
@@ -185,7 +185,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         setTimeout(() => {
           setPopupIndex(5);
           dispatch(playSound("police"));
-        }, 5800);
+        }, 5000);
 
         updateScore(thiefIndex, 0, round - 1);
         updateScore(policeIndex, 500, round - 1);
@@ -201,7 +201,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         setTimeout(() => {
           setPopupIndex(4);
           dispatch(playSound("thief"));
-        }, 5800);
+        }, 5000);
 
         updateScore(thiefIndex, 500, round - 1);
         updateScore(policeIndex, 0, round - 1);

@@ -86,14 +86,14 @@ export const handlePlayHelper = (
       );
 
       // Wait for flip animations to complete
-      await delay(5000);
+      await delay(4500);
       
       // Display popup 2
       setPopupIndex(2);
       dispatch(playSound("police"));
 
       // Wait for popup 2 display duration
-      await delay(6000);
+      await delay(4000);
       
       // Display popup 1
 
@@ -102,7 +102,7 @@ export const handlePlayHelper = (
 
 
       // Wait for popup 1 display duration
-      await delay(5000);
+      await delay(4000);
       
       // Make the cards clickable after all animations and popups
       setAreCardsClickable(true);

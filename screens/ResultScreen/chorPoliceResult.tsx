@@ -32,7 +32,10 @@ const ChorPoliceResult = () => {
     <SafeAreaView style={globalstyles.container}>
       <StatusBar backgroundColor="#7653ec" barStyle="dark-content" />
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-        < Components.ScreenHeader name="Game Result" showBackButton={false} />
+        <Components.ScreenHeader
+          name="Who's the Winner?"
+          showBackButton={false}
+        />
       </View>
       <View style={[globalstyles.Container2, { flex: 10 }]}>
         <View style={chorPoliceQuizstyles.overlay} />
