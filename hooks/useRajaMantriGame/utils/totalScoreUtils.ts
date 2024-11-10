@@ -1,5 +1,5 @@
 import { Dispatch } from "redux";
-import { updatePlayerScores } from "@/redux/slices/playerSlice";
+import { updatePlayerScores, updateScoresByRound } from "@/redux/slices/playerSlice";
 
 interface PlayerScore {
   playerName: string;
@@ -11,6 +11,7 @@ export const calculateTotalScores = (
   playerScores: PlayerScore[],
   dispatch: Dispatch
 ) => {
+  dispatch(updateScoresByRound(playerScores))
   const updatedScores = playerScores.map((player) => {
     const totalScore = player.scores.reduce((sum, score) => sum + score, 0);
     return {
@@ -27,7 +28,7 @@ export const calculateTotalScores = (
   // Dispatch the array to the store after a short delay
   setTimeout(() => {
     dispatch(updatePlayerScores(totalScoresArray));
-  }, 1000);
+  }, 100);
 
   return updatedScores;
 };

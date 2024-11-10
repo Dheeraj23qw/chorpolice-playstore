@@ -9,12 +9,12 @@ import { responsiveHeight } from "react-native-responsive-dimensions";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { Ionicons } from "@expo/vector-icons";
 import ScoreTable from "@/modal/ShowTableModal";
-import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import { selectPlayerNames } from "@/redux/slices/selectors";
 import { playerNamesArray, PlayerScoresArray } from "@/redux/slices/selectors"; // Adjust the import path as necessary
-
+import { useSelector } from "react-redux";
+import { PlayerScore } from "@/redux/slices/playerSlice"; // Adjust import as needed
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
 
@@ -36,7 +36,10 @@ const ChorPoliceQuiz: React.FC = () => {
 
   const [popupTable, setPopupTable] = useState(false);
   const playerNames = useSelector(playerNamesArray);
-  const playerScores = useSelector(PlayerScoresArray);
+  // const playerScores = useSelector(PlayerScoresArray); total points of each player
+
+  const playerScores = useSelector((state:RootState) => state.player.playerScoresByRound);
+
 
   const toggleModal = () => {
     setPopupTable(!popupTable);

@@ -102,7 +102,7 @@ export const handlePlayHelper = (
 
 
       // Wait for popup 1 display duration
-      await delay(4000);
+      await delay(3400);
       
       // Make the cards clickable after all animations and popups
       setAreCardsClickable(true);

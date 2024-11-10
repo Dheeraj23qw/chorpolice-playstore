@@ -39,7 +39,7 @@ const RajaMantriGameScreen: React.FC = () => {
     message, // Message to display
     roles, // Roles assigned to players
     isPlayButtonDisabled, // Flag to disable play button
-    playerScores, // Scores of players
+    playerScores, // Scores of players of each round
     round, // Current round number
     videoIndex, // Index of the video to play
     isPlaying, // Flag to check if video is playing

@@ -17,7 +17,8 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
   isOptionDisabled,
   currentPlayerIsBot
 }) => {
-  const optionsDisabled = isOptionDisabled || currentPlayerIsBot;
+  const [isOptionsDisabledForSeconds, setIsOptionsDisabledForSeconds] = useState(true); // State to disable options for 3 seconds
+  const optionsDisabled = isOptionDisabled || currentPlayerIsBot || isOptionsDisabledForSeconds; // Disable if the option is disabled for the duration
 
   // Animated values
   const fadeAnim = useRef(new Animated.Value(0)).current; // Fade-in for text
@@ -25,6 +26,11 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
   const [optionAnim] = useState(new Animated.Value(0)); // Scale animation for options
 
   useEffect(() => {
+    // Disable options for 3 seconds after they appear
+    const timer = setTimeout(() => {
+      setIsOptionsDisabledForSeconds(false); 
+    }, 700);  // 3 seconds
+
     // Fade-in effect for player name and question text
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -57,8 +63,11 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
       useNativeDriver: true,
     }).start();
 
-    // Cleanup the pulse animation when the component unmounts
-    return () => pulse.stop();
+    // Cleanup the pulse animation and timeout when the component unmounts
+    return () => {
+      clearTimeout(timer); // Clean up the timeout
+      pulse.stop();
+    };
   }, []);
 
   const handleOptionPress = (score: number) => {
@@ -88,10 +97,7 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
     <>
       <View style={chorPoliceQuizstyles.questionBox}>
         <Animated.Text
-          style={[
-            chorPoliceQuizstyles.question,
-            { opacity: fadeAnim, transform: [{ scale: pulseAnim }] }
-          ]}
+          style={[chorPoliceQuizstyles.question, { opacity: fadeAnim, transform: [{ scale: pulseAnim }] }]}
         >
           <Text style={chorPoliceQuizstyles.playerName}>{playerName}</Text>, Guess your Score?
         </Animated.Text>
@@ -105,12 +111,7 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
           disabled={optionsDisabled}
         >
           <Animated.Text
-            style={[
-              chorPoliceQuizstyles.optionText,
-              {
-                transform: [{ scale: optionAnim }]  // Apply the scaling animation to each option text
-              }
-            ]}
+            style={[chorPoliceQuizstyles.optionText, { transform: [{ scale: optionAnim }] }]}
           >
             {score}
           </Animated.Text>

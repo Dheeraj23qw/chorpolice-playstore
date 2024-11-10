@@ -176,7 +176,7 @@ const useQuizLogic = (router: any) => {
     dispatch(playSound(soundName));
     setIsContentVisible(false);
     setTimeout(() => {
-      moveToNextPlayer();
+      moveToNextPlayer();    
     }, 4000);
   };
 
@@ -196,8 +196,8 @@ const useQuizLogic = (router: any) => {
         return nextIndex;
       } else {
         setTimeout(() => {
-          router.push("/chorpoliceResult");
-        }, 10);
+          router.push("/chorpoliceResult"); 
+        }, 1);
         return prevIndex;
       }
     });

@@ -83,7 +83,7 @@ export const playerNameStyles = StyleSheet.create({
       elevation: 3,
     },
     startGameButtonText: {
-      color: '#fff',
+      color: '#FFD700',
       fontWeight: 'bold',
       fontFamily: 'outfit-bold',
       fontSize: responsiveFontSize(2.7), // Slightly larger for emphasis

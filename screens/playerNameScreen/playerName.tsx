@@ -22,6 +22,7 @@ const PlayerNameScreen: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
   const [selectedOption, setSelectedOption] = useState<string | null>(null); // For avatar selection
 
+  
   const {
     selectedImages,
     imageNames,

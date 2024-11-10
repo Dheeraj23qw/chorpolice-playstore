@@ -50,12 +50,12 @@ const PlayerInfo: React.FC<PlayerInfoProps> = memo(({ playerImage }) => {
     Animated.sequence([
       Animated.spring(bounceAnim, {
         toValue: 1.1, // Scale up
-        friction: 3,  // Control the bounce effect
+        friction: 3, // Control the bounce effect
         tension: 100,
         useNativeDriver: true,
       }),
       Animated.spring(bounceAnim, {
-        toValue: 1,   // Return to the original size
+        toValue: 1, // Return to the original size
         friction: 3,
         tension: 100,
         useNativeDriver: true,
@@ -71,20 +71,16 @@ const PlayerInfo: React.FC<PlayerInfoProps> = memo(({ playerImage }) => {
       <Pressable onPress={handleImagePress}>
         <Animated.View
           style={[
-            styles.playerImage,
             {
-              opacity: fadeAnim,        // Fade-in effect
+              opacity: fadeAnim, // Fade-in effect
               transform: [
-                { scale: scaleAnim },   // Scale-up effect
-                { scale: bounceAnim },  // Bounce effect on click
+                { scale: scaleAnim }, // Scale-up effect
+                { scale: bounceAnim }, // Bounce effect on click
               ],
             },
           ]}
         >
-          <Image
-            source={imageSource}
-            style={styles.playerImage}
-          />
+          <Image source={imageSource} style={styles.playerImage} />
         </Animated.View>
       </Pressable>
     </View>

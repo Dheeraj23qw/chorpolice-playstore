@@ -1,24 +1,29 @@
 // redux/slices/selectors.ts
 import { createSelector } from "@reduxjs/toolkit";
-import { RootState } from "../store"; // Adjust the import path according to your project structure
+import { RootState } from "../store";
 
+// Select the entire player state
 const selectPlayerState = (state: RootState) => state.player;
 
+// Selector to get selected images
 export const selectSelectedImages = createSelector(
   [selectPlayerState],
   (playerState) => playerState.selectedImages
 );
 
+// Selector to get player names
 export const selectPlayerNames = createSelector(
   [selectPlayerState],
   (playerState) => playerState.playerNames
 );
 
+// Selector to get player total scores
 export const selectPlayerScores = createSelector(
   [selectPlayerState],
   (playerState) => playerState.playerScores
 );
 
+// Selector to get game status (whether required data is present)
 export const selectGameStatus = createSelector(
   [selectPlayerState],
   (playerState) => ({
@@ -28,10 +33,11 @@ export const selectGameStatus = createSelector(
   })
 );
 
+// Selector to get the player with the highest score (winner)
 export const selectWinner = createSelector(
   [selectPlayerScores],
   (playerScores) => {
-    if (playerScores.length === 0) return null;
+    if (playerScores.length === 0) return null; // Return null if no players
     return playerScores.reduce((highestScorer, currentPlayer) =>
       currentPlayer.totalScore > highestScorer.totalScore
         ? currentPlayer
@@ -40,10 +46,18 @@ export const selectWinner = createSelector(
   }
 );
 
+// Selector to get player names as an array
 export const playerNamesArray = createSelector(
   [selectPlayerState],
   (playerState) => playerState.playerNames.map((player) => player.name)
 );
+
+// Selector to get player scores by round (scores per round for each player)
+export const selectPlayerScoresByRound = createSelector(
+  [selectPlayerState],
+  (playerState) => playerState.playerScoresByRound // Returns scores for each player per round
+);
+
 
 
 

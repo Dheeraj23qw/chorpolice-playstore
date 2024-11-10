@@ -1,14 +1,13 @@
-import playerName from "@/screens/playerNameScreen/playerName";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // Define the PlayerScore interface
-interface PlayerScore {
+export interface PlayerScore {
   playerName: string;
   totalScore: number;
 }
 
 // Define the PlayerName interface with isBot as optional
-interface PlayerName {
+export interface PlayerName {
   id: number;
   name: string;
   isBot: boolean;
@@ -17,11 +16,18 @@ interface PlayerName {
 // Define the GameMode type
 export type GameMode = "OFFLINE" | "ONLINE_WITH_REAL_PLAYERS" | "ONLINE_WITH_FRIENDS" | "ONLINE_WITH_BOTS" | "OFFLINE_WITH_BOTS" | "QUIZ_WITH_BOTS";
 
+// Define the PlayerScoresByRound interface to store scores by round
+export interface PlayerScoresByRound {
+  playerName: string;
+  scores: number[];  // Array to store scores for each round
+}
+
 // Define the PlayerState interface
-interface PlayerState {
+export interface PlayerState {
   selectedImages: number[];
   playerNames: PlayerName[];
   playerScores: PlayerScore[];
+  playerScoresByRound: PlayerScoresByRound[];  // New state for storing scores by round
   gameMode: GameMode;
 }
 
@@ -30,6 +36,7 @@ const initialState: PlayerState = {
   selectedImages: [],
   playerNames: [],
   playerScores: [],
+  playerScoresByRound: [],  // Initialize empty playerScoresByRound
   gameMode: "OFFLINE",
 };
 
@@ -93,6 +100,35 @@ const playerSlice = createSlice({
         totalScore: 0,
       }));
     },
+    // New action to update player scores by round
+    updateScoresByRound: {
+      reducer(
+        state,
+        action: PayloadAction<PlayerScoresByRound[]>
+      ) {
+        const roundScores = action.payload;
+        // Update or add player round scores
+        roundScores.forEach(({ playerName, scores }) => {
+          const player = state.playerScoresByRound.find(
+            (player) => player.playerName === playerName
+          );
+          
+          if (!player) {
+            state.playerScoresByRound.push({ playerName, scores: [...scores] });
+          } else {
+            player.scores = [...scores];
+          }
+        });
+      },
+      prepare(roundScores: PlayerScoresByRound[]) {
+        return {
+          payload: roundScores.map((roundScore) => ({
+            playerName: roundScore.playerName,
+            scores: roundScore.scores.filter((score) => typeof score === "number" && score >= 0),
+          })),
+        };
+      },
+    },
   },
 });
 
@@ -104,6 +140,7 @@ export const {
   setGameMode,
   resetGame,
   playAgain,
+  updateScoresByRound, // Export the new action
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

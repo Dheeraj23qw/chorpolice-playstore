@@ -25,16 +25,15 @@ export const resetForNextRound = (
   setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
   setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
-  if (round == 2) {
+  if (round == 1) {
     dispatch(playSound("next"));
     calculateTotalScores();
     setTimeout(() => {
       router.push("/chorPoliceQuiz");
-    }, 2000); // Adding delay before navigating
+    }, 2400); // Adding delay before navigating
 
     return;
   } else {
-
     setRound((count) => count + 1);
     setFlipAnims(initialFlipAnims.map(() => new Animated.Value(0)));
     setFlippedStates(initialFlippedStates);
@@ -46,9 +45,8 @@ export const resetForNextRound = (
     setThiefIndex(null);
     setKingIndex(null);
     setPoliceIndex(null);
-    setFirstCardClicked(false)
-    setAreCardsClickable(false)
+    setFirstCardClicked(false);
+    setAreCardsClickable(false);
     dispatch(playSound("next"));
-
   }
 };
