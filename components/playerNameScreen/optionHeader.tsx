@@ -6,6 +6,9 @@ import * as Application from "expo-application"; // Import the expo-application 
 
 // Assuming your custom modal component is imported here
 import CustomRatingModal from "@/modal/RatingModal";
+import { useDispatch } from "react-redux";
+import { stopQuizSound } from "@/redux/slices/soundSlice";
+import { playSound } from "@/redux/slices/soundSlice";
 
 interface IonicOptions {
   isMuted: boolean;
@@ -27,7 +30,7 @@ const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
   // Function to share the app link along with app metadata and app icon
   const handleShare = async () => {
     try {
-      const androidPackageName = 'com.dheeraj_kumar_yadav.chorpolice'; // Replace with your app's package name
+      const androidPackageName = "com.dheeraj_kumar_yadav.chorpolice"; // Replace with your app's package name
       const appStoreLink = `https://play.google.com/store/apps/details?id=${androidPackageName}`;
 
       // Get app metadata
@@ -36,7 +39,8 @@ const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
       const appBuildVersion = Application.nativeBuildVersion;
 
       // Your uploaded app icon URL
-      const appIconUrl = 'https://cdn-icons-png.flaticon.com/512/3616/3616049.png'; // Replace with the URL of your app icon
+      const appIconUrl =
+        "https://cdn-icons-png.flaticon.com/512/3616/3616049.png"; // Replace with the URL of your app icon
 
       // Prepare the message with app metadata, link, and app icon
       const message = `Check out this awesome app, ${appName}! 🎉\nVersion: ${appVersion} (Build ${appBuildVersion})\nDownload it now: ${appStoreLink}\n\nApp Icon: ${appIconUrl}`;
@@ -50,6 +54,18 @@ const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
     }
   };
 
+  const dispatch = useDispatch();
+
+  const handleStopSound = () => {
+    // Dispatch stopQuizSound action to stop the quiz sound
+    dispatch(stopQuizSound());
+  };
+
+  const handlePlaySound = () => {
+    // Call playSound function to play quiz sound
+    dispatch(playSound("quiz")); // You can modify this based on your sound utility
+  };
+
   return (
     <View style={styles.headerButtonsContainer}>
       {/* Settings Button */}
@@ -60,7 +76,14 @@ const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
       {/* Mute/Unmute Button */}
       <TouchableOpacity
         style={styles.headerButton}
-        onPress={() => setIsMuted((prev) => !prev)} // Toggle mute state
+        onPress={() => {
+          setIsMuted((prev) => !prev); // Toggle mute state
+          if (isMuted) {
+            handlePlaySound(); // Play the sound when unmuted
+          } else {
+            handleStopSound(); // Stop the sound when muted
+          }
+        }}
       >
         <Ionicons
           name={isMuted ? "volume-mute" : "volume-high"}

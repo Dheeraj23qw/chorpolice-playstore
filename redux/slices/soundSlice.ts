@@ -77,30 +77,30 @@ const soundSlice = createSlice({
   name: "sound",
   initialState,
   reducers: {
-    playSound: (state, action) => {
-      const soundName: SoundName = action.payload;
-      const sound = sounds[soundName];
-      if (sound) {
-        if (soundName === "quiz") {
-          // Set the quiz sound to loop indefinitely
-          sound.setIsLoopingAsync(true).catch((error: unknown) => {
-            console.error(
-              `Failed to set loop for quiz sound:`,
-              (error as Error).message
-            );
-          });
-        }
+  playSound: (state, action) => {
+  const soundName: SoundName = action.payload;
+  const sound = sounds[soundName];
+  if (sound) {
+    // Reset looping if it's the quiz sound
+    if (soundName === "quiz") {
+      sound.setIsLoopingAsync(true).catch((error: unknown) => {
+        console.error(`Failed to set loop for quiz sound:`, (error as Error).message);
+      });
+    }
 
-        sound.replayAsync().catch((error: unknown) => {
-          console.error(
-            `Failed to play sound ${soundName}:`,
-            (error as Error).message
-          );
-        });
-      } else {
-        console.warn(`Sound ${soundName} is not loaded.`);
-      }
-    },
+    // Stop the sound before replaying
+    sound.stopAsync().catch((error: unknown) => {
+      console.error(`Failed to stop sound ${soundName}:`, (error as Error).message);
+    });
+
+    // Replay the sound after stopping it
+    sound.replayAsync().catch((error: unknown) => {
+      console.error(`Failed to play sound ${soundName}:`, (error as Error).message);
+    });
+  } else {
+    console.warn(`Sound ${soundName} is not loaded.`);
+  }
+},
     stopQuizSound: () => {
       const quizSound = sounds.quiz;
       if (quizSound) {
