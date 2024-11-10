@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { SafeAreaView, View, ImageBackground } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { SafeAreaView, View, ImageBackground, Animated } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "./quizStyle";
 import { useRouter } from "expo-router";
@@ -38,10 +38,35 @@ const ChorPoliceQuiz: React.FC = () => {
   const playerNames = useSelector(playerNamesArray);
   const playerScores = useSelector(PlayerScoresArray);
 
-
   const toggleModal = () => {
     setPopupTable(!popupTable);
   };
+
+  // Animated value for pulsating effect
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Function to start the pulsating animation
+  const startPulsing = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.2, // Scale up
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1, // Scale down to original size
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  };
+
+  useEffect(() => {
+    startPulsing(); // Start the animation when component mounts
+  }, []);
+
   return (
     <>
       <ScoreTable
@@ -86,11 +111,17 @@ const ChorPoliceQuiz: React.FC = () => {
               resizeMode="cover"
             >
               <View style={chorPoliceQuizstyles.overlay} />
-              <Ionicons
-                name="bulb" // "bulb" represents a light bulb in Ionicons
-                style={chorPoliceQuizstyles.bulbIcon}
-                onPress={toggleModal} // Toggling the modal when the bulb is clicked
-              />
+              <Animated.View
+                style={{
+                  transform: [{ scale: scaleAnim }], // Apply the pulsating scale effect
+                }}
+              >
+                <Ionicons
+                  name="bulb" // "bulb" represents a light bulb in Ionicons
+                  style={chorPoliceQuizstyles.bulbIcon}
+                  onPress={toggleModal} // Toggling the modal when the bulb is clicked
+                />
+              </Animated.View>
               <View style={chorPoliceQuizstyles.quizContainer}>
                 {/* Player Info */}
                 <Components.PlayerInfo playerImage={playerImage} />

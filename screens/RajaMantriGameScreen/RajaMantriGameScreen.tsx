@@ -3,6 +3,7 @@ import {
   View,
   ImageBackground,
   ScrollView,
+  Animated,
 } from "react-native";
 
 // Redux
@@ -23,6 +24,7 @@ import useBackHandlerModal from "@/hooks/useBackHandlerModal";
 import CustomModal from "@/modal/CustomModal";
 import CustomButton from "@/components/CustomButton";
 import ScoreTable from "@/modal/ShowTableModal";
+
 const RajaMantriGameScreen: React.FC = () => {
   // Select player names from the Redux store and map to an array
   const playerNames = useSelector(selectPlayerNames).map(
@@ -57,11 +59,56 @@ const RajaMantriGameScreen: React.FC = () => {
   });
   const [popupTable, setPopupTable] = useState(false);
 
-  const dispatch =useDispatch()
+  // Bouncy effect animation for cards
+  const [bounceAnims] = useState(
+    playerNames.map(() => new Animated.Value(1)) // Initialize bounce animation values for each card
+  );
+
+  const dispatch = useDispatch();
+
   // Function to toggle the modal visibility
   const toggleModal = () => {
     setPopupTable(!popupTable);
   };
+
+  // Handle card click and apply bounce animation
+  const handleCardClickWithBounce = (index: number) => {
+    // Trigger the bounce effect when a card is clicked
+    Animated.sequence([
+      // First bounce: Scale up to 1.2x
+      Animated.spring(bounceAnims[index], {
+        toValue: 1.2, // Scale the card to 1.2x its size
+        friction: 3,  // Friction for the bounce
+        tension: 160, // Tension for the bounce
+        useNativeDriver: true, // Use native driver for better performance
+      }),
+      // Second bounce: Return to normal size (1x)
+      Animated.spring(bounceAnims[index], {
+        toValue: 1,  // Return to normal size
+        friction: 3, // Friction for the bounce
+        tension: 160, // Tension for the bounce
+        useNativeDriver: true, // Use native driver for better performance
+      }),
+    ]).start();
+
+    // Optionally, trigger the flip animation as well
+    handleCardClick(index);
+  };
+
+  // Define combined style for flip and bounce animations
+  const getCardStyle = (index: number) => ({
+    transform: [
+      {
+        rotateY: flipAnims[index].interpolate({
+          inputRange: [0, 1],
+          outputRange: ["0deg", "14400deg"], // Flipping animation
+        }),
+      },
+      {
+        scale: bounceAnims[index], // Apply the bouncy scale transform
+      },
+    ],
+  });
 
   return (
     <>
@@ -127,22 +174,13 @@ const RajaMantriGameScreen: React.FC = () => {
                       playerName={playerNames[index]} // Fallback player name
                       flipped={flippedStates[index]} // Check if card is flipped
                       clicked={clickedCards[index]} // Check if card is clicked
-                      onClick={handleCardClick} // Handle card click
+                      onClick={() => handleCardClickWithBounce(index)} // Handle card click with bounce
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}
                       advisorIndex={advisorIndex}
                       thiefIndex={thiefIndex}
-                      animatedStyle={{
-                        transform: [
-                          {
-                            rotateY: flipAnims[index].interpolate({
-                              inputRange: [0, 1],
-                              outputRange: ["0deg", "14400deg"], // Flipping animation
-                            }),
-                          },
-                        ],
-                      }}
+                      animatedStyle={getCardStyle(index)} // Apply the combined flip and bounce animation
                     />
                   ))}
                 </View>
@@ -155,22 +193,13 @@ const RajaMantriGameScreen: React.FC = () => {
                       playerName={playerNames[index + 2]} // Fallback player name
                       flipped={flippedStates[index + 2]} // Check if card is flipped
                       clicked={clickedCards[index + 2]} // Check if card is clicked
-                      onClick={handleCardClick} // Handle card click
+                      onClick={() => handleCardClickWithBounce(index + 2)} // Handle card click with bounce
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}
                       advisorIndex={advisorIndex}
                       thiefIndex={thiefIndex}
-                      animatedStyle={{
-                        transform: [
-                          {
-                            rotateY: flipAnims[index + 2].interpolate({
-                              inputRange: [0, 1],
-                              outputRange: ["0deg", "14400deg"], // Flipping animation
-                            }),
-                          },
-                        ],
-                      }}
+                      animatedStyle={getCardStyle(index + 2)} // Apply the combined flip and bounce animation
                     />
                   ))}
                 </View>

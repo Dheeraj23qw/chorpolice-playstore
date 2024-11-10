@@ -103,8 +103,8 @@ export const chorPoliceQuizstyles = StyleSheet.create({
   },
   bulbIcon: {
     position: 'absolute',
-    top: '5%',  // Adjust to position the icon at the top
-    left: '90%', // Center horizontally
+    top: '25%',  // Adjust to position the icon at the top
+    left: '80%', // Center horizontally
     transform: [{ translateX: -20 }], // Adjust for perfect centering
     fontSize: 50, // Icon size
     color: '#FFD700', // Bulb color
