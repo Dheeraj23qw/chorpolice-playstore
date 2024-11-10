@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { View, Image, Text } from "react-native";
+import React, { useMemo, useEffect, useRef } from "react";
+import { View, Image, Text, Animated, Easing } from "react-native";
 import { ChorPoloceLeaderboardStyles } from "@/screens/ResultScreen/leaderboardStyle";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
@@ -45,22 +45,71 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
     return fallbackImage; // Fallback to default image if index is invalid
   }, [winner.playerName, selectedImages, playerNames, playerImages]);
 
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current; // Fade-in effect
+  const scaleAnim = useRef(new Animated.Value(0.8)).current; // Scale-up effect for the image and text
+  const bounceAnim = useRef(new Animated.Value(0)).current; // Bounce effect for the image
+
+  // Run the animations when the component is mounted
+  useEffect(() => {
+    // Start animations
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+      Animated.spring(bounceAnim, {
+        toValue: 1,
+        friction: 3,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
     <View style={ChorPoloceLeaderboardStyles.winnerContainer}>
-      <Image
-        source={
-          typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage // Ensure the source is an object with uri
-        }
-        style={ChorPoloceLeaderboardStyles.winnerImage}
-        accessibilityLabel={`Image of ${winnerName}`}
-      />
-      <Text style={ChorPoloceLeaderboardStyles.congratulations}>
+      <Animated.View
+        style={{
+          opacity: fadeAnim, // Apply fade-in effect
+          transform: [
+            { scale: scaleAnim }, // Apply scale-up effect
+            { scale: bounceAnim }, // Apply bounce effect
+          ],
+        }}
+      >
+        <Image
+          source={typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage} // Ensure the source is an object with uri
+          style={ChorPoloceLeaderboardStyles.winnerImage}
+          accessibilityLabel={`Image of ${winnerName}`}
+        />
+      </Animated.View>
+
+      <Animated.Text
+        style={[ChorPoloceLeaderboardStyles.congratulations, { opacity: fadeAnim }]} // Fade-in effect for the text
+      >
         🎉 Congratulations!{" "}
-      </Text>
-      <Text style={ChorPoloceLeaderboardStyles.winnerName}>{winnerName}</Text>
-      <Text style={ChorPoloceLeaderboardStyles.winnerScore}>
+      </Animated.Text>
+
+      <Animated.Text
+        style={[ChorPoloceLeaderboardStyles.winnerName, { opacity: fadeAnim }]} // Fade-in effect for the name
+      >
+        {winnerName}
+      </Animated.Text>
+
+      <Animated.Text
+        style={[ChorPoloceLeaderboardStyles.winnerScore, { opacity: fadeAnim }]} // Fade-in effect for the score
+      >
         Score: {winner.totalScore}
-      </Text>
+      </Animated.Text>
     </View>
   );
 };

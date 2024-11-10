@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import {
   View,
-  StatusBar,
   ImageBackground,
-  BackHandler,
   ScrollView,
 } from "react-native";
 
@@ -25,7 +23,6 @@ import useBackHandlerModal from "@/hooks/useBackHandlerModal";
 import CustomModal from "@/modal/CustomModal";
 import CustomButton from "@/components/CustomButton";
 import ScoreTable from "@/modal/ShowTableModal";
-import { playSound } from "@/redux/slices/soundSlice";
 const RajaMantriGameScreen: React.FC = () => {
   // Select player names from the Redux store and map to an array
   const playerNames = useSelector(selectPlayerNames).map(

@@ -45,7 +45,7 @@ export const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     marginTop: responsiveHeight(9),
-    fontFamily:"outfit-bold"
+    fontFamily:"outfit-bold",
 
   } , 
   roleMessage: {

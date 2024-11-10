@@ -183,7 +183,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         }, 2000);
 
         setTimeout(() => {
-          setPopupIndex(5);
+          setPopupIndex(4);
           dispatch(playSound("police"));
         }, 5000);
 
@@ -199,7 +199,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           dispatch(playSound("lose"));
         }, 2000);
         setTimeout(() => {
-          setPopupIndex(4);
+          setPopupIndex(3);
           dispatch(playSound("thief"));
         }, 5000);
 

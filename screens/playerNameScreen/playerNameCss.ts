@@ -69,10 +69,10 @@ export const playerNameStyles = StyleSheet.create({
       backgroundColor: '#fff',
     },
     startGameButton: {
-      backgroundColor: '#ffca28',
-      paddingVertical: 15,
-      paddingHorizontal: 30,
-      borderRadius: 25,
+      backgroundColor: '#7653ec',
+      paddingVertical: responsiveHeight(2.7),
+      paddingHorizontal: responsiveWidth(10),
+      borderRadius: 45,
       margin: 20,
       alignItems: 'center',
       justifyContent: 'center',
@@ -84,9 +84,13 @@ export const playerNameStyles = StyleSheet.create({
     },
     startGameButtonText: {
       color: '#fff',
-      fontSize: 20,
       fontWeight: 'bold',
-      fontFamily: 'outfit-bold', // Playful font
+      fontFamily: 'outfit-bold',
+      fontSize: responsiveFontSize(2.7), // Slightly larger for emphasis
+      letterSpacing: 1.2,               // Adds space between letters for elegance
+      textShadowColor: 'rgba(0, 0, 0, 0.6)', // Shadow effect for depth
+      textShadowOffset: { width: 1, height: 2 },
+      textShadowRadius: 4,
     },
     changeButton: {
         marginTop: responsiveHeight(1),

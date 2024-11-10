@@ -101,7 +101,7 @@ const PlayerNameScreen: React.FC = () => {
             <Components.ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
-              imagesPerRow={12}
+              imagesPerRow={10}
               gameMode="OFFLINE"
               isBot={false}
             />

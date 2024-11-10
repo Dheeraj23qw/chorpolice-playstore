@@ -9,7 +9,6 @@ type SoundName =
   | "next"
   | "quiz"
   | "level"
-  | "start"
   | "select"
   | "selected"
   | "king"
@@ -24,7 +23,6 @@ const soundPaths: Record<SoundName, any> = {
   next: require("@/assets/audio/chorPolice/round.mp3"),
   quiz: require("@/assets/audio/chorPolice/quiz.mp3"),
   level: require("@/assets/audio/chorPolice/level.mp3"),
-  start: require("@/assets/audio/chorPolice/start.mp3"),
   select: require("@/assets/audio/chorPolice/select.mp3"),
   selected: require("@/assets/audio/chorPolice/selected.mp3"),
   king: require("@/assets/audio/maingame/king.mp3"),
@@ -40,7 +38,6 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   next: null,
   quiz: null,
   level: null,
-  start: null,
   select: null,
   selected: null,
   king: null,

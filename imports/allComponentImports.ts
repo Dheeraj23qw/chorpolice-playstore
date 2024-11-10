@@ -13,7 +13,6 @@ import OptionHeader from "@/components/playerNameScreen/optionHeader";
 import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGrid";
 import { AvatarSelectionMemo } from "@/components/playerNameScreen/toggleContainer";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
-import GameMessage from "@/components/RajamantriGameScreen/gameMessage";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import ScoreTable  from '@/components/RajamantriGameScreen/scoretable';
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
@@ -40,7 +39,6 @@ export const Components = {
 
   //RajamantriGameScreen components imports
   PlayerCard,
-  GameMessage,
   PlayButton,
   ScoreTable,
   VideoPlayerComponent,
