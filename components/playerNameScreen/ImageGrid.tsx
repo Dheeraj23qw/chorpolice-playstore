@@ -1,17 +1,34 @@
 import React, { memo } from "react";
-import { Pressable, ScrollView, StyleSheet, View, Image } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  Image,
+  ImageSourcePropType,
+} from "react-native";
 import { useSelector } from "react-redux";
 import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
 import { RootState } from "@/redux/store";
 import { GameMode } from "@/redux/slices/playerSlice";
+import { PulsatingImage } from "@/Animations/animation";
 
 interface ImageGridProps {
   selectedImages: number[];
-  handleImageSelect: (imageId: number, isBot: boolean, gameMode: GameMode) => void;
+  handleImageSelect: (
+    imageId: number,
+    isBot: boolean,
+    gameMode: GameMode
+  ) => void;
   isBot: boolean;
   imagesPerRow: number;
   gameMode?: GameMode;
   selectedOption?: string | null;
+}
+
+interface PlayerImage {
+  id: number;
+  image: ImageSourcePropType;
 }
 
 // Utility function to split images array into chunks of imagesPerRow size
@@ -51,46 +68,65 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
     <View style={styles.container}>
       {rows.map((row, rowIndex) => (
         <ScrollView
-          key={`row-${rowIndex}`} 
+          key={`row-${rowIndex}`}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.rowContainer}
         >
-          {selectedOption === 'player-Avatar' ? row.slice().reverse().map((item) => { // Reverse if selectedOption is player-Avatar
-            const isSelected = selectedImages.includes(item.id);
-            return (
-              <Pressable
-                key={`row-${rowIndex}-image-${item.id}`}
-                onPress={() => handlePress(item.id, isBot, gameMode)}
-                style={[
-                  playerNameStyles.imageContainer,
-                  isSelected && styles.selectedImageContainer,
-                ]}
-              >
-                <Image
-                  source={item.image}
-                  style={playerNameStyles.image}
-                />
-              </Pressable>
-            );
-          }) : row.map((item) => {
-            const isSelected = selectedImages.includes(item.id);
-            return (
-              <Pressable
-                key={`row-${rowIndex}-image-${item.id}`}
-                onPress={() => handlePress(item.id, isBot, gameMode)}
-                style={[
-                  playerNameStyles.imageContainer,
-                  isSelected && styles.selectedImageContainer,
-                ]}
-              >
-                <Image
-                  source={item.image}
-                  style={playerNameStyles.image}
-                />
-              </Pressable>
-            );
-          })}
+          {selectedOption === "player-Avatar"
+            ? row
+                .slice()
+                .reverse()
+                .map((item) => {
+                  const isSelected = selectedImages.includes(item.id);
+                  return (
+                    <Pressable
+                      key={`row-${rowIndex}-image-${item.id}`}
+                      onPress={() => handlePress(item.id, isBot, gameMode)}
+                      style={[
+                        playerNameStyles.imageContainer,
+                        isSelected && styles.selectedImageContainer,
+                      ]}
+                    >
+                      {isSelected ? (
+                        <PulsatingImage
+                          source={item.image}
+                          style={playerNameStyles.image}
+                        />
+                      ) : (
+                        <Image
+                          source={item.image}
+                          style={playerNameStyles.image}
+                        />
+                      )}
+                    </Pressable>
+                  );
+                })
+            : row.map((item) => {
+                const isSelected = selectedImages.includes(item.id);
+                return (
+                  <Pressable
+                    key={`row-${rowIndex}-image-${item.id}`}
+                    onPress={() => handlePress(item.id, isBot, gameMode)}
+                    style={[
+                      playerNameStyles.imageContainer,
+                      isSelected && styles.selectedImageContainer,
+                    ]}
+                  >
+                    {isSelected ? (
+                      <PulsatingImage
+                        source={item.image}
+                        style={playerNameStyles.image}
+                      />
+                    ) : (
+                      <Image
+                        source={item.image}
+                        style={playerNameStyles.image}
+                      />
+                    )}
+                  </Pressable>
+                );
+              })}
         </ScrollView>
       ))}
     </View>

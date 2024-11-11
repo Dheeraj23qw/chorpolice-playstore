@@ -63,9 +63,7 @@ export const usePlayerNameScreen = () => {
       }
 
       if (isBot && botCount >= 3) {
-        setAlertMessage(
-          "You can only select a maximum of 3 bots.please choose your Avatar to start the game"
-        );
+        setAlertMessage("3 bots max. Select your Avatar to play.");
         setModals((prev) => ({ ...prev, modalVisible: true }));
         return;
       }
@@ -78,9 +76,7 @@ export const usePlayerNameScreen = () => {
       }
 
       if (selectedImages.includes(imageId)) {
-        setAlertMessage(
-          "You've already selected this superhero! Would you like to change it?"
-        );
+        setAlertMessage("Do you want to change Selected Superhero?");
         setCurrentImageId(imageId);
         setModals((prev) => ({ ...prev, confirmChangeVisible: true }));
         return;
@@ -93,8 +89,8 @@ export const usePlayerNameScreen = () => {
           // Check if `gameModeStatus` is OFFLINE and show appropriate message
           const alertMsg =
             gameMode === "OFFLINE"
-              ? "Add 3 more avatars to play"
-              : "Add 3 more avatars (bots or humans) to complete your team of 4!";
+              ? "Select 3 more avatars to play"
+              : "Select 3 more (bots or humans) to make your team of 4!";
           setAlertMessage(alertMsg);
           setModals((prev) => ({ ...prev, infoAddMoreVisible: true }));
         }
@@ -134,9 +130,7 @@ export const usePlayerNameScreen = () => {
     (imageId: number) => {
       if (selectedImages.includes(imageId)) {
         dispatch(playSound("select"));
-        setAlertMessage(
-          "This superhero is already selected. Do you want to change it?"
-        );
+        setAlertMessage("Do you want to change Selected Superhero?");
         setCurrentImageId(imageId);
         setModals((prev) => ({ ...prev, confirmChangeVisible: true }));
       }
@@ -174,7 +168,7 @@ export const usePlayerNameScreen = () => {
   }, [imageNames]);
 
   const handleStartAdventure = useCallback(async () => {
-    dispatch(playSound("select"))
+    dispatch(playSound("select"));
     setIsButtonDisabled(true); // Disable the button after click
     try {
       // Check for duplicate names
