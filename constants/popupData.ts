@@ -22,16 +22,5 @@ export const data: DataItem[] = [
     message: "Police Alert!",
     point: "",
   },
-  {
-    id: 3,
-    image: require("@/assets/modalImages/thiefWin.png"),
-    message: "Thief Wins!",
-    point: "you got 500 points",
-  },
-  {
-    id: 4,
-    image: require("@/assets/modalImages/policeWin.png"),
-    message: "Police Triumphs!",
-    point: "you got 500 points",
-  },
+ 
 ];

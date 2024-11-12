@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { TouchableOpacity, View, Share } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { styles } from "./_css/optionbarcss";
 import * as Application from "expo-application"; // Import the expo-application package
 
@@ -9,6 +9,7 @@ import CustomRatingModal from "@/modal/RatingModal";
 import { useDispatch } from "react-redux";
 import { stopQuizSound } from "@/redux/slices/soundSlice";
 import { playSound } from "@/redux/slices/soundSlice";
+import { useRouter } from "expo-router";
 
 interface IonicOptions {
   isMuted: boolean;
@@ -17,6 +18,7 @@ interface IonicOptions {
 
 const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
   const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
+  const router = useRouter();
 
   const handleCloseModal = () => {
     setModalVisible(false); // Close the modal
@@ -100,6 +102,15 @@ const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
       {/* Star Rate Button that Triggers the Rating Modal */}
       <TouchableOpacity style={styles.headerButton} onPress={toggleModal}>
         <MaterialIcons name="star-rate" size={24} color="#FFF" />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.headerButton}
+        onPress={() => {
+          router.push("/award");
+        }}
+      >
+        <Ionicons name="trophy" size={24} color="#FFF" />
       </TouchableOpacity>
 
       {/* Custom Rating Modal for Rating and Comment */}

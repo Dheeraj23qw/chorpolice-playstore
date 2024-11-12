@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { updatePlayerScores, resetGame } from "@/redux/slices/playerSlice";
 import { BackHandler } from "react-native";
 import { playSound } from "@/redux/slices/soundSlice";
+import useRandomMessage from "@/hooks/useRandomMessage";
 
 const useQuizLogic = (router: any) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,31 +35,9 @@ const useQuizLogic = (router: any) => {
     "image"
   );
 
-  const winMessages = [
-    "Great job, {name}!",
-    "Well done, {name}!",
-    "You nailed it, {name}!",
-    "Awesome, {name}!",
-    "You did it, {name}!",
-  ];
-
-  const lossMessages = [
-    "Better luck next time, {name}!",
-    "Nice try, {name}!",
-    "Almost there, {name}!",
-    "You gave it your best, {name}!",
-    "Good effort, {name}!",
-  ];
-
-  const getRandomMessage = (status: string) => {
-    if (status === "win") {
-      const randomIndex = Math.floor(Math.random() * winMessages.length);
-      return winMessages[randomIndex].replace("{name}", currentPlayerName);
-    } else {
-      const randomIndex = Math.floor(Math.random() * lossMessages.length);
-      return lossMessages[randomIndex].replace("{name}", currentPlayerName);
-    }
-  };
+  const currentPlayerName = playerNames[currentPlayerIndex]?.name;
+  const winMessage = useRandomMessage(currentPlayerName, "win");
+  const loseMessage = useRandomMessage(currentPlayerName, "lose");
 
   // Handle the hardware back button press (Android)
   useEffect(() => {
@@ -134,13 +113,13 @@ const useQuizLogic = (router: any) => {
       setIsPopUp(true);
       setMediaId(2);
       setMediaType("gif");
-      setFeedback(getRandomMessage("win"), "win");
+      setFeedback(winMessage, "win"); // Pass win message here
     } else {
       updateScore(currentPlayerName, -2000);
       setIsPopUp(true);
       setMediaId(1);
       setMediaType("gif");
-      setFeedback(getRandomMessage("loose"), "lose");
+      setFeedback(loseMessage, "lose"); // Pass lose message here
     }
   };
 
@@ -176,7 +155,7 @@ const useQuizLogic = (router: any) => {
     dispatch(playSound(soundName));
     setIsContentVisible(false);
     setTimeout(() => {
-      moveToNextPlayer();    
+      moveToNextPlayer();
     }, 4000);
   };
 
@@ -196,7 +175,7 @@ const useQuizLogic = (router: any) => {
         return nextIndex;
       } else {
         setTimeout(() => {
-          router.push("/chorpoliceResult"); 
+          router.push("/chorpoliceResult");
         }, 1);
         return prevIndex;
       }
@@ -207,7 +186,6 @@ const useQuizLogic = (router: any) => {
   const playerImage =
     playerImages[selectedImages[currentPlayerIndex]] ?? playerImages[0];
 
-  const currentPlayerName = playerNames[currentPlayerIndex]?.name;
   const currentPlayerImage =
     playerImages[selectedImages[currentPlayerIndex]]?.src;
   const currentPlayerImageType =
@@ -231,7 +209,6 @@ const useQuizLogic = (router: any) => {
     currentPlayerImageType,
     playerNames,
     playerScores,
-  
   };
 };
 

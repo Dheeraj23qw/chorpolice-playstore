@@ -130,3 +130,36 @@ export const WobbleText: React.FC<TextAnimationProps> = ({ children, style }) =>
 
   return <Animated.Text style={[style, { transform: [{ translateX: wobbleAnim }] }]}>{children}</Animated.Text>;
 };
+
+// Function to handle bounce animation on card click
+export const bounceAnimation = (animValue: Animated.Value) => {
+  return Animated.sequence([
+    Animated.spring(animValue, {
+      toValue: 1.1,
+      friction: 4,
+      tension: 160,
+      useNativeDriver: true,
+    }),
+    Animated.spring(animValue, {
+      toValue: 1,
+      friction: 4,
+      tension: 160,
+      useNativeDriver: true,
+    }),
+  ]);
+};
+
+// Function to handle flip and bounce animations
+export const flipAndBounceStyle = (flipAnim: Animated.Value, bounceAnim: Animated.Value) => ({
+  transform: [
+    {
+      rotateY: flipAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ["0deg", "14400deg"],
+      }),
+    },
+    {
+      scale: bounceAnim,
+    },
+  ],
+});

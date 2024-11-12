@@ -12,8 +12,7 @@ type SoundName =
   | "select"
   | "selected"
   | "king"
-  | "police"
-  | "thief";
+  | "police";
 
 // Define paths to your sound files
 const soundPaths: Record<SoundName, any> = {
@@ -27,7 +26,6 @@ const soundPaths: Record<SoundName, any> = {
   selected: require("@/assets/audio/chorPolice/selected.mp3"),
   king: require("@/assets/audio/maingame/king.mp3"),
   police: require("@/assets/audio/maingame/police.mp3"),
-  thief: require("@/assets/audio/maingame/thief.mp3"),
 };
 
 // Object to store loaded sounds
@@ -42,7 +40,6 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   selected: null,
   king: null,
   police: null,
-  thief: null,
 };
 
 // Thunk to load sounds asynchronously with error handling

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Text,
   TouchableOpacity,
@@ -61,7 +61,8 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
       .map((player, idx) => (player.isBot ? idx : -1))
       .filter((idx) => idx !== -1);
 
-    const isPoliceBot = policeIndex !== null && botIndexes.includes(policeIndex);
+    const isPoliceBot =
+      policeIndex !== null && botIndexes.includes(policeIndex);
 
     const handleClick = (idx: number) => {
       // Allow click only if the current police is not a bot
@@ -75,9 +76,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
       if (botIndexes.includes(index)) {
         // Bot action with a random delay for Advisor or Thief
         if (role === "Advisor" || role === "Thief") {
-          const timeout = setTimeout(() => {
-            handleClick(index); // Automatically send the index for Advisor or Thief bots
-          }, Math.random() * 2000 + 6000); // Random delay between 6 to 8 seconds
+          const timeout = setTimeout(() => {}, Math.random() * 2000 + 6000); // Random delay between 6 to 8 seconds
 
           return () => clearTimeout(timeout);
         }
@@ -94,15 +93,21 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
           }
         }
       }
-    }, [flipped, botIndexes, index, role, advisorIndex, thiefIndex, handleClick]);
+    }, [
+      flipped,
+      botIndexes,
+      index,
+      role,
+      advisorIndex,
+      thiefIndex,
+      handleClick,
+    ]);
 
     const renderContent = () => {
       if (flipped) {
         if (role === "Police" || role === "King") {
-          // Display the image for Police or King without interaction
           return <Image source={roleImages[role]} style={styles.cardImage} />;
         } else {
-          // For other roles, display image with potential interactivity
           return (
             <TouchableOpacity onPress={() => handleClick(index)}>
               <Image source={roleImages[role]} style={styles.cardImage} />

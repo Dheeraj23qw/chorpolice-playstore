@@ -1,10 +1,5 @@
-import React, { useState } from "react";
-import {
-  View,
-  ImageBackground,
-  ScrollView,
-  Animated,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, ImageBackground, ScrollView, Animated } from "react-native";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
@@ -24,98 +19,70 @@ import useBackHandlerModal from "@/hooks/useBackHandlerModal";
 import CustomModal from "@/modal/CustomModal";
 import CustomButton from "@/components/CustomButton";
 import ScoreTable from "@/modal/ShowTableModal";
+import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+
+// Animation imports
+import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 
 const RajaMantriGameScreen: React.FC = () => {
-  // Select player names from the Redux store and map to an array
   const playerNames = useSelector(selectPlayerNames).map(
     (player) => player.name
   );
 
-  // Custom hook to manage game state and actions
   const {
-    flipAnims, // Animation states for card flipping
-    flippedStates, // States to check if cards are flipped
-    clickedCards, // Track clicked cards
-    message, // Message to display
-    roles, // Roles assigned to players
-    isPlayButtonDisabled, // Flag to disable play button
-    playerScores, // Scores of players of each round
-    round, // Current round number
-    videoIndex, // Index of the video to play
-    isPlaying, // Flag to check if video is playing
-    handlePlay, // Function to handle play button press
-    setIsPlaying, // Function to set playing state
-    handleCardClick, // Function to handle card click
+    flipAnims,
+    flippedStates,
+    clickedCards,
+    message,
+    roles,
+    isPlayButtonDisabled,
+    playerScores,
+    round,
+    videoIndex,
+    isPlaying,
+    handlePlay,
+    setIsPlaying,
+    handleCardClick,
     policeIndex,
     kingIndex,
     advisorIndex,
     thiefIndex,
     popupIndex,
+    isDynamicPopUp,
+    mediaId,
+    mediaType,
+    playerData,
   } = useRajaMantriGame({ playerNames });
 
-  // Use the custom hook to handle back button press and modal
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
     navigateToScreen: "/playerName",
   });
   const [popupTable, setPopupTable] = useState(false);
 
-  // Bouncy effect animation for cards
-  const [bounceAnims] = useState(
-    playerNames.map(() => new Animated.Value(1)) // Initialize bounce animation values for each card
-  );
+  const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
 
   const dispatch = useDispatch();
 
-  // Function to toggle the modal visibility
   const toggleModal = () => {
     setPopupTable(!popupTable);
   };
 
-  // Handle card click and apply bounce animation
+  // Function to handle card click with bounce animation
   const handleCardClickWithBounce = (index: number) => {
-    // Trigger the bounce effect when a card is clicked
-    Animated.sequence([
-      // First bounce: Scale up to 1.2x
-      Animated.spring(bounceAnims[index], {
-        toValue: 1.2, // Scale the card to 1.2x its size
-        friction: 3,  // Friction for the bounce
-        tension: 160, // Tension for the bounce
-        useNativeDriver: true, // Use native driver for better performance
-      }),
-      // Second bounce: Return to normal size (1x)
-      Animated.spring(bounceAnims[index], {
-        toValue: 1,  // Return to normal size
-        friction: 3, // Friction for the bounce
-        tension: 160, // Tension for the bounce
-        useNativeDriver: true, // Use native driver for better performance
-      }),
-    ]).start();
-
-    // Optionally, trigger the flip animation as well
+    bounceAnimation(bounceAnims[index]).start();
     handleCardClick(index);
   };
 
-  // Define combined style for flip and bounce animations
-  const getCardStyle = (index: number) => ({
-    transform: [
-      {
-        rotateY: flipAnims[index].interpolate({
-          inputRange: [0, 1],
-          outputRange: ["0deg", "14400deg"], // Flipping animation
-        }),
-      },
-      {
-        scale: bounceAnims[index], // Apply the bouncy scale transform
-      },
-    ],
-  });
+  // Use flipAndBounceStyle function to combine animations
+  const getCardStyle = (index: number) =>
+    flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
   return (
     <>
       <ScoreTable
         playerNames={playerNames}
         playerScores={playerScores}
-        popupTable={popupTable} // Control modal visibility
+        popupTable={popupTable}
       />
       <CustomModal
         visible={modalVisible}
@@ -134,16 +101,30 @@ const RajaMantriGameScreen: React.FC = () => {
         />
       )}
 
-      <View style={[styles.container]}>
-        {isPlaying ? (
-          // Render video player component if video is playing
-          <Components.VideoPlayerComponent
-            videoIndex={videoIndex}
-            onVideoEnd={() => setIsPlaying(false)}
-          />
-        ) : (
-          <>
-            {/* Background image overlay for the game */}
+      {isDynamicPopUp && (
+        <ImageBackground
+        source={require("../../assets/images/bg/quiz.png")}
+        style={[chorPoliceQuizstyles.imageBackground, { flex: 1}]}
+        resizeMode="cover"
+      >
+        <DynamicOverlayPopUp
+          isPopUp={isDynamicPopUp}
+          mediaId={mediaId}
+          mediaType={mediaType}
+          closeVisibleDelay={3000}
+          playerData={playerData}
+        />
+      </ImageBackground>
+      )}
+
+{!isDynamicPopUp && (
+        <View style={[styles.container]}>
+          {isPlaying ? (
+            <Components.VideoPlayerComponent
+              videoIndex={videoIndex}
+              onVideoEnd={() => setIsPlaying(false)}
+            />
+          ) : (
             <ImageBackground
               source={require("../../assets/images/bg/quiz.png")}
               style={chorPoliceQuizstyles.imageBackground}
@@ -151,7 +132,6 @@ const RajaMantriGameScreen: React.FC = () => {
             >
               <View style={chorPoliceQuizstyles.overlay} />
               <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-                {/* Play button for starting the game */}
                 <Components.PlayButton
                   disabled={isPlayButtonDisabled}
                   onPress={handlePlay}
@@ -159,28 +139,27 @@ const RajaMantriGameScreen: React.FC = () => {
                     isPlayButtonDisabled
                       ? message
                         ? message
-                        : `Round ${round}` // Display round number if button is disabled
-                      : `Press me to play!` // Button text when active
+                        : `Round ${round}`
+                      : `Press me to play!`
                   }
                 />
 
-                {/* Render player cards in two rows */}
                 <View style={styles.cardRow}>
                   {roles.slice(0, 2).map((_, index) => (
                     <Components.PlayerCard
                       key={index}
                       index={index}
-                      role={roles[index]} // Assign role to player card
-                      playerName={playerNames[index]} // Fallback player name
-                      flipped={flippedStates[index]} // Check if card is flipped
-                      clicked={clickedCards[index]} // Check if card is clicked
-                      onClick={() => handleCardClickWithBounce(index)} // Handle card click with bounce
+                      role={roles[index]}
+                      playerName={playerNames[index]}
+                      flipped={flippedStates[index]}
+                      clicked={clickedCards[index]}
+                      onClick={() => handleCardClickWithBounce(index)}
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}
                       advisorIndex={advisorIndex}
                       thiefIndex={thiefIndex}
-                      animatedStyle={getCardStyle(index)} // Apply the combined flip and bounce animation
+                      animatedStyle={getCardStyle(index)}
                     />
                   ))}
                 </View>
@@ -189,17 +168,17 @@ const RajaMantriGameScreen: React.FC = () => {
                     <Components.PlayerCard
                       key={index + 2}
                       index={index + 2}
-                      role={roles[index + 2]} // Assign role to player card
-                      playerName={playerNames[index + 2]} // Fallback player name
-                      flipped={flippedStates[index + 2]} // Check if card is flipped
-                      clicked={clickedCards[index + 2]} // Check if card is clicked
-                      onClick={() => handleCardClickWithBounce(index + 2)} // Handle card click with bounce
+                      role={roles[index + 2]}
+                      playerName={playerNames[index + 2]}
+                      flipped={flippedStates[index + 2]}
+                      clicked={clickedCards[index + 2]}
+                      onClick={() => handleCardClickWithBounce(index + 2)}
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}
                       advisorIndex={advisorIndex}
                       thiefIndex={thiefIndex}
-                      animatedStyle={getCardStyle(index + 2)} // Apply the combined flip and bounce animation
+                      animatedStyle={getCardStyle(index + 2)}
                     />
                   ))}
                 </View>
@@ -214,9 +193,9 @@ const RajaMantriGameScreen: React.FC = () => {
                 </View>
               </ScrollView>
             </ImageBackground>
-          </>
-        )}
-      </View>
+          )}
+        </View>
+      )}
     </>
   );
 };

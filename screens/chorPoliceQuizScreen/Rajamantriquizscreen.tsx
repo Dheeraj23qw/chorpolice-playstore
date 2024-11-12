@@ -14,7 +14,6 @@ import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import { selectPlayerNames } from "@/redux/slices/selectors";
 import { playerNamesArray, PlayerScoresArray } from "@/redux/slices/selectors"; // Adjust the import path as necessary
 import { useSelector } from "react-redux";
-import { PlayerScore } from "@/redux/slices/playerSlice"; // Adjust import as needed
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
 

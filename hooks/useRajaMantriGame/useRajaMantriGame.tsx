@@ -16,11 +16,16 @@ import { resetForNextRound } from "./utils/resetForNextRound";
 import { handlePlayHelper } from "./gameHelper/handleplay";
 import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
+import useRandomMessage from "../useRandomMessage";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
 }
-
+interface PlayerData {
+  image?: string | null;
+  message?: string | null;
+  imageType?: string | null;
+}
 const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const initialFlippedStates = [false, false, false, false];
   const initialClickedCards = [false, false, false, false];
@@ -64,6 +69,28 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [popupIndex, setPopupIndex] = useState<number | null>(null);
   const [firstCardClicked, setFirstCardClicked] = useState<boolean>(false);
 
+  const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
+  const [mediaId, setMediaId] = useState<number>(1);
+  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
+    "image"
+  );
+  const [playerData, setPlayerData] = useState<PlayerData>({
+    image: null,
+    message: null,
+    imageType: null,
+  });
+
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images
+  );
+
+  const selectedImages = useSelector(
+    (state: RootState) => state.player.selectedImages
+  );
+  const playerNamesRedux = useSelector(
+    (state: RootState) => state.player.playerNames
+  );
+
   const router = useRouter();
   const dispatch = useDispatch();
 
@@ -78,8 +105,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
     return () => unsubscribe.remove();
   }, []);
-
-  const playerData = useSelector((state: RootState) => state.player);
 
   useEffect(() => {
     resetGame(
@@ -110,7 +135,18 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     };
   }, [dispatch]);
 
-  //isse se hai matlab
+  const randomMessageWin = useRandomMessage(
+    policeIndex !== null && policeIndex >= 0
+      ? playerNamesRedux[policeIndex]?.name || ""
+      : "",
+    "win"
+  );
+  const randomMessageLose = useRandomMessage(
+    policeIndex !== null && policeIndex >= 0
+      ? playerNamesRedux[policeIndex]?.name || ""
+      : "",
+    "lose"
+  );
 
   const handlePlay = () => {
     dispatch(playSound("select"));
@@ -174,6 +210,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       kingIndex !== null
     ) {
       const playerRole = roles[index];
+      const currentPlayerImage = playerImages[selectedImages[policeIndex]]?.src;
+      const currentPlayerImageType =
+        playerImages[selectedImages[policeIndex]]?.type;
 
       if (playerRole === "Thief" && thiefIndex !== null) {
         handleRevealAllCards();
@@ -183,15 +222,22 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         }, 2000);
 
         setTimeout(() => {
-          setPopupIndex(4);
-          dispatch(playSound("police"));
+          setMediaType("gif");
+          setIsDynamicPopUp(true);
+          setMediaId(4);
+        
+          setPlayerData({
+            image: currentPlayerImage,
+            message: randomMessageWin,
+            imageType: currentPlayerImageType,
+          });
         }, 5000);
 
         updateScore(thiefIndex, 0, round - 1);
         updateScore(policeIndex, 500, round - 1);
         updateScore(advisorIndex, 800, round - 1);
         updateScore(kingIndex, 1000, round - 1);
-        setTimeout(() => resetForNextRoundHandler(), 7000);
+        setTimeout(() => resetForNextRoundHandler(), 8000);
       } else {
         handleRevealAllCards();
 
@@ -199,15 +245,21 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           dispatch(playSound("lose"));
         }, 2000);
         setTimeout(() => {
-          setPopupIndex(3);
-          dispatch(playSound("thief"));
+          setMediaType("gif");
+          setIsDynamicPopUp(true);
+          setMediaId(3);
+          setPlayerData({
+            image: currentPlayerImage,
+            message: randomMessageLose,
+            imageType: currentPlayerImageType,
+          });
         }, 5000);
 
         updateScore(thiefIndex, 500, round - 1);
         updateScore(policeIndex, 0, round - 1);
         updateScore(advisorIndex, 800, round - 1);
         updateScore(kingIndex, 1000, round - 1);
-        setTimeout(() => resetForNextRoundHandler(), 7000);
+        setTimeout(() => resetForNextRoundHandler(), 8000);
       }
 
       if (
@@ -294,7 +346,10 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       calculateTotalScoresHandler,
       router,
       setFirstCardClicked,
-      setAreCardsClickable
+      setAreCardsClickable,
+      setIsDynamicPopUp,
+      setMediaId,
+      setMediaType
     );
   };
 
@@ -324,6 +379,10 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     resetForNextRound,
     isModalVisible,
     popupIndex,
+    isDynamicPopUp,
+    mediaId,
+    mediaType,
+    playerData,
   };
 };
 

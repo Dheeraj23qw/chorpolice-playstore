@@ -1,6 +1,6 @@
 export type MediaItem = {
   id: number;
-  url: string | any; // URL can be a string (remote) or require (local assets)
+  url: string; // URL can be a string (remote) or require (local assets)
   description: string;
 };
 
@@ -8,8 +8,8 @@ export type MediaItem = {
 export const videoData: MediaItem[] = [
 {
   id: 1,
-  url: "https://example.com/video1.mp4", 
-  description: "Exciting Gameplay - Round 1",
+  url: require("@/assets/gif/chorPolicescreen/bot.mp4"), 
+  description: "Thinking... give me a second!",
 },
 {
   id: 2,
@@ -29,6 +29,17 @@ export const gifData: MediaItem[] = [
   id: 2,
   url: require("@/assets/gif/quiz/laugh.gif"), 
   description: "+ 2000 points!",
+},
+
+{
+  id: 3,
+  url: require("@/assets/gif/quiz/weep.gif"),
+  description: "you got 0 points.",
+},
+{
+  id: 4,
+  url: require("@/assets/gif/quiz/laugh.gif"), 
+  description: "you got 500 points!",
 },
 ];
 

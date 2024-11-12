@@ -76,7 +76,7 @@ export const playerNameStyles = StyleSheet.create({
     backgroundColor: "#7653ec",
     paddingVertical: responsiveHeight(2.7),
     paddingHorizontal: responsiveWidth(10),
-    borderRadius: 45,
+    borderRadius: 35,
     margin: 20,
     alignItems: "center",
     justifyContent: "center",
@@ -85,6 +85,8 @@ export const playerNameStyles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
+    borderColor:"#FFD700",
+    borderWidth:3
   },
   startGameButtonText: {
     color: "#FFD700",

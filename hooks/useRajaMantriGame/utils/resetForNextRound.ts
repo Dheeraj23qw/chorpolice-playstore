@@ -23,9 +23,12 @@ export const resetForNextRound = (
   calculateTotalScores: () => void,
   router: Router,
   setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
-  setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>
+  setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>,
+  setIsDynamicPopUp:React.Dispatch<React.SetStateAction<boolean>>,
+  setMediaId:React.Dispatch<React.SetStateAction<number>>,
+  setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif">>
 ) => {
-  if (round == 1) {
+  if (round == 7) {
     dispatch(playSound("next"));
     calculateTotalScores();
     setTimeout(() => {
@@ -47,6 +50,9 @@ export const resetForNextRound = (
     setPoliceIndex(null);
     setFirstCardClicked(false);
     setAreCardsClickable(false);
+    setIsDynamicPopUp(false);
+    setMediaId(1);
+    setMediaType("image");
     dispatch(playSound("next"));
   }
 };
