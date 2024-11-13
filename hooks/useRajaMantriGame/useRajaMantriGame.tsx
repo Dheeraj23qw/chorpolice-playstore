@@ -79,7 +79,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     message: null,
     imageType: null,
   });
-
+  const [isRoundStartPopupVisible, setIsRoundStartPopupVisible] = useState(false);
+  const [roundStartMessage, setRoundStartMessage] = useState("");
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
   );
@@ -147,31 +148,43 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       : "",
     "lose"
   );
+  const handlesetRoundStartMessage=()=>{
+    setRoundStartMessage("Round " + round + " starts!");
+    setIsRoundStartPopupVisible(true);
+    setTimeout(() => {
+      setIsRoundStartPopupVisible(false);
+    }, 3000);
+  }
 
   const handlePlay = () => {
-    dispatch(playSound("select"));
-    handlePlayHelper(
-      dispatch,
-      playerNames,
-      setSelectedPlayer,
-      setIsPlayButtonDisabled,
-      setRoles,
-      setPoliceIndex,
-      setKingIndex,
-      setAdvisorIndex,
-      setThiefIndex,
-      setPolicePlayerName,
-      flipCard,
-      setAreCardsClickable,
-      setRound,
-      resetForNextRoundHandler,
-      flipAnims,
-      flippedStates,
-      roles,
-      clickedCards,
-      setFlippedStates,
-      setPopupIndex
-    );
+    handlesetRoundStartMessage()
+    setTimeout(() => {
+      dispatch(playSound("select"));
+      handlePlayHelper(
+        dispatch,
+        playerNames,
+        setSelectedPlayer,
+        setIsPlayButtonDisabled,
+        setRoles,
+        setPoliceIndex,
+        setKingIndex,
+        setAdvisorIndex,
+        setThiefIndex,
+        setPolicePlayerName,
+        flipCard,
+        setAreCardsClickable,
+        setRound,
+        resetForNextRoundHandler,
+        flipAnims,
+        flippedStates,
+        roles,
+        clickedCards,
+        setFlippedStates,
+        setPopupIndex
+      );
+    }, 1000);
+    
+  
   };
 
   // koi matlab nhi isse
@@ -349,7 +362,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setAreCardsClickable,
       setIsDynamicPopUp,
       setMediaId,
-      setMediaType
+      setMediaType,
+      // setIsRoundStartPopupVisible
     );
   };
 
@@ -383,6 +397,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     mediaId,
     mediaType,
     playerData,
+    isRoundStartPopupVisible, 
+    roundStartMessage,
   };
 };
 

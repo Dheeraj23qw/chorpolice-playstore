@@ -18,6 +18,9 @@ interface OverlayPopUpProps {
   advisorIndex: number | null;
   thiefIndex: number | null;
   kingIndex: number | null;
+  displayDuration?: number;
+  contentType?: "default" | "textOnly";
+  customMessage?: string | null;
 }
 
 const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
@@ -26,6 +29,9 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
   advisorIndex,
   thiefIndex,
   kingIndex,
+  displayDuration = 2000, // Default to 2 seconds if not provided
+  contentType = "default", // Default content type
+  customMessage
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState<{
@@ -34,11 +40,11 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
     image: any;
     roleMessage: string;
   } | null>(null);
-  const [canClose, setCanClose] = useState(false); // State to control if the modal can be closed
+  const [showTapToClose, setShowTapToClose] = useState(false);
 
   const scaleAnim = useState(new Animated.Value(0))[0];
   const opacityAnim = useState(new Animated.Value(0))[0];
-  const closeButtonOpacity = useState(new Animated.Value(0))[0];
+  const tapToCloseAnim = useState(new Animated.Value(0))[0]; // For "Tap to close" opacity
 
   const playerNames = useSelector(selectPlayerNames).map(
     (player) => player.name
@@ -46,24 +52,15 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
   const kingName = kingIndex !== null ? playerNames[kingIndex] : "King";
   const policeName = policeIndex !== null ? playerNames[policeIndex] : "Police";
-  const advisorName =
-    advisorIndex !== null ? playerNames[advisorIndex] : "Advisor";
+  const advisorName = advisorIndex !== null ? playerNames[advisorIndex] : "Advisor";
   const thiefName = thiefIndex !== null ? playerNames[thiefIndex] : "Thief";
 
   useEffect(() => {
+    // Initialize animations and reset tap-to-close visibility
     scaleAnim.setValue(0);
     opacityAnim.setValue(0);
-    closeButtonOpacity.setValue(0); // Reset close button opacity
-    setCanClose(false);
-
-    const timeout = setTimeout(() => {
-      Animated.timing(closeButtonOpacity, {
-        toValue: 1, // Fade-in effect for close button
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-      setCanClose(true);
-    }, 3000);
+    tapToCloseAnim.setValue(0); // Reset "Tap to close" opacity
+    setShowTapToClose(false);
 
     if (index >= 1 && index <= data.length) {
       const selectedItem = data[index - 1];
@@ -94,27 +91,65 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
       setModalVisible(true);
 
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 900,
-        useNativeDriver: true,
-      }).start();
+      // Start entry animations
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
 
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }).start();
+      // Set a timer to show "Tap to close" after the display duration
+      const showTapTimer = setTimeout(() => {
+        setShowTapToClose(true);
+        // Animate "Tap to close" text visibility
+        Animated.timing(tapToCloseAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }, displayDuration);
+
+      // Set a timer to close the popup automatically after the display duration + buffer time
+      const closeTimer = setTimeout(() => {
+        closeModal();
+      }, displayDuration + 1000); // Add buffer time for "Tap to close" message visibility
+
+      return () => {
+        clearTimeout(showTapTimer);
+        clearTimeout(closeTimer);
+      };
     } else {
       setModalVisible(false);
     }
+  }, [index, displayDuration]);
 
-    return () => clearTimeout(timeout);
-  }, [index]);
+  // Function to close the modal after the timer expires
+  const closeModal = () => {
+    Animated.parallel([
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setModalVisible(false));
+  };
 
-  const handleCloseModal = () => {
-    if (canClose) {
-      setModalVisible(false);
+  // Handle screen tap to close modal after timeout
+  const handleScreenTap = () => {
+    if (showTapToClose) {
+      closeModal();
     }
   };
 
@@ -125,9 +160,9 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
       visible={modalVisible}
       transparent={true}
       animationType="fade"
-      onRequestClose={handleCloseModal}
+      onRequestClose={() => {}}
     >
-      <TouchableWithoutFeedback onPress={handleCloseModal}>
+      <TouchableWithoutFeedback onPress={handleScreenTap}>
         <View style={styles.overlay}>
           <Animated.View
             style={[
@@ -138,27 +173,30 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
               },
             ]}
           >
-            <Text style={styles.message}>{modalData.message}</Text>
-
-            <Text style={styles.roleMessage}>{modalData.roleMessage}</Text>
-
-            <Image
-              source={modalData.image}
-              style={styles.image}
-              resizeMode="contain"
-            />
-            {modalData.point && (
-              <Text style={styles.point}>{modalData.point}</Text>
+            {contentType === "textOnly" ? (
+              // Render text-only content
+              <Text style={styles.message}> {customMessage}</Text>
+            ) : (
+              // Render full content (default)
+              <>
+                <Text style={styles.message}>{modalData.message}</Text>
+                <Text style={styles.roleMessage}>{modalData.roleMessage}</Text>
+                <Image
+                  source={modalData.image}
+                  style={styles.image}
+                  resizeMode="contain"
+                />
+                {modalData.point && (
+                  <Text style={styles.point}>{modalData.point}</Text>
+                )}
+              </>
             )}
 
-            <Animated.Text
-              style={[
-                styles.tapToClose,
-                { opacity: closeButtonOpacity }, // Control visibility with opacity
-              ]}
-            >
-              Tap to close
-            </Animated.Text>
+            {showTapToClose && (
+              <Animated.View style={{ opacity: tapToCloseAnim }}>
+                <Text style={styles.tapToClose}>Tap to close</Text>
+              </Animated.View>
+            )}
           </Animated.View>
         </View>
       </TouchableWithoutFeedback>

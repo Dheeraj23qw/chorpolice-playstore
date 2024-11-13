@@ -52,6 +52,8 @@ const RajaMantriGameScreen: React.FC = () => {
     mediaId,
     mediaType,
     playerData,
+    isRoundStartPopupVisible,
+    roundStartMessage,
   } = useRajaMantriGame({ playerNames });
 
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
@@ -98,26 +100,46 @@ const RajaMantriGameScreen: React.FC = () => {
           kingIndex={kingIndex}
           advisorIndex={advisorIndex}
           thiefIndex={thiefIndex}
+          displayDuration={3000}
         />
       )}
+      {isRoundStartPopupVisible && (
+        <OverlayPopUp
+          index={1} // or you can set a static index if needed
+          policeIndex={policeIndex}
+          kingIndex={kingIndex}
+          advisorIndex={advisorIndex}
+          thiefIndex={thiefIndex}
+          displayDuration={3000}
+          contentType="textOnly"
+          customMessage={roundStartMessage}
+        />
+      )}
+
+      {/* {isRoundStartPopupVisible && (
+  <OverlayPopUp
+   
+    contentType="textOnly"
+    customMessage={roundStartMessage}
+  /> */}
 
       {isDynamicPopUp && (
         <ImageBackground
-        source={require("../../assets/images/bg/quiz.png")}
-        style={[chorPoliceQuizstyles.imageBackground, { flex: 1}]}
-        resizeMode="cover"
-      >
-        <DynamicOverlayPopUp
-          isPopUp={isDynamicPopUp}
-          mediaId={mediaId}
-          mediaType={mediaType}
-          closeVisibleDelay={3000}
-          playerData={playerData}
-        />
-      </ImageBackground>
+          source={require("../../assets/images/bg/quiz.png")}
+          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
+          resizeMode="cover"
+        >
+          <DynamicOverlayPopUp
+            isPopUp={isDynamicPopUp}
+            mediaId={mediaId}
+            mediaType={mediaType}
+            closeVisibleDelay={3000}
+            playerData={playerData}
+          />
+        </ImageBackground>
       )}
 
-{!isDynamicPopUp && (
+      {!isDynamicPopUp && (
         <View style={[styles.container]}>
           {isPlaying ? (
             <Components.VideoPlayerComponent
