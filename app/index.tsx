@@ -8,7 +8,7 @@ import {
   playSound,
   stopQuizSound,
   unloadSounds,
-} from "@/redux/slices/soundSlice";
+} from "@/redux/reducers/soundReducer";
 import VideoPlayerComponent from '@/components/RajamantriGameScreen/videoPlayer';
 
 export default function Index() {

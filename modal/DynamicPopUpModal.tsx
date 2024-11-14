@@ -12,22 +12,8 @@ import { Video, ResizeMode } from "expo-av";
 import { videoData, gifData, imageData } from "@/constants/DynamicPopUpData";
 import { styles } from "@/modal/_styles/DynamicOverlayPopCSS";
 import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/quizStyle";
-import { useDispatch } from "react-redux";
+import { OverlayPopUpProps, PlayerData } from "@/types/models/DynamicpopUpModal";
 
-interface PlayerData {
-  image?: any;
-  name?: string | null;
-  message?: any;
-  imageType?: any;
-}
-
-interface OverlayPopUpProps {
-  isPopUp: boolean;
-  mediaId: number;
-  mediaType: "image" | "video" | "gif";
-  playerData?: PlayerData;
-  closeVisibleDelay: number; // Time in milliseconds before "Tap to Close" becomes visible
-}
 
 const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   isPopUp,

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { styles } from "@/screens/RajaMantriGameScreen/styles";
-import { selectSelectedImages } from "@/redux/slices/selectors";
+import { selectSelectedImages } from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
 
 interface PlayerCardProps {

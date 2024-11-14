@@ -11,8 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import ScoreTable from "@/modal/ShowTableModal";
 import { RootState } from "@/redux/store";
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
-import { selectPlayerNames } from "@/redux/slices/selectors";
-import { playerNamesArray, PlayerScoresArray } from "@/redux/slices/selectors"; // Adjust the import path as necessary
+import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
+import { playerNamesArray, PlayerScoresArray } from "@/redux/selectors/playerDataSelector"; // Adjust the import path as necessary
 import { useSelector } from "react-redux";
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();

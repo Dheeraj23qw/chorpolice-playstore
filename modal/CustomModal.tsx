@@ -1,20 +1,8 @@
 import React, { useCallback, useEffect, useRef, memo } from 'react';
 import { Modal, Text, Pressable, View, Animated } from 'react-native';
 import { playerNameStyles } from '@/screens/playerNameScreen/playerNameCss';
+import { CustomModalProps } from '@/types/models/CustomModal';
 
-interface CustomModalButtonProps {
-  text: string;
-  onPress: () => void;
-}
-
-interface CustomModalProps {
-  visible: boolean;
-  onClose: () => void;
-  title: string;
-  content: string;
-  buttons: CustomModalButtonProps[];
-  children?: React.ReactNode; // Optional children prop if you need to pass custom content
-}
 
 const CustomModal: React.FC<CustomModalProps> = ({
   visible,

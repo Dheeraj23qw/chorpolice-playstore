@@ -3,7 +3,7 @@ import { View, ImageBackground, ScrollView, Animated } from "react-native";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
-import { selectPlayerNames } from "@/redux/slices/selectors";
+import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 
 // Hooks
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";

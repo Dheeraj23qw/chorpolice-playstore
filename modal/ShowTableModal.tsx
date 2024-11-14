@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Text, View, TouchableWithoutFeedback } from "react-native";
-import { styles} from"@/modal/_styles/showTableCSS";
-import { playSound } from "@/redux/slices/soundSlice";
+import { styles } from "@/modal/_styles/showTableCSS";
 import { useDispatch } from "react-redux";
+import { playSound } from "@/redux/reducers/soundReducer";
+import { ScoreTableProps } from "@/types/models/ScoreTableModal";
 
-interface ScoreTableProps {
-  playerNames: string[];
-  playerScores: Array<{ playerName: string; scores: number[] }>;
-  popupTable?: boolean; // Used to control whether the modal is shown
-}
-
-const ScoreTable: React.FC<ScoreTableProps> = ({ playerNames, playerScores, popupTable = false }) => {
+const ScoreTable: React.FC<ScoreTableProps> = ({
+  playerNames,
+  playerScores,
+  popupTable = false,
+}) => {
   const [isModalVisible, setIsModalVisible] = useState(popupTable);
   const maxRounds = 7;
   const dispatch = useDispatch();
 
   // Use useEffect to open or close the modal when popupTable changes
   useEffect(() => {
-    dispatch(playSound("select"))
+    dispatch(playSound("select"));
 
     setIsModalVisible(popupTable);
-  }, [popupTable,dispatch]);
+  }, [popupTable, dispatch]);
 
   // Function to handle modal close
   const handleModalClose = () => {
@@ -53,9 +52,14 @@ const ScoreTable: React.FC<ScoreTableProps> = ({ playerNames, playerScores, popu
             {Array.from({ length: maxRounds }, (_, rowIndex) => (
               <View key={`row-${rowIndex}`} style={styles.tableRow}>
                 {playerScores.map((player, index) => (
-                  <View key={`cell-${index}-${rowIndex}`} style={styles.tableCell}>
+                  <View
+                    key={`cell-${index}-${rowIndex}`}
+                    style={styles.tableCell}
+                  >
                     <Text style={styles.cellText}>
-                      {player.scores[rowIndex] !== undefined ? player.scores[rowIndex] : '-'}
+                      {player.scores[rowIndex] !== undefined
+                        ? player.scores[rowIndex]
+                        : "-"}
                     </Text>
                   </View>
                 ))}

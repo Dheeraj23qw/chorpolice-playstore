@@ -13,13 +13,9 @@ import {
 import * as StoreReview from "expo-store-review"; // Import expo-store-review
 
 import { style } from "@/modal/_styles/ratingModalCSS";
+import { CustomRatingModalProps } from "@/types/models/RatingModal";
 
-interface CustomRatingModalProps {
-  visible: boolean;
-  onClose: () => void;
-  title: string;
-  description?: string;
-}
+
 
 const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
   visible,

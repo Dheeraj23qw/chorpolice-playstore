@@ -10,18 +10,8 @@ import {
 import { styles } from "@/modal/_styles/overlaypopCSS";
 import { data } from "@/constants/popupData";
 import { useSelector } from "react-redux";
-import { selectPlayerNames } from "@/redux/slices/selectors";
-
-interface OverlayPopUpProps {
-  index: number;
-  policeIndex: number | null;
-  advisorIndex: number | null;
-  thiefIndex: number | null;
-  kingIndex: number | null;
-  displayDuration?: number;
-  contentType?: "default" | "textOnly";
-  customMessage?: string | null;
-}
+import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
+import { OverlayPopUpProps } from "@/types/models/OverlayPop";
 
 const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
   index,
@@ -31,7 +21,7 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
   kingIndex,
   displayDuration = 2000, // Default to 2 seconds if not provided
   contentType = "default", // Default content type
-  customMessage
+  customMessage,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState<{
@@ -52,7 +42,8 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
   const kingName = kingIndex !== null ? playerNames[kingIndex] : "King";
   const policeName = policeIndex !== null ? playerNames[policeIndex] : "Police";
-  const advisorName = advisorIndex !== null ? playerNames[advisorIndex] : "Advisor";
+  const advisorName =
+    advisorIndex !== null ? playerNames[advisorIndex] : "Advisor";
   const thiefName = thiefIndex !== null ? playerNames[thiefIndex] : "Thief";
 
   useEffect(() => {
