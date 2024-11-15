@@ -5,10 +5,10 @@ import {
   setPlayerNames,
   setSelectedImages,
   setGameMode,
-} from "@/redux/slices/playerSlice";
-import { playSound } from "@/redux/slices/soundSlice";
+} from "@/redux/reducers/playerReducer";
+import { playSound } from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
-import { GameMode } from "@/redux/slices/playerSlice";
+import { GameMode } from "@/types/redux/reducers";
 
 const MAX_SELECTED_IMAGES = 4;
 const MAX_NAME_LENGTH = 8;

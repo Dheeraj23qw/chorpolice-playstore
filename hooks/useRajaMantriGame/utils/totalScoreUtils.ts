@@ -1,5 +1,5 @@
 import { Dispatch } from "redux";
-import { updatePlayerScores, updateScoresByRound } from "@/redux/slices/playerSlice";
+import { updatePlayerScores, updateScoresByRound } from "@/redux/reducers/playerReducer";
 
 interface PlayerScore {
   playerName: string;

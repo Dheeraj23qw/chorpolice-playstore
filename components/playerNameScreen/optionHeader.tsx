@@ -7,8 +7,7 @@ import * as Application from "expo-application"; // Import the expo-application 
 // Assuming your custom modal component is imported here
 import CustomRatingModal from "@/modal/RatingModal";
 import { useDispatch } from "react-redux";
-import { stopQuizSound } from "@/redux/slices/soundSlice";
-import { playSound } from "@/redux/slices/soundSlice";
+import { stopQuizSound, playSound } from "@/redux/reducers/soundReducer";
 import { useRouter } from "expo-router";
 
 interface IonicOptions {

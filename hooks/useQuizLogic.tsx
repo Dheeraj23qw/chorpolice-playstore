@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
-import { updatePlayerScores, resetGame } from "@/redux/slices/playerSlice";
+import { updatePlayerScores, resetGame } from "@/redux/reducers/playerReducer";
 import { BackHandler } from "react-native";
-import { playSound } from "@/redux/slices/soundSlice";
+import { playSound } from "@/redux/reducers/soundReducer";
 import useRandomMessage from "@/hooks/useRandomMessage";
 
 const useQuizLogic = (router: any) => {

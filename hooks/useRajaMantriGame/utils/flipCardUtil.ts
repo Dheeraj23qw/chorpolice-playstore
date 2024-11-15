@@ -1,7 +1,7 @@
 // flipCardUtil.ts
 import { Animated } from "react-native";
 import { Dispatch, SetStateAction } from "react";
-import { playSound } from "@/redux/slices/soundSlice";
+import { playSound } from "@/redux/reducers/soundReducer";
 import { AppDispatch } from "@/redux/store";
 export const flipCard = (
   index: number,

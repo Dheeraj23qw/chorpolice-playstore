@@ -1,4 +1,4 @@
-import { playSound } from "@/redux/slices/soundSlice";
+import { playSound } from "@/redux/reducers/soundReducer";
 import { AppDispatch } from "@/redux/store";
 import { shuffleArray } from "../utils/suffleArrayUtils";
 import { Dispatch, SetStateAction } from "react";

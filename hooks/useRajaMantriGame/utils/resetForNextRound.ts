@@ -1,6 +1,6 @@
 import { Animated } from "react-native";
 import { AppDispatch } from "@/redux/store";
-import { playSound } from "@/redux/slices/soundSlice";
+import { playSound } from "@/redux/reducers/soundReducer";
 import { Router } from "expo-router";
 
 export const resetForNextRound = (

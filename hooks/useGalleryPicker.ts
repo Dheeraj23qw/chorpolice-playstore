@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { useDispatch } from "react-redux";
-import { addImage } from "@/redux/slices/dynamicImagesSlice";
+import { addImage } from "@/redux/reducers/dynamicImagesReducer";
 
 const useGalleryPicker = () => {
   const dispatch = useDispatch();
