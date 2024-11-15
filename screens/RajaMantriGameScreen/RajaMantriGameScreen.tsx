@@ -69,15 +69,13 @@ const RajaMantriGameScreen: React.FC = () => {
     setPopupTable(!popupTable);
   };
 
-  // Function to handle card click with bounce animation
-  const handleCardClickWithBounce = (index: number) => {
-    bounceAnimation(bounceAnims[index]).start();
-    handleCardClick(index);
-  };
+  
+ // Function to handle card click with bounce animation
+ const handleCardClickWithBounce = (index: number) => {
+  bounceAnimation(bounceAnims[index]).start();
+};
+  const getCardStyle = (index: number) => flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
-  // Use flipAndBounceStyle function to combine animations
-  const getCardStyle = (index: number) =>
-    flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
   return (
     <>
@@ -175,7 +173,9 @@ const RajaMantriGameScreen: React.FC = () => {
                       playerName={playerNames[index]}
                       flipped={flippedStates[index]}
                       clicked={clickedCards[index]}
-                      onClick={() => handleCardClickWithBounce(index)}
+                      onClick={handleCardClick}
+                      onBounceEffect={()=>handleCardClickWithBounce(index)}  // new handler
+
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}
@@ -194,7 +194,8 @@ const RajaMantriGameScreen: React.FC = () => {
                       playerName={playerNames[index + 2]}
                       flipped={flippedStates[index + 2]}
                       clicked={clickedCards[index + 2]}
-                      onClick={() => handleCardClickWithBounce(index + 2)}
+                      onClick={handleCardClick}
+                      onBounceEffect={()=>handleCardClickWithBounce(index+2)}  // new handler
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}

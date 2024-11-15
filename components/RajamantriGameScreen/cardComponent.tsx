@@ -9,8 +9,12 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { styles } from "@/screens/RajaMantriGameScreen/styles";
-import { selectSelectedImages } from "@/redux/selectors/playerDataSelector";
+import {
+  playerNamesArray,
+  selectSelectedImages,
+} from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
+import { bounceAnimation } from "@/Animations/animation";
 
 interface PlayerCardProps {
   index: number;
@@ -25,6 +29,7 @@ interface PlayerCardProps {
   advisorIndex: number | null;
   thiefIndex: number | null;
   kingIndex: number | null;
+  onBounceEffect:(index:number) => void;
 }
 
 const roleImages: { [key: string]: any } = {
@@ -50,10 +55,16 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
     policeIndex,
     advisorIndex,
     thiefIndex,
+    onBounceEffect
   }) => {
     const selectedImages = useSelector(selectSelectedImages);
     const playerImages = useSelector(
       (state: RootState) => state.playerImages.images
+    );
+    // Set up an animated value for the animation
+    const playerNames = useSelector(playerNamesArray);
+    const [bounceAnims] = useState(
+      playerNames.map(() => new Animated.Value(1))
     );
 
     const playerData = useSelector((state: RootState) => state.player);
@@ -66,12 +77,12 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
 
     const handleClick = (idx: number) => {
       // Allow click only if the current police is not a bot
+      onBounceEffect(index)
       if (!isPoliceBot) {
         onClick(idx);
       }
     };
 
-    // Automatic response for bots with "Advisor" or "Thief" role
     useEffect(() => {
       if (botIndexes.includes(index)) {
         // Bot action with a random delay for Advisor or Thief
@@ -140,7 +151,12 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
         onPress={() => handleClick(index)}
         disabled={flipped || clicked || botIndexes.includes(index)}
       >
-        <Animated.View style={[styles.card, animatedStyle]}>
+        <Animated.View
+          style={[
+            styles.card,
+            animatedStyle, // Apply the passed animatedStyle
+          ]}
+        >
           {renderContent()}
         </Animated.View>
       </TouchableOpacity>

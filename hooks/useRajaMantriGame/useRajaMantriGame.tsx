@@ -17,6 +17,7 @@ import { handlePlayHelper } from "./gameHelper/handleplay";
 import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
+import { bounceAnimation } from "@/Animations/animation";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
@@ -204,6 +205,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   //isse se hai matlab
   const handleCardClick = (index: number) => {
+
     dispatch(playSound("select"));
     if (
       !areCardsClickable ||

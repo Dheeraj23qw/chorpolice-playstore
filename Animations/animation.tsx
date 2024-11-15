@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Image, Text, ImageSourcePropType, TextStyle, ImageStyle, ViewStyle } from "react-native";
+import { Animated, Image, Text, ImageSourcePropType, TextStyle, ImageStyle, ViewStyle, Easing } from "react-native";
 
 // TypeScript Prop Types for Image and Text Animation Components
 interface ImageAnimationProps {
@@ -135,14 +135,14 @@ export const WobbleText: React.FC<TextAnimationProps> = ({ children, style }) =>
 export const bounceAnimation = (animValue: Animated.Value) => {
   return Animated.sequence([
     Animated.spring(animValue, {
-      toValue: 1.1,
-      friction: 4,
+      toValue: 1.17,
+      friction: 5,
       tension: 160,
       useNativeDriver: true,
     }),
     Animated.spring(animValue, {
       toValue: 1,
-      friction: 4,
+      friction: 5,
       tension: 160,
       useNativeDriver: true,
     }),
@@ -163,3 +163,19 @@ export const flipAndBounceStyle = (flipAnim: Animated.Value, bounceAnim: Animate
     },
   ],
 });
+export const cardAnimation = (animatedValue: Animated.Value) => {
+  Animated.sequence([
+    Animated.spring(animatedValue, {
+      toValue: 1.2, // Scale up to 1.2x size
+      friction: 4,  // Lower friction for a bouncier effect
+      tension: 100, // Higher tension for a more rigid bounce
+      useNativeDriver: true,  // This is important to improve performance
+    }),
+    Animated.spring(animatedValue, {
+      toValue: 1, // Return to original size
+      friction: 4,
+      tension: 100,
+      useNativeDriver: true,
+    }),
+  ]).start();
+};
