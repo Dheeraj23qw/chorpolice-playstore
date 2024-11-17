@@ -17,7 +17,6 @@ import { handlePlayHelper } from "./gameHelper/handleplay";
 import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
-import { bounceAnimation } from "@/Animations/animation";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
@@ -59,7 +58,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   >(
     playerNames.map((name) => ({
       playerName: name,
-      scores: Array.from({ length: 10 }, () => 0),
+      scores: [],
     }))
   );
   const [round, setRound] = useState<number>(1);
@@ -69,7 +68,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [popupIndex, setPopupIndex] = useState<number | null>(null);
   const [firstCardClicked, setFirstCardClicked] = useState<boolean>(false);
-
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
   const [mediaId, setMediaId] = useState<number>(1);
   const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
@@ -80,11 +78,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     message: null,
     imageType: null,
   });
-  const [isRoundStartPopupVisible, setIsRoundStartPopupVisible] = useState(false);
+  const [isRoundStartPopupVisible, setIsRoundStartPopupVisible] =
+    useState(false);
   const [roundStartMessage, setRoundStartMessage] = useState("");
-
-
-
 
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
@@ -96,6 +92,10 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const playerNamesRedux = useSelector(
     (state: RootState) => state.player.playerNames
   );
+  const playerInfo = useSelector((state: RootState) => state.player);
+  const botIndexes = playerInfo.playerNames
+    .map((player, idx) => (player.isBot ? idx : -1))
+    .filter((idx) => idx !== -1);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -110,6 +110,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       handleBackButton
     );
     return () => unsubscribe.remove();
+
+  
   }, []);
 
   useEffect(() => {
@@ -153,16 +155,16 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       : "",
     "lose"
   );
-  const handlesetRoundStartMessage=()=>{
+  const handlesetRoundStartMessage = () => {
     setRoundStartMessage("Round " + round + " starts!");
     setIsRoundStartPopupVisible(true);
     setTimeout(() => {
       setIsRoundStartPopupVisible(false);
     }, 3000);
-  }
+  };
 
   const handlePlay = () => {
-    handlesetRoundStartMessage()
+    handlesetRoundStartMessage();
     setTimeout(() => {
       dispatch(playSound("select"));
       handlePlayHelper(
@@ -185,14 +187,13 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         roles,
         clickedCards,
         setFlippedStates,
-        setPopupIndex
+        setPopupIndex,
+        playerInfo
+ 
       );
     }, 1000);
-    
-  
   };
 
-  // koi matlab nhi isse
   const updateScore = (
     playerIndex: number,
     newScore: number,
@@ -205,7 +206,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   //isse se hai matlab
   const handleCardClick = (index: number) => {
-
     dispatch(playSound("select"));
     if (
       !areCardsClickable ||
@@ -244,7 +244,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           setMediaType("gif");
           setIsDynamicPopUp(true);
           setMediaId(4);
-        
+
           setPlayerData({
             image: currentPlayerImage,
             message: randomMessageWin,
@@ -368,7 +368,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setAreCardsClickable,
       setIsDynamicPopUp,
       setMediaId,
-      setMediaType,
+      setMediaType
       // setIsRoundStartPopupVisible
     );
   };
@@ -403,7 +403,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     mediaId,
     mediaType,
     playerData,
-    isRoundStartPopupVisible, 
+    isRoundStartPopupVisible,
     roundStartMessage,
   };
 };

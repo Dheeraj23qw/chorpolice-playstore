@@ -3,7 +3,7 @@ import { View, ImageBackground, ScrollView, Animated } from "react-native";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
-import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
+import { selectPlayerNames, selectSelectedImages } from "@/redux/selectors/playerDataSelector";
 
 // Hooks
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
@@ -23,6 +23,8 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 
 // Animation imports
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
+import { RootState } from "@/redux/store";
+import { setIsThinking } from "@/redux/reducers/botReducer";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
@@ -62,20 +64,33 @@ const RajaMantriGameScreen: React.FC = () => {
   const [popupTable, setPopupTable] = useState(false);
 
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
-
   const dispatch = useDispatch();
 
   const toggleModal = () => {
     setPopupTable(!popupTable);
   };
-
   
- // Function to handle card click with bounce animation
- const handleCardClickWithBounce = (index: number) => {
-  bounceAnimation(bounceAnims[index]).start();
-};
-  const getCardStyle = (index: number) => flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
+  const isBotThinking = useSelector((state: RootState) => state.bot.isThinking);
+  const selectedImages = useSelector(selectSelectedImages);
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images
+  );
+  // Function to handle card click with bounce animation
+  const handleCardClickWithBounce = (index: number) => {
+    bounceAnimation(bounceAnims[index]).start();
+  };
+  const getCardStyle = (index: number) =>
+    flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
+  // Set isBotThinking to false after 4 seconds
+  useEffect(() => {
+    if (isBotThinking) {
+      const timer = setTimeout(() => {
+        dispatch(setIsThinking(false));
+      }, 7200);
+      return () => clearTimeout(timer); // Cleanup timer
+    }
+  }, [isBotThinking, dispatch]);
 
   return (
     <>
@@ -113,13 +128,27 @@ const RajaMantriGameScreen: React.FC = () => {
           customMessage={roundStartMessage}
         />
       )}
+      {isBotThinking && policeIndex!=null && (
+       <ImageBackground
+       source={require("../../assets/images/bg/quiz.png")}
+       style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
+       resizeMode="cover"
+     >
+       <DynamicOverlayPopUp
+         isPopUp={isBotThinking}
+         mediaId={5}
+         mediaType={"gif"}
+         closeVisibleDelay={7300}
+         playerData={{
+          image: playerImages[selectedImages[policeIndex]]?.src,
+          imageType:playerImages[selectedImages[policeIndex]]?.type
+         }
+         
+         }
 
-      {/* {isRoundStartPopupVisible && (
-  <OverlayPopUp
-   
-    contentType="textOnly"
-    customMessage={roundStartMessage}
-  /> */}
+       />
+     </ImageBackground>
+      )}
 
       {isDynamicPopUp && (
         <ImageBackground
@@ -174,8 +203,7 @@ const RajaMantriGameScreen: React.FC = () => {
                       flipped={flippedStates[index]}
                       clicked={clickedCards[index]}
                       onClick={handleCardClick}
-                      onBounceEffect={()=>handleCardClickWithBounce(index)}  // new handler
-
+                      onBounceEffect={() => handleCardClickWithBounce(index)} // new handler
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}
@@ -195,13 +223,16 @@ const RajaMantriGameScreen: React.FC = () => {
                       flipped={flippedStates[index + 2]}
                       clicked={clickedCards[index + 2]}
                       onClick={handleCardClick}
-                      onBounceEffect={()=>handleCardClickWithBounce(index+2)}  // new handler
+                      onBounceEffect={() =>
+                        handleCardClickWithBounce(index + 2)
+                      } // new handler
                       roles={roles}
                       policeIndex={policeIndex}
                       kingIndex={kingIndex}
                       advisorIndex={advisorIndex}
                       thiefIndex={thiefIndex}
                       animatedStyle={getCardStyle(index + 2)}
+
                     />
                   ))}
                 </View>

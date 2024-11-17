@@ -67,13 +67,10 @@ const BotScreen: React.FC = () => {
     { label: "Choose your Avatar", value: "player-Avatar" },
   ];
 
-  // Add "Upload from Gallery" option if an avatar option is selected
-  const additionalOption = selectedOption
-    ? [{ label: "Upload from Gallery", value: "gallery" }]
-    : [];
+
 
   // Check if the image grid should be shown
-  const showImageGrid = selectedOption && additionalOption.length > 0;
+  const showImageGrid = selectedOption ;
 
   // Function to handle option change and show loading
   const handleOptionChange = (option: string | null) => {
@@ -124,7 +121,7 @@ const BotScreen: React.FC = () => {
               selectedOption={selectedOption}
               setSelectedOption={handleOptionChange} // Pass the handler for option change
               pickImage={pickImage}
-              options={[...options, ...additionalOption]} // Combine options here
+              options={[...options]} // Combine options here
             />
             {/* Loading Indicator */}
             {loading && (
@@ -141,7 +138,7 @@ const BotScreen: React.FC = () => {
                     <Components.ImageGrid
                       selectedImages={selectedImages}
                       handleImageSelect={handleImageSelect}
-                      imagesPerRow={36}
+                      imagesPerRow={10}
                       isBot={true}
                       gameMode="OFFLINE_WITH_BOTS"
                     />
@@ -150,7 +147,7 @@ const BotScreen: React.FC = () => {
                       <Components.ImageGrid
                         selectedImages={selectedImages}
                         handleImageSelect={handleImageSelect}
-                        imagesPerRow={36}
+                        imagesPerRow={10}
                         isBot={false}
                         gameMode="OFFLINE_WITH_BOTS"
                         selectedOption={selectedOption}

@@ -39,7 +39,7 @@ export const resetGame = (
   setPlayerScores(
     playerNames.map((name) => ({
       playerName: name,
-      scores: Array.from({ length: 10 }, () => 0),
+      scores: [],
     }))
   );
 };

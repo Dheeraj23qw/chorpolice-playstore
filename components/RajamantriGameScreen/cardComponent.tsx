@@ -7,14 +7,14 @@ import {
   ImageBackground,
   View,
 } from "react-native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { styles } from "@/screens/RajaMantriGameScreen/styles";
 import {
   playerNamesArray,
   selectSelectedImages,
 } from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
-import { bounceAnimation } from "@/Animations/animation";
+import { setIsThinking } from "@/redux/reducers/botReducer";
 
 interface PlayerCardProps {
   index: number;
@@ -29,7 +29,7 @@ interface PlayerCardProps {
   advisorIndex: number | null;
   thiefIndex: number | null;
   kingIndex: number | null;
-  onBounceEffect:(index:number) => void;
+  onBounceEffect: (index: number) => void;
 }
 
 const roleImages: { [key: string]: any } = {
@@ -55,18 +55,13 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
     policeIndex,
     advisorIndex,
     thiefIndex,
-    onBounceEffect
+    onBounceEffect,
   }) => {
     const selectedImages = useSelector(selectSelectedImages);
     const playerImages = useSelector(
       (state: RootState) => state.playerImages.images
     );
-    // Set up an animated value for the animation
-    const playerNames = useSelector(playerNamesArray);
-    const [bounceAnims] = useState(
-      playerNames.map(() => new Animated.Value(1))
-    );
-
+const dispatch =useDispatch()
     const playerData = useSelector((state: RootState) => state.player);
     const botIndexes = playerData.playerNames
       .map((player, idx) => (player.isBot ? idx : -1))
@@ -76,8 +71,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
       policeIndex !== null && botIndexes.includes(policeIndex);
 
     const handleClick = (idx: number) => {
-      // Allow click only if the current police is not a bot
-      onBounceEffect(index)
+      onBounceEffect(index);
       if (!isPoliceBot) {
         onClick(idx);
       }
@@ -85,20 +79,14 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
 
     useEffect(() => {
       if (botIndexes.includes(index)) {
-        // Bot action with a random delay for Advisor or Thief
-        if (role === "Advisor" || role === "Thief") {
-          const timeout = setTimeout(() => {}, Math.random() * 2000 + 6000); // Random delay between 6 to 8 seconds
+        const targetIndex = advisorIndex !== null ? advisorIndex : thiefIndex;
 
-          return () => clearTimeout(timeout);
-        }
-
-        // For Police bot
-        if (role === "Police") {
-          const targetIndex = advisorIndex !== null ? advisorIndex : thiefIndex;
-          if (targetIndex !== null) {
+        if (targetIndex !== null) {
+          if (role === "Police") {
             const timeout = setTimeout(() => {
-              onClick(targetIndex); // Automatically send the index of Advisor or Thief
-            }, Math.random() * 2000 + 6000); // Random delay between 1 to 3 seconds
+              onBounceEffect(targetIndex);
+              onClick(targetIndex);
+            }, 5000);
 
             return () => clearTimeout(timeout);
           }
@@ -151,12 +139,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
         onPress={() => handleClick(index)}
         disabled={flipped || clicked || botIndexes.includes(index)}
       >
-        <Animated.View
-          style={[
-            styles.card,
-            animatedStyle, // Apply the passed animatedStyle
-          ]}
-        >
+        <Animated.View style={[styles.card, animatedStyle]}>
           {renderContent()}
         </Animated.View>
       </TouchableOpacity>

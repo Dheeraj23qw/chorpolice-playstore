@@ -2,14 +2,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import playerReducer from './reducers/playerReducer'
 import soundSlice from './reducers/soundReducer';
-// import imagesReducer  from '@/redux/slices/imageSlice'
 import playerImagesReducer from './reducers/dynamicImagesReducer'
-import gameReducer from "@/redux/reducers/gameReducer"
+import gameReducer from "@/redux/reducers/gameReducer";
+import botReducer from "@/redux/reducers/botReducer"
+
 const store = configureStore({
   reducer: {
     player: playerReducer,
     sound: soundSlice,
-    // images: imagesReducer, 
+    bot: botReducer,
     playerImages: playerImagesReducer,
     game: gameReducer,
 

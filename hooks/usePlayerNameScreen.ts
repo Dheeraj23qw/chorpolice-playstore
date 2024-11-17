@@ -90,7 +90,7 @@ export const usePlayerNameScreen = () => {
           const alertMsg =
             gameMode === "OFFLINE"
               ? "Select 3 more avatars to play"
-              : "Select 3 more (bots or humans) to make your team of 4!";
+              : "Select 3 more (bots or humans) avatars to play!";
           setAlertMessage(alertMsg);
           setModals((prev) => ({ ...prev, infoAddMoreVisible: true }));
         }

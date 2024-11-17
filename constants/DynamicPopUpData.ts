@@ -8,7 +8,7 @@ export type MediaItem = {
 export const videoData: MediaItem[] = [
 {
   id: 1,
-  url: require("@/assets/gif/chorPolicescreen/bot.mp4"), 
+  url: require("@/assets/gif/chorPolicescreen/chorpolice.mp4"), 
   description: "Thinking... give me a second!",
 },
 {
@@ -40,6 +40,11 @@ export const gifData: MediaItem[] = [
   id: 4,
   url: require("@/assets/gif/quiz/laugh.gif"), 
   description: "you got 500 points!",
+},
+{
+  id: 5,
+  url: require("@/assets/gif/quiz/bot.gif"), 
+  description: "bot is thinking! please wait...",
 },
 ];
 
