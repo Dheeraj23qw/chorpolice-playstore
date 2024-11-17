@@ -3,7 +3,10 @@ import { View, ImageBackground, ScrollView, Animated } from "react-native";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
-import { selectPlayerNames, selectSelectedImages } from "@/redux/selectors/playerDataSelector";
+import {
+  selectPlayerNames,
+  selectSelectedImages,
+} from "@/redux/selectors/playerDataSelector";
 
 // Hooks
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
@@ -25,7 +28,7 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 import { RootState } from "@/redux/store";
 import { setIsThinking } from "@/redux/reducers/botReducer";
-
+import useRandomMessage from "@/hooks/useRandomMessage";
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
     (player) => player.name
@@ -56,6 +59,8 @@ const RajaMantriGameScreen: React.FC = () => {
     playerData,
     isRoundStartPopupVisible,
     roundStartMessage,
+    playerNamesRedux,
+    
   } = useRajaMantriGame({ playerNames });
 
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
@@ -69,12 +74,17 @@ const RajaMantriGameScreen: React.FC = () => {
   const toggleModal = () => {
     setPopupTable(!popupTable);
   };
-  
+
+  const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
+ const [thinkingMsg, setThinkingMsg] = useState<string | null>(null)
+ 
+
   const isBotThinking = useSelector((state: RootState) => state.bot.isThinking);
   const selectedImages = useSelector(selectSelectedImages);
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
   );
+
   // Function to handle card click with bounce animation
   const handleCardClickWithBounce = (index: number) => {
     bounceAnimation(bounceAnims[index]).start();
@@ -82,15 +92,33 @@ const RajaMantriGameScreen: React.FC = () => {
   const getCardStyle = (index: number) =>
     flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
-  // Set isBotThinking to false after 4 seconds
+  const randomMessage = useRandomMessage(
+    policeIndex != null ? playerNames[policeIndex] : "",
+    status
+  );
+
   useEffect(() => {
-    if (isBotThinking) {
+    // Only set the thinking message if policeIndex is valid and bot is thinking
+    if (policeIndex != null && status === "thinking") {
+      setThinkingMsg(randomMessage); // Update the message when the bot is thinking
+    }
+  }, [policeIndex, status, randomMessage]);
+
+  useEffect(() => {
+    if (isBotThinking && policeIndex != null) {
+   
       const timer = setTimeout(() => {
         dispatch(setIsThinking(false));
-      }, 7200);
+      }, 4000);
       return () => clearTimeout(timer); // Cleanup timer
+    } else {
+      dispatch(setIsThinking(false));
+    
     }
-  }, [isBotThinking, dispatch]);
+  }, [isBotThinking, dispatch, policeIndex]);
+
+
+
 
   return (
     <>
@@ -128,26 +156,24 @@ const RajaMantriGameScreen: React.FC = () => {
           customMessage={roundStartMessage}
         />
       )}
-      {isBotThinking && policeIndex!=null && (
-       <ImageBackground
-       source={require("../../assets/images/bg/quiz.png")}
-       style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
-       resizeMode="cover"
-     >
-       <DynamicOverlayPopUp
-         isPopUp={isBotThinking}
-         mediaId={5}
-         mediaType={"gif"}
-         closeVisibleDelay={7300}
-         playerData={{
-          image: playerImages[selectedImages[policeIndex]]?.src,
-          imageType:playerImages[selectedImages[policeIndex]]?.type
-         }
-         
-         }
-
-       />
-     </ImageBackground>
+      {isBotThinking && policeIndex != null && (
+        <ImageBackground
+          source={require("../../assets/images/bg/quiz.png")}
+          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
+          resizeMode="cover"
+        >
+          <DynamicOverlayPopUp
+            isPopUp={isBotThinking}
+            mediaId={5}
+            mediaType={"gif"}
+            closeVisibleDelay={7300}
+            playerData={{
+              image: playerImages[selectedImages[policeIndex]]?.src,
+              imageType: playerImages[selectedImages[policeIndex]]?.type,
+              message: thinkingMsg,
+            }}
+          />
+        </ImageBackground>
       )}
 
       {isDynamicPopUp && (
@@ -232,7 +258,6 @@ const RajaMantriGameScreen: React.FC = () => {
                       advisorIndex={advisorIndex}
                       thiefIndex={thiefIndex}
                       animatedStyle={getCardStyle(index + 2)}
-
                     />
                   ))}
                 </View>

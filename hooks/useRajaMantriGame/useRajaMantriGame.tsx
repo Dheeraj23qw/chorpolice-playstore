@@ -405,6 +405,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     playerData,
     isRoundStartPopupVisible,
     roundStartMessage,
+    playerNamesRedux
   };
 };
 

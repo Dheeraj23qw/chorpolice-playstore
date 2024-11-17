@@ -12,8 +12,12 @@ import ScoreTable from "@/modal/ShowTableModal";
 import { RootState } from "@/redux/store";
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
-import { playerNamesArray, PlayerScoresArray } from "@/redux/selectors/playerDataSelector"; // Adjust the import path as necessary
+import {
+  playerNamesArray,
+  PlayerScoresArray,
+} from "@/redux/selectors/playerDataSelector"; // Adjust the import path as necessary
 import { useSelector } from "react-redux";
+import useRandomMessage from "@/hooks/useRandomMessage";
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
 
@@ -31,19 +35,32 @@ const ChorPoliceQuiz: React.FC = () => {
     currentPlayerImage,
     currentPlayerImageType,
     feedbackMessage,
+    isBotThinking,
   } = useQuizLogic(router);
 
   const [popupTable, setPopupTable] = useState(false);
   const playerNames = useSelector(playerNamesArray);
   // const playerScores = useSelector(PlayerScoresArray); total points of each player
 
-  const playerScores = useSelector((state:RootState) => state.player.playerScoresByRound);
+  const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
+  const [thinkingMsg, setThinkingMsg] = useState<string | null>(null);
 
+  const playerScores = useSelector(
+    (state: RootState) => state.player.playerScoresByRound
+  );
 
   const toggleModal = () => {
     setPopupTable(!popupTable);
   };
 
+  const randomMessage = useRandomMessage(currentPlayerName, status);
+
+  useEffect(() => {
+    // Only set the thinking message if policeIndex is valid and bot is thinking
+    if (status === "thinking") {
+      setThinkingMsg(randomMessage); // Update the message when the bot is thinking
+    }
+  }, [status, randomMessage]);
   // Animated value for pulsating effect
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -76,6 +93,26 @@ const ChorPoliceQuiz: React.FC = () => {
         playerScores={playerScores}
         popupTable={popupTable} // Control modal visibility
       />
+
+      {isBotThinking && (
+        <ImageBackground
+          source={require("../../assets/images/bg/quiz.png")}
+          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
+          resizeMode="cover"
+        >
+          <DynamicOverlayPopUp
+            isPopUp={isBotThinking}
+            mediaId={5}
+            mediaType={"gif"}
+            closeVisibleDelay={7300}
+            playerData={{
+              image: currentPlayerImage,
+              imageType: currentPlayerImageType,
+              message: thinkingMsg,
+            }}
+          />
+        </ImageBackground>
+      )}
       {isPopUp ? (
         // Show only the background and popup when isPopUp is true
         <ImageBackground

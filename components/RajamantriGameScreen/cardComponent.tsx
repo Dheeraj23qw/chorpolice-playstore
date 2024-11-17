@@ -14,6 +14,7 @@ import {
   selectSelectedImages,
 } from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
+import { setIsThinking } from "@/redux/reducers/botReducer";
 
 interface PlayerCardProps {
   index: number;
@@ -83,6 +84,7 @@ const dispatch =useDispatch()
         if (targetIndex !== null) {
           if (role === "Police") {
             const timeout = setTimeout(() => {
+             
               onBounceEffect(targetIndex);
               onClick(targetIndex);
             }, 4000);
@@ -99,6 +101,7 @@ const dispatch =useDispatch()
       advisorIndex,
       thiefIndex,
       handleClick,
+    
     ]);
 
     const renderContent = () => {

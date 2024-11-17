@@ -2,6 +2,7 @@ import { Animated } from "react-native";
 import { AppDispatch } from "@/redux/store";
 import { playSound } from "@/redux/reducers/soundReducer";
 import { Router } from "expo-router";
+import { setIsThinking } from "@/redux/reducers/botReducer";
 
 export const resetForNextRound = (
   round: number,
@@ -28,12 +29,13 @@ export const resetForNextRound = (
   setMediaId:React.Dispatch<React.SetStateAction<number>>,
   setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif">>
 ) => {
-  if (round == 5) {
+  if (round == 3) {
     dispatch(playSound("next"));
+
     calculateTotalScores();
     setTimeout(() => {
       router.push("/chorPoliceQuiz");
-    }, 5000); // Adding delay before navigating
+    }, 5000);
 
     return;
   } else {

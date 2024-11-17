@@ -44,7 +44,7 @@ export const gifData: MediaItem[] = [
 {
   id: 5,
   url: require("@/assets/gif/quiz/bot.gif"), 
-  description: "bot is thinking! please wait...",
+  description: "please wait...",
 },
 ];
 

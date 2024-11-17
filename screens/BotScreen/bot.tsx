@@ -65,6 +65,7 @@ const BotScreen: React.FC = () => {
   const options = [
     { label: "Choose Computer Avatar", value: "Bots-Avatar" },
     { label: "Choose your Avatar", value: "player-Avatar" },
+    { label: "Upload from Gallery", value: "gallery" },
   ];
 
 
@@ -138,7 +139,7 @@ const BotScreen: React.FC = () => {
                     <Components.ImageGrid
                       selectedImages={selectedImages}
                       handleImageSelect={handleImageSelect}
-                      imagesPerRow={10}
+                      imagesPerRow={15}
                       isBot={true}
                       gameMode="OFFLINE_WITH_BOTS"
                     />

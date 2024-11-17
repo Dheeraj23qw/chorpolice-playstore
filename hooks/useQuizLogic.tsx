@@ -5,6 +5,7 @@ import { updatePlayerScores, resetGame } from "@/redux/reducers/playerReducer";
 import { BackHandler } from "react-native";
 import { playSound } from "@/redux/reducers/soundReducer";
 import useRandomMessage from "@/hooks/useRandomMessage";
+import { setIsThinking } from "@/redux/reducers/botReducer";
 
 const useQuizLogic = (router: any) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -38,7 +39,7 @@ const useQuizLogic = (router: any) => {
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
   const winMessage = useRandomMessage(currentPlayerName, "win");
   const loseMessage = useRandomMessage(currentPlayerName, "lose");
-
+  const [isBotThinking, setIsBotThinking] = useState(false);
   // Handle the hardware back button press (Android)
   useEffect(() => {
     const backAction = () => {
@@ -57,12 +58,37 @@ const useQuizLogic = (router: any) => {
   useEffect(() => {
     generateOptionsForPlayer();
   }, [currentPlayerIndex]);
-
   useEffect(() => {
-    if (currentPlayerIsBot) {
-      simulateBotOptionSelection();
+    let timeoutToShow: NodeJS.Timeout | undefined;
+    let timeoutToHide: NodeJS.Timeout | undefined;
+    let timeoutToAnswer: NodeJS.Timeout | undefined;
+  
+    if (currentPlayerIsBot && !isPopUp) {
+      // Delay showing the "bot is thinking" modal by 2 seconds
+      timeoutToShow = setTimeout(() => {
+        setIsBotThinking(true);
+  
+        // Automatically hide the modal after 3 seconds
+        timeoutToHide = setTimeout(() => {
+          setIsBotThinking(false);
+  
+          // Simulate the bot's answer after the modal disappears
+          timeoutToAnswer = setTimeout(() => {
+            simulateBotOptionSelection();
+          }, 3000); // Delay bot's answer by 1 second after modal disappears
+        }, 6000); // Show "bot is thinking" for 3 seconds
+      }, 4000); // Initial delay before showing "bot is thinking"
+    } else {
+      setIsBotThinking(false); // Ensure modal is hidden for non-bot players
     }
-  }, [currentPlayerIndex]);
+  
+    // Cleanup timeouts on unmount or when dependencies change
+    return () => {
+      if (timeoutToShow) clearTimeout(timeoutToShow);
+      if (timeoutToHide) clearTimeout(timeoutToHide);
+      if (timeoutToAnswer) clearTimeout(timeoutToAnswer);
+    };
+  }, [currentPlayerIndex, isPopUp]);
 
   const currentPlayerIsBot = playerNames[currentPlayerIndex]?.isBot;
 
@@ -124,14 +150,16 @@ const useQuizLogic = (router: any) => {
   };
 
   const simulateBotOptionSelection = () => {
-    const minDelay = 2000; // Minimum delay of 2 seconds
-    const maxDelay = 6000; // Maximum delay of 6 seconds
+    const minDelay = 4000; // Minimum delay of 1 seconds
+    const maxDelay = 6000; // Maximum delay of 3 seconds
     const randomDelay =
       Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay between 2000 and 6000
 
     setTimeout(() => {
       const botChoice = options[Math.floor(Math.random() * options.length)];
-      handleOptionPress(botChoice);
+ 
+        handleOptionPress(botChoice);
+
     }, randomDelay);
   };
 
@@ -168,7 +196,7 @@ const useQuizLogic = (router: any) => {
     setIsPopUp(false);
     setMediaId(1);
     setMediaType("image");
-
+ 
     setCurrentPlayerIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
       if (nextIndex < playerNames.length) {
@@ -209,6 +237,8 @@ const useQuizLogic = (router: any) => {
     currentPlayerImageType,
     playerNames,
     playerScores,
+    isBotThinking,
+
   };
 };
 
