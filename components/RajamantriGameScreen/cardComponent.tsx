@@ -14,7 +14,6 @@ import {
   selectSelectedImages,
 } from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
-import { setIsThinking } from "@/redux/reducers/botReducer";
 
 interface PlayerCardProps {
   index: number;
@@ -86,7 +85,7 @@ const dispatch =useDispatch()
             const timeout = setTimeout(() => {
               onBounceEffect(targetIndex);
               onClick(targetIndex);
-            }, 5000);
+            }, 4000);
 
             return () => clearTimeout(timeout);
           }

@@ -28,12 +28,12 @@ export const resetForNextRound = (
   setMediaId:React.Dispatch<React.SetStateAction<number>>,
   setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif">>
 ) => {
-  if (round == 1) {
+  if (round == 5) {
     dispatch(playSound("next"));
     calculateTotalScores();
     setTimeout(() => {
       router.push("/chorPoliceQuiz");
-    }, 4000); // Adding delay before navigating
+    }, 5000); // Adding delay before navigating
 
     return;
   } else {
