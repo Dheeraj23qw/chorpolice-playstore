@@ -38,6 +38,10 @@ const AvatarSelection: React.FC<AvatarSelectionProps> = ({
       if (option.value === "bots") {
         router.push("/playwithbot");
       }
+
+      if(option.value === "ONLINE_WITH_BOTS"){
+        router.push("/connectandplay"); 
+      }
     }
   };
 

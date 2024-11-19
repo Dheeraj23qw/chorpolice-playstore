@@ -34,14 +34,12 @@ export const usePlayerNameScreen = () => {
   const [currentImageId, setCurrentImageId] = useState<number | null>(null);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [playerNames, setPlayerNamesState] = useState<PlayerName[]>([]);
-  // New states for counting bots and humans
   const [botCount, setBotCount] = useState<number>(0);
   const [humanCount, setHumanCount] = useState<number>(0);
 
   const dispatch = useDispatch();
   const router = useRouter();
 
-  // Use player images from Redux state
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
   );
@@ -68,9 +66,14 @@ export const usePlayerNameScreen = () => {
         return;
       }
 
-      // In non-OFFLINE modes, limit the human count to 3 and prompt user to add at least one bot
       if (gameMode !== "OFFLINE" && !isBot && humanCount >= 3) {
         setAlertMessage("Please choose at least one bot to start the game.");
+        setModals((prev) => ({ ...prev, modalVisible: true }));
+        return;
+      }
+
+      if (gameMode === "ONLINE_WITH_BOTS" && selectedImages.length >= 1) {
+        setAlertMessage("You can only select one image in this mode.");
         setModals((prev) => ({ ...prev, modalVisible: true }));
         return;
       }
@@ -86,13 +89,53 @@ export const usePlayerNameScreen = () => {
         dispatch(playSound("level"));
 
         if (selectedImages.length === 0) {
-          // Check if `gameModeStatus` is OFFLINE and show appropriate message
-          const alertMsg =
-            gameMode === "OFFLINE"
-              ? "Select 3 more avatars to play"
-              : "Select 3 more (bots or humans) avatars to play!";
+          let alertMsg = "";
+
+          if (gameMode === "OFFLINE") {
+            alertMsg = "Select 3 more avatars to play";
+          } else if (gameMode === "OFFLINE_WITH_BOTS") {
+            alertMsg = "Select 3 more (bots or humans) avatars to play!";
+          } else if (gameMode === "ONLINE_WITH_BOTS") {
+            alertMsg = "image selected";
+          }
+
           setAlertMessage(alertMsg);
           setModals((prev) => ({ ...prev, infoAddMoreVisible: true }));
+        }
+
+        if (gameMode === "ONLINE_WITH_BOTS" && selectedImages.length === 0) {
+          const botImages = [];
+          for (let i = 1; i <= 30; i++) {
+            if (i !== imageId && !selectedImages.includes(i)) {
+              botImages.push(i);
+            }
+          }
+
+          const selectedBotImages = botImages
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 3);
+
+          setSelectedImagesState([imageId, ...selectedBotImages]);
+
+          const botPlayers = selectedBotImages.map((botImageId) => ({
+            id: botImageId,
+            name: "",
+            isBot: true,
+          }));
+
+          setPlayerNamesState([
+            { id: imageId, name: "", isBot: false },
+            ...botPlayers,
+          ]);
+
+          dispatch(
+            setPlayerNames([
+              { id: imageId, name: "", isBot: false },
+              ...botPlayers,
+            ])
+          );
+
+          return;
         }
 
         setSelectedImagesState((prevSelectedImages) => [
@@ -122,7 +165,7 @@ export const usePlayerNameScreen = () => {
       playerNames,
       gameModeStatus,
       botCount,
-      humanCount, // Include humanCount in dependencies
+      humanCount,
     ]
   );
 
@@ -169,13 +212,12 @@ export const usePlayerNameScreen = () => {
 
   const handleStartAdventure = useCallback(async () => {
     dispatch(playSound("select"));
-    setIsButtonDisabled(true); // Disable the button after click
+    setIsButtonDisabled(true); 
     try {
-      // Check for duplicate names
       if (checkForDuplicateNames()) {
         setAlertMessage("Please make sure each superhero has a unique name.");
         setModals((prev) => ({ ...prev, modalVisible: true }));
-        setIsButtonDisabled(false); // Re-enable button on error
+        setIsButtonDisabled(false); 
         return;
       }
 
@@ -205,7 +247,7 @@ export const usePlayerNameScreen = () => {
       }
       setModals((prev) => ({ ...prev, modalVisible: true }));
     } finally {
-      setIsButtonDisabled(false); // Re-enable the button after task completion
+      setIsButtonDisabled(false); 
     }
   }, [
     selectedImages,
@@ -233,17 +275,22 @@ export const usePlayerNameScreen = () => {
   const handleAlertConfirm = useCallback(() => {
     dispatch(playSound("select"));
     if (currentImageId !== null) {
-      // Determine if the current image is a bot or human before removing it
       const currentPlayer = playerNames.find(
         (player) => player.id === currentImageId
       );
       if (currentPlayer) {
-        // Decrement the corresponding count
         if (currentPlayer.isBot && botCount > 0) {
           setBotCount((prev) => prev - 1);
         } else if (!currentPlayer.isBot && humanCount > 0) {
           setHumanCount((prev) => prev - 1);
         }
+      }
+
+      if (gameModeStatus === "ONLINE_WITH_BOTS" && !currentPlayer?.isBot) {
+        setSelectedImagesState([]);
+        setPlayerNamesState([]);
+        setImageNamesState({});
+        return;
       }
 
       setSelectedImagesState((prevSelectedImages) =>
@@ -257,7 +304,15 @@ export const usePlayerNameScreen = () => {
     }
     closeAlertModal();
     setModals((prev) => ({ ...prev, confirmChangeVisible: false }));
-  }, [currentImageId, closeAlertModal, dispatch]);
+  }, [
+    currentImageId,
+    playerNames,
+    botCount,
+    humanCount,
+    gameModeStatus,
+    dispatch,
+    closeAlertModal,
+  ]);
 
   return {
     selectedImages,
@@ -285,7 +340,7 @@ export const usePlayerNameScreen = () => {
       setModals((prev) => ({ ...prev, infoAddMoreVisible: visible })),
     setAlertMessage,
     isButtonDisabled,
-    botCount, // Return bot count
-    humanCount, // Return human count
+    botCount, 
+    humanCount, 
   };
 };

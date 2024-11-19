@@ -60,7 +60,6 @@ const RajaMantriGameScreen: React.FC = () => {
     isRoundStartPopupVisible,
     roundStartMessage,
     playerNamesRedux,
-    
   } = useRajaMantriGame({ playerNames });
 
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
@@ -76,8 +75,7 @@ const RajaMantriGameScreen: React.FC = () => {
   };
 
   const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
- const [thinkingMsg, setThinkingMsg] = useState<string | null>(null)
- 
+  const [thinkingMsg, setThinkingMsg] = useState<string | null>(null);
 
   const isBotThinking = useSelector((state: RootState) => state.bot.isThinking);
   const selectedImages = useSelector(selectSelectedImages);
@@ -106,19 +104,14 @@ const RajaMantriGameScreen: React.FC = () => {
 
   useEffect(() => {
     if (isBotThinking && policeIndex != null) {
-   
       const timer = setTimeout(() => {
         dispatch(setIsThinking(false));
       }, 4000);
       return () => clearTimeout(timer); // Cleanup timer
     } else {
       dispatch(setIsThinking(false));
-    
     }
   }, [isBotThinking, dispatch, policeIndex]);
-
-
-
 
   return (
     <>

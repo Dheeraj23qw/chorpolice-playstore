@@ -10,6 +10,8 @@ import {
   unloadSounds,
 } from "@/redux/reducers/soundReducer";
 import VideoPlayerComponent from '@/components/RajamantriGameScreen/videoPlayer';
+import GameModeScreen from '@/screens/GameModeScreen/gameModeScreen';
+import Showplayer from '@/components/QuizScreen/showplayer';
 
 export default function Index() {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -52,5 +54,5 @@ export default function Index() {
   }
 
   // Render main content after video ends
-  return <PlayerNameScreen />;
+  return <GameModeScreen/>;
 }

@@ -24,7 +24,7 @@ import InfoAddMoreModal from "../playerNameScreen/modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
 
 
-const BotScreen: React.FC = () => {
+const ConnectAndPlay: React.FC = () => {
   // Local State
   const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
   const [selectedOption, setSelectedOption] = useState<string | null>(
@@ -63,8 +63,7 @@ const BotScreen: React.FC = () => {
 
   // Initial options
   const options = [
-    { label: "Choose Computer Avatar", value: "Bots-Avatar" },
-    { label: "Choose your Avatar", value: "player-Avatar" },
+
     { label: "Upload from Gallery", value: "gallery" },
   ];
 
@@ -82,12 +81,16 @@ const BotScreen: React.FC = () => {
     }, 1000); 
   };
 
+ 
 
   return (
     <SafeAreaView style={globalstyles.container}>
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-        <Components.ScreenHeader name="Play With Bots!" showBackButton={true} />
+        <Components.ScreenHeader
+          name="Connect & Play!"
+          showBackButton={true}
+        />
       </View>
 
       {/* Main Content Container */}
@@ -108,52 +111,36 @@ const BotScreen: React.FC = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1 }}
           >
-            {/* Avatar Selection Component */}
+            {/* Avatar Selection */}
             <Components.AvatarSelectionMemo
               selectedOption={selectedOption}
-              setSelectedOption={handleOptionChange} // Pass the handler for option change
+              setSelectedOption={setSelectedOption}
               pickImage={pickImage}
-              options={[...options]} // Combine options here
+              options={options} // Pass the dynamic options array
             />
-            {/* Loading Indicator */}
-            {loading && (
-              <Components.LoadingIndicator
-                loading={true}
-                message="Loading, please wait..."
-              />
-            )}
-            {/* Conditional Image Grid for Avatar Selection */}
-            {!loading &&
-              showImageGrid && ( // Don't show grid while loading
-                <>
-                  {selectedOption === "Bots-Avatar" ? (
-                    <Components.ImageGrid
-                      selectedImages={selectedImages}
-                      handleImageSelect={handleImageSelect}
-                      imagesPerRow={15}
-                      isBot={true}
-                      gameMode="OFFLINE_WITH_BOTS"
-                    />
-                  ) : selectedOption === "player-Avatar" ? (
-                    <>
-                      <Components.ImageGrid
-                        selectedImages={selectedImages}
-                        handleImageSelect={handleImageSelect}
-                        imagesPerRow={15}
-                        isBot={false}
-                        gameMode="OFFLINE_WITH_BOTS"
-                        selectedOption={selectedOption}
-                      />
-                    </>
-                  ) : null}
-                </>
-              )}
 
+            {/* Loading Indicator */}
+            <Components.LoadingIndicator
+              loading={loading}
+              message="Loading, please wait..."
+            />
+
+            {/* Image Grid for Selected Images */}
+            <Components.ImageGrid
+              selectedImages={selectedImages}
+              handleImageSelect={handleImageSelect}
+              imagesPerRow={10}
+              gameMode="ONLINE_WITH_BOTS"
+              isBot={false}
+            />
+
+            {/* Selected Image Grid with Name Change and Click Handling */}
             <Components.SelectedImageGrid
               selectedImages={selectedImages}
               imageNames={imageNames}
               handleNameChange={handleNameChange}
               handleSelectedImageClick={handleSelectedImageClick}
+              gameMode="ONLINE_WITH_BOTS"
             />
 
             {/* Action Buttons for Starting Adventure - Show only if 4 images selected */}
@@ -179,14 +166,12 @@ const BotScreen: React.FC = () => {
         onClose={() => setConfirmChangeVisible(false)}
         onConfirm={handleAlertConfirm}
         content={alertMessage}
-
       />
 
       <InfoAddMoreModal
         visible={infoAddMoreVisible}
         onClose={closeInfoAddMoreModal}
         content={alertMessage}
-
       />
 
       <CustomModal
@@ -194,11 +179,11 @@ const BotScreen: React.FC = () => {
         onClose={() => setIsModalVisible(false)}
         title={modalTitle}
         content={modalContent}
-        buttons={[{ text: "OK", onPress: () => setIsModalVisible(false) }]}
+        buttons={[{ text: "OK", onPress: () => setIsModalVisible(false) }]} // Button to close modal
       />
     </SafeAreaView>
   );
 };
 
 // Exporting Component with React Memo for Optimization
-export default React.memo(BotScreen);
+export default React.memo(ConnectAndPlay);

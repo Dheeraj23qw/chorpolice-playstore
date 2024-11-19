@@ -16,13 +16,13 @@ import CustomAlertModal from "./modals/CustomAlertModal";
 import ConfirmChangeModal from "./modals/ConfirmChangeModal";
 import InfoAddMoreModal from "./modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
+import GameModeScrollView from "@/components/GameModeScrollView";
 
 const PlayerNameScreen: React.FC = () => {
   // Local State
   const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
   const [selectedOption, setSelectedOption] = useState<string | null>(null); // For avatar selection
 
-  
   const {
     selectedImages,
     imageNames,
@@ -52,7 +52,7 @@ const PlayerNameScreen: React.FC = () => {
   } = useGalleryPicker();
 
   const options = [
-    { label: "Play with Computer!", value: "bots" },
+   
     { label: "Upload from Gallery", value: "gallery" },
   ];
 
@@ -61,8 +61,8 @@ const PlayerNameScreen: React.FC = () => {
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
         <Components.ScreenHeader
-          name="Choose Your Avatars!"
-          showBackButton={false}
+          name="Play with Friends!"
+          showBackButton={true}
         />
       </View>
 
@@ -76,6 +76,11 @@ const PlayerNameScreen: React.FC = () => {
           ]}
           resizeMode="cover"
         >
+          {/* Loading Indicator */}
+          <Components.LoadingIndicator
+            loading={loading}
+            message="Loading, please wait..."
+          />
           {/* Option Header for Muting Sound */}
           <Components.OptionHeader isMuted={isMuted} setIsMuted={setIsMuted} />
 
@@ -91,13 +96,6 @@ const PlayerNameScreen: React.FC = () => {
               pickImage={pickImage}
               options={options} // Pass the dynamic options array
             />
-
-            {/* Loading Indicator */}
-            <Components.LoadingIndicator
-              loading={loading}
-              message="Loading, please wait..."
-            />
-
             {/* Image Grid for Selected Images */}
             <Components.ImageGrid
               selectedImages={selectedImages}

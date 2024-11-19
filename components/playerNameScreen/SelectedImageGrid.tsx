@@ -16,6 +16,7 @@ interface SelectedImageGridProps {
   imageNames: Record<number, string>;
   handleNameChange: (imageId: number, name: string) => void;
   handleSelectedImageClick: (imageId: number) => void;
+  gameMode?: string; // Optional gameMode prop
 }
 
 // Helper function to get the correct image source
@@ -29,9 +30,12 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
   imageNames,
   handleNameChange,
   handleSelectedImageClick,
+  gameMode,
 }) => {
   // Fetch playerImages from Redux store
-  const playerImages = useSelector((state: RootState) => state.playerImages.images); 
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images
+  );
   // Create imagesArray from Redux data
   const imagesArray = useMemo(() => {
     return Object.entries(playerImages).map(([key, image]) => ({
@@ -45,8 +49,18 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
     handleNameChange(imgId, text);
   };
 
+  const filteredSelectedImages = useMemo(() => {
+    if (gameMode === "ONLINE_WITH_BOTS") {
+      return selectedImages.length > 0 ? [selectedImages[0]] : [];
+    }
+    return selectedImages;
+  }, [selectedImages, gameMode]);
+
+  const titleText = gameMode === "ONLINE_WITH_BOTS" ? "Your Avatar!" : "Your Superhero Team!";
+
+
   const selectedImagesContent = useMemo(() => {
-    return selectedImages.map((imgId) => {
+    return filteredSelectedImages.map((imgId) => {
       const imgData = imagesArray.find((img) => img.id === imgId);
       if (!imgData) return null; // Skip if image data is not found
       return (
@@ -69,21 +83,28 @@ const SelectedImageGridComponent: React.FC<SelectedImageGridProps> = ({
         </TouchableOpacity>
       );
     });
-  }, [selectedImages, imageNames, handleNameChange, handleSelectedImageClick, imagesArray]);
+  }, [
+    filteredSelectedImages,
+    selectedImages,
+    imageNames,
+    handleNameChange,
+    handleSelectedImageClick,
+    imagesArray,
+  ]);
 
   return (
     <View style={playerNameStyles.selectedImageGrid}>
-      {selectedImages.length > 0 && (
-        <Text style={playerNameStyles.selectedImageTitle}>
-          Your Superhero Team!
-        </Text>
-      )}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={playerNameStyles.selectedImageRow}>
-          {selectedImagesContent}
-        </View>
-      </ScrollView>  
-    </View>
+    {filteredSelectedImages.length > 0 && (
+      <Text style={playerNameStyles.selectedImageTitle}>
+        {titleText}
+      </Text>
+    )}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <View style={playerNameStyles.selectedImageRow}>
+        {selectedImagesContent}
+      </View>
+    </ScrollView>
+  </View>
   );
 };
 
