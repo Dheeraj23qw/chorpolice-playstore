@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { ImageBackground, SafeAreaView, ScrollView, View } from "react-native";
+import {
+  ImageBackground,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 import { responsiveHeight } from "react-native-responsive-dimensions";
-
 // Custom Hooks
 import { usePlayerNameScreen } from "@/hooks/usePlayerNameScreen";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
@@ -16,7 +22,6 @@ import CustomAlertModal from "./modals/CustomAlertModal";
 import ConfirmChangeModal from "./modals/ConfirmChangeModal";
 import InfoAddMoreModal from "./modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
-import GameModeScrollView from "@/components/GameModeScrollView";
 
 const PlayerNameScreen: React.FC = () => {
   // Local State
@@ -51,10 +56,7 @@ const PlayerNameScreen: React.FC = () => {
     setIsModalVisible,
   } = useGalleryPicker();
 
-  const options = [
-   
-    { label: "Upload from Gallery", value: "gallery" },
-  ];
+  const options = [{ label: "Upload from Gallery", value: "gallery" }];
 
   return (
     <SafeAreaView style={globalstyles.container}>
@@ -90,21 +92,39 @@ const PlayerNameScreen: React.FC = () => {
             contentContainerStyle={{ flexGrow: 1 }}
           >
             {/* Avatar Selection */}
+            {selectedImages.length <4 &&
+
             <Components.AvatarSelectionMemo
               selectedOption={selectedOption}
               setSelectedOption={setSelectedOption}
               pickImage={pickImage}
               options={options} // Pass the dynamic options array
             />
+            }
+
+{selectedImages.length === 0 && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>
+                  Select 4 Images to Play
+                </Text>
+              </View>
+            )}
             {/* Image Grid for Selected Images */}
+            {selectedImages.length < 4 &&
             <Components.ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
               imagesPerRow={10}
               gameMode="OFFLINE"
               isBot={false}
-            />
-
+            />}
+            {selectedImages.length === 4 && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>
+                  To change the image, click on it.
+                </Text>
+              </View>
+            )}
             {/* Selected Image Grid with Name Change and Click Handling */}
             <Components.SelectedImageGrid
               selectedImages={selectedImages}
@@ -157,3 +177,21 @@ const PlayerNameScreen: React.FC = () => {
 
 // Exporting Component with React Memo for Optimization
 export default React.memo(PlayerNameScreen);
+
+const styles = StyleSheet.create({
+  instructionContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    padding: 5,
+    borderRadius: 10,
+    marginVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+  },
+  instructionText: {
+    fontSize: 20, // Slightly larger for better readability
+    color: "#fff", // A softer white for a modern look
+    textAlign: "center",
+    fontFamily: "outfit-bold", // Using a premium and clean font
+  },
+});

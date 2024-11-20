@@ -7,8 +7,7 @@ import {
 } from "react-native-responsive-dimensions";
 
 export default function ShowPlayer() {
-  const player1Score = 50; 
-  const player2Score = 30; 
+
 
   return (
     <ImageBackground
@@ -30,9 +29,7 @@ export default function ShowPlayer() {
           />
           <View style={styles.textOverlay}>
             <Text style={styles.playerName}>Player 1</Text>
-            {player1Score !== null && (
-              <Text style={styles.scoreText}>Score: {player1Score}</Text>
-            )}
+          
           </View>
         </View>
       </View>
@@ -48,9 +45,6 @@ export default function ShowPlayer() {
           />
           <View style={styles.textOverlay}>
             <Text style={styles.playerName}>Player 2</Text>
-            {player2Score !== null && (
-              <Text style={styles.scoreText}>Score: {player2Score}</Text>
-            )}
           </View>
         </View>
       </View>

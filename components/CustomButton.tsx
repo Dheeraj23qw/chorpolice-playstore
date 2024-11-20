@@ -1,14 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { Text, Pressable, Animated } from 'react-native';
-import { responsiveHeight, responsiveFontSize } from 'react-native-responsive-dimensions';
 import { styles } from "@/components/_CSS/customButtonStyles";
 
 type CustomButtonProps = {
     label: string;
     onPress?: () => void;
+    backgroundColor?: string; // Optional background color prop
+
 };
 
-export default function CustomButton({ label, onPress }: CustomButtonProps) {
+export default function CustomButton({ label, onPress, backgroundColor}: CustomButtonProps) {
     const [isSelected, setIsSelected] = useState(false);
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -39,7 +40,7 @@ export default function CustomButton({ label, onPress }: CustomButtonProps) {
         <Pressable
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-            style={[styles.optionButton, isSelected && styles.selectedOption]}
+            style={[styles.optionButton, isSelected && styles.selectedOption,  backgroundColor ? { backgroundColor } : null,,]}
         >
             <Animated.Text style={[styles.optionText, { transform: [{ scale: scaleAnim }] }]}>
                 {label}

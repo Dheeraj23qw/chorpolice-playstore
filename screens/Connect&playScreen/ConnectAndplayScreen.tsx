@@ -3,6 +3,7 @@ import {
   ImageBackground,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -23,13 +24,10 @@ import ConfirmChangeModal from "../playerNameScreen/modals/ConfirmChangeModal";
 import InfoAddMoreModal from "../playerNameScreen/modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
 
-
 const ConnectAndPlay: React.FC = () => {
   // Local State
   const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
-  const [selectedOption, setSelectedOption] = useState<string | null>(
-    null
-  );
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [loading, setLoading] = useState(false); // New loading state
 
   // Custom Hook - Player Name Screen
@@ -62,35 +60,25 @@ const ConnectAndPlay: React.FC = () => {
   } = useGalleryPicker();
 
   // Initial options
-  const options = [
-
-    { label: "Upload from Gallery", value: "gallery" },
-  ];
-
-
+  const options = [{ label: "Upload from Gallery", value: "gallery" }];
 
   // Check if the image grid should be shown
-  const showImageGrid = selectedOption ;
+  const showImageGrid = selectedOption;
 
   // Function to handle option change and show loading
   const handleOptionChange = (option: string | null) => {
-    setLoading(true); 
-    setSelectedOption(option); 
+    setLoading(true);
+    setSelectedOption(option);
     setTimeout(() => {
-      setLoading(false); 
-    }, 1000); 
+      setLoading(false);
+    }, 1000);
   };
-
- 
 
   return (
     <SafeAreaView style={globalstyles.container}>
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-        <Components.ScreenHeader
-          name="Connect & Play!"
-          showBackButton={true}
-        />
+        <Components.ScreenHeader name="Connect & Play!" showBackButton={true} />
       </View>
 
       {/* Main Content Container */}
@@ -111,13 +99,23 @@ const ConnectAndPlay: React.FC = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1 }}
           >
-            {/* Avatar Selection */}
-            <Components.AvatarSelectionMemo
-              selectedOption={selectedOption}
-              setSelectedOption={setSelectedOption}
-              pickImage={pickImage}
-              options={options} // Pass the dynamic options array
-            />
+            {selectedImages.length === 0 && (
+              <Components.AvatarSelectionMemo
+                selectedOption={selectedOption}
+                setSelectedOption={setSelectedOption}
+                pickImage={pickImage}
+                options={options} // Pass the dynamic options array
+              />
+            )}
+
+            {/* Instruction Text */}
+            {selectedImages.length === 0 && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>
+                  Select an Image to Play
+                </Text>
+              </View>
+            )}
 
             {/* Loading Indicator */}
             <Components.LoadingIndicator
@@ -126,14 +124,22 @@ const ConnectAndPlay: React.FC = () => {
             />
 
             {/* Image Grid for Selected Images */}
-            <Components.ImageGrid
-              selectedImages={selectedImages}
-              handleImageSelect={handleImageSelect}
-              imagesPerRow={10}
-              gameMode="ONLINE_WITH_BOTS"
-              isBot={false}
-            />
-
+            {selectedImages.length === 0 && (
+              <Components.ImageGrid
+                selectedImages={selectedImages}
+                handleImageSelect={handleImageSelect}
+                imagesPerRow={10}
+                gameMode="ONLINE_WITH_BOTS"
+                isBot={false}
+              />
+            )}
+            {selectedImages.length === 4 && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>
+                  To change the image, click on it.
+                </Text>
+              </View>
+            )}
             {/* Selected Image Grid with Name Change and Click Handling */}
             <Components.SelectedImageGrid
               selectedImages={selectedImages}
@@ -143,7 +149,6 @@ const ConnectAndPlay: React.FC = () => {
               gameMode="ONLINE_WITH_BOTS"
             />
 
-            {/* Action Buttons for Starting Adventure - Show only if 4 images selected */}
             {selectedImages.length === 4 && (
               <Components.PlayernameActionButtons
                 handleStartAdventure={handleStartAdventure}
@@ -187,3 +192,21 @@ const ConnectAndPlay: React.FC = () => {
 
 // Exporting Component with React Memo for Optimization
 export default React.memo(ConnectAndPlay);
+
+ const styles = StyleSheet.create({
+  instructionContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    padding: 5,
+    borderRadius: 10,
+    marginVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+  },
+  instructionText: {
+    fontSize: 20, // Slightly larger for better readability
+    color: "#fff", // A softer white for a modern look
+    textAlign: "center",
+    fontFamily: "outfit-bold", // Using a premium and clean font
+  },
+});
