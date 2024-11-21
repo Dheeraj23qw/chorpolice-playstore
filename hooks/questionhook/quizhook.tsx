@@ -273,7 +273,7 @@ export const useGameTableAndScores = (
     };
   
     // Choose a random question type from 3 available options (even/odd, prime, sum comparison)
-    const questionType = Math.floor(Math.random() * 4); // Randomly select one of the 3 question types
+    const questionType = Math.floor(Math.random() * 3); // Randomly select one of the 3 question types
   
     let question = "";
     let isTrue = false;
@@ -291,13 +291,8 @@ export const useGameTableAndScores = (
         isTrue = isPrime(totalScore); // Check if the score is prime
         break;
       }
+   
       case 2: {
-        // Total sum comparison between the selected player's score and the sum of all players' scores for the same round
-        question = `Is ${selectedPlayer}'s total score at round ${roundIndex + 1} greater than the total sum of scores for all players in that round?`;
-        isTrue = totalScore > totalSum; // Check if the selected player's score is greater than the sum of all players' scores
-        break;
-      }
-      case 3: {
         question = `Is ${selectedPlayer}'s total score at round ${roundIndex + 1} an Odd number?`;
         isTrue = totalScore % 2 != 0; // Check if the score is even
         break;
