@@ -14,28 +14,28 @@ export default function GameScreen() {
     totalScores,
     getSpecificRoundScore,
     getTotalScoreUpToRound,
-    getCalculationSteps,
-    generateScoreQuestion,
-    generateTotalScoreQuestion,
-    generateOperationQuestion,
-    generateTrueFalseQuestion,
-    generateRoundOffQuestion
+    getScoreQuestion,
+    getTotalScoreQuestion,
+    getOperationQuestion,
+    getTrueFalseQuestion,
+    getRoundOffQuestion,
+    getRandomPositionQuestion,
+    getPlayerPositionBooleanQuestion,
+    getDivisibilityQuestion,
+    getRandomQuestion
 
-  } = useGameTableAndScores("easy");
+  } = useGameTableAndScores("hard");
 
   const roundIndex = 6; // Example: up to round 3 (0-based index)
   const player = "Police"; // Example: Police player
   const operation = "+"; // Example: Addition
 
-  const specificRoundScore = getSpecificRoundScore(roundIndex, player);
-  const totalScoreUpToRound = getTotalScoreUpToRound(roundIndex, player);
-  const calculationSteps = getCalculationSteps(roundIndex, player, operation);
+ 
 
   if (table.length <= 1) {
     return <Text>Loading...</Text>;
   }
-//   const question = generateScoreQuestion();
-    const question =          generateRoundOffQuestion("easy")
+    const question = getRandomQuestion()
     
 
 
@@ -51,21 +51,9 @@ export default function GameScreen() {
           ))}
         </View>
       ))}
-      <Text style={styles.header}>Total Scores</Text>
-      {Object.entries(totalScores).map(([role, score]) => (
-        <Text key={role} style={styles.score}>
-          {role}: {score}
-        </Text>
-      ))}
-      <Text style={styles.header}>
-        Score for {player} in Round {roundIndex + 1}: {specificRoundScore}
-      </Text>
-      <Text style={styles.header}>
-        Total Score for {player} up to Round {roundIndex + 1}:{" "}
-        {totalScoreUpToRound}
-      </Text>
-      <Text style={styles.header}>Calculation Steps:</Text>
-      <Text style={styles.steps}>{calculationSteps}</Text>
+      
+    
+     
 
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text style={{ fontSize: 18, marginBottom: 20 }}>
