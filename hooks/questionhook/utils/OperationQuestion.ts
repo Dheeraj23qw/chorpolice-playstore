@@ -11,65 +11,77 @@ export const generateOperationQuestion = (
     "Advisor",
   ];
 
-  // Select two unique players
-  const player1 =
-    players[Math.floor(Math.random() * players.length)];
-  const remainingPlayers = players.filter((player) => player !== player1);
-  const player2 =
-    remainingPlayers[Math.floor(Math.random() * remainingPlayers.length)];
+  // Randomly select two different players
+  let player1 = players[Math.floor(Math.random() * players.length)];
+  let player2 = players[Math.floor(Math.random() * players.length)];
 
-  // Randomly select a round
+  // Ensure that player1 is different from player2
+  while (player1 === player2) {
+    player2 = players[Math.floor(Math.random() * players.length)];
+  }
+
+  // Randomly select a round between 0-9
   const roundIndex = Math.floor(Math.random() * 10);
 
-  // Fetch scores for the selected players
+  // Fetch scores for the selected players from the provided function
   const score1 = getSpecificRoundScore(roundIndex, player1);
   const score2 = getSpecificRoundScore(roundIndex, player2);
 
-  // Randomly select an operation
-  const operations: ("+" | "-" | "*")[] = ["+", "-", "*"];
+  // If either score is NaN or undefined, throw an error
+  if (isNaN(score1) || isNaN(score2)) {
+    throw new Error(`Invalid score returned for players: ${player1}, ${player2}`);
+  }
+
+  // Randomly select an operation (+, -, *)
+  const operations = ["+", "-", "*"];
   const operation = operations[Math.floor(Math.random() * operations.length)];
 
-  let question = "";
+  // Initialize correctAnswer and question variables
   let correctAnswer = 0;
+  let question = "";
 
+  // Calculate correctAnswer based on selected operation
   switch (operation) {
     case "+":
-      question = `What is the sum of ${player1}'s and ${player2}'s scores at round ${
-        roundIndex + 1
-      }?`;
+      question = `What is the sum of ${player1}'s and ${player2}'s scores in round ${roundIndex + 1}?`;
       correctAnswer = score1 + score2;
       break;
     case "-":
-      question = `What is the result of subtracting ${
-        Math.min(score1, score2)
-      } from ${Math.max(score1, score2)} at round ${roundIndex + 1}?`;
-      correctAnswer = Math.abs(score1 - score2);
+      question = `What is the absolute difference between ${player1}'s and ${player2}'s scores in round ${roundIndex + 1}?`;
+      correctAnswer = Math.abs(score1 - score2); // Ensure positive result
       break;
     case "*":
-      question = `What is the result of multiplying ${player1}'s and ${player2}'s scores at round ${
-        roundIndex + 1
-      }?`;
+      question = `What is the result of multiplying ${player1}'s and ${player2}'s scores in round ${roundIndex + 1}?`;
       correctAnswer = score1 * score2;
       break;
+    default:
+      throw new Error(`Invalid operation: ${operation}`);
   }
 
-  // Generate wrong answers
-  const wrongAnswers = Array.from(
-    new Set([
-      correctAnswer + Math.floor(Math.random() * 10 + 1),
-      correctAnswer - Math.floor(Math.random() * 10 + 1),
-      correctAnswer + Math.floor(Math.random() * 20 + 1),
-    ])
-  ).slice(0, 3);
+  // Generate 3 incorrect answers with some variation
+  const wrongAnswers = generateWrongAnswers(correctAnswer);
 
-  // Combine correct and wrong answers and shuffle them
-  const allAnswers = [correctAnswer, ...wrongAnswers]
-    .filter((val) => val >= 0) // Ensure all answers are valid
-    .sort(() => Math.random() - 0.5);
+  // Shuffle the answers and ensure all are positive
+  const allOptions = [correctAnswer, ...wrongAnswers].map(option => Math.abs(option)); // Ensure all answers are positive
+  const shuffledOptions = shuffleArray(allOptions);
 
   return {
     question,
-    options: allAnswers.map(String), // Answers as strings
     correctAnswer: correctAnswer.toString(),
+    options: shuffledOptions.map(String),
   };
+};
+
+// Function to generate incorrect answers with variation
+const generateWrongAnswers = (correctAnswer: number): number[] => {
+  return [
+    correctAnswer + Math.floor(Math.random() * 5) + 2,  // Incorrect answer 1 (positive)
+    correctAnswer - Math.floor(Math.random() * 5) - 2,  // Incorrect answer 2 (positive)
+    correctAnswer * Math.floor(Math.random() * 2) + 2,  // Incorrect answer 3 (positive)
+  ];
+};
+
+// Function to shuffle array elements randomly
+const shuffleArray = (array: any[]): any[] => {
+  return array.sort(() => Math.random() - 0.5);
 };
