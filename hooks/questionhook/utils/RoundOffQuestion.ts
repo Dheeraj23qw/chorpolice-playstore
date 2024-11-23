@@ -1,5 +1,5 @@
 export const generateRoundOffQuestion = (
-  difficulty: "easy" | "medium" | "hard"
+  difficulty: "easy" | "medium" | "hard" | null
 ) => {
   // Generate a random score based on difficulty
   const score =

@@ -13,12 +13,14 @@ import VideoPlayerComponent from '@/components/RajamantriGameScreen/videoPlayer'
 import GameModeScreen from '@/screens/GameModeScreen/gameModeScreen';
 import Showplayer from '@/components/QuizScreen/showplayer';
 import GameScreen from '@/screens/gameScreen';
+import { StatusBar } from 'react-native';
 
 export default function Index() {
   const navigation = useNavigation<NavigationProp<any>>();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
 
+ 
   // Load sounds on mount
   useEffect(() => {
     async function initializeSounds() {
@@ -55,5 +57,5 @@ export default function Index() {
   }
 
   // Render main content after video ends
-  return <GameScreen/>;
+  return <GameModeScreen/>;
 }

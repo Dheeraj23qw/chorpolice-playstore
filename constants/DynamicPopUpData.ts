@@ -46,6 +46,16 @@ export const gifData: MediaItem[] = [
   url: require("@/assets/gif/quiz/bot.gif"), 
   description: "please wait...",
 },
+{
+  id: 6,
+  url: require("@/assets/gif/quiz/weep.gif"),
+  description: "Wrong answer!",
+},
+{
+  id: 7,
+  url: require("@/assets/gif/quiz/laugh.gif"), 
+  description: "Correct answer!",
+},
 ];
 
 // Image data (with IDs and URLs)

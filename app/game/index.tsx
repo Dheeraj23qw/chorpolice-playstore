@@ -4,8 +4,9 @@ import ConnectAndplayScreen from '@/screens/Connect&playScreen/ConnectAndplayScr
 import { useNavigation } from 'expo-router';
 import { NavigationProp } from '@react-navigation/native';
 import ImageSelectScreen from '@/screens/QuizScreen/quizDifficultySelect';
+import GameScreen from '@/screens/gameScreen';
 
-export default function QuizgameLevelRoute() {
+export default function Index() {
     const navigation = useNavigation<NavigationProp<any>>();
 
     useLayoutEffect(() => {
@@ -14,5 +15,5 @@ export default function QuizgameLevelRoute() {
       });
     }, [navigation]);
   
-    return <ImageSelectScreen/>;
+    return <GameScreen/>;
 }

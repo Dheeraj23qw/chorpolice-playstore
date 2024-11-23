@@ -5,6 +5,7 @@ import soundSlice from './reducers/soundReducer';
 import playerImagesReducer from './reducers/dynamicImagesReducer'
 import gameReducer from "@/redux/reducers/gameReducer";
 import botReducer from "@/redux/reducers/botReducer"
+import difficultyReducer from "@/redux/reducers/quiz"
 
 const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ const store = configureStore({
     bot: botReducer,
     playerImages: playerImagesReducer,
     game: gameReducer,
+    difficulty: difficultyReducer, // Add the difficulty reducer to the store
 
   },
 });

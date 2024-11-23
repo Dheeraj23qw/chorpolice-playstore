@@ -6,7 +6,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.8)", // Darker overlay for emphasis
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
   },
   container: {
     width: responsiveWidth(90),
@@ -23,6 +23,7 @@ export const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 3,
     borderColor: "rgba(210, 210, 210, 1)", 
+
   },
   videoContainer: {
     justifyContent: "center",
@@ -33,6 +34,7 @@ export const styles = StyleSheet.create({
     marginTop: responsiveHeight(2),
     width: "100%",
     height: "auto",
+    
   },
   defaultContainer: {
     backgroundColor: "#f8f8f8",
