@@ -1,20 +1,23 @@
+// QuizScreen.tsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
-  ImageBackground,
-  Pressable,
-  ScrollView,
-  TouchableOpacity,
   Alert,
+  StatusBar,
+  ImageBackground,
+  ScrollView,
 } from "react-native";
-import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
-import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { playSound } from "@/redux/reducers/soundReducer";
 import { useDispatch } from "react-redux";
 import GameTable from "./GameTable";
+import { QuizButton } from "./QuizButtons";
+import Timer from "./Timer";
+import HintSection from "./HintSection";
+import QuestionSection from "./QuestionSection";
+import OptionsSection from "./OptionsSection";
+import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 
 const NUM_QUESTIONS = 7;
 const CORRECT_ANSWER_GIF = 7;
@@ -25,12 +28,6 @@ interface PlayerData {
   message?: string | null;
   imageType?: string | null;
 }
-
-const buttons = [
-  { id: 1, text: "50-50" },
-  { id: 2, text: "Quit" },
-  { id: 3, text: "ScoreBoard" },
-];
 
 export default function QuizScreen() {
   const { table, getRandomQuestion } = useGameTableAndScores();
@@ -43,15 +40,20 @@ export default function QuizScreen() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
   const [mediaId, setMediaId] = useState<number>(1);
-  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">("image");
+  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
+    "image"
+  );
   const [isTableOpen, setIsTableOpen] = useState<boolean>(false);
+  const [showHint, setShowHint] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Timer Logic
   useEffect(() => {
     timerRef.current = setInterval(() => {
-      setCountdown((prevCountdown) => (prevCountdown > 0 ? prevCountdown - 1 : 0));
+      setCountdown((prevCountdown) =>
+        prevCountdown > 0 ? prevCountdown - 1 : 0
+      );
     }, 1000);
 
     return () => {
@@ -77,10 +79,12 @@ export default function QuizScreen() {
 
     setTimeout(() => {
       setIsDynamicPopUp(false);
-    }, 5000);
+      setShowHint(true); // Show hint after popup disappears
+    }, 4000);
   };
 
   const handleNextQuestion = () => {
+    setShowHint(false);
     if (questionIndex + 1 === NUM_QUESTIONS) {
       Alert.alert("Game Over!", "You've answered all questions.");
       resetGame();
@@ -101,13 +105,20 @@ export default function QuizScreen() {
 
   return (
     <>
-      {isTableOpen && <GameTable isTableOpen={isTableOpen} setIsTableOpen={setIsTableOpen} table={table} />}
+      {isTableOpen && (
+        <GameTable
+          isTableOpen={isTableOpen}
+          setIsTableOpen={setIsTableOpen}
+          table={table}
+        />
+      )}
 
       {isDynamicPopUp ? (
         <ImageBackground
           source={require("../../assets/images/bg/quizbg2.png")}
           style={styles.backgroundImage}
         >
+          <StatusBar backgroundColor={"#000000CC"} />
           <DynamicOverlayPopUp
             isPopUp={isDynamicPopUp}
             mediaId={mediaId}
@@ -123,81 +134,27 @@ export default function QuizScreen() {
           <View style={styles.overlay} />
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             {/* Timer Countdown */}
-            <View style={styles.playersSection}>
-              <ImageBackground
-                source={require("../../assets/images/bg/timer.png")}
-                style={styles.vsCircle}
-                imageStyle={styles.vsCircleImage}
-              >
-                <Text style={styles.vsText}>{countdown}</Text>
-              </ImageBackground>
-            </View>
-
-            {/* New Circular Section */}
-            <View style={styles.circularSection}>
-              <ImageBackground
-                source={require("../../assets/images/bg/quizbg5.png")}
-                style={styles.circularBackground}
-                imageStyle={styles.circularBackgroundImage}
-              />
-            </View>
+            <Timer countdown={countdown} />
 
             {/* Question Section */}
-            <View style={styles.questionSection}>
-              <ImageBackground
-                source={require("../../assets/images/bg/quiz3.png")}
-                style={styles.questionBackground}
-                imageStyle={styles.questionBackgroundImage}
-              >
-                <Text style={styles.questionText}>{question?.question}</Text>
-              </ImageBackground>
-            </View>
+            {<QuestionSection question={question?.question} />}
+
+            {/* Hint Section */}
+            {showHint && <HintSection hint={question?.hint} />}
 
             {/* Options Section */}
-            <View style={styles.optionsSection}>
-              {question?.options?.map((option, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => handleAnswerSelection(option)}
-                  style={styles.optionWrapper}
-                  accessible
-                  accessibilityLabel={`Option ${index + 1}: ${option}`}
-                >
-                  <ImageBackground
-                    source={require("../../assets/images/bg/quiz3.png")}
-                    style={styles.optionBackground}
-                    imageStyle={styles.optionBackgroundImage}
-                  >
-                    <Text style={styles.optionText}>{option}</Text>
-                  </ImageBackground>
-                </Pressable>
-              ))}
-            </View>
+            {!showHint && question?.options && (
+              <OptionsSection
+                options={question?.options}
+                handleAnswerSelection={handleAnswerSelection}
+              />
+            )}
 
-            {/* Buttons Section */}
-            <View style={styles.buttonsSection}>
-              {buttons.map((button) => (
-                <ImageBackground
-                  key={button.id}
-                  source={require("../../assets/images/bg/quiz3.png")}
-                  style={styles.iconBackground}
-                  imageStyle={styles.iconBackgroundImage}
-                >
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={() => {
-                      if (button.text === "ScoreBoard") {
-                        setIsTableOpen(true);
-                      }
-                    }}
-                    accessible
-                    accessibilityLabel={button.text}
-                  >
-                    <Text style={styles.iconText}>{button.text}</Text>
-                  </TouchableOpacity>
-                </ImageBackground>
-              ))}
-            </View>
+            <QuizButton
+              showHint={showHint}
+              setIsTableOpen={setIsTableOpen}
+              handleNextQuestion={handleNextQuestion}
+            />
           </ScrollView>
         </ImageBackground>
       )}

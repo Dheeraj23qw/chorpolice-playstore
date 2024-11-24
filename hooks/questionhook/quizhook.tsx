@@ -55,14 +55,14 @@ export const useGameTableAndScores = () => {
 
   const getRandomQuestion = () => {
     const questionFunctions = [
-      // getScoreQuestion,
-      // getTotalScoreQuestion,
-      // getRandomPositionQuestion,
+      getScoreQuestion,
+      getTotalScoreQuestion,
+      getRandomPositionQuestion,
       getPlayerPositionBooleanQuestion,
-      // getDivisibilityQuestion,
-      // getTrueFalseQuestion,
-      // getRoundOffQuestion,
-      // getOperationQuestion,
+      getDivisibilityQuestion,
+      getTrueFalseQuestion,
+      getRoundOffQuestion,
+      getOperationQuestion,
     ];
 
     const randomIndex = Math.floor(Math.random() * questionFunctions.length);

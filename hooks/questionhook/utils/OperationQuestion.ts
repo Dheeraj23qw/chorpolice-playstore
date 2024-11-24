@@ -29,7 +29,9 @@ export const generateOperationQuestion = (
 
   // If either score is NaN or undefined, throw an error
   if (isNaN(score1) || isNaN(score2)) {
-    throw new Error(`Invalid score returned for players: ${player1}, ${player2}`);
+    throw new Error(
+      `Invalid score returned for players: ${player1}, ${player2}`
+    );
   }
 
   // Randomly select an operation (+, -, *)
@@ -39,21 +41,50 @@ export const generateOperationQuestion = (
   // Initialize correctAnswer and question variables
   let correctAnswer = 0;
   let question = "";
+  let hint = "";
+
+  const PLAYERS_SCORES_DATA = `${player1}'s score in round ${
+    roundIndex + 1
+  } is ${score1}\n\n ${player2}'s score in round ${
+    roundIndex + 1
+  } is ${score2}\n\n `;
 
   // Calculate correctAnswer based on selected operation
   switch (operation) {
     case "+":
-      question = `What is the sum of ${player1}'s and ${player2}'s scores in round ${roundIndex + 1}?`;
+      question = `What is the sum of ${player1}'s and ${player2}'s scores in round ${
+        roundIndex + 1
+      }?`;
       correctAnswer = score1 + score2;
+
+      hint =`${PLAYERS_SCORES_DATA}` +
+        `The sum is: ${score1} + ${score2} = ${correctAnswer}.`;
       break;
+
     case "-":
-      question = `What is the absolute difference between ${player1}'s and ${player2}'s scores in round ${roundIndex + 1}?`;
+      question = `What is the absolute difference between ${player1}'s and ${player2}'s scores in round ${
+        roundIndex + 1
+      }?`;
       correctAnswer = Math.abs(score1 - score2); // Ensure positive result
+
+      // Add simple hint with separate scores
+      hint =
+        `${PLAYERS_SCORES_DATA}` +
+        `The absolute difference is: |${score1} - ${score2}| = ${correctAnswer}.`;
       break;
+
     case "*":
-      question = `What is the result of multiplying ${player1}'s and ${player2}'s scores in round ${roundIndex + 1}?`;
+      question = `What is the result of multiplying ${player1}'s and ${player2}'s scores in round ${
+        roundIndex + 1
+      }?`;
       correctAnswer = score1 * score2;
+
+      // Add simple hint with separate scores
+      hint =
+        `${PLAYERS_SCORES_DATA}` +
+        `The product is: ${score1} * ${score2} = ${correctAnswer}.`;
       break;
+
     default:
       throw new Error(`Invalid operation: ${operation}`);
   }
@@ -62,22 +93,25 @@ export const generateOperationQuestion = (
   const wrongAnswers = generateWrongAnswers(correctAnswer);
 
   // Shuffle the answers and ensure all are positive
-  const allOptions = [correctAnswer, ...wrongAnswers].map(option => Math.abs(option)); // Ensure all answers are positive
+  const allOptions = [correctAnswer, ...wrongAnswers].map((option) =>
+    Math.abs(option)
+  ); // Ensure all answers are positive
   const shuffledOptions = shuffleArray(allOptions);
 
   return {
     question,
     correctAnswer: correctAnswer.toString(),
     options: shuffledOptions.map(String),
+    hint,
   };
 };
 
 // Function to generate incorrect answers with variation
 const generateWrongAnswers = (correctAnswer: number): number[] => {
   return [
-    correctAnswer + Math.floor(Math.random() * 5) + 2,  // Incorrect answer 1 (positive)
-    correctAnswer - Math.floor(Math.random() * 5) - 2,  // Incorrect answer 2 (positive)
-    correctAnswer * Math.floor(Math.random() * 2) + 2,  // Incorrect answer 3 (positive)
+    correctAnswer + Math.floor(Math.random() * 5) + 2, // Incorrect answer 1 (positive)
+    correctAnswer - Math.floor(Math.random() * 5) - 2, // Incorrect answer 2 (positive)
+    correctAnswer * Math.floor(Math.random() * 2) + 2, // Incorrect answer 3 (positive)
   ];
 };
 

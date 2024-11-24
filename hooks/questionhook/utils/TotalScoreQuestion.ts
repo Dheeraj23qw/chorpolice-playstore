@@ -12,27 +12,30 @@ export const generateTotalScoreQuestion = (
     "Advisor",
   ];
 
-  // Randomly select a round (0 to 9) and a player
-  const roundIndex = Math.floor(Math.random() * 10); // Assuming 10 rounds (0-9)
-  const selectedPlayer =
-    players[Math.floor(Math.random() * players.length)];
+  const roundIndex = Math.floor(Math.random() * 3) + 7;
+  const selectedPlayer = players[Math.floor(Math.random() * players.length)];
 
-  // Get the total score for the selected player at the chosen round
   const totalScore = getTotalScoreUpToRound(roundIndex, selectedPlayer);
 
-  // Generate randomized answer options
+  const hint = `To find the correct answer, you need to add up all the points ${selectedPlayer} has collected Up to Round ${roundIndex+1}\n
+  the total score of the ${selectedPlayer} at the end of round ${roundIndex + 1} is ${totalScore}`;
+
+  const buffer = Math.floor(Math.random() * 3) + 1; 
+
+  // Use Math.abs() to ensure all values are positive
   const options = [
-    totalScore.toString(), // Correct answer
-    (totalScore + Math.floor(Math.random() * 10) + 1).toString(), // Slightly higher wrong answer
-    (totalScore - Math.floor(Math.random() * 10) - 1).toString(), // Slightly lower wrong answer
-    (totalScore + Math.floor(Math.random() * 20) + 1).toString(), // Larger deviation wrong answer
+    Math.abs(totalScore + buffer).toString(),
+    Math.abs(totalScore + buffer - 1).toString(),
+    Math.abs(totalScore - buffer).toString(),
+    Math.abs(totalScore).toString(),
   ].sort(() => Math.random() - 0.5); // Shuffle the options
 
   return {
-    question: `What is the total score of the ${selectedPlayer} at round ${
+    question: `What is the total score of the ${selectedPlayer} at the end of round ${
       roundIndex + 1
     }?`,
     options,
     correctAnswer: totalScore.toString(),
+    hint
   };
 };

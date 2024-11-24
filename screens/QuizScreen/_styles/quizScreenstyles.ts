@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     },
     overlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0, 0, 0, 0.3)",
+      backgroundColor: "rgba(0, 0, 0, 0.4)",
     },
     scrollViewContent: {
       flexGrow: 1,
@@ -77,12 +77,12 @@ export const styles = StyleSheet.create({
       textAlign: "center",
     },
     optionsSection: {
-      paddingHorizontal: responsiveWidth(5),
+      paddingHorizontal: responsiveWidth(16),
     },
     optionBackground: {
       flex: 1,
       borderRadius: responsiveWidth(4),
-      marginBottom: responsiveHeight(1.5),
+      marginBottom: responsiveHeight(1),
       justifyContent: "center",
       alignItems: "center",
       paddingVertical:responsiveHeight(1.9)

@@ -40,7 +40,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
           <View style={styles.tableContainer}>
             {/* Header */}
-            <Text style={styles.header}>Game Table</Text>
+            <Text style={styles.header}>Quiz Table</Text>
 
             {/* Table Header Row */}
             {table.length > 0 && (

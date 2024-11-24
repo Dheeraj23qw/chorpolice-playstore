@@ -11,10 +11,9 @@ export const generateRandomPositionQuestion = (
     "Advisor",
   ];
 
-  const roundIndex = Math.floor(Math.random() * 5); // Select a random round (0 to 4)
+  const roundIndex = Math.floor(Math.random() * (7 - 3 + 1)) + 3; // Random round index between 3 and 7
   const rank = Math.floor(Math.random() * 4) + 1; // Random rank (1 to 4)
 
-  // Map rank number to rank word (1 -> "first", 2 -> "second", etc.)
   const rankWord = ["first", "second", "third", "fourth"][rank - 1];
 
   // Get total scores for each player up to the selected round
@@ -23,8 +22,21 @@ export const generateRandomPositionQuestion = (
     totalScore: getTotalScoreUpToRound(roundIndex, player),
   }));
 
-  // Sort players by total score in descending order
-  playerScores.sort((a, b) => b.totalScore - a.totalScore);
+  // Tie-breaking rule: King > Advisor > Police > Thief
+  const rolePriority: Record<"Police" | "Thief" | "King" | "Advisor", number> = {
+    King: 1,
+    Advisor: 2,
+    Police: 3,
+    Thief: 4,
+  };
+
+  // Sort players by score (descending), then by role priority (ascending)
+  playerScores.sort((a, b) => {
+    if (b.totalScore === a.totalScore) {
+      return rolePriority[a.player] - rolePriority[b.player];
+    }
+    return b.totalScore - a.totalScore;
+  });
 
   // Get the player at the specified rank
   const playerAtRank = playerScores[rank - 1];
@@ -35,6 +47,7 @@ export const generateRandomPositionQuestion = (
       question: `No player is ranked ${rankWord} at the end of round ${roundIndex + 1}.`,
       options: [],
       correctAnswer: "",
+      hint: "No valid ranking data available.",
     };
   }
 
@@ -43,10 +56,19 @@ export const generateRandomPositionQuestion = (
     .map((entry) => entry.player)
     .sort(() => Math.random() - 0.5);
 
-  // Return the question, options, and the correct answer
+  // Generate the hint with player scores and rankings
+  const hint = playerScores
+    .map(
+      (entry, index) =>
+        `${index + 1}. ${entry.player}: ${entry.totalScore} points`
+    )
+    .join("\n");
+
+  // Return the question, options, correct answer, and hint
   return {
-    question: `Who was at ${rankWord} position after round ${roundIndex + 1}?`,
+    question: `Who was at ${rankWord} position at the end of round ${roundIndex + 1}?(In case of a tie, King > Advisor > Police > Thief)`,
     options: shuffledPlayers,
     correctAnswer: playerAtRank.player,
+    hint: `Scores and Rankings at the end of Round ${roundIndex+1}:\n${hint}`,
   };
 };

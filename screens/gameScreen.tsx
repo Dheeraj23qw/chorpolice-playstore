@@ -127,12 +127,12 @@ export default function GameScreen() {
               )}
 
               {/* Display the solution if available */}
-              {question?.hint && (
+              {/* {question?.hint && (
                 <View style={styles.solutionContainer}>
                   <Text style={styles.solutionHeader}>Solution:</Text>
                   <Text style={styles.solutionText}>{question?.hint}</Text>
                 </View>
-              )}
+              )} */}
 
               {/* Show next question button */}
               <TouchableOpacity style={styles.nextButton} onPress={handleNextQuestion}>
