@@ -6,6 +6,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Animated,
+  StatusBar,
 } from "react-native";
 import { styles } from "@/modal/_styles/overlaypopCSS";
 import { data } from "@/constants/popupData";
@@ -153,6 +154,8 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
       animationType="fade"
       onRequestClose={() => {}}
     >
+                <StatusBar backgroundColor={"#000000CC"} />
+
       <TouchableWithoutFeedback onPress={handleScreenTap}>
         <View style={styles.overlay}>
           <Animated.View

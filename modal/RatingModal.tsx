@@ -9,13 +9,12 @@ import {
   TextInput,
   Linking,
   Platform,
+  StatusBar,
 } from "react-native";
 import * as StoreReview from "expo-store-review"; // Import expo-store-review
 
 import { style } from "@/modal/_styles/ratingModalCSS";
 import { CustomRatingModalProps } from "@/types/models/RatingModal";
-
-
 
 const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
   visible,
@@ -99,7 +98,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
       StoreReview.requestReview();
     } else if (Platform.OS === "android") {
       // Redirect Android users to Play Store review section
-      const androidPackageName = 'com.dheeraj_kumar_yadav.chorpolice'; // Replace with your app's package name
+      const androidPackageName = "com.dheeraj_kumar_yadav.chorpolice"; // Replace with your app's package name
       Linking.openURL(
         `https://play.google.com/store/apps/details?id=${androidPackageName}&showAllReviews=true`
       );
@@ -113,6 +112,8 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
       visible={visible}
       onRequestClose={onClose}
     >
+      <StatusBar backgroundColor={"#000000CC"} />
+
       <View style={style.modalContainer}>
         <Animated.View
           style={[
@@ -147,7 +148,9 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
             onChangeText={handleCommentChange}
             multiline
           />
-          <Text style={style.wordCount}>{`Characters: ${comment.length}/80`}</Text>
+          <Text
+            style={style.wordCount}
+          >{`Characters: ${comment.length}/80`}</Text>
 
           {/* Action buttons */}
           <View style={style.buttonRow}>

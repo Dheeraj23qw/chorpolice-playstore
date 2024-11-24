@@ -8,7 +8,7 @@ import {
   ScrollView,
   ImageBackground,
 } from "react-native";
-import { styles } from "@/screens/QuizScreen/_styles/GameTableStyles"; // Import styles
+import { styles } from "@/components/thinkAndCountScreen/_styles/GameTableStyles"; // Import styles
 
 // Define props type
 interface GameTableProps {

@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Text, View, TouchableWithoutFeedback } from "react-native";
+import {
+  Modal,
+  Text,
+  View,
+  TouchableWithoutFeedback,
+  StatusBar,
+} from "react-native";
 import { styles } from "@/modal/_styles/showTableCSS";
 import { useDispatch } from "react-redux";
 import { playSound } from "@/redux/reducers/soundReducer";
@@ -34,6 +40,8 @@ const ScoreTable: React.FC<ScoreTableProps> = ({
         animationType="fade"
         onRequestClose={handleModalClose}
       >
+        <StatusBar backgroundColor={"#000000CC"} />
+
         <TouchableWithoutFeedback onPress={handleModalClose}>
           <View style={styles.modalContainer}>
             {/* Score Table Heading */}

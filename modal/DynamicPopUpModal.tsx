@@ -7,6 +7,7 @@ import {
   Pressable,
   Animated,
   TouchableWithoutFeedback,
+  StatusBar,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 import { videoData, gifData, imageData } from "@/constants/DynamicPopUpData";
@@ -139,6 +140,8 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
   return (
     <Modal visible={modalVisible} animationType="fade" transparent>
+                <StatusBar backgroundColor={"#000000CC"} />
+
       <TouchableWithoutFeedback onPress={() => {}}>
         <View style={styles.overlay}>
           {/* Player Data Section */}

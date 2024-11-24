@@ -9,7 +9,7 @@ import {
 import { useDispatch } from "react-redux";
 import CustomButton from "@/components/CustomButton";
 import { useRouter } from "expo-router";
-import { styles } from "@/screens/QuizScreen/_styles/imageSelectStyles";
+import { styles } from "@/screens/QuizScreen/_styles/quizDifficultyStyles";
 import { setDifficulty } from "@/redux/reducers/quiz";
 import { playSound } from "@/redux/reducers/soundReducer";
 

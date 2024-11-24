@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, memo } from 'react';
-import { Modal, Text, Pressable, View, Animated } from 'react-native';
+import { Modal, Text, Pressable, View, Animated, StatusBar } from 'react-native';
 import { playerNameStyles } from '@/screens/playerNameScreen/playerNameCss';
 import { CustomModalProps } from '@/types/models/CustomModal';
-
+import {styles} from "@/modal/_styles/customModalStyles"
 
 const CustomModal: React.FC<CustomModalProps> = ({
   visible,
@@ -61,11 +61,11 @@ const CustomModal: React.FC<CustomModalProps> = ({
     buttons.map((button, index) => (
       <Pressable
         key={index}
-        style={playerNameStyles.modalButton}
+        style={styles.modalButton}
         onPress={() => handleButtonPress(button.onPress)}
         accessibilityLabel={button.text}
       >
-        <Text style={playerNameStyles.modalButtonText}>{button.text}</Text>
+        <Text style={styles.modalButtonText}>{button.text}</Text>
       </Pressable>
     ))
   ), [buttons, handleButtonPress]);
@@ -77,21 +77,23 @@ const CustomModal: React.FC<CustomModalProps> = ({
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={playerNameStyles.modalContainer}>
+                <StatusBar backgroundColor={"#000000CC"} />
+
+      <View style={styles.modalContainer}>
         <Animated.View style={[
-          playerNameStyles.modalContent,
+          styles.modalContent,
           {
             transform: [{ scale: scaleAnim }],
             opacity: opacityAnim,
           },
         ]}>
-          <Text style={playerNameStyles.modaltitle}>{title}</Text>
-          <Text style={playerNameStyles.modalText}>{content}</Text>
+          <Text style={styles.modaltitle}>{title}</Text>
+          <Text style={styles.modalText}>{content}</Text>
           
           {/* Render children passed to the modal */}
           {children && <View>{children}</View>}
           
-          <View style={playerNameStyles.buttonRow}>
+          <View style={styles.buttonRow}>
             {renderButtons()}
           </View>
         </Animated.View>
