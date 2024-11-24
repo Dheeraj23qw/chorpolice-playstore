@@ -3,14 +3,14 @@ import { View, Text, Pressable, ImageBackground } from "react-native";
 import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 
 interface OptionsSectionProps {
-  options: string[];
+  options: string[] | null;
   handleAnswerSelection: (answer: string) => void;
 }
 
 const OptionsSection: React.FC<OptionsSectionProps> = ({ options, handleAnswerSelection }) => {
   return (
     <View style={styles.optionsSection}>
-      {options.map((option, index) => (
+      {options?.map((option, index) => (
         <Pressable
           key={index}
           onPress={() => handleAnswerSelection(option)}

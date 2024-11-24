@@ -77,6 +77,8 @@ export const generatePlayerPositionBooleanQuestion = (
     options: ["True", "False"], // Boolean answer options
     correctAnswer: isPlayerAtRank ? "True" : "False",
     hint: generateHint(),
+    boolean: true
+
   };
 };
 

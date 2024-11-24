@@ -96,5 +96,6 @@ export const generateTrueFalseQuestion = (
     options: ["True", "False"],
     correctAnswer: isTrue ? "True" : "False",
     hint,
+    boolean: true
   };
 };

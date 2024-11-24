@@ -5,6 +5,7 @@ import {
   StatusBar,
   ImageBackground,
   ScrollView,
+  Text,
 } from "react-native";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import {
@@ -22,6 +23,7 @@ import OptionsSection from "./OptionsSection";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { RootState } from "@/redux/store";
+import OverlayPopUp from "@/modal/overlaypop";
 
 const NUM_QUESTIONS = 7;
 const CORRECT_ANSWER_GIF = 7;
@@ -51,15 +53,35 @@ export default function QuizScreen() {
   const [isTableOpen, setIsTableOpen] = useState<boolean>(false);
   const [showHint, setShowHint] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState(0);
-  const [wrongAnswer,setWrongAnswer] = useState(0);
-  const [notanswer, setNotAnswer] = useState(0)
-
+  const [wrongAnswer, setWrongAnswer] = useState(0);
+  const [notanswer, setNotAnswer] = useState(0);
+  const [isQuestionOverlayVisible, setIsQuestionOverlayVisible] =
+    useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isOverlayRemoved, setIsOverlayRemoved] = useState(false); // New state
+
+  const [remainingOptions, setRemainingOptions] = useState<string[] | null>(
+    null
+  );
+  const [isFiftyFiftyActive, setIsFiftyFiftyActive] = useState(false);
+  const [isFiftyFiftyUsed, setIsFiftyFiftyUsed] = useState(false);
 
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
 
+  useEffect(() => {
+    setIsQuestionOverlayVisible(true);
+
+    const overlayTimeout = setTimeout(() => {
+      setIsQuestionOverlayVisible(false);
+      setIsOverlayRemoved(true); // Set overlay removed to true
+    }, 2500); // Show overlay for 2 seconds
+
+    return () => clearTimeout(overlayTimeout);
+  }, [questionIndex]);
+
   // Timer Logic - Adjust timer based on difficulty
   useEffect(() => {
+    if (!isOverlayRemoved) return;
     dispatch(stopQuizSound());
     dispatch(playSound("timer")); // Play quiz sound
 
@@ -86,7 +108,7 @@ export default function QuizScreen() {
         setIsDynamicPopUp(true); // Show "Time's up" pop-up
         setMediaType("gif");
         setMediaId(TIMER_UP_GIF);
-        setNotAnswer((prev) => prev + 1)
+        setNotAnswer((prev) => prev + 1);
         // After popup duration, hide it and show the solution
         setTimeout(() => {
           setIsDynamicPopUp(false);
@@ -101,8 +123,61 @@ export default function QuizScreen() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [difficulty, questionIndex]); // Re-run timer when difficulty or question changes
+  }, [difficulty, questionIndex, isOverlayRemoved]);
 
+  // Function to handle the 50-50 lifeline
+  const handleFiftyFifty = () => {
+    if (isFiftyFiftyUsed) {
+      Alert.alert("Lifeline Used", "You have already used the 50-50 lifeline.");
+      return;
+    }
+
+    if (!question) return; // Ensure the question exists
+
+    // Check if it's a true/false question
+    if (question.boolean) {
+      Alert.alert(
+        "Not Applicable",
+        "50-50 is not applicable for true/false questions."
+      );
+      return;
+    }
+
+    // Check if it's a multiple-choice question with exactly 4 options
+    if (question.options && question.options.length === 4) {
+      // Filter out correct and 2 random incorrect options
+      const incorrectOptions = question.options.filter(
+        (option) => option !== question.correctAnswer
+      );
+
+      // Ensure there are at least 2 incorrect options to pick from
+      if (incorrectOptions.length >= 2) {
+        const randomIncorrectOption =
+          incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
+
+        // Keep the correct answer and one random incorrect answer
+        const optionsToKeep = [question.correctAnswer, randomIncorrectOption];
+
+        setRemainingOptions(optionsToKeep); // Update state with filtered options
+        setIsFiftyFiftyActive(true); // Mark 50-50 as active
+        setIsFiftyFiftyUsed(true); // Mark lifeline as used
+      } else {
+        Alert.alert(
+          "Insufficient Options",
+          "There are not enough incorrect options to apply 50-50."
+        );
+      }
+    } else {
+      Alert.alert(
+        "Not Applicable",
+        "50-50 is only applicable for questions with four options."
+      );
+    }
+  };
+
+  const handleQuit = () => {
+    console.log("Quitting...");
+  }
   const handleAnswerSelection = (answer: string) => {
     dispatch(stopTimerSound());
 
@@ -133,6 +208,9 @@ export default function QuizScreen() {
   };
 
   const handleNextQuestion = () => {
+    setIsOverlayRemoved(false);
+    setRemainingOptions(null);
+    setIsFiftyFiftyActive(false);
     setShowHint(false);
     if (questionIndex + 1 === NUM_QUESTIONS) {
       Alert.alert("Game Over!", "You've answered all questions.");
@@ -150,10 +228,38 @@ export default function QuizScreen() {
     setSelectedAnswer(null);
     setIsCorrect(null);
     setQuestion(getRandomQuestion());
+    setCountdown(0);
+    setSelectedAnswer(null);
+    setIsCorrect(null);
+    setQuestion(getRandomQuestion());
+    setQuestionIndex(0);
+    setIsDynamicPopUp(false);
+    setMediaId(1);
+    setMediaType("image");
+    setIsTableOpen(false);
+    setShowHint(false);
+    setCorrectAnswer(0);
+    setWrongAnswer(0);
+    setNotAnswer(0);
+    setIsQuestionOverlayVisible(false);
+    setIsOverlayRemoved(false);
+    setRemainingOptions(null);
+    setIsFiftyFiftyActive(false);
+    setIsFiftyFiftyUsed(false);
+    dispatch(stopTimerSound())
+    dispatch(playSound("quiz"));
   };
 
   return (
     <>
+      {isQuestionOverlayVisible && (
+        <View style={styles.overlayContainer}>
+          <View>
+            <Text style={styles.overlayText}>Question {questionIndex + 1}</Text>
+          </View>
+        </View>
+      )}
+
       {isTableOpen && (
         <GameTable
           isTableOpen={isTableOpen}
@@ -194,7 +300,9 @@ export default function QuizScreen() {
             {/* Options Section */}
             {!showHint && question?.options && (
               <OptionsSection
-                options={question?.options}
+                options={
+                  isFiftyFiftyActive ? remainingOptions : question?.options
+                } // Conditionally pass options
                 handleAnswerSelection={handleAnswerSelection}
               />
             )}
@@ -203,6 +311,8 @@ export default function QuizScreen() {
               showHint={showHint}
               setIsTableOpen={setIsTableOpen}
               handleNextQuestion={handleNextQuestion}
+              handleFiftyFifty={handleFiftyFifty}
+              handleQuit={handleQuit}
             />
           </ScrollView>
         </ImageBackground>

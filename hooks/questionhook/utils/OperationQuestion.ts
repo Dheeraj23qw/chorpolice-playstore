@@ -113,5 +113,7 @@ export const generateOperationQuestion = (
     correctAnswer: correctAnswer.toString(),
     options,
     hint,
+    boolean: false
+
   };
 };

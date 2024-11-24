@@ -70,5 +70,6 @@ export const generateRandomPositionQuestion = (
     options: shuffledPlayers,
     correctAnswer: playerAtRank.player,
     hint: `Scores and Rankings at the end of Round ${roundIndex+1}:\n${hint}`,
+    boolean:false
   };
 };

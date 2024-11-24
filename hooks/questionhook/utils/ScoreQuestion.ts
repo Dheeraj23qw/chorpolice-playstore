@@ -71,5 +71,7 @@ export const generateScoreQuestion = (
     options: shuffledPlayers, // Multiple-choice options
     correctAnswer: selectedPlayer, // The correct answer
     hint, // Explanation of the correct answer
+    boolean: false
+
   };
 };

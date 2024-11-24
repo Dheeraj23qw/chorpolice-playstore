@@ -43,6 +43,8 @@ export const generateTotalScoreQuestion = (
     }?`,
     options,
     correctAnswer: totalScore.toString(),
-    hint
+    hint,
+    boolean: false
+
   };
 };

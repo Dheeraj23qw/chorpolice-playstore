@@ -14,6 +14,8 @@ interface ButtonProps {
   showHint: boolean;
   setIsTableOpen: (isOpen: boolean) => void;
   handleNextQuestion: () => void;
+  handleFiftyFifty: () => void;
+  handleQuit: () => void;
 }
 
 const buttons = [
@@ -27,6 +29,8 @@ export const QuizButton: React.FC<ButtonProps> = ({
   showHint,
   setIsTableOpen,
   handleNextQuestion,
+  handleFiftyFifty,
+  handleQuit
 }) => {
   const dispatch = useDispatch();
 
@@ -50,6 +54,14 @@ export const QuizButton: React.FC<ButtonProps> = ({
                 dispatch(playSound("select"));
               } else if (button.text === "Next") {
                 handleNextQuestion();
+                dispatch(playSound("select"));
+              }
+              else if(button.text === "Quit"){
+                handleQuit();
+                dispatch(playSound("select"));
+              }
+              if (button.text === "50-50") {
+                handleFiftyFifty();
                 dispatch(playSound("select"));
               }
             }}

@@ -184,4 +184,29 @@ export const styles = StyleSheet.create({
       fontSize: responsiveFontSize(1.6), // Responsive font size
       textAlign: 'center',
     },
+    overlayContainer: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0, 0, 0, 0.9)", // Semi-transparent background
+      zIndex: 10,
+    },
+  
+    overlayText: {
+      fontSize: 24, 
+      fontFamily: "outfit-bold", 
+      textAlign: "center",
+      color: "#FFD700", 
+      textShadowColor: "#000", 
+      textShadowOffset: { width: 2, height: 2 }, 
+      textShadowRadius: 4, 
+      letterSpacing: 1.5, 
+    
+    },
+    
+    
   });

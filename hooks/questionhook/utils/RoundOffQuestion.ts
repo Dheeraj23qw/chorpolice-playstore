@@ -52,5 +52,7 @@ export const generateRoundOffQuestion = (
     options,
     correctAnswer: roundedScore.toString(),
     hint,
+    boolean: false
+
   };
 };

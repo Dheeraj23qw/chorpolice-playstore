@@ -64,5 +64,7 @@ ${playerScore} is ${
     options: ["True", "False"], 
     correctAnswer: isDivisible ? "True" : "False",
     hint, 
+    boolean: true
+
   };
 };
