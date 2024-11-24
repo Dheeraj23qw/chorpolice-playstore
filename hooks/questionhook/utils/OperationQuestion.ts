@@ -57,7 +57,8 @@ export const generateOperationQuestion = (
       }?`;
       correctAnswer = score1 + score2;
 
-      hint =`${PLAYERS_SCORES_DATA}` +
+      hint =
+        `${PLAYERS_SCORES_DATA}` +
         `The sum is: ${score1} + ${score2} = ${correctAnswer}.`;
       break;
 
@@ -89,33 +90,28 @@ export const generateOperationQuestion = (
       throw new Error(`Invalid operation: ${operation}`);
   }
 
-  // Generate 3 incorrect answers with some variation
-  const wrongAnswers = generateWrongAnswers(correctAnswer);
+  const optionsSet = new Set<number>();
 
-  // Shuffle the answers and ensure all are positive
-  const allOptions = [correctAnswer, ...wrongAnswers].map((option) =>
-    Math.abs(option)
-  ); // Ensure all answers are positive
-  const shuffledOptions = shuffleArray(allOptions);
+  // Add correct answer first
+  optionsSet.add(correctAnswer);
+
+  while (optionsSet.size < 4) {
+    // Generate a new option using the buffer
+    const randomOption = Math.abs(
+      correctAnswer + Math.floor(Math.random() * 6) - 3
+    );
+    optionsSet.add(randomOption); // Add it to the set
+  }
+
+  // Convert the Set to an array and shuffle it
+  const options = Array.from(optionsSet)
+    .map((option) => Math.abs(option).toString()) // Convert to string and ensure all are positive
+    .sort(() => Math.random() - 0.5);
 
   return {
     question,
     correctAnswer: correctAnswer.toString(),
-    options: shuffledOptions.map(String),
+    options,
     hint,
   };
-};
-
-// Function to generate incorrect answers with variation
-const generateWrongAnswers = (correctAnswer: number): number[] => {
-  return [
-    correctAnswer + Math.floor(Math.random() * 5) + 2, // Incorrect answer 1 (positive)
-    correctAnswer - Math.floor(Math.random() * 5) - 2, // Incorrect answer 2 (positive)
-    correctAnswer * Math.floor(Math.random() * 2) + 2, // Incorrect answer 3 (positive)
-  ];
-};
-
-// Function to shuffle array elements randomly
-const shuffleArray = (array: any[]): any[] => {
-  return array.sort(() => Math.random() - 0.5);
 };

@@ -20,15 +20,22 @@ export const generateTotalScoreQuestion = (
   const hint = `To find the correct answer, you need to add up all the points ${selectedPlayer} has collected Up to Round ${roundIndex+1}\n
   the total score of the ${selectedPlayer} at the end of round ${roundIndex + 1} is ${totalScore}`;
 
-  const buffer = Math.floor(Math.random() * 3) + 1; 
+  const optionsSet = new Set<number>();
 
-  // Use Math.abs() to ensure all values are positive
-  const options = [
-    Math.abs(totalScore + buffer).toString(),
-    Math.abs(totalScore + buffer - 1).toString(),
-    Math.abs(totalScore - buffer).toString(),
-    Math.abs(totalScore).toString(),
-  ].sort(() => Math.random() - 0.5); // Shuffle the options
+  // Add the correct answer first
+  optionsSet.add(totalScore);
+
+  // Generate unique options
+  while (optionsSet.size < 4) {
+    const buffer = Math.floor(Math.random() * 3) + 1; // Random adjustment
+    const option = totalScore + Math.floor(Math.random() * 7) - 3; // Create a random offset
+    optionsSet.add(option); // Only adds unique values
+  }
+
+  // Convert the set to an array and shuffle
+  const options = Array.from(optionsSet)
+    .map((option) => Math.abs(option).toString()) // Convert to string and ensure all are positive
+    .sort(() => Math.random() - 0.5);
 
   return {
     question: `What is the total score of the ${selectedPlayer} at the end of round ${

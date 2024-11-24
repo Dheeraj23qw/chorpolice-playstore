@@ -55,13 +55,13 @@ export const useGameTableAndScores = () => {
 
   const getRandomQuestion = () => {
     const questionFunctions = [
-      getScoreQuestion,
-      getTotalScoreQuestion,
-      getRandomPositionQuestion,
-      getPlayerPositionBooleanQuestion,
-      getDivisibilityQuestion,
-      getTrueFalseQuestion,
-      getRoundOffQuestion,
+      // getScoreQuestion,
+      // getTotalScoreQuestion,
+      // getRandomPositionQuestion,
+      // getPlayerPositionBooleanQuestion,
+      // getDivisibilityQuestion,
+      // getTrueFalseQuestion,
+      // getRoundOffQuestion,
       getOperationQuestion,
     ];
 

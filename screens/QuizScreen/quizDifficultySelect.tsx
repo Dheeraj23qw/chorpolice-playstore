@@ -11,6 +11,7 @@ import CustomButton from "@/components/CustomButton";
 import { useRouter } from "expo-router";
 import { styles } from "@/screens/QuizScreen/_styles/imageSelectStyles";
 import { setDifficulty } from "@/redux/reducers/quiz";
+import { playSound } from "@/redux/reducers/soundReducer";
 
 type DifficultyOption = "easy" | "medium" | "hard"; // Explicit type for options
 
@@ -21,6 +22,8 @@ export default function ImageSelectScreen() {
   const dispatch = useDispatch();
 
   const handleOptionSelect = (option: string) => {
+    dispatch(playSound("select"));
+
     // Type assertion to ensure the option is valid (only "easy", "medium", "hard" are allowed)
     if (options.includes(option as DifficultyOption)) {
       setSelectedOption(option as DifficultyOption); // Update local state

@@ -32,7 +32,7 @@ const difficultySlice = createSlice({
 
 // Function to generate random number based on difficulty
 const generateRandomNumber = (difficulty: "easy" | "medium" | "hard" | null): number => {
-  if (difficulty === "easy") return Math.floor(Math.random() * 3) + 1;
+  if (difficulty === "easy") return Math.floor(Math.random() * 9) + 1;
   if (difficulty === "medium") return Math.floor(Math.random() * 90) + 10;
   return Math.floor(Math.random() * 900) + 100;
 };

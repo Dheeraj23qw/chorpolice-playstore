@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Text, Pressable, Animated } from 'react-native';
 import { styles } from "@/components/_CSS/customButtonStyles";
+import { playSound } from '@/redux/reducers/soundReducer';
+import { useDispatch } from 'react-redux';
 
 type CustomButtonProps = {
     label: string;
@@ -12,8 +14,10 @@ type CustomButtonProps = {
 export default function CustomButton({ label, onPress, backgroundColor}: CustomButtonProps) {
     const [isSelected, setIsSelected] = useState(false);
     const scaleAnim = useRef(new Animated.Value(1)).current;
-
+    const dispatch = useDispatch(); // Redux dispatch hook
     const handlePressIn = () => {
+        dispatch(playSound("select"));
+
         setIsSelected(true);
         Animated.spring(scaleAnim, {
             toValue: 1.1, // Slightly enlarge text on press

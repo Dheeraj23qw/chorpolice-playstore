@@ -14,7 +14,7 @@ interface HintSectionProps {
 const HintSection: React.FC<HintSectionProps> = ({ hint }) => {
   return (
     <View style={localStyles.hintContainer}>
-      <ScrollView style={localStyles.hintScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={localStyles.hintScroll} >
         <Text style={localStyles.hintText}>{hint || "No hint available."}</Text>
       </ScrollView>
     </View>

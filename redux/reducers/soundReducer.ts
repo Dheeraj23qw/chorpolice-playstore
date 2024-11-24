@@ -12,6 +12,7 @@ type SoundName =
   | "select"
   | "selected"
   | "king"
+  |"timer"
   | "police";
 
 // Define paths to your sound files
@@ -26,6 +27,7 @@ const soundPaths: Record<SoundName, any> = {
   selected: require("@/assets/audio/chorPolice/selected.mp3"),
   king: require("@/assets/audio/maingame/king.mp3"),
   police: require("@/assets/audio/maingame/police.mp3"),
+  timer: require("@/assets/audio/QuizScreen/timer.mp3"),
 };
 
 // Object to store loaded sounds
@@ -40,6 +42,7 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   selected: null,
   king: null,
   police: null,
+  timer: null,
 };
 
 // Thunk to load sounds asynchronously with error handling
@@ -103,6 +106,14 @@ const soundSlice = createSlice({
         });
       }
     },
+    stopTimerSound: () => { // Add this action
+      const timerSound = sounds.timer;
+      if (timerSound) {
+        timerSound.stopAsync().catch((error: unknown) => {
+          console.error("Failed to stop timer sound:", (error as Error).message);
+        });
+      }
+    },
     unloadSounds: () => {
       Object.values(sounds).forEach((sound) => {
         if (sound) {
@@ -129,6 +140,6 @@ const soundSlice = createSlice({
   },
 });
 
-export const { playSound, stopQuizSound, unloadSounds } = soundSlice.actions;
+export const { playSound, stopQuizSound,stopTimerSound, unloadSounds } = soundSlice.actions;
 
 export default soundSlice.reducer;
