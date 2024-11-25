@@ -9,7 +9,11 @@ import { RootState } from "@/redux/store";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
+import useRandomMessage from "../useRandomMessage";
 
+interface PlayerMessage {
+  message?: string | null;
+}
 const NUM_QUESTIONS = 7;
 const CORRECT_ANSWER_GIF = 7;
 const INCORRECT_ANSWER_GIF = 6;
@@ -26,6 +30,9 @@ export const useQuizGameLogic = () => {
   const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
     "image"
   );
+  const [playerMessage, setPlayerMessage] = useState<PlayerMessage>({
+    message: null,
+  });
   const [remainingOptions, setRemainingOptions] = useState<string[] | null>(
     null
   );
@@ -52,6 +59,10 @@ export const useQuizGameLogic = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
   const dispatch = useDispatch();
+
+  const randomMessageWin = useRandomMessage("a", "winwithoutname");
+  const randomMessageLose = useRandomMessage("b", "loserwithoutname");
+  const randomMessageTimesUp = useRandomMessage("c", "timesup");
 
   useEffect(() => {
     setIsQuestionOverlayVisible(true);
@@ -93,6 +104,9 @@ export const useQuizGameLogic = () => {
         setIsDynamicPopUp(true); // Show "Time's up" pop-up
         setMediaType("gif");
         setMediaId(TIMER_UP_GIF);
+        setPlayerMessage({
+          message: randomMessageTimesUp,
+        });
         setNotAnswer((prev) => prev + 1);
         // After popup duration, hide it and show the solution
         setTimeout(() => {
@@ -215,12 +229,18 @@ export const useQuizGameLogic = () => {
       setMediaType("gif");
       setMediaId(CORRECT_ANSWER_GIF);
       setIsCorrect(true);
+      setPlayerMessage({
+        message: randomMessageWin,
+      });
       dispatch(playSound("win"));
     } else {
       setWrongAnswer((prev) => prev + 1);
       setIsCorrect(false);
       setMediaType("gif");
       setMediaId(INCORRECT_ANSWER_GIF);
+      setPlayerMessage({
+        message: randomMessageLose,
+      });
       dispatch(playSound("lose"));
     }
 
@@ -307,5 +327,6 @@ export const useQuizGameLogic = () => {
     modalButtons,
     closeModal,
     showModal,
+    playerMessage,
   };
 };

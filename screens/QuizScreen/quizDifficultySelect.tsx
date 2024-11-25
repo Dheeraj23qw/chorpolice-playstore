@@ -57,8 +57,7 @@ const ImageSelectScreen = () => {
 
   useEffect(() => {
     const backAction = () => {
-      // Prevent back navigation when arrow is clicked
-      return true; // Returning true here prevents default back behavior
+      return true; 
     };
 
     const backHandler = BackHandler.addEventListener(

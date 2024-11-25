@@ -5,7 +5,6 @@ import { updatePlayerScores, resetGame } from "@/redux/reducers/playerReducer";
 import { BackHandler } from "react-native";
 import { playSound } from "@/redux/reducers/soundReducer";
 import useRandomMessage from "@/hooks/useRandomMessage";
-import { setIsThinking } from "@/redux/reducers/botReducer";
 
 const useQuizLogic = (router: any) => {
   const dispatch = useDispatch<AppDispatch>();

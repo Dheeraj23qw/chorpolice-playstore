@@ -42,6 +42,7 @@ export default function QuizScreen() {
     modalContent,
     modalButtons,
     closeModal,
+    playerMessage
   } = useQuizGameLogic();
 
   // Memoize parts of the UI to prevent unnecessary re-renders
@@ -101,6 +102,7 @@ export default function QuizScreen() {
             mediaId={mediaId}
             mediaType={mediaType}
             closeVisibleDelay={3000}
+            playerData={playerMessage}
           />
         </ImageBackground>
       ) : (
