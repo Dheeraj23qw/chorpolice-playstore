@@ -13,6 +13,7 @@ type SoundName =
   | "selected"
   | "king"
   |"timer"
+  | "timesup"
   | "police";
 
 // Define paths to your sound files
@@ -28,6 +29,7 @@ const soundPaths: Record<SoundName, any> = {
   king: require("@/assets/audio/maingame/king.mp3"),
   police: require("@/assets/audio/maingame/police.mp3"),
   timer: require("@/assets/audio/QuizScreen/timer.mp3"),
+  timesup: require("@/assets/audio/QuizScreen/timesup.mp3"),
 };
 
 // Object to store loaded sounds
@@ -43,6 +45,7 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   king: null,
   police: null,
   timer: null,
+  timesup: null,
 };
 
 // Thunk to load sounds asynchronously with error handling
@@ -84,7 +87,11 @@ const soundSlice = createSlice({
         console.error(`Failed to set loop for quiz sound:`, (error as Error).message);
       });
     }
-
+    if (soundName === "timer") {
+      sound.setIsLoopingAsync(true).catch((error: unknown) => {
+        console.error(`Failed to set loop for timer sound:`, (error as Error).message);
+      });
+    }
     // Stop the sound before replaying
     sound.stopAsync().catch((error: unknown) => {
       console.error(`Failed to stop sound ${soundName}:`, (error as Error).message);

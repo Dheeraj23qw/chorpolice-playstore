@@ -1,26 +1,21 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { useNavigation } from 'expo-router';
-import { NavigationProp } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
-import PlayerNameScreen from '@/screens/playerNameScreen/playerName';
+import React, { useState, useEffect, useLayoutEffect } from "react";
+import { useNavigation } from "expo-router";
+import { NavigationProp } from "@react-navigation/native";
+import { useDispatch } from "react-redux";
 import {
   loadSounds,
   playSound,
   stopQuizSound,
   unloadSounds,
 } from "@/redux/reducers/soundReducer";
-import VideoPlayerComponent from '@/components/RajamantriGameScreen/videoPlayer';
-import GameModeScreen from '@/screens/GameModeScreen/gameModeScreen';
-import Showplayer from '@/components/QuizScreen/showplayer';
-import GameScreen from '@/screens/gameScreen';
-import { StatusBar } from 'react-native';
+import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
+import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 
 export default function Index() {
   const navigation = useNavigation<NavigationProp<any>>();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
 
- 
   // Load sounds on mount
   useEffect(() => {
     async function initializeSounds() {
@@ -57,5 +52,5 @@ export default function Index() {
   }
 
   // Render main content after video ends
-  return <GameModeScreen/>;
+  return <GameModeScreen />;
 }

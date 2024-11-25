@@ -8,6 +8,7 @@ import {
 import { RootState } from "@/redux/store";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { Alert } from "react-native";
+import { useRouter } from "expo-router";
 
 const NUM_QUESTIONS = 7;
 const CORRECT_ANSWER_GIF = 7;
@@ -46,6 +47,7 @@ export const useQuizGameLogic = () => {
   const [modalButtons, setModalButtons] = useState<
     Array<{ text: string; onPress: () => void }>
   >([]);
+  const router = useRouter(); // Initialize router
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
@@ -72,11 +74,11 @@ export const useQuizGameLogic = () => {
 
     // Set timer based on difficulty (in seconds)
     if (difficulty === "easy") {
-      initialTime = 20; // 90 seconds for easy
+      initialTime = 60; // 90 seconds for easy
     } else if (difficulty === "medium") {
-      initialTime = 30; // 120 seconds for medium
+      initialTime = 90; // 120 seconds for medium
     } else if (difficulty === "hard") {
-      initialTime = 50; // 150 seconds for hard
+      initialTime = 180; // 150 seconds for hard
     }
 
     setCountdown(initialTime);
@@ -86,7 +88,7 @@ export const useQuizGameLogic = () => {
       setCountdown((prevCountdown) => {
         if (prevCountdown > 0) return prevCountdown - 1;
         dispatch(stopTimerSound());
-
+        dispatch(playSound("timesup"));
         clearInterval(timerRef.current!);
         setIsDynamicPopUp(true); // Show "Time's up" pop-up
         setMediaType("gif");
@@ -163,11 +165,9 @@ export const useQuizGameLogic = () => {
         setIsFiftyFiftyActive(true);
         setIsFiftyFiftyUsed(true); // Mark lifeline as used
 
-        showModal(
-          "Lifeline Used",
-          "Two incorrect options have been removed.",
-          [{ text: "OK", onPress: closeModal }]
-        );
+        showModal("Lifeline Used", "Two incorrect options have been removed.", [
+          { text: "OK", onPress: closeModal },
+        ]);
       } else {
         showModal(
           "Insufficient Options",
@@ -185,7 +185,20 @@ export const useQuizGameLogic = () => {
   };
 
   const handleQuit = () => {
-    console.log("Quitting...");
+    showModal("Quit Game", "Are you sure you want to quit the game?", [
+      {
+        text: "Cancel",
+        onPress: closeModal, // Close the modal without quitting
+      },
+      {
+        text: "Quit",
+        onPress: () => {
+          closeModal(); // Close the modal
+          resetGame(); // Reset the game state
+          router.replace("/gamelevel"); // Navigate to the GameMode screen
+        },
+      },
+    ]);
   };
 
   const handleAnswerSelection = (answer: string) => {
@@ -218,6 +231,7 @@ export const useQuizGameLogic = () => {
   };
 
   const handleNextQuestion = () => {
+    dispatch(playSound("next"));
     setIsOverlayRemoved(false);
     setRemainingOptions(null);
     setIsFiftyFiftyActive(false);

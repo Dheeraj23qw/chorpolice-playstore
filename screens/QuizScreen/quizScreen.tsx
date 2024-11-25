@@ -20,33 +20,19 @@ import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import CustomModal from "@/modal/CustomModal";
 
-interface PlayerData {
-  image?: string | null;
-  message?: string | null;
-  imageType?: string | null;
-}
-
 export default function QuizScreen() {
   const {
     countdown,
-    selectedAnswer,
-    isCorrect,
     isDynamicPopUp,
     mediaId,
     mediaType,
     remainingOptions,
     isFiftyFiftyActive,
-    isFiftyFiftyUsed,
     showHint,
-    correctAnswer,
-    wrongAnswer,
-    notanswer,
     handleFiftyFifty,
     handleNextQuestion,
     handleAnswerSelection,
-    resetGame,
     isQuestionOverlayVisible,
-    isOverlayRemoved,
     handleQuit,
     isTableOpen,
     setIsTableOpen,
@@ -58,7 +44,6 @@ export default function QuizScreen() {
     modalContent,
     modalButtons,
     closeModal,
-    showModal,
   } = useQuizGameLogic();
 
   return (

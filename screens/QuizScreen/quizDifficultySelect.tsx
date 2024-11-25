@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StatusBar,
+  BackHandler,
 } from "react-native";
 import { useDispatch } from "react-redux";
 import CustomButton from "@/components/CustomButton";
@@ -14,6 +15,7 @@ import { styles } from "@/screens/QuizScreen/_styles/quizDifficultyStyles";
 import { setDifficulty } from "@/redux/reducers/quiz";
 import { playSound } from "@/redux/reducers/soundReducer";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+import { Ionicons } from "@expo/vector-icons";
 
 type DifficultyOption = "easy" | "medium" | "hard";
 const GIF_IDS: Record<DifficultyOption, number> = {
@@ -45,12 +47,23 @@ export default function ImageSelectScreen() {
 
       setTimeout(() => {
         setIsDynamicPopUp(false);
-      }, 4000);
+      }, 2500);
     }
   };
 
+  useEffect(() => {
+    const backAction = () => {
+      // Prevent back navigation when arrow is clicked
+      return true; // Returning true here prevents default back behavior
+    };
 
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
 
+    return () => backHandler.remove(); // Clean up the listener when component unmounts
+  }, []);
 
   return (
     <>
@@ -64,7 +77,7 @@ export default function ImageSelectScreen() {
             isPopUp={isDynamicPopUp}
             mediaId={mediaId}
             mediaType={mediaType}
-            closeVisibleDelay={4000}
+            closeVisibleDelay={2500}
           />
         </ImageBackground>
       ) : (
@@ -73,6 +86,17 @@ export default function ImageSelectScreen() {
           style={styles.backgroundImage}
         >
           <View style={styles.overlay} />
+          <Pressable
+            onPress={() => router.navigate("/modeselect")}
+            style={[styles.backButton]} // Apply the backButton style
+          >
+            <Ionicons
+              name="arrow-back"
+              size={35}
+              color="gold"
+              style={styles.icon3D} // Apply the icon3D style
+            />
+          </Pressable>
 
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             {/* Circular Section */}

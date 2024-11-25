@@ -69,11 +69,6 @@ const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
 
   return (
     <View style={styles.headerButtonsContainer}>
-      {/* Settings Button */}
-      <TouchableOpacity style={styles.headerButton}>
-        <Ionicons name="settings" size={24} color="#FFF" />
-      </TouchableOpacity>
-
       {/* Mute/Unmute Button */}
       <TouchableOpacity
         style={styles.headerButton}

@@ -87,5 +87,22 @@ export const styles = StyleSheet.create({
     selectedOptionText: {
       color: "gold",
     },
+
+    backButton: {
+      paddingTop: 60,  // Adjust to space the button below the status bar
+      position: 'absolute',
+      top: 0,
+      left: 30, // Adjust for desired horizontal position
+      zIndex: 1000,  // Ensure button is above other elements
+    },
+    icon3D: {
+      
+      transform: [{ translateY: 2 }, { translateX: 2 }],  // Creates the 3D effect
+      shadowColor: '#000',  // Shadow color
+      shadowOffset: { width: 3, height: 3 },  // Shadow offset
+      shadowOpacity: 0.5,  // Shadow opacity
+      shadowRadius: 3,  // Shadow radius for blur
+      elevation: 5,  // Adds shadow on Android
+    },
     
   });
