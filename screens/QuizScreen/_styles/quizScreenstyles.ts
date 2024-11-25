@@ -207,6 +207,22 @@ export const styles = StyleSheet.create({
       letterSpacing: 1.5, 
     
     },
+
+    instructionContainer: {
+      backgroundColor: "rgba(255, 255, 255, 0.4)",
+      padding: responsiveWidth(2), // Responsive padding
+      borderRadius: responsiveWidth(2), // Responsive border radius
+      marginVertical: responsiveHeight(2), // Responsive vertical margin
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: responsiveHeight(1.5), // Responsive vertical padding
+    },
+    instructionText: {
+      fontSize: responsiveFontSize(2.5), // Responsive font size
+      color: "#fff", // Modern white color
+      textAlign: "center",
+      fontFamily: "outfit-bold", // Premium and clean font
+    },
     
     
   });

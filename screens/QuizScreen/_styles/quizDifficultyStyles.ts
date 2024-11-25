@@ -87,4 +87,5 @@ export const styles = StyleSheet.create({
     selectedOptionText: {
       color: "gold",
     },
+    
   });

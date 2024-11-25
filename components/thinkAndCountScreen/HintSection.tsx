@@ -6,6 +6,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { responsiveFontSize, responsiveHeight, responsiveWidth } from "react-native-responsive-dimensions";
+import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 
 interface HintSectionProps {
   hint: string | undefined;
@@ -14,8 +15,8 @@ interface HintSectionProps {
 const HintSection: React.FC<HintSectionProps> = ({ hint }) => {
   return (
     <View style={localStyles.hintContainer}>
-      <ScrollView style={localStyles.hintScroll} >
-        <Text style={localStyles.hintText}>{hint || "No hint available."}</Text>
+      <ScrollView style={localStyles.hintScroll} nestedScrollEnabled={true}>
+        <Text style={styles.instructionText}>{hint || "No hint available."}</Text>
       </ScrollView>
     </View>
   );

@@ -38,7 +38,14 @@ export const useQuizGameLogic = () => {
   const [isOverlayRemoved, setIsOverlayRemoved] = useState(false);
   const [isQuestionOverlayVisible, setIsQuestionOverlayVisible] =
     useState(false);
-    const [isTableOpen, setIsTableOpen] = useState<boolean>(false);
+  const [isTableOpen, setIsTableOpen] = useState<boolean>(false);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalTitle, setModalTitle] = useState<string>("");
+  const [modalContent, setModalContent] = useState<string>("");
+  const [modalButtons, setModalButtons] = useState<
+    Array<{ text: string; onPress: () => void }>
+  >([]);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
@@ -101,11 +108,27 @@ export const useQuizGameLogic = () => {
     };
   }, [difficulty, questionIndex, isOverlayRemoved]);
 
+  const showModal = (
+    title: string,
+    content: string,
+    buttons: Array<{ text: string; onPress: () => void }>
+  ) => {
+    setModalTitle(title);
+    setModalContent(content);
+    setModalButtons(buttons);
+    setIsModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+  };
 
   // Function to handle the 50-50 lifeline
   const handleFiftyFifty = () => {
     if (isFiftyFiftyUsed) {
-      Alert.alert("Lifeline Used", "You have already used the 50-50 lifeline.");
+      showModal("Lifeline Used", "You have already used the 50-50 lifeline.", [
+        { text: "OK", onPress: closeModal },
+      ]);
       return;
     }
 
@@ -113,9 +136,10 @@ export const useQuizGameLogic = () => {
 
     // Check if it's a true/false question
     if (question.boolean) {
-      Alert.alert(
+      showModal(
         "Not Applicable",
-        "50-50 is not applicable for true/false questions."
+        "50-50 is only applicable for questions with four options.",
+        [{ text: "OK", onPress: closeModal }]
       );
       return;
     }
@@ -136,29 +160,35 @@ export const useQuizGameLogic = () => {
         const optionsToKeep = [question.correctAnswer, randomIncorrectOption];
 
         setRemainingOptions(optionsToKeep); // Update state with filtered options
-        setIsFiftyFiftyActive(true); // Mark 50-50 as active
+        setIsFiftyFiftyActive(true);
         setIsFiftyFiftyUsed(true); // Mark lifeline as used
+
+        showModal(
+          "Lifeline Used",
+          "Two incorrect options have been removed.",
+          [{ text: "OK", onPress: closeModal }]
+        );
       } else {
-        Alert.alert(
+        showModal(
           "Insufficient Options",
-          "There are not enough incorrect options to apply 50-50."
+          "There are not enough incorrect options to apply 50-50.",
+          [{ text: "OK", onPress: closeModal }]
         );
       }
     } else {
-      Alert.alert(
-        "Not Applicable",
-        "50-50 is only applicable for questions with four options."
+      showModal(
+        `Not Applicable`,
+        `50-50 is only applicable for questions with four options.`,
+        [{ text: "OK", onPress: closeModal }]
       );
     }
   };
 
   const handleQuit = () => {
     console.log("Quitting...");
-  }
+  };
 
- 
-
-   const handleAnswerSelection = (answer: string) => {
+  const handleAnswerSelection = (answer: string) => {
     dispatch(stopTimerSound());
 
     setSelectedAnswer(answer);
@@ -226,7 +256,7 @@ export const useQuizGameLogic = () => {
     setRemainingOptions(null);
     setIsFiftyFiftyActive(false);
     setIsFiftyFiftyUsed(false);
-    dispatch(stopTimerSound())
+    dispatch(stopTimerSound());
     dispatch(playSound("quiz"));
   };
 
@@ -249,13 +279,19 @@ export const useQuizGameLogic = () => {
     isQuestionOverlayVisible,
     isOverlayRemoved,
     handleQuit,
-   isTableOpen,
-   setIsTableOpen,
+    isTableOpen,
+    setIsTableOpen,
     handleFiftyFifty,
     handleNextQuestion,
     handleAnswerSelection,
     resetGame,
     questionIndex,
     table,
+    isModalVisible,
+    modalTitle,
+    modalContent,
+    modalButtons,
+    closeModal,
+    showModal,
   };
 };

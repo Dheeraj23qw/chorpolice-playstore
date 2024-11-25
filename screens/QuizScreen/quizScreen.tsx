@@ -6,6 +6,7 @@ import {
   ImageBackground,
   ScrollView,
   Text,
+  StyleSheet,
 } from "react-native";
 
 import GameTable from "../../components/thinkAndCountScreen/GameTable";
@@ -17,6 +18,7 @@ import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection"
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
+import CustomModal from "@/modal/CustomModal";
 
 interface PlayerData {
   image?: string | null;
@@ -51,6 +53,12 @@ export default function QuizScreen() {
     questionIndex,
     table,
     question,
+    isModalVisible,
+    modalTitle,
+    modalContent,
+    modalButtons,
+    closeModal,
+    showModal,
   } = useQuizGameLogic();
 
   return (
@@ -116,6 +124,28 @@ export default function QuizScreen() {
               handleNextQuestion={handleNextQuestion}
               handleFiftyFifty={handleFiftyFifty}
               handleQuit={handleQuit}
+            />
+            {!showHint && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>
+                  Tap on the Quiz Table to solve the question.
+                </Text>
+              </View>
+            )}
+            {showHint && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>
+                  Tap on the Next to move to the next question.
+                </Text>
+              </View>
+            )}
+
+            <CustomModal
+              visible={isModalVisible}
+              onClose={closeModal}
+              title={modalTitle}
+              content={modalContent}
+              buttons={modalButtons}
             />
           </ScrollView>
         </ImageBackground>

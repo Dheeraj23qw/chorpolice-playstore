@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
-import { responsiveHeight } from "react-native-responsive-dimensions";
+import { responsiveFontSize, responsiveHeight, responsiveWidth } from "react-native-responsive-dimensions";
 // Custom Hooks
 import { usePlayerNameScreen } from "@/hooks/usePlayerNameScreen";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
@@ -181,17 +181,17 @@ export default React.memo(PlayerNameScreen);
 const styles = StyleSheet.create({
   instructionContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.4)",
-    padding: 5,
-    borderRadius: 10,
-    marginVertical: 20,
+    padding: responsiveWidth(2), // Responsive padding
+    borderRadius: responsiveWidth(2), // Responsive border radius
+    marginVertical: responsiveHeight(2), // Responsive vertical margin
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
+    paddingVertical: responsiveHeight(1.5), // Responsive vertical padding
   },
   instructionText: {
-    fontSize: 20, // Slightly larger for better readability
-    color: "#fff", // A softer white for a modern look
+    fontSize: responsiveFontSize(2.5), // Responsive font size
+    color: "#fff", // Modern white color
     textAlign: "center",
-    fontFamily: "outfit-bold", // Using a premium and clean font
+    fontFamily: "outfit-bold", // Premium and clean font
   },
 });
