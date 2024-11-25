@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -23,7 +23,8 @@ const GIF_IDS: Record<DifficultyOption, number> = {
   medium: 10,
   hard: 11,
 };
-export default function ImageSelectScreen() {
+
+const ImageSelectScreen = () => {
   const router = useRouter();
   const options: DifficultyOption[] = ["easy", "medium", "hard"];
   const [selectedOption, setSelectedOption] = useState<DifficultyOption | null>(
@@ -36,20 +37,23 @@ export default function ImageSelectScreen() {
   );
   const dispatch = useDispatch();
 
-  const handleOptionSelect = (option: DifficultyOption) => {
-    if (options.includes(option)) {
-      dispatch(playSound("select"));
-      setMediaId(GIF_IDS[option]);
-      setMediaType("gif");
-      setIsDynamicPopUp(true);
-      setSelectedOption(option);
-      dispatch(setDifficulty(option));
+  const handleOptionSelect = useCallback(
+    (option: DifficultyOption) => {
+      if (options.includes(option) && selectedOption !== option) {
+        dispatch(playSound("select"));
+        setMediaId(GIF_IDS[option]);
+        setMediaType("gif");
+        setIsDynamicPopUp(true);
+        setSelectedOption(option);
+        dispatch(setDifficulty(option));
 
-      setTimeout(() => {
-        setIsDynamicPopUp(false);
-      }, 2500);
-    }
-  };
+        setTimeout(() => {
+          setIsDynamicPopUp(false);
+        }, 2500);
+      }
+    },
+    [dispatch, options, selectedOption]
+  );
 
   useEffect(() => {
     const backAction = () => {
@@ -87,14 +91,14 @@ export default function ImageSelectScreen() {
         >
           <View style={styles.overlay} />
           <Pressable
-            onPress={() => router.navigate("/modeselect")}
-            style={[styles.backButton]} // Apply the backButton style
+            onPress={() => router.push("/modeselect")}
+            style={[styles.backButton]}
           >
             <Ionicons
               name="arrow-back"
               size={35}
               color="gold"
-              style={styles.icon3D} // Apply the icon3D style
+              style={styles.icon3D}
             />
           </Pressable>
 
@@ -149,6 +153,8 @@ export default function ImageSelectScreen() {
                 </Pressable>
               ))}
             </View>
+
+            {/* Start Button */}
             {selectedOption && (
               <View
                 style={{
@@ -169,4 +175,6 @@ export default function ImageSelectScreen() {
       )}
     </>
   );
-}
+};
+
+export default React.memo(ImageSelectScreen);

@@ -1,12 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
-  Alert,
   StatusBar,
   ImageBackground,
   ScrollView,
   Text,
-  StyleSheet,
 } from "react-native";
 
 import GameTable from "../../components/thinkAndCountScreen/GameTable";
@@ -46,30 +44,58 @@ export default function QuizScreen() {
     closeModal,
   } = useQuizGameLogic();
 
+  // Memoize parts of the UI to prevent unnecessary re-renders
+  const renderQuestionSection = useMemo(() => {
+    return <QuestionSection question={question?.question} />;
+  }, [question]);
+
+  const renderOptionsSection = useMemo(() => {
+    return (
+      !showHint && question?.options && (
+        <OptionsSection
+          options={isFiftyFiftyActive ? remainingOptions : question?.options}
+          handleAnswerSelection={handleAnswerSelection}
+        />
+      )
+    );
+  }, [showHint, question, remainingOptions, isFiftyFiftyActive]);
+
+  const renderHintSection = useMemo(() => {
+    return showHint && <HintSection hint={question?.hint} />;
+  }, [showHint, question]);
+
+  const renderInstructionText = useMemo(() => {
+    return (
+      <View style={styles.instructionContainer}>
+        <Text style={styles.instructionText}>
+          {showHint
+            ? "Tap on the Next to move to the next question."
+            : "Tap on the Quiz Table to solve the question."}
+        </Text>
+      </View>
+    );
+  }, [showHint]);
+
   return (
     <>
       {isQuestionOverlayVisible && (
         <View style={styles.overlayContainer}>
-          <View>
-            <Text style={styles.overlayText}>Question {questionIndex + 1}</Text>
-          </View>
+          <Text style={styles.overlayText}>Question {questionIndex + 1}</Text>
         </View>
       )}
 
-      {isTableOpen && (
+      {isTableOpen ? (
         <GameTable
           isTableOpen={isTableOpen}
           setIsTableOpen={setIsTableOpen}
           table={table}
         />
-      )}
-
-      {isDynamicPopUp ? (
+      ) : isDynamicPopUp ? (
         <ImageBackground
           source={require("../../assets/images/bg/quizbg2.png")}
           style={styles.backgroundImage}
         >
-          <StatusBar backgroundColor={"#000000CC"} />
+          <StatusBar backgroundColor="#000000CC" />
           <DynamicOverlayPopUp
             isPopUp={isDynamicPopUp}
             mediaId={mediaId}
@@ -88,21 +114,15 @@ export default function QuizScreen() {
             <Timer countdown={countdown} />
 
             {/* Question Section */}
-            {<QuestionSection question={question?.question} />}
+            {renderQuestionSection}
 
             {/* Hint Section */}
-            {showHint && <HintSection hint={question?.hint} />}
+            {renderHintSection}
 
             {/* Options Section */}
-            {!showHint && question?.options && (
-              <OptionsSection
-                options={
-                  isFiftyFiftyActive ? remainingOptions : question?.options
-                } // Conditionally pass options
-                handleAnswerSelection={handleAnswerSelection}
-              />
-            )}
+            {renderOptionsSection}
 
+            {/* Quiz Buttons */}
             <QuizButton
               showHint={showHint}
               setIsTableOpen={setIsTableOpen}
@@ -110,21 +130,11 @@ export default function QuizScreen() {
               handleFiftyFifty={handleFiftyFifty}
               handleQuit={handleQuit}
             />
-            {!showHint && (
-              <View style={styles.instructionContainer}>
-                <Text style={styles.instructionText}>
-                  Tap on the Quiz Table to solve the question.
-                </Text>
-              </View>
-            )}
-            {showHint && (
-              <View style={styles.instructionContainer}>
-                <Text style={styles.instructionText}>
-                  Tap on the Next to move to the next question.
-                </Text>
-              </View>
-            )}
 
+            {/* Instruction Text */}
+            {renderInstructionText}
+
+            {/* Custom Modal */}
             <CustomModal
               visible={isModalVisible}
               onClose={closeModal}

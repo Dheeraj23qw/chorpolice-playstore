@@ -218,7 +218,7 @@ export const styles = StyleSheet.create({
       paddingVertical: responsiveHeight(1.5), // Responsive vertical padding
     },
     instructionText: {
-      fontSize: responsiveFontSize(2.5), // Responsive font size
+      fontSize: responsiveFontSize(2.3), // Responsive font size
       color: "#fff", // Modern white color
       textAlign: "center",
       fontFamily: "outfit-bold", // Premium and clean font

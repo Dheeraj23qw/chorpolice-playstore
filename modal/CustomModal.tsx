@@ -1,8 +1,15 @@
-import React, { useCallback, useEffect, useRef, memo } from 'react';
-import { Modal, Text, Pressable, View, Animated, StatusBar } from 'react-native';
-import { playerNameStyles } from '@/screens/playerNameScreen/playerNameCss';
-import { CustomModalProps } from '@/types/models/CustomModal';
-import {styles} from "@/modal/_styles/customModalStyles"
+import React, { useCallback, useEffect, useRef, memo } from "react";
+import {
+  Modal,
+  Text,
+  Pressable,
+  View,
+  Animated,
+  StatusBar,
+} from "react-native";
+import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
+import { CustomModalProps } from "@/types/models/CustomModal";
+import { styles } from "@/modal/_styles/customModalStyles";
 
 const CustomModal: React.FC<CustomModalProps> = ({
   visible,
@@ -10,7 +17,7 @@ const CustomModal: React.FC<CustomModalProps> = ({
   title,
   content,
   buttons,
-  children,  // Include children if needed for flexible content
+  children, // Include children if needed for flexible content
 }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current; // Initial scale value
   const opacityAnim = useRef(new Animated.Value(0)).current; // Initial opacity value
@@ -25,13 +32,13 @@ const CustomModal: React.FC<CustomModalProps> = ({
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
-          friction: 3, 
-          tension: 100, 
+          friction: 3,
+          tension: 100,
           ...animationConfig,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 500, 
+          duration: 500,
           ...animationConfig,
         }),
       ]).start();
@@ -40,7 +47,7 @@ const CustomModal: React.FC<CustomModalProps> = ({
       Animated.parallel([
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 300, 
+          duration: 300,
           ...animationConfig,
         }),
         Animated.timing(scaleAnim, {
@@ -52,23 +59,28 @@ const CustomModal: React.FC<CustomModalProps> = ({
     }
   }, [visible, scaleAnim, opacityAnim]);
 
-  const handleButtonPress = useCallback((onPress: () => void) => {
-    onPress();
-    onClose(); // Close the modal when a button is pressed
-  }, [onClose]);
+  const handleButtonPress = useCallback(
+    (onPress: () => void) => {
+      onPress();
+      onClose(); // Close the modal when a button is pressed
+    },
+    [onClose]
+  );
 
-  const renderButtons = useCallback(() => (
-    buttons.map((button, index) => (
-      <Pressable
-        key={index}
-        style={styles.modalButton}
-        onPress={() => handleButtonPress(button.onPress)}
-        accessibilityLabel={button.text}
-      >
-        <Text style={styles.modalButtonText}>{button.text}</Text>
-      </Pressable>
-    ))
-  ), [buttons, handleButtonPress]);
+  const renderButtons = useCallback(
+    () =>
+      buttons.map((button, index) => (
+        <Pressable
+          key={index}
+          style={styles.modalButton}
+          onPress={() => handleButtonPress(button.onPress)}
+          accessibilityLabel={button.text}
+        >
+          <Text style={styles.modalButtonText}>{button.text}</Text>
+        </Pressable>
+      )),
+    [buttons, handleButtonPress]
+  );
 
   return (
     <Modal
@@ -77,25 +89,25 @@ const CustomModal: React.FC<CustomModalProps> = ({
       visible={visible}
       onRequestClose={onClose}
     >
-                <StatusBar backgroundColor={"#000000CC"} />
+      <StatusBar backgroundColor={"#000000CC"} />
 
       <View style={styles.modalContainer}>
-        <Animated.View style={[
-          styles.modalContent,
-          {
-            transform: [{ scale: scaleAnim }],
-            opacity: opacityAnim,
-          },
-        ]}>
+        <Animated.View
+          style={[
+            styles.modalContent,
+            {
+              transform: [{ scale: scaleAnim }],
+              opacity: opacityAnim,
+            },
+          ]}
+        >
           <Text style={styles.modaltitle}>{title}</Text>
           <Text style={styles.modalText}>{content}</Text>
-          
+
           {/* Render children passed to the modal */}
           {children && <View>{children}</View>}
-          
-          <View style={styles.buttonRow}>
-            {renderButtons()}
-          </View>
+
+          <View style={styles.buttonRow}>{renderButtons()}</View>
         </Animated.View>
       </View>
     </Modal>

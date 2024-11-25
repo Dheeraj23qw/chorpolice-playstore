@@ -1,12 +1,14 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React, { Dispatch, SetStateAction, useMemo } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Modal,
   StyleSheet,
-  ScrollView,
+  FlatList,
   ImageBackground,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { styles } from "@/components/thinkAndCountScreen/_styles/GameTableStyles"; // Import styles
 
@@ -23,65 +25,84 @@ const GameTable: React.FC<GameTableProps> = ({
   setIsTableOpen,
   table,
 }) => {
-  return (
-    <>
-      <View style={styles.overlay} />
+  const memoizedTable = useMemo(() => table, [table]);
 
-      <Modal
-        visible={isTableOpen}
-        transparent={true} // Enables overlay effect
-        animationType="fade" // Smooth animation
-      >
-        <ImageBackground
-          source={require("../../assets/images/bg/quizbg2.png")} // Background image
-          style={styles.backgroundImage}
-        >
-          <View style={styles.overlay} />
-
-          <View style={styles.tableContainer}>
-            {/* Header */}
-            <Text style={styles.header}>Quiz Table</Text>
-
-            {/* Table Header Row */}
-            {table.length > 0 && (
-              <View style={[styles.row, styles.headerRow]}>
-                {table[0].map((cell, cellIndex) => (
-                  <View
-                    style={[styles.cell, styles.headerCell]}
-                    key={cellIndex}
-                  >
-                    <Text style={[styles.cellText, styles.headerCellText]}>
-                      {cell}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Scrollable Rows */}
-            <ScrollView style={styles.scrollableContainer}>
-              {table.slice(1).map((row, rowIndex) => (
-                <View style={styles.row} key={rowIndex}>
-                  {row.map((cell, cellIndex) => (
-                    <View style={styles.cell} key={cellIndex}>
-                      <Text style={styles.cellText}>{cell}</Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </ScrollView>
-
-            {/* Close Button */}
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setIsTableOpen(false)} // Close the table
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+  // Render table header row
+  const renderHeader = () => {
+    return (
+      <View style={[styles.row, styles.headerRow]}>
+        {memoizedTable[0].map((cell, cellIndex) => (
+          <View style={[styles.cell, styles.headerCell]} key={cellIndex}>
+            <Text style={[styles.cellText, styles.headerCellText]}>{cell}</Text>
           </View>
-        </ImageBackground>
-      </Modal>
-    </>
+        ))}
+      </View>
+    );
+  };
+
+  // Render table row
+  const renderRow = ({
+    item,
+    index,
+  }: {
+    item: (string | number)[];
+    index: number;
+  }) => (
+    <View style={styles.row} key={index}>
+      {item.map((cell, cellIndex) => (
+        <View style={styles.cell} key={cellIndex}>
+          <Text style={styles.cellText}>{cell}</Text>
+        </View>
+      ))}
+    </View>
+  );
+
+  // Close modal handler
+  const handleClose = () => setIsTableOpen(false);
+
+  return (
+    <Modal
+      visible={isTableOpen}
+      transparent={true} // Enables overlay effect
+      animationType="fade" // Smooth animation
+      onRequestClose={handleClose} // Handle back press on Android
+    >
+      <StatusBar backgroundColor={"#000000CC"} />
+
+      <ImageBackground
+        source={require("../../assets/images/bg/quizbg2.png")} // Background image
+        style={styles.backgroundImage}
+      >
+        <View style={styles.overlay} />
+
+        <View style={styles.tableContainer}>
+          {/* Header */}
+          <Text style={styles.header}>Quiz Table</Text>
+
+          {/* Table Header Row */}
+          {memoizedTable.length > 0 && renderHeader()}
+
+          {/* Scrollable Rows */}
+          <FlatList
+            data={memoizedTable.slice(1)} // Skip the header row
+            renderItem={renderRow}
+            keyExtractor={(_, index) => index.toString()}
+            style={styles.scrollableContainer}
+            showsVerticalScrollIndicator={false}
+          />
+
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={handleClose} // Close the table
+            accessibilityLabel="Close the table"
+            accessibilityRole="button"
+          >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </ImageBackground>
+    </Modal>
   );
 };
 

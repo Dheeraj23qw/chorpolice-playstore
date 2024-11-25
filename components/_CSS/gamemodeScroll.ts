@@ -11,7 +11,7 @@ const GameModeScrollViewStyles = StyleSheet.create({
   itemContainer: {
     width: responsiveWidth(96),
     height: responsiveHeight(25),
-    borderWidth: 3.8,
+    borderWidth: 2,
     borderColor: 'white', // Default border color is white
     marginHorizontal: 10,
     borderRadius: 15,
@@ -27,7 +27,7 @@ const GameModeScrollViewStyles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject, // Ensures the overlay covers the entire container
-    backgroundColor: "rgba(0, 0, 0, 0.3)", // Black with 40% opacity
+    backgroundColor: "rgba(0, 0, 0, 0.4)", // Black with 40% opacity
   },
   selectedItem: {
     borderColor: '#FFD700', // Yellow border when selected
