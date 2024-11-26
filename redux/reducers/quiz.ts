@@ -4,40 +4,62 @@ interface DifficultyState {
   level: "easy" | "medium" | "hard" | null;
   table: (number | string)[][];
   totalScores: Record<string, number>;
+  totalQuestions: number;
+  correctQuestions: number;
+  isWinner: boolean;
 }
 
 const initialState: DifficultyState = {
-  level: null, // Default state is null until a difficulty is selected
+  level: null,
   table: [["Round", "Police", "Thief", "King", "Advisor"]],
   totalScores: { Police: 0, Thief: 0, King: 0, Advisor: 0 },
+  totalQuestions: 2,
+  correctQuestions: 0,
+  isWinner: false,
 };
 
 const difficultySlice = createSlice({
   name: "difficulty",
   initialState,
   reducers: {
-    setDifficulty: (state, action: PayloadAction<"easy" | "medium" | "hard">) => {
+    setDifficulty: (
+      state,
+      action: PayloadAction<"easy" | "medium" | "hard">
+    ) => {
       state.level = action.payload;
-      // Regenerate table and total scores based on the selected difficulty
       state.table = generateTable(action.payload);
       state.totalScores = generateTotalScores(state.table);
+      state.correctQuestions = 0;
+      state.isWinner = false;
     },
     resetDifficulty: (state) => {
       state.level = null;
       state.table = [["Round", "Police", "Thief", "King", "Advisor"]];
       state.totalScores = { Police: 0, Thief: 0, King: 0, Advisor: 0 };
+      state.correctQuestions = 0;
+      state.isWinner = false;
+    },
+    setCorrectAnswers: (state, action: PayloadAction<number>) => {
+      state.correctQuestions = action.payload;
+
+      // Check if all questions are correct
+      if (state.correctQuestions === state.totalQuestions) {
+        state.isWinner = true;
+      } else {
+        state.isWinner = false;
+      }
     },
   },
 });
 
-// Function to generate random number based on difficulty
-const generateRandomNumber = (difficulty: "easy" | "medium" | "hard" | null): number => {
+const generateRandomNumber = (
+  difficulty: "easy" | "medium" | "hard" | null
+): number => {
   if (difficulty === "easy") return Math.floor(Math.random() * 9) + 1;
   if (difficulty === "medium") return Math.floor(Math.random() * 90) + 10;
   return Math.floor(Math.random() * 900) + 100;
 };
 
-// Function to generate the game table based on difficulty
 const generateTable = (difficulty: "easy" | "medium" | "hard" | null) => {
   const header = ["Round", "Police", "Thief", "King", "Advisor"];
   const rows = Array.from({ length: 10 }, (_, roundIndex) => {
@@ -59,7 +81,6 @@ const generateTable = (difficulty: "easy" | "medium" | "hard" | null) => {
   return [header, ...rows];
 };
 
-// Function to calculate total scores for each player based on the table
 const generateTotalScores = (table: (number | string)[][]) => {
   const rows = table.slice(1); // Skip the header row
   return rows.reduce(
@@ -89,7 +110,6 @@ const getSpecificRoundScore = (
   return (roundRow[columnIndex] as number) || 0;
 };
 
-// Function to get the total score up to a specific round for a player
 const getTotalScoreUpToRound = (
   state: DifficultyState,
   roundIndex: number,
@@ -111,7 +131,8 @@ const getTotalScoreUpToRound = (
   return total;
 };
 
-export const { setDifficulty, resetDifficulty } = difficultySlice.actions;
+export const { setDifficulty, resetDifficulty, setCorrectAnswers } =
+  difficultySlice.actions;
 
 export default difficultySlice.reducer;
 

@@ -10,11 +10,12 @@ import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
+import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
 
 interface PlayerMessage {
   message?: string | null;
 }
-const NUM_QUESTIONS = 7;
+const NUM_QUESTIONS = 2;
 const CORRECT_ANSWER_GIF = 7;
 const INCORRECT_ANSWER_GIF = 6;
 const TIMER_UP_GIF = 8;
@@ -207,8 +208,9 @@ export const useQuizGameLogic = () => {
       {
         text: "Quit",
         onPress: () => {
-          closeModal(); // Close the modal
-          resetGame(); // Reset the game state
+          closeModal();
+          resetGame();
+          dispatch(resetDifficulty());
           router.replace("/gamelevel"); // Navigate to the GameMode screen
         },
       },
@@ -257,8 +259,8 @@ export const useQuizGameLogic = () => {
     setIsFiftyFiftyActive(false);
     setShowHint(false);
     if (questionIndex + 1 === NUM_QUESTIONS) {
-      Alert.alert("Game Over!", "You've answered all questions.");
-      resetGame();
+      dispatch(setCorrectAnswers(correctAnswer));
+      router.push("/quizresult");
     } else {
       setSelectedAnswer(null);
       setIsCorrect(null);
