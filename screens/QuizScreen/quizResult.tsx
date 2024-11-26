@@ -22,8 +22,12 @@ export default function QuizResult() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { correctQuestions: Correct, totalQuestions: Total, isWinner } =
-    useSelector((state: RootState) => state.difficulty);
+  const {
+    correctQuestions: Correct,
+    totalQuestions: Total,
+    isWinner,
+    level,
+  } = useSelector((state: RootState) => state.difficulty);
 
   const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
 
@@ -35,19 +39,29 @@ export default function QuizResult() {
 
   const toggleModal = () => setModalVisible((prev) => !prev);
 
+  const coinsMessage = (level: any) => {
+    if (level === "easy") {
+      return "You won 100 coins!";
+    }
+    if (level === "medium") {
+      return "You won 500 coins!";
+    }
+    if (level === "hard") {
+      return "You won 2000 coins!";
+    }
+  };
+
   // Render reusable UI components
   const renderResultInfo = () => (
     <>
       <Text style={styles.heading}>
         {isWinner ? "Congratulations!" : "Nice try!"}
       </Text>
-      <Text style={styles.score}>
-        {`Your Score: ${Correct}/${Total}`}
-      </Text>
+      <Text style={styles.score}>{`Your Score: ${Correct}/${Total}`}</Text>
       <Text style={styles.message}>{Message}</Text>
       <Text style={styles.coinMessage}>
         {isWinner
-          ? "You won 100 coins!"
+          ? `${coinsMessage(level)}`
           : "You didn’t win coins, but you gained experience!"}
       </Text>
       <ImageBackground
