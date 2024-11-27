@@ -32,27 +32,19 @@ export default function QuizResult() {
   const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
 
   useEffect(() => {
-    if (isWinner && !coinsAwardedOnce) {
-      console.log("called");
-      let message = "";
-      switch (level) {
-        case "easy":
-          dispatch(addCoins(100));
-          message = "You won 100 coins!";
-          break;
-        case "medium":
-          dispatch(addCoins(500));
-          message = "You won 500 coins!";
-          break;
-        case "hard":
-          dispatch(addCoins(2000));
-          message = "You won 2000 coins!";
-          break;
-        default:
-          message = "";
-          break;
-      }
-      setCoinsAwarded(message);
+    if (!coinsAwardedOnce && level != null) {
+      // Check if coins have already been awarded
+      const coinValues = {
+        easy: isWinner ? 100 : 10,
+        medium: isWinner ? 500 : 25,
+        hard: isWinner ? 2000 : 50,
+      };
+      const levelMessage = isWinner
+        ? `You won ${coinValues[level]} coins!`
+        : `You won ${coinValues[level]} coins for participating!`;
+
+      dispatch(addCoins(coinValues[level])); // Award coins to the player
+      setCoinsAwarded(levelMessage);
       setCoinsAwardedOnce(true); // Lock the effect
     }
   }, []);
@@ -85,7 +77,6 @@ export default function QuizResult() {
             Message={Message}
             coinsMessage={coinsAwarded}
             isWinner={isWinner}
-            level={level}
           />
           <RenderButtons
             handleShare={handleShare}

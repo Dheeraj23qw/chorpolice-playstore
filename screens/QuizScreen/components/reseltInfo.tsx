@@ -7,7 +7,6 @@ interface ResultInfoProps {
   Message: string;
   coinsMessage: string;
   isWinner: boolean;
-  level: string | null;
 }
 
 export const ResultInfo: React.FC<ResultInfoProps> = ({
@@ -16,7 +15,6 @@ export const ResultInfo: React.FC<ResultInfoProps> = ({
   Message,
   coinsMessage,
   isWinner,
-  level,
 }) => (
   <>
     <Text style={styles.heading}>
@@ -24,11 +22,7 @@ export const ResultInfo: React.FC<ResultInfoProps> = ({
     </Text>
     <Text style={styles.score}>{`Your Score: ${Correct}/${Total}`}</Text>
     <Text style={styles.message}>{Message}</Text>
-    <Text style={styles.coinMessage}>
-      {isWinner
-        ? `${coinsMessage}`
-        : "You didn’t win coins, but you gained experience!"}
-    </Text>
+    <Text style={styles.coinMessage}>{coinsMessage}</Text>
     <ImageBackground
       source={
         isWinner

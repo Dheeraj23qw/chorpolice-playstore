@@ -76,7 +76,6 @@ export const useQuizGameLogic = () => {
     return () => clearTimeout(overlayTimeout);
   }, [questionIndex]);
 
-  console.log(question?.correctAnswer)
   // Timer Logic - Adjust timer based on difficulty
   useEffect(() => {
     if (!isOverlayRemoved) return;
