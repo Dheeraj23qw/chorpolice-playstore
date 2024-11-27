@@ -60,10 +60,11 @@ const RajaMantriGameScreen: React.FC = () => {
     isRoundStartPopupVisible,
     roundStartMessage,
     playerNamesRedux,
+    resetGame
   } = useRajaMantriGame({ playerNames });
 
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
-    navigateToScreen: "/playerName",
+    navigateToScreen: "/playerName"
   });
   const [popupTable, setPopupTable] = useState(false);
 

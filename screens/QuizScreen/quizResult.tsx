@@ -1,11 +1,5 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  ImageBackground,
-  ScrollView,
-  Pressable,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, ImageBackground, ScrollView } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 
@@ -15,9 +9,15 @@ import CustomRatingModal from "@/modal/RatingModal";
 import { RootState } from "@/redux/store";
 import { resetDifficulty } from "@/redux/reducers/quiz";
 import { handleShare } from "@/utils/share";
+import { addCoins, resetCoins } from "@/redux/reducers/coinsReducer";
+import { ResultInfo } from "./components/reseltInfo";
+import { RenderButtons } from "./components/renderButtons";
+import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [coinsAwarded, setCoinsAwarded] = useState<string>("");
+  const [coinsAwardedOnce, setCoinsAwardedOnce] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -31,64 +31,45 @@ export default function QuizResult() {
 
   const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
 
+  useEffect(() => {
+    if (isWinner && !coinsAwardedOnce) {
+      console.log("called");
+      let message = "";
+      switch (level) {
+        case "easy":
+          dispatch(addCoins(100));
+          message = "You won 100 coins!";
+          break;
+        case "medium":
+          dispatch(addCoins(500));
+          message = "You won 500 coins!";
+          break;
+        case "hard":
+          dispatch(addCoins(2000));
+          message = "You won 2000 coins!";
+          break;
+        default:
+          message = "";
+          break;
+      }
+      setCoinsAwarded(message);
+      setCoinsAwardedOnce(true); // Lock the effect
+    }
+  }, []);
+
+  // Clean up modal visibility to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      setModalVisible(false);
+    };
+  }, []);
+
   // Handlers
   const handleHome = () => {
     router.push("/gamelevel");
-    dispatch(resetDifficulty());
   };
 
   const toggleModal = () => setModalVisible((prev) => !prev);
-
-  const coinsMessage = (level: any) => {
-    if (level === "easy") {
-      return "You won 100 coins!";
-    }
-    if (level === "medium") {
-      return "You won 500 coins!";
-    }
-    if (level === "hard") {
-      return "You won 2000 coins!";
-    }
-  };
-
-  // Render reusable UI components
-  const renderResultInfo = () => (
-    <>
-      <Text style={styles.heading}>
-        {isWinner ? "Congratulations!" : "Nice try!"}
-      </Text>
-      <Text style={styles.score}>{`Your Score: ${Correct}/${Total}`}</Text>
-      <Text style={styles.message}>{Message}</Text>
-      <Text style={styles.coinMessage}>
-        {isWinner
-          ? `${coinsMessage(level)}`
-          : "You didn’t win coins, but you gained experience!"}
-      </Text>
-      <ImageBackground
-        source={
-          isWinner
-            ? require("../../assets/images/treasure.png")
-            : require("../../assets/images/empty.png")
-        }
-        style={styles.gif}
-        resizeMode="contain"
-      />
-    </>
-  );
-
-  const renderButtons = () => (
-    <View style={styles.buttonsContainer}>
-      <Pressable style={styles.button} onPress={handleShare}>
-        <Text style={styles.buttonText}>Share</Text>
-      </Pressable>
-      <Pressable style={styles.button} onPress={handleHome}>
-        <Text style={styles.buttonText}>Home</Text>
-      </Pressable>
-      <Pressable style={styles.button} onPress={toggleModal}>
-        <Text style={styles.buttonText}>Rate Us</Text>
-      </Pressable>
-    </View>
-  );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -98,8 +79,19 @@ export default function QuizResult() {
         resizeMode="cover"
       >
         <View style={styles.overlay}>
-          {renderResultInfo()}
-          {renderButtons()}
+          <ResultInfo
+            Correct={Correct}
+            Total={Total}
+            Message={Message}
+            coinsMessage={coinsAwarded}
+            isWinner={isWinner}
+            level={level}
+          />
+          <RenderButtons
+            handleShare={handleShare}
+            handleHome={handleHome}
+            toggleModal={toggleModal}
+          />
         </View>
         <CustomRatingModal
           visible={modalVisible}

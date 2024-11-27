@@ -4,6 +4,10 @@ export type MediaItem = {
   description: string;
 };
 
+import useRandomMessage from "@/hooks/useRandomMessage";
+
+const random = useRandomMessage("","winwithoutname")
+
 export const videoData: MediaItem[] = [
   {
     id: 1,
@@ -76,6 +80,11 @@ export const gifData: MediaItem[] = [
     url: require("@/assets/gif/quiz/chest.gif"),
     description: "Win 2000 Coins! \n Answer 10/10 Correctly."
   },
+  {
+    id: 12,
+    url: require("@/assets/gif/quiz/chest.gif"),
+    description: "Your treasure sparkles with victory!",
+  }
 ];
 
 // Image data (with IDs and URLs)
