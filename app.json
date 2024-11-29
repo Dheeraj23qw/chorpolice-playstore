@@ -22,14 +22,12 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-asset",
-      "expo-secure-store"
-    ],
+    "plugins": ["expo-router", "expo-asset", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     },
+    "assetBundlePatterns": ["assets/fonts/*"],
+
     "extra": {
       "router": {
         "origin": false

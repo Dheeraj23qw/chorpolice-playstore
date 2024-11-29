@@ -11,7 +11,7 @@ const GameModeScrollViewStyles = StyleSheet.create({
   itemContainer: {
     width: responsiveWidth(96),
     height: responsiveHeight(25),
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: 'white', // Default border color is white
     marginHorizontal: 10,
     borderRadius: 15,
@@ -22,7 +22,7 @@ const GameModeScrollViewStyles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Light gray background
+    backgroundColor: 'rgba(0, 0, 0, 0.9)', // Light gray background
 
   },
   overlay: {
@@ -40,11 +40,12 @@ const GameModeScrollViewStyles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   text: {
-    color: 'white',
-    fontSize: 22,
+    color: '#FFFFFF', 
+    fontSize: 24,
     textAlign: 'center',
-    fontFamily:"outfit-bold"
+    fontFamily: "outfit-bold", 
   },
+  
   selectedText: {
     color: '#FFD700', // Yellow text when selected
   },

@@ -10,12 +10,9 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { Ionicons } from "@expo/vector-icons";
 import ScoreTable from "@/modal/ShowTableModal";
 import { RootState } from "@/redux/store";
-import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
-import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 import {
   playerNamesArray,
-  PlayerScoresArray,
-} from "@/redux/selectors/playerDataSelector"; // Adjust the import path as necessary
+} from "@/redux/selectors/playerDataSelector";
 import { useSelector } from "react-redux";
 import useRandomMessage from "@/hooks/useRandomMessage";
 const ChorPoliceQuiz: React.FC = () => {
@@ -40,7 +37,6 @@ const ChorPoliceQuiz: React.FC = () => {
 
   const [popupTable, setPopupTable] = useState(false);
   const playerNames = useSelector(playerNamesArray);
-  // const playerScores = useSelector(PlayerScoresArray); total points of each player
 
   const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
   const [thinkingMsg, setThinkingMsg] = useState<string | null>(null);
@@ -56,25 +52,22 @@ const ChorPoliceQuiz: React.FC = () => {
   const randomMessage = useRandomMessage(currentPlayerName, status);
 
   useEffect(() => {
-    // Only set the thinking message if policeIndex is valid and bot is thinking
     if (status === "thinking") {
-      setThinkingMsg(randomMessage); // Update the message when the bot is thinking
+      setThinkingMsg(randomMessage); 
     }
-  }, [status, randomMessage]);
-  // Animated value for pulsating effect
+  }, [status]);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  // Function to start the pulsating animation
   const startPulsing = () => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(scaleAnim, {
-          toValue: 1.2, // Scale up
+          toValue: 1.2, 
           duration: 800,
           useNativeDriver: true,
         }),
         Animated.timing(scaleAnim, {
-          toValue: 1, // Scale down to original size
+          toValue: 1, 
           duration: 800,
           useNativeDriver: true,
         }),
@@ -83,7 +76,7 @@ const ChorPoliceQuiz: React.FC = () => {
   };
 
   useEffect(() => {
-    startPulsing(); // Start the animation when component mounts
+    startPulsing(); 
   }, []);
 
   return (
@@ -91,7 +84,7 @@ const ChorPoliceQuiz: React.FC = () => {
       <ScoreTable
         playerNames={playerNames}
         playerScores={playerScores}
-        popupTable={popupTable} // Control modal visibility
+        popupTable={popupTable} 
       />
 
       {isBotThinking && (
@@ -114,7 +107,6 @@ const ChorPoliceQuiz: React.FC = () => {
         </ImageBackground>
       )}
       {isPopUp ? (
-        // Show only the background and popup when isPopUp is true
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
           style={chorPoliceQuizstyles.imageBackground}
@@ -133,7 +125,6 @@ const ChorPoliceQuiz: React.FC = () => {
           />
         </ImageBackground>
       ) : (
-        // Show quiz content when isPopUp is false
         <SafeAreaView style={globalstyles.container}>
           <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
             <Components.ScreenHeader
@@ -152,17 +143,16 @@ const ChorPoliceQuiz: React.FC = () => {
               <View style={chorPoliceQuizstyles.overlay} />
               <Animated.View
                 style={{
-                  transform: [{ scale: scaleAnim }], // Apply the pulsating scale effect
+                  transform: [{ scale: scaleAnim }], 
                 }}
               >
                 <Ionicons
-                  name="bulb" // "bulb" represents a light bulb in Ionicons
+                  name="bulb" 
                   style={chorPoliceQuizstyles.bulbIcon}
-                  onPress={toggleModal} // Toggling the modal when the bulb is clicked
+                  onPress={toggleModal} 
                 />
               </Animated.View>
               <View style={chorPoliceQuizstyles.quizContainer}>
-                {/* Player Info */}
                 <Components.PlayerInfo playerImage={playerImage} />
 
                 <Components.QuizOptions

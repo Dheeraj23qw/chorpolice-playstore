@@ -97,22 +97,21 @@ const RajaMantriGameScreen: React.FC = () => {
   );
 
   useEffect(() => {
-    // Only set the thinking message if policeIndex is valid and bot is thinking
     if (policeIndex != null && status === "thinking") {
-      setThinkingMsg(randomMessage); // Update the message when the bot is thinking
+      setThinkingMsg(randomMessage)
     }
-  }, [policeIndex, status, randomMessage]);
+  }, [status]);
 
   useEffect(() => {
     if (isBotThinking && policeIndex != null) {
       const timer = setTimeout(() => {
         dispatch(setIsThinking(false));
       }, 4000);
-      return () => clearTimeout(timer); // Cleanup timer
+      return () => clearTimeout(timer);
     } else {
       dispatch(setIsThinking(false));
     }
-  }, [isBotThinking, dispatch, policeIndex]);
+  }, [isBotThinking]);
 
   return (
     <>

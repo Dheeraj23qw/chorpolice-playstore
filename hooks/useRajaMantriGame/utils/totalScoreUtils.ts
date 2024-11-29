@@ -11,7 +11,7 @@ export const calculateTotalScores = (
   playerScores: PlayerScore[],
   dispatch: Dispatch
 ) => {
-  dispatch(updateScoresByRound(playerScores))
+ 
   const updatedScores = playerScores.map((player) => {
     const totalScore = player.scores.reduce((sum, score) => sum + score, 0);
     return {
@@ -25,10 +25,9 @@ export const calculateTotalScores = (
     totalScore: player.totalScore!,
   }));
 
-  // Dispatch the array to the store after a short delay
-  setTimeout(() => {
+  
+    dispatch(updateScoresByRound(playerScores))
     dispatch(updatePlayerScores(totalScoresArray));
-  }, 100);
 
   return updatedScores;
 };

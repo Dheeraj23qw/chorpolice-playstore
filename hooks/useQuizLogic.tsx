@@ -39,10 +39,8 @@ const useQuizLogic = (router: any) => {
   const winMessage = useRandomMessage(currentPlayerName, "win");
   const loseMessage = useRandomMessage(currentPlayerName, "lose");
   const [isBotThinking, setIsBotThinking] = useState(false);
-  // Handle the hardware back button press (Android)
   useEffect(() => {
     const backAction = () => {
-      // Prevent default behavior (going back)
       return true;
     };
 
@@ -51,7 +49,7 @@ const useQuizLogic = (router: any) => {
       backAction
     );
 
-    return () => backHandler.remove(); // Cleanup on unmount
+    return () => backHandler.remove(); 
   }, []);
 
   useEffect(() => {
@@ -63,25 +61,21 @@ const useQuizLogic = (router: any) => {
     let timeoutToAnswer: NodeJS.Timeout | undefined;
   
     if (currentPlayerIsBot && !isPopUp) {
-      // Delay showing the "bot is thinking" modal by 2 seconds
       timeoutToShow = setTimeout(() => {
         setIsBotThinking(true);
   
-        // Automatically hide the modal after 3 seconds
         timeoutToHide = setTimeout(() => {
           setIsBotThinking(false);
   
-          // Simulate the bot's answer after the modal disappears
           timeoutToAnswer = setTimeout(() => {
             simulateBotOptionSelection();
-          }, 3000); // Delay bot's answer by 1 second after modal disappears
-        }, 6000); // Show "bot is thinking" for 3 seconds
-      }, 4000); // Initial delay before showing "bot is thinking"
+          }, 3000); 
+        }, 6000); 
+      }, 4000);
     } else {
-      setIsBotThinking(false); // Ensure modal is hidden for non-bot players
+      setIsBotThinking(false); 
     }
   
-    // Cleanup timeouts on unmount or when dependencies change
     return () => {
       if (timeoutToShow) clearTimeout(timeoutToShow);
       if (timeoutToHide) clearTimeout(timeoutToHide);

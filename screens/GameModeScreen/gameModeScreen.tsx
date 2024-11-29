@@ -7,6 +7,7 @@ import { Components } from "@/imports/allComponentImports";
 import GameModeScrollView from "@/components/GameModeScrollView";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { useFocusEffect } from "@react-navigation/native"; // Import useFocusEffect
+import { StatusBar } from "react-native";
 
 const GameModeScreen: React.FC = () => {
   // Local State
@@ -40,6 +41,7 @@ const GameModeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[globalstyles.container]}>
+
       {/* Main Content Container */}
       <ImageBackground
         source={require("../../assets/images/bg/quiz.png")}

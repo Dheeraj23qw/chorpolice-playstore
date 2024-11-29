@@ -93,9 +93,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     (state: RootState) => state.player.playerNames
   );
   const playerInfo = useSelector((state: RootState) => state.player);
-  const botIndexes = playerInfo.playerNames
-    .map((player, idx) => (player.isBot ? idx : -1))
-    .filter((idx) => idx !== -1);
+  // const botIndexes = playerInfo.playerNames
+  //   .map((player, idx) => (player.isBot ? idx : -1))
+  //   .filter((idx) => idx !== -1);
 
   const router = useRouter();
   const dispatch = useDispatch();
@@ -210,14 +210,14 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     if (
       !areCardsClickable ||
       !isPlayButtonDisabled ||
-      flippedStates[index] || // Prevent clicking flipped cards
-      clickedCards[index] // Prevent clicking already clicked cards
+      flippedStates[index] || 
+      clickedCards[index] 
     ) {
-      return; // Exit if the card is flipped or already clicked
+      return;
     }
 
     if (firstCardClicked) {
-      return; // If the first card has already been clicked, do nothing on the second card
+      return;
     }
 
     setFirstCardClicked(true); // Mark the first card as clicked

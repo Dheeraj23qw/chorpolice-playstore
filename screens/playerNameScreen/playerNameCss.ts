@@ -90,9 +90,8 @@ export const playerNameStyles = StyleSheet.create({
   },
   startGameButtonText: {
     color: "#FFD700",
-    fontWeight: "bold",
     fontFamily: "outfit-bold",
-    fontSize: responsiveFontSize(2.7), // Slightly larger for emphasis
+    fontSize: responsiveFontSize(2.3), // Slightly larger for emphasis
     letterSpacing: 1.2, // Adds space between letters for elegance
     textShadowColor: "rgba(0, 0, 0, 0.6)", // Shadow effect for depth
     textShadowOffset: { width: 1, height: 2 },
