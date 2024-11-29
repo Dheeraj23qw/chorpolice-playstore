@@ -3,6 +3,7 @@ import {
   ImageBackground,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -76,6 +77,8 @@ const ConnectAndPlay: React.FC = () => {
 
   return (
     <SafeAreaView style={globalstyles.container}>
+      <StatusBar backgroundColor={"transparent"}/>
+
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
         <Components.ScreenHeader name="Connect & Play!" showBackButton={true} />

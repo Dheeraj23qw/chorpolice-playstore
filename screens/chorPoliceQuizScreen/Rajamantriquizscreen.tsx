@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, View, ImageBackground, Animated } from "react-native";
+import { SafeAreaView, View, ImageBackground, Animated, StatusBar } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "./quizStyle";
 import { useRouter } from "expo-router";
@@ -7,12 +7,8 @@ import { Components } from "@/imports/allComponentImports";
 import useQuizLogic from "@/hooks/useQuizLogic";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
-import { Ionicons } from "@expo/vector-icons";
-import ScoreTable from "@/modal/ShowTableModal";
 import { RootState } from "@/redux/store";
-import {
-  playerNamesArray,
-} from "@/redux/selectors/playerDataSelector";
+import { playerNamesArray } from "@/redux/selectors/playerDataSelector";
 import { useSelector } from "react-redux";
 import useRandomMessage from "@/hooks/useRandomMessage";
 const ChorPoliceQuiz: React.FC = () => {
@@ -53,7 +49,7 @@ const ChorPoliceQuiz: React.FC = () => {
 
   useEffect(() => {
     if (status === "thinking") {
-      setThinkingMsg(randomMessage); 
+      setThinkingMsg(randomMessage);
     }
   }, [status]);
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -62,12 +58,12 @@ const ChorPoliceQuiz: React.FC = () => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(scaleAnim, {
-          toValue: 1.2, 
+          toValue: 1.2,
           duration: 800,
           useNativeDriver: true,
         }),
         Animated.timing(scaleAnim, {
-          toValue: 1, 
+          toValue: 1,
           duration: 800,
           useNativeDriver: true,
         }),
@@ -76,16 +72,11 @@ const ChorPoliceQuiz: React.FC = () => {
   };
 
   useEffect(() => {
-    startPulsing(); 
+    startPulsing();
   }, []);
 
   return (
     <>
-      <ScoreTable
-        playerNames={playerNames}
-        playerScores={playerScores}
-        popupTable={popupTable} 
-      />
 
       {isBotThinking && (
         <ImageBackground
@@ -126,6 +117,7 @@ const ChorPoliceQuiz: React.FC = () => {
         </ImageBackground>
       ) : (
         <SafeAreaView style={globalstyles.container}>
+<StatusBar backgroundColor={"transparent"}/>
           <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
             <Components.ScreenHeader
               name="Boost Your Score!"
@@ -140,18 +132,8 @@ const ChorPoliceQuiz: React.FC = () => {
               style={chorPoliceQuizstyles.imageBackground}
               resizeMode="cover"
             >
-              <View style={chorPoliceQuizstyles.overlay} />
-              <Animated.View
-                style={{
-                  transform: [{ scale: scaleAnim }], 
-                }}
-              >
-                <Ionicons
-                  name="bulb" 
-                  style={chorPoliceQuizstyles.bulbIcon}
-                  onPress={toggleModal} 
-                />
-              </Animated.View>
+              {/* <View style={chorPoliceQuizstyles.overlay} /> */}
+
               <View style={chorPoliceQuizstyles.quizContainer}>
                 <Components.PlayerInfo playerImage={playerImage} />
 

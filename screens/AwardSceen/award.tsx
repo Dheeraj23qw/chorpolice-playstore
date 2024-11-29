@@ -1,4 +1,4 @@
-import { View, SafeAreaView, ImageBackground } from "react-native";
+import { View, SafeAreaView, ImageBackground, StatusBar } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
@@ -25,6 +25,8 @@ const msg =`you have won ${coins} coins`
 
   return (
     <SafeAreaView style={[globalstyles.container]}>
+      <StatusBar backgroundColor={"transparent"}/>
+
       <ImageBackground
         source={require("../../assets/images/bg/quiz.png")}
         style={[

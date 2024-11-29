@@ -49,7 +49,7 @@ const useQuizLogic = (router: any) => {
       backAction
     );
 
-    return () => backHandler.remove(); 
+    return () => backHandler.remove();
   }, []);
 
   useEffect(() => {
@@ -59,23 +59,23 @@ const useQuizLogic = (router: any) => {
     let timeoutToShow: NodeJS.Timeout | undefined;
     let timeoutToHide: NodeJS.Timeout | undefined;
     let timeoutToAnswer: NodeJS.Timeout | undefined;
-  
+
     if (currentPlayerIsBot && !isPopUp) {
       timeoutToShow = setTimeout(() => {
         setIsBotThinking(true);
-  
+
         timeoutToHide = setTimeout(() => {
           setIsBotThinking(false);
-  
+
           timeoutToAnswer = setTimeout(() => {
             simulateBotOptionSelection();
-          }, 3000); 
-        }, 6000); 
+          }, 3000);
+        }, 6000);
       }, 4000);
     } else {
-      setIsBotThinking(false); 
+      setIsBotThinking(false);
     }
-  
+
     return () => {
       if (timeoutToShow) clearTimeout(timeoutToShow);
       if (timeoutToHide) clearTimeout(timeoutToHide);
@@ -150,9 +150,8 @@ const useQuizLogic = (router: any) => {
 
     setTimeout(() => {
       const botChoice = options[Math.floor(Math.random() * options.length)];
- 
-        handleOptionPress(botChoice);
 
+      handleOptionPress(botChoice);
     }, randomDelay);
   };
 
@@ -189,14 +188,14 @@ const useQuizLogic = (router: any) => {
     setIsPopUp(false);
     setMediaId(1);
     setMediaType("image");
- 
+
     setCurrentPlayerIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
       if (nextIndex < playerNames.length) {
         return nextIndex;
       } else {
         setTimeout(() => {
-          router.push("/chorpoliceResult");
+          router.replace("/chorpoliceResult");
         }, 1);
         return prevIndex;
       }
@@ -231,7 +230,6 @@ const useQuizLogic = (router: any) => {
     playerNames,
     playerScores,
     isBotThinking,
-
   };
 };
 

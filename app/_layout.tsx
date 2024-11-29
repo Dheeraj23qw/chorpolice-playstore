@@ -26,14 +26,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <StatusBar
-        barStyle="light-content" // Adjusts the text/icon color to light (for dark background)
-        translucent={true} // Makes the status bar transparent
-        backgroundColor="transparent" // Sets background color to transparent
-        networkActivityIndicatorVisible={true} // Shows an activity indicator while network requests are loading
-        showHideTransition="fade" // Controls the transition effect (e.g., "fade" or "slide")
-        animated={true} // Makes the status bar changes animate
-      />
+      <StatusBar backgroundColor={"transparent"} />
 
       <Stack>
         <Stack.Screen name="index" />

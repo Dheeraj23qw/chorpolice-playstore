@@ -88,6 +88,8 @@ const ImageSelectScreen = () => {
           source={require("../../assets/images/bg/quizbg2.png")}
           style={styles.backgroundImage}
         >
+          <StatusBar backgroundColor={"transparent"}/>
+
           <View style={styles.overlay} />
           <Pressable
             onPress={() => router.push("/modeselect")}

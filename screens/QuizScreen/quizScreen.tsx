@@ -68,6 +68,8 @@ export default function QuizScreen() {
   const renderInstructionText = useMemo(() => {
     return (
       <View style={styles.instructionContainer}>
+        <StatusBar backgroundColor={"transparent"}/>
+
         <Text style={styles.instructionText}>
           {showHint
             ? "Tap on the Next to move to the next question."

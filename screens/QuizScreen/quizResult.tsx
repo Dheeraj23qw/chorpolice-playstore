@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ImageBackground, ScrollView } from "react-native";
+import { View, ImageBackground, ScrollView, StatusBar } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 
@@ -70,6 +70,8 @@ export default function QuizResult() {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
+        <StatusBar backgroundColor={"transparent"}/>
+
         <View style={styles.overlay}>
           <ResultInfo
             Correct={Correct}

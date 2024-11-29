@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, ImageBackground, ScrollView, Animated } from "react-native";
+import {
+  View,
+  ImageBackground,
+  ScrollView,
+  Animated,
+  StatusBar,
+} from "react-native";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
@@ -60,11 +66,11 @@ const RajaMantriGameScreen: React.FC = () => {
     isRoundStartPopupVisible,
     roundStartMessage,
     playerNamesRedux,
-    resetGame
+    resetGame,
   } = useRajaMantriGame({ playerNames });
 
   const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
-    navigateToScreen: "/playerName"
+    navigateToScreen: "/playerName",
   });
   const [popupTable, setPopupTable] = useState(false);
 
@@ -98,7 +104,7 @@ const RajaMantriGameScreen: React.FC = () => {
 
   useEffect(() => {
     if (policeIndex != null && status === "thinking") {
-      setThinkingMsg(randomMessage)
+      setThinkingMsg(randomMessage);
     }
   }, [status]);
 
@@ -198,6 +204,8 @@ const RajaMantriGameScreen: React.FC = () => {
               style={chorPoliceQuizstyles.imageBackground}
               resizeMode="cover"
             >
+              <StatusBar backgroundColor={"transparent"} />
+
               <View style={chorPoliceQuizstyles.overlay} />
               <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                 <Components.PlayButton

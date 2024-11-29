@@ -3,6 +3,7 @@ import {
   ImageBackground,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   Text,
   View,
 } from "react-native";
@@ -85,6 +86,8 @@ const BotScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={globalstyles.container}>
+      <StatusBar backgroundColor={"transparent"}/>
+
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
         <Components.ScreenHeader name="Play With Bots!" showBackButton={true} />

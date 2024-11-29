@@ -1,5 +1,5 @@
 import React, { memo, useRef, useEffect } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, StatusBar } from "react-native";
 import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import { Asset } from "expo-asset";
 import { styles as globalStyles } from "@/screens/RajaMantriGameScreen/styles";
@@ -44,6 +44,8 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
 
     return (
       <View style={styles.fullScreenContainer}>
+        <StatusBar backgroundColor={"transparent"} />
+
         <Video
           ref={videoRef}
           source={videoSource}

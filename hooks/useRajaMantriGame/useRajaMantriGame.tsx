@@ -17,6 +17,10 @@ import { handlePlayHelper } from "./gameHelper/handleplay";
 import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
+import {
+  updatePlayerScores,
+  updateScoresByRound,
+} from "@/redux/reducers/playerReducer";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
@@ -110,8 +114,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       handleBackButton
     );
     return () => unsubscribe.remove();
-
-  
   }, []);
 
   useEffect(() => {
@@ -189,7 +191,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         setFlippedStates,
         setPopupIndex,
         playerInfo
- 
       );
     }, 1000);
   };
@@ -210,8 +211,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     if (
       !areCardsClickable ||
       !isPlayButtonDisabled ||
-      flippedStates[index] || 
-      clickedCards[index] 
+      flippedStates[index] ||
+      clickedCards[index]
     ) {
       return;
     }
@@ -340,9 +341,31 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
   };
 
-  const calculateTotalScoresHandler = () => {
-    setPlayerScores((prevScores) => calculateTotalScores(prevScores, dispatch));
+  const calculateTotalScores = () => {
+    setPlayerScores((prevScores) => {
+      const updatedScores = prevScores.map((player) => {
+        const totalScore = player.scores.reduce((sum, score) => sum + score, 0);
+        return {
+          ...player,
+          totalScore,
+        };
+      });
+
+      // Create an array with only player names and total scores
+      const totalScoresArray = updatedScores.map((player) => ({
+        playerName: player.playerName,
+        totalScore: player.totalScore,
+      }));
+
+      // Dispatch the array with only player names and total scores to the store
+      setTimeout(() => {
+        dispatch(updatePlayerScores(totalScoresArray));
+      }, 1000);
+
+      return updatedScores;
+    });
   };
+
 
   const resetForNextRoundHandler = () => {
     resetForNextRound(
@@ -362,7 +385,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setKingIndex,
       setPoliceIndex,
       dispatch,
-      calculateTotalScoresHandler,
+      calculateTotalScores,
       router,
       setFirstCardClicked,
       setAreCardsClickable,
@@ -405,7 +428,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     playerData,
     isRoundStartPopupVisible,
     roundStartMessage,
-    playerNamesRedux
+    playerNamesRedux,
   };
 };
 

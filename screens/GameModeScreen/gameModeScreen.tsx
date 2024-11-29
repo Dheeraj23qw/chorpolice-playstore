@@ -41,6 +41,7 @@ const GameModeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[globalstyles.container]}>
+<StatusBar backgroundColor={"transparent"}/>
 
       {/* Main Content Container */}
       <ImageBackground
