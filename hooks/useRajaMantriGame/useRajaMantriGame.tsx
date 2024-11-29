@@ -157,6 +157,14 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       : "",
     "lose"
   );
+
+  const randomMessageThinking = useRandomMessage(
+    policeIndex !== null && policeIndex >= 0
+      ? playerNamesRedux[policeIndex]?.name || ""
+      : "",
+    "thinking"
+  );
+
   const handlesetRoundStartMessage = () => {
     setRoundStartMessage("Round " + round + " starts!");
     setIsRoundStartPopupVisible(true);
@@ -429,6 +437,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     isRoundStartPopupVisible,
     roundStartMessage,
     playerNamesRedux,
+    randomMessageThinking
   };
 };
 

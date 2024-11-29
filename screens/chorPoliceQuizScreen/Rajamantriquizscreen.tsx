@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { SafeAreaView, View, ImageBackground, Animated, StatusBar } from "react-native";
+import {
+  SafeAreaView,
+  View,
+  ImageBackground,
+  Animated,
+  StatusBar,
+} from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "./quizStyle";
 import { useRouter } from "expo-router";
@@ -29,13 +35,13 @@ const ChorPoliceQuiz: React.FC = () => {
     currentPlayerImageType,
     feedbackMessage,
     isBotThinking,
+    thinkingMessage,
   } = useQuizLogic(router);
 
   const [popupTable, setPopupTable] = useState(false);
   const playerNames = useSelector(playerNamesArray);
 
   const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
-  const [thinkingMsg, setThinkingMsg] = useState<string | null>(null);
 
   const playerScores = useSelector(
     (state: RootState) => state.player.playerScoresByRound
@@ -45,13 +51,6 @@ const ChorPoliceQuiz: React.FC = () => {
     setPopupTable(!popupTable);
   };
 
-  const randomMessage = useRandomMessage(currentPlayerName, status);
-
-  useEffect(() => {
-    if (status === "thinking") {
-      setThinkingMsg(randomMessage);
-    }
-  }, [status]);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const startPulsing = () => {
@@ -77,7 +76,6 @@ const ChorPoliceQuiz: React.FC = () => {
 
   return (
     <>
-
       {isBotThinking && (
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
@@ -92,7 +90,7 @@ const ChorPoliceQuiz: React.FC = () => {
             playerData={{
               image: currentPlayerImage,
               imageType: currentPlayerImageType,
-              message: thinkingMsg,
+              message: thinkingMessage,
             }}
           />
         </ImageBackground>
@@ -117,7 +115,7 @@ const ChorPoliceQuiz: React.FC = () => {
         </ImageBackground>
       ) : (
         <SafeAreaView style={globalstyles.container}>
-<StatusBar backgroundColor={"transparent"}/>
+          <StatusBar backgroundColor={"transparent"} />
           <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
             <Components.ScreenHeader
               name="Boost Your Score!"

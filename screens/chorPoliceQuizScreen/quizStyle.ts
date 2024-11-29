@@ -11,7 +11,7 @@ export const chorPoliceQuizstyles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent black overlay
+    backgroundColor: "rgba(0, 0, 0, 0.4)", // Semi-transparent black overlay
   },
   quizContainer: {
     flex: 1,
@@ -39,7 +39,6 @@ export const chorPoliceQuizstyles = StyleSheet.create({
     borderColor: "#FFD700", // Yellow border color
   },
   playerName: {
- 
     fontSize: responsiveFontSize(3.4),
     fontWeight: "800",
     color: "red", // Rich indigo color for a classy look
@@ -102,16 +101,14 @@ export const chorPoliceQuizstyles = StyleSheet.create({
     textShadowRadius: 2,
   },
   bulbIcon: {
-    position: 'absolute',
-    top: '25%',  // Adjust to position the icon at the top
-    left: '80%', // Center horizontally
+    position: "absolute",
+    top: "25%", // Adjust to position the icon at the top
+    left: "80%", // Center horizontally
     transform: [{ translateX: -20 }], // Adjust for perfect centering
     fontSize: 50, // Icon size
-    color: '#FFD700', // Bulb color
-    textShadowColor: '#FFD700',  // Glowing color
+    color: "#FFD700", // Bulb color
+    textShadowColor: "#FFD700", // Glowing color
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,  // Glowing effect radius
-  }
-  
-
+    textShadowRadius: 10, // Glowing effect radius
+  },
 });

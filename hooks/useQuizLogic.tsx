@@ -38,6 +38,8 @@ const useQuizLogic = (router: any) => {
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
   const winMessage = useRandomMessage(currentPlayerName, "win");
   const loseMessage = useRandomMessage(currentPlayerName, "lose");
+  const thinkingMessage =useRandomMessage(currentPlayerName, "thinking");
+
   const [isBotThinking, setIsBotThinking] = useState(false);
   useEffect(() => {
     const backAction = () => {
@@ -63,7 +65,6 @@ const useQuizLogic = (router: any) => {
     if (currentPlayerIsBot && !isPopUp) {
       timeoutToShow = setTimeout(() => {
         setIsBotThinking(true);
-
         timeoutToHide = setTimeout(() => {
           setIsBotThinking(false);
 
@@ -143,8 +144,8 @@ const useQuizLogic = (router: any) => {
   };
 
   const simulateBotOptionSelection = () => {
-    const minDelay = 4000; // Minimum delay of 1 seconds
-    const maxDelay = 6000; // Maximum delay of 3 seconds
+    const minDelay = 1000; // Minimum delay of 1 seconds
+    const maxDelay = 2000; // Maximum delay of 2 seconds
     const randomDelay =
       Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay between 2000 and 6000
 
@@ -230,6 +231,7 @@ const useQuizLogic = (router: any) => {
     playerNames,
     playerScores,
     isBotThinking,
+    thinkingMessage
   };
 };
 

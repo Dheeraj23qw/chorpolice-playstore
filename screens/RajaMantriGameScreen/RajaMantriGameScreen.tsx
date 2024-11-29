@@ -66,6 +66,7 @@ const RajaMantriGameScreen: React.FC = () => {
     isRoundStartPopupVisible,
     roundStartMessage,
     playerNamesRedux,
+    randomMessageThinking,
     resetGame,
   } = useRajaMantriGame({ playerNames });
 
@@ -82,7 +83,6 @@ const RajaMantriGameScreen: React.FC = () => {
   };
 
   const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
-  const [thinkingMsg, setThinkingMsg] = useState<string | null>(null);
 
   const isBotThinking = useSelector((state: RootState) => state.bot.isThinking);
   const selectedImages = useSelector(selectSelectedImages);
@@ -102,11 +102,7 @@ const RajaMantriGameScreen: React.FC = () => {
     status
   );
 
-  useEffect(() => {
-    if (policeIndex != null && status === "thinking") {
-      setThinkingMsg(randomMessage);
-    }
-  }, [status]);
+ 
 
   useEffect(() => {
     if (isBotThinking && policeIndex != null) {
@@ -169,7 +165,7 @@ const RajaMantriGameScreen: React.FC = () => {
             playerData={{
               image: playerImages[selectedImages[policeIndex]]?.src,
               imageType: playerImages[selectedImages[policeIndex]]?.type,
-              message: thinkingMsg,
+              message: randomMessageThinking,
             }}
           />
         </ImageBackground>

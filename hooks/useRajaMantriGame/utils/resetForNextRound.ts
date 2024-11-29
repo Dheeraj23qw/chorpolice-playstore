@@ -29,7 +29,7 @@ export const resetForNextRound = (
   setMediaId:React.Dispatch<React.SetStateAction<number>>,
   setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif">>
 ) => {
-  if (round == 1) {
+  if (round == 7) {
     dispatch(playSound("next"));
 
     calculateTotalScores();

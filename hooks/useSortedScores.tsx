@@ -47,10 +47,9 @@ export const useSortedScores = () => {
     if (isButtonDisabled) return;
     setIsButtonDisabled(true);
 
-
     // Delay navigation to ensure state is updated
-      router.push("/playerName"); // Navigate to playerName without checking isReady
-    
+    router.push("/modeselect"); // Navigate to playerName without checking isReady
+
     setTimeout(() => {
       dispatch(resetGame());
     }, 500);
