@@ -9,10 +9,10 @@ import {
 import { playSound } from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
 import { GameMode } from "@/types/redux/reducers";
+import { generateRandomName } from "@/utils/generateRandomnames";
 
 const MAX_SELECTED_IMAGES = 4;
 const MAX_NAME_LENGTH = 8;
-const DEFAULT_PLAYER_NAME = "player_";
 
 interface PlayerName {
   id: number;
@@ -192,10 +192,11 @@ export const usePlayerNameScreen = () => {
   }, []);
 
   const getDefaultNames = useCallback(
-    (imageIds: number[]): Record<number, string> => {
-      return imageIds.reduce((acc, id, index) => {
+    (imageIds: number[], gameMode: GameMode | null): Record<number, string> => {
+      const usedNames = new Set<string>(); // Keep track of used names to ensure uniqueness
+      return imageIds.map((id, index) => ({ id, index })).reduce((acc, { id, index }) => {
         if (!imageNames[id] || imageNames[id].trim() === "") {
-          acc[id] = `${DEFAULT_PLAYER_NAME}${index + 1}`;
+          acc[id] = generateRandomName(usedNames, gameMode, index); // Pass gameMode and index to name generation
         }
         return acc;
       }, {} as Record<number, string>);
@@ -212,18 +213,18 @@ export const usePlayerNameScreen = () => {
 
   const handleStartAdventure = useCallback(async () => {
     dispatch(playSound("select"));
-    setIsButtonDisabled(true); 
+    setIsButtonDisabled(true);
     try {
       if (checkForDuplicateNames()) {
         setAlertMessage("Please make sure each superhero has a unique name.");
         setModals((prev) => ({ ...prev, modalVisible: true }));
-        setIsButtonDisabled(false); 
+        setIsButtonDisabled(false);
         return;
       }
 
       const updatedImageNames = {
         ...imageNames,
-        ...getDefaultNames(selectedImages),
+        ...getDefaultNames(selectedImages, gameModeStatus),
       };
       const imagesWithDetails = selectedImages.map((id) => ({
         id,
@@ -247,7 +248,7 @@ export const usePlayerNameScreen = () => {
       }
       setModals((prev) => ({ ...prev, modalVisible: true }));
     } finally {
-      setIsButtonDisabled(false); 
+      setIsButtonDisabled(false);
     }
   }, [
     selectedImages,
@@ -340,7 +341,7 @@ export const usePlayerNameScreen = () => {
       setModals((prev) => ({ ...prev, infoAddMoreVisible: visible })),
     setAlertMessage,
     isButtonDisabled,
-    botCount, 
-    humanCount, 
+    botCount,
+    humanCount,
   };
 };

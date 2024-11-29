@@ -110,10 +110,9 @@ export const handlePlayHelper = (
 
           // Bot thinking state
           if (policeIndex !== null && botIndexes.includes(policeIndex)) {
-            await delay(3400);
+            await delay(4000);
             dispatch(setIsThinking(true));
           }
-          await delay(3400);
 
           setAreCardsClickable(true);
         } else {
