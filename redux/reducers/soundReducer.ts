@@ -12,9 +12,11 @@ type SoundName =
   | "select"
   | "selected"
   | "king"
-  |"timer"
+  | "timer"
   | "timesup"
-  | "police";
+  | "police"
+  | "winning"
+  | "losing";
 
 // Define paths to your sound files
 const soundPaths: Record<SoundName, any> = {
@@ -30,6 +32,8 @@ const soundPaths: Record<SoundName, any> = {
   police: require("@/assets/audio/maingame/police.mp3"),
   timer: require("@/assets/audio/QuizScreen/timer.mp3"),
   timesup: require("@/assets/audio/QuizScreen/timesup.mp3"),
+  winning: require("@/assets/audio/chorPolice/winning.mp3"),
+  losing: require("@/assets/audio/chorPolice/losing.mp3"),
 };
 
 // Object to store loaded sounds
@@ -46,6 +50,8 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   police: null,
   timer: null,
   timesup: null,
+  winning: null,
+  losing: null,
 };
 
 // Thunk to load sounds asynchronously with error handling
@@ -66,51 +72,60 @@ export const loadSounds = createAsyncThunk(
 type SoundState = {
   isLoading: boolean;
   error: string | null;
-  isMuted: boolean,
+  isMuted: boolean;
 };
 
 const initialState: SoundState = {
   isLoading: false,
   error: null,
   isMuted: false,
-
 };
 
 const soundSlice = createSlice({
   name: "sound",
   initialState,
   reducers: {
-  playSound: (state, action) => {
-  const soundName: SoundName = action.payload;
-  
+    playSound: (state, action) => {
+      const soundName: SoundName = action.payload;
 
-  const sound = sounds[soundName];
-  if (sound) {
-    if (soundName === "quiz") {
-      sound.setIsLoopingAsync(true).catch((error: unknown) => {
-        console.error(`Failed to set loop for quiz sound:`, (error as Error).message);
-      });
-      state.isMuted= false; 
+      const sound = sounds[soundName];
+      if (sound) {
+        if (soundName === "quiz") {
+          sound.setIsLoopingAsync(true).catch((error: unknown) => {
+            console.error(
+              `Failed to set loop for quiz sound:`,
+              (error as Error).message
+            );
+          });
+          state.isMuted = false;
+        }
+        if (soundName === "timer") {
+          sound.setIsLoopingAsync(true).catch((error: unknown) => {
+            console.error(
+              `Failed to set loop for timer sound:`,
+              (error as Error).message
+            );
+          });
+        }
+        // Stop the sound before replaying
+        sound.stopAsync().catch((error: unknown) => {
+          console.error(
+            `Failed to stop sound ${soundName}:`,
+            (error as Error).message
+          );
+        });
 
-    }
-    if (soundName === "timer") {
-      sound.setIsLoopingAsync(true).catch((error: unknown) => {
-        console.error(`Failed to set loop for timer sound:`, (error as Error).message);
-      });
-    }
-    // Stop the sound before replaying
-    sound.stopAsync().catch((error: unknown) => {
-      console.error(`Failed to stop sound ${soundName}:`, (error as Error).message);
-    });
-
-    // Replay the sound after stopping it
-    sound.replayAsync().catch((error: unknown) => {
-      console.error(`Failed to play sound ${soundName}:`, (error as Error).message);
-    });
-  } else {
-    console.warn(`Sound ${soundName} is not loaded.`);
-  }
-},
+        // Replay the sound after stopping it
+        sound.replayAsync().catch((error: unknown) => {
+          console.error(
+            `Failed to play sound ${soundName}:`,
+            (error as Error).message
+          );
+        });
+      } else {
+        console.warn(`Sound ${soundName} is not loaded.`);
+      }
+    },
     stopQuizSound: (state) => {
       const quizSound = sounds.quiz;
       if (quizSound) {
@@ -118,13 +133,17 @@ const soundSlice = createSlice({
           console.error("Failed to stop quiz sound:", (error as Error).message);
         });
       }
-      state.isMuted = true; 
+      state.isMuted = true;
     },
-    stopTimerSound: () => { // Add this action
+    stopTimerSound: () => {
+      // Add this action
       const timerSound = sounds.timer;
       if (timerSound) {
         timerSound.stopAsync().catch((error: unknown) => {
-          console.error("Failed to stop timer sound:", (error as Error).message);
+          console.error(
+            "Failed to stop timer sound:",
+            (error as Error).message
+          );
         });
       }
     },
@@ -154,6 +173,7 @@ const soundSlice = createSlice({
   },
 });
 
-export const { playSound, stopQuizSound,stopTimerSound, unloadSounds } = soundSlice.actions;
+export const { playSound, stopQuizSound, stopTimerSound, unloadSounds } =
+  soundSlice.actions;
 
 export default soundSlice.reducer;

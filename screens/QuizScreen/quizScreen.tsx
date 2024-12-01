@@ -113,9 +113,10 @@ export default function QuizScreen() {
           style={styles.backgroundImage}
         >
           <View style={styles.overlay} />
-          <ScrollView contentContainerStyle={styles.scrollViewContent}>
             {/* Timer Countdown */}
             <Timer countdown={countdown} />
+
+            <ScrollView contentContainerStyle={styles.scrollViewContent}>
 
             {/* Question Section */}
             {renderQuestionSection}

@@ -13,8 +13,12 @@ import { Video, ResizeMode } from "expo-av";
 import { videoData, gifData, imageData } from "@/constants/DynamicPopUpData";
 import { styles } from "@/modal/_styles/DynamicOverlayPopCSS";
 import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/quizStyle";
-import { OverlayPopUpProps, PlayerData } from "@/types/models/DynamicpopUpModal";
-
+import {
+  OverlayPopUpProps,
+  PlayerData,
+} from "@/types/models/DynamicpopUpModal";
+import { playSound } from "@/redux/reducers/soundReducer";
+import { useDispatch } from "react-redux";
 
 const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   isPopUp,
@@ -35,7 +39,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   const playerDataAnim = useRef(new Animated.Value(0)).current; // for player data
   const closeTextAnim = useRef(new Animated.Value(0)).current; // for close text
   const descriptionAnim = useRef(new Animated.Value(-50)).current; // for description
-
+  const dispatch = useDispatch();
   const getMediaData = (id: number, type: "image" | "video" | "gif") => {
     let data;
     switch (type) {
@@ -54,7 +58,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
     if (!data) {
       console.warn(`No media data found for ID: ${id} and type: ${type}`);
-    } 
+    }
 
     return data;
   };
@@ -75,6 +79,18 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   const closeModal = () => {
     setModalVisible(false);
   };
+
+  useEffect(() => {
+    if (modalVisible && mediaType === "gif" && [2, 4, 7].includes(mediaId)) {
+      dispatch(playSound("winning"));
+    } else if (
+      modalVisible &&
+      mediaType === "gif" &&
+      [1, 3, 6].includes(mediaId)
+    ) {
+      dispatch(playSound("losing"));
+    }
+  }, [modalVisible, mediaType, mediaId, dispatch]);
 
   // Start animations when modal becomes visible
   useEffect(() => {
@@ -140,7 +156,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
   return (
     <Modal visible={modalVisible} animationType="fade" transparent>
-                <StatusBar backgroundColor={"#000000CC"} />
+      <StatusBar backgroundColor={"#000000CC"} />
 
       <TouchableWithoutFeedback onPress={() => {}}>
         <View style={styles.overlay}>

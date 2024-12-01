@@ -303,6 +303,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         setTimeout(() => {
           dispatch(playSound("lose"));
         }, 2000);
+
         setTimeout(() => {
           setMediaType("gif");
           setIsDynamicPopUp(true);
