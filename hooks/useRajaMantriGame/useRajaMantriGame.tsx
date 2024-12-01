@@ -8,6 +8,7 @@ import { flipCard } from "./utils/flipCardUtil";
 import {
   playSound,
   stopQuizSound,
+  stopSound,
   unloadSounds,
 } from "@/redux/reducers/soundReducer";
 import { revealAllCards } from "./utils/revealAllCardsUtils";

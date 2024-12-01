@@ -15,7 +15,7 @@ import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
 interface PlayerMessage {
   message?: string | null;
 }
-const NUM_QUESTIONS = 2;
+const NUM_QUESTIONS = 8;
 const CORRECT_ANSWER_GIF = 7;
 const INCORRECT_ANSWER_GIF = 6;
 const TIMER_UP_GIF = 8;
@@ -56,6 +56,7 @@ export const useQuizGameLogic = () => {
     Array<{ text: string; onPress: () => void }>
   >([]);
   const router = useRouter(); // Initialize router
+  const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
@@ -90,7 +91,7 @@ export const useQuizGameLogic = () => {
     } else if (difficulty === "medium") {
       initialTime = 90; // 120 seconds for medium
     } else if (difficulty === "hard") {
-      initialTime = 180; // 150 seconds for hard
+      initialTime = 150; // 150 seconds for hard
     }
 
     setCountdown(initialTime);
@@ -141,11 +142,15 @@ export const useQuizGameLogic = () => {
   };
 
   // Function to handle the 50-50 lifeline
+
   const handleFiftyFifty = () => {
-    if (isFiftyFiftyUsed) {
-      showModal("Lifeline Used", "You have already used the 50-50 lifeline.", [
-        { text: "OK", onPress: closeModal },
-      ]);
+    if (fiftyFiftyUsageCount >= 2) {
+      // If used twice already, show message and return
+      showModal(
+        "Lifeline Used",
+        "You have used the 50-50 lifeline twice already.",
+        [{ text: "OK", onPress: closeModal }]
+      );
       return;
     }
 
@@ -178,9 +183,17 @@ export const useQuizGameLogic = () => {
 
         setRemainingOptions(optionsToKeep); // Update state with filtered options
         setIsFiftyFiftyActive(true);
-        setIsFiftyFiftyUsed(true); // Mark lifeline as used
 
-        showModal("Lifeline Used", "Two incorrect options have been removed.", [
+        // Increment usage count
+        setFiftyFiftyUsageCount((prev) => prev + 1);
+
+        // Show appropriate message based on usage count
+        const usageMessage =
+          fiftyFiftyUsageCount === 0
+            ? "You have used the 50-50 lifeline once. You can use it one more time."
+            : "You have used the 50-50 lifeline twice. This is your last chance.";
+
+        showModal("Lifeline Used", usageMessage, [
           { text: "OK", onPress: closeModal },
         ]);
       } else {
@@ -192,8 +205,8 @@ export const useQuizGameLogic = () => {
       }
     } else {
       showModal(
-        `Not Applicable`,
-        `50-50 is only applicable for questions with four options.`,
+        "Not Applicable",
+        "50-50 is only applicable for questions with four options.",
         [{ text: "OK", onPress: closeModal }]
       );
     }
@@ -211,7 +224,7 @@ export const useQuizGameLogic = () => {
           closeModal();
           resetGame();
           dispatch(resetDifficulty());
-          router.replace("/gamelevel"); // Navigate to the GameMode screen
+          router.replace("/gamelevel"); 
         },
       },
     ]);
@@ -292,11 +305,10 @@ export const useQuizGameLogic = () => {
     setRemainingOptions(null);
     setIsFiftyFiftyActive(false);
     setIsFiftyFiftyUsed(false);
+    setFiftyFiftyUsageCount(0);
     dispatch(stopTimerSound());
-    dispatch(playSound("quiz"));
+    dispatch(playSound("quiz"))
   };
-
-
 
   return {
     question,

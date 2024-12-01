@@ -12,7 +12,7 @@ import { handleShare } from "@/utils/share";
 import { addCoins, resetCoins } from "@/redux/reducers/coinsReducer";
 import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
-import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
+import { playSound } from "@/redux/reducers/soundReducer";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -58,7 +58,8 @@ export default function QuizResult() {
 
   // Handlers
   const handleHome = () => {
-    router.push("/gamelevel");
+    dispatch(playSound("quiz"))
+    router.push("/modeselect");
   };
 
   const toggleModal = () => setModalVisible((prev) => !prev);

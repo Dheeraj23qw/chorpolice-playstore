@@ -15,8 +15,7 @@ type SoundName =
   | "timer"
   | "timesup"
   | "police"
-  | "winning"
-  | "losing";
+  | "winning";
 
 // Define paths to your sound files
 const soundPaths: Record<SoundName, any> = {
@@ -33,7 +32,7 @@ const soundPaths: Record<SoundName, any> = {
   timer: require("@/assets/audio/QuizScreen/timer.mp3"),
   timesup: require("@/assets/audio/QuizScreen/timesup.mp3"),
   winning: require("@/assets/audio/chorPolice/winning.mp3"),
-  losing: require("@/assets/audio/chorPolice/losing.mp3"),
+  // losing: require("@/assets/audio/chorPolice/losing.mp3"),
 };
 
 // Object to store loaded sounds
@@ -51,7 +50,7 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   timer: null,
   timesup: null,
   winning: null,
-  losing: null,
+  // losing: null,
 };
 
 // Thunk to load sounds asynchronously with error handling
@@ -147,6 +146,21 @@ const soundSlice = createSlice({
         });
       }
     },
+    stopSound: (state, action) => {
+      const soundName: SoundName = action.payload;
+      const sound = sounds[soundName];
+      if (sound) {
+        sound.stopAsync().catch((error: unknown) => {
+          console.error(
+            `Failed to stop sound ${soundName}:`,
+            (error as Error).message
+          );
+        });
+      } else {
+        console.warn(`Sound ${soundName} is not loaded or already stopped.`);
+      }
+    },
+    
     unloadSounds: () => {
       Object.values(sounds).forEach((sound) => {
         if (sound) {
@@ -173,7 +187,7 @@ const soundSlice = createSlice({
   },
 });
 
-export const { playSound, stopQuizSound, stopTimerSound, unloadSounds } =
+export const { playSound, stopQuizSound, stopTimerSound, unloadSounds,stopSound} =
   soundSlice.actions;
 
 export default soundSlice.reducer;

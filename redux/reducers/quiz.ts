@@ -13,7 +13,7 @@ const initialState: DifficultyState = {
   level: null,
   table: [["Round", "Police", "Thief", "King", "Advisor"]],
   totalScores: { Police: 0, Thief: 0, King: 0, Advisor: 0 },
-  totalQuestions: 2,
+  totalQuestions: 7,
   correctQuestions: 0,
   isWinner: false,
 };

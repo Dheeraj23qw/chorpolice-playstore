@@ -67,18 +67,18 @@ export const gifData: MediaItem[] = [
   {
     id: 9,
     url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 100 Coins!\n Answer 10/10 Correctly.",
+    description: "Win 100 Coins!\n Answer 7/7 Correctly.",
   },
 
   {
     id: 10,
     url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 500 Coins!\n Answer 10/10 Correctly."
+    description: "Win 500 Coins!\n Answer 7/7 Correctly."
   },
   {
     id: 11,
     url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 2000 Coins! \n Answer 10/10 Correctly."
+    description: "Win 2000 Coins! \n Answer 7/7 Correctly."
   },
   {
     id: 12,
