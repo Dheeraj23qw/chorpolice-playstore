@@ -106,7 +106,7 @@ export const handlePlayHelper = (
           await delay(4000);
 
           setPopupIndex(1);
-          dispatch(playSound("king"));
+          dispatch(playSound("king")); 
 
           // Bot thinking state
           if (policeIndex !== null && botIndexes.includes(policeIndex)) {

@@ -1,113 +1,88 @@
-import React, { useState } from "react";
-import { TouchableOpacity, View, Share } from "react-native";
+import React, { useState, useCallback } from "react";
+import { Pressable, View } from "react-native";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { styles } from "./_css/optionbarcss";
-import * as Application from "expo-application"; // Import the expo-application package
-
-// Assuming your custom modal component is imported here
-import CustomRatingModal from "@/modal/RatingModal";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { stopQuizSound, playSound } from "@/redux/reducers/soundReducer";
 import { useRouter } from "expo-router";
+import { RootState } from "@/redux/store";
+import CustomRatingModal from "@/modal/RatingModal";
+import { handleShare } from "@/utils/share";
 
-interface IonicOptions {
-  isMuted: boolean;
-  setIsMuted: (value: boolean | ((prev: boolean) => boolean)) => void;
-}
-
-const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
-  const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
+const OptionHeader = () => {
+  const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
-
-  const handleCloseModal = () => {
-    setModalVisible(false); // Close the modal
-  };
-
-  // Function to toggle the modal visibility
-  const toggleModal = () => {
-    setModalVisible((prevState) => !prevState); // Toggle modal visibility
-  };
-
-  // Function to share the app link along with app metadata and app icon
-  const handleShare = async () => {
-    try {
-      const androidPackageName = "com.dheeraj_kumar_yadav.chorpolice"; // Replace with your app's package name
-      const appStoreLink = `https://play.google.com/store/apps/details?id=${androidPackageName}`;
-
-      // Get app metadata
-      const appName = Application.applicationName;
-      const appVersion = Application.nativeApplicationVersion;
-      const appBuildVersion = Application.nativeBuildVersion;
-
-      // Your uploaded app icon URL
-      const appIconUrl =
-        "https://cdn-icons-png.flaticon.com/512/3616/3616049.png"; // Replace with the URL of your app icon
-
-      // Prepare the message with app metadata, link, and app icon
-      const message = `Check out this awesome app, ${appName}! 🎉\nVersion: ${appVersion} (Build ${appBuildVersion})\nDownload it now: ${appStoreLink}\n\nApp Icon: ${appIconUrl}`;
-
-      // Directly share the app link via the share dialog
-      await Share.share({
-        message: message,
-      });
-    } catch (error) {
-      console.error("Error sharing app", error);
-    }
-  };
-
+  const isMuted = useSelector((state: RootState) => state.sound.isMuted);
   const dispatch = useDispatch();
 
-  const handleStopSound = () => {
-    // Dispatch stopQuizSound action to stop the quiz sound
-    dispatch(stopQuizSound());
-  };
 
-  const handlePlaySound = () => {
-    // Call playSound function to play quiz sound
-    dispatch(playSound("quiz")); // You can modify this based on your sound utility
-  };
+  const handleCloseModal = useCallback(() => {
+    setModalVisible(false); 
+  }, []);
+
+  const toggleModal = useCallback(() => {
+    setModalVisible((prevState) => !prevState);
+  }, []);
+
+  const handleQuizSound = useCallback(() => {
+    if (isMuted) {
+      dispatch(playSound("quiz"));
+    } else {
+      dispatch(stopQuizSound());
+    }
+  }, [dispatch, isMuted]);
 
   return (
     <View style={styles.headerButtonsContainer}>
       {/* Mute/Unmute Button */}
-      <TouchableOpacity
-        style={styles.headerButton}
-        onPress={() => {
-          setIsMuted((prev) => !prev); // Toggle mute state
-          if (isMuted) {
-            handlePlaySound(); // Play the sound when unmuted
-          } else {
-            handleStopSound(); // Stop the sound when muted
-          }
-        }}
+      <Pressable
+        style={({ pressed }) => [
+          styles.headerButton,
+          { opacity: pressed ? 0.7 : 1 },
+        ]}
+        onPress={handleQuizSound}
       >
         <Ionicons
           name={isMuted ? "volume-mute" : "volume-high"}
           size={24}
           color="#FFF"
         />
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Share Button */}
-      <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.headerButton,
+          { opacity: pressed ? 0.7 : 1 },
+        ]}
+        onPress={handleShare}
+      >
         <Ionicons name="share-social" size={24} color="#FFF" />
-      </TouchableOpacity>
+      </Pressable>
 
-      {/* Star Rate Button that Triggers the Rating Modal */}
-      <TouchableOpacity style={styles.headerButton} onPress={toggleModal}>
+      {/* Star Rate Button */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.headerButton,
+          { opacity: pressed ? 0.7 : 1 },
+        ]}
+        onPress={toggleModal}
+      >
         <MaterialIcons name="star-rate" size={24} color="#FFF" />
-      </TouchableOpacity>
+      </Pressable>
 
-      <TouchableOpacity
-        style={styles.headerButton}
-        onPress={() => {
-          router.push("/award");
-        }}
+      {/* Navigate to Awards */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.headerButton,
+          { opacity: pressed ? 0.7 : 1 },
+        ]}
+        onPress={() => router.push("/award")}
       >
         <Ionicons name="trophy" size={24} color="#FFF" />
-      </TouchableOpacity>
+      </Pressable>
 
-      {/* Custom Rating Modal for Rating and Comment */}
+      {/* Custom Rating Modal */}
       <CustomRatingModal
         visible={modalVisible}
         onClose={handleCloseModal}
@@ -115,7 +90,6 @@ const OptionHeader = React.memo(({ isMuted, setIsMuted }: IonicOptions) => {
       />
     </View>
   );
-});
+};
 
-// Exporting the memoized component
-export default OptionHeader;
+export default React.memo(OptionHeader);

@@ -1,4 +1,5 @@
 // gameUtils.ts
+import { PlayerData } from "@/types/redux/reducers";
 import { Animated } from "react-native";
 
 export const resetGame = (
@@ -20,7 +21,19 @@ export const resetGame = (
   setPoliceIndex: (value: number | null) => void,
   setVideoIndex: (value: number) => void,
   setIsPlaying: (value: boolean) => void,
-  setPlayerScores: (value: Array<{ playerName: string; scores: number[] }>) => void
+  setPlayerScores: (
+    value: Array<{ playerName: string; scores: number[] }>
+  ) => void,
+  setPolicePlayerName: React.Dispatch<React.SetStateAction<string | null>>,
+  setPlayerData: React.Dispatch<React.SetStateAction<PlayerData>>,
+  setIsModalVisible: React.Dispatch<React.SetStateAction<boolean>>,
+  setPopupIndex: React.Dispatch<React.SetStateAction<number | null>>,
+  setMediaId: React.Dispatch<React.SetStateAction<number | null>>,
+  setMediaType: React.Dispatch<
+    React.SetStateAction<"image" | "video" | "gif" | null>
+  >,
+  setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
+  setIsDynamicPopUp: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
   setFlipAnims(initialFlipAnims.map(() => new Animated.Value(0)));
   setFlippedStates(initialFlippedStates);
@@ -42,4 +55,16 @@ export const resetGame = (
       scores: [],
     }))
   );
+  setPolicePlayerName(null);
+  setPlayerData({
+    image: null,
+    message: null,
+    imageType: null,
+  });
+  setIsModalVisible(false);
+  setPopupIndex(null);
+  setFirstCardClicked(false);
+  setMediaId(null);
+  setMediaType(null);
+  setIsDynamicPopUp(false);
 };

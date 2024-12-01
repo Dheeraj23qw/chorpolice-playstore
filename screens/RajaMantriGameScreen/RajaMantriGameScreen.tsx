@@ -5,6 +5,7 @@ import {
   ScrollView,
   Animated,
   StatusBar,
+  BackHandler,
 } from "react-native";
 
 // Redux
@@ -24,7 +25,6 @@ import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 // Components
 import { Components } from "@/imports/allComponentImports";
 import OverlayPopUp from "@/modal/overlaypop";
-import useBackHandlerModal from "@/hooks/useBackHandlerModal";
 import CustomModal from "@/modal/CustomModal";
 import CustomButton from "@/components/CustomButton";
 import ScoreTable from "@/modal/ShowTableModal";
@@ -35,7 +35,11 @@ import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 import { RootState } from "@/redux/store";
 import { setIsThinking } from "@/redux/reducers/botReducer";
 import useRandomMessage from "@/hooks/useRandomMessage";
+import { useRouter } from "expo-router";
 const RajaMantriGameScreen: React.FC = () => {
+  const router = useRouter();
+  const dispatch = useDispatch();
+
   const playerNames = useSelector(selectPlayerNames).map(
     (player) => player.name
   );
@@ -65,30 +69,52 @@ const RajaMantriGameScreen: React.FC = () => {
     playerData,
     isRoundStartPopupVisible,
     roundStartMessage,
-    playerNamesRedux,
     randomMessageThinking,
-    resetGame,
+    handleResetgame,
+    setPopupIndex
   } = useRajaMantriGame({ playerNames });
 
-  const { modalVisible, setModalVisible, modalButtons } = useBackHandlerModal({
-    navigateToScreen: "/playerName",
-  });
   const [popupTable, setPopupTable] = useState(false);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
 
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
-  const dispatch = useDispatch();
-
-  const toggleModal = () => {
-    setPopupTable(!popupTable);
-  };
-
-  const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
 
   const isBotThinking = useSelector((state: RootState) => state.bot.isThinking);
   const selectedImages = useSelector(selectSelectedImages);
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
   );
+
+  // Toggle modal visibility
+  const toggleModal = () => setPopupTable(!popupTable);
+  const toggleExitModal = () => setExitModalVisible(!exitModalVisible);
+
+  // Handle game exit
+  const handleExitGame = async () => {
+    setPopupIndex(null)
+    handleResetgame()
+    router.replace("/modeselect"); // Replace with your actual route
+    toggleExitModal();
+  };
+
+  // Handle back button press
+  useEffect(() => {
+    const backAction = () => {
+      if (exitModalVisible) {
+        setExitModalVisible(false);
+        return true; // Prevent default behavior
+      }
+      toggleExitModal(); // Show exit modal
+      return true; // Prevent default back navigation
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // Cleanup on unmount
+  }, [exitModalVisible]);
 
   // Function to handle card click with bounce animation
   const handleCardClickWithBounce = (index: number) => {
@@ -97,13 +123,7 @@ const RajaMantriGameScreen: React.FC = () => {
   const getCardStyle = (index: number) =>
     flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
-  const randomMessage = useRandomMessage(
-    policeIndex != null ? playerNames[policeIndex] : "",
-    status
-  );
-
  
-
   useEffect(() => {
     if (isBotThinking && policeIndex != null) {
       const timer = setTimeout(() => {
@@ -123,12 +143,16 @@ const RajaMantriGameScreen: React.FC = () => {
         popupTable={popupTable}
       />
       <CustomModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        visible={exitModalVisible}
+        onClose={toggleExitModal}
         title="Exit Game"
         content="Do you want to exit the game?"
-        buttons={modalButtons}
+        buttons={[
+          { text: "Yes", onPress: handleExitGame },
+          { text: "No", onPress: toggleExitModal },
+        ]}
       />
+
       {popupIndex && (
         <OverlayPopUp
           index={popupIndex}
@@ -171,7 +195,7 @@ const RajaMantriGameScreen: React.FC = () => {
         </ImageBackground>
       )}
 
-      {isDynamicPopUp && (
+      {isDynamicPopUp && mediaId != null && mediaType != null && (
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
           style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}

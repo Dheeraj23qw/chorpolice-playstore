@@ -26,8 +26,8 @@ export const resetForNextRound = (
   setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
   setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>,
   setIsDynamicPopUp:React.Dispatch<React.SetStateAction<boolean>>,
-  setMediaId:React.Dispatch<React.SetStateAction<number>>,
-  setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif">>
+  setMediaId:React.Dispatch<React.SetStateAction<number | null>>,
+  setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif"| null>>
 ) => {
   if (round == 7) {
     dispatch(playSound("next"));
@@ -53,8 +53,8 @@ export const resetForNextRound = (
     setFirstCardClicked(false);
     setAreCardsClickable(false);
     setIsDynamicPopUp(false);
-    setMediaId(1);
-    setMediaType("image");
+    setMediaId(null);
+    setMediaType(null);
     dispatch(playSound("next"));
   }
 };

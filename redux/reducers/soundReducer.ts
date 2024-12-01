@@ -66,11 +66,14 @@ export const loadSounds = createAsyncThunk(
 type SoundState = {
   isLoading: boolean;
   error: string | null;
+  isMuted: boolean,
 };
 
 const initialState: SoundState = {
   isLoading: false,
   error: null,
+  isMuted: false,
+
 };
 
 const soundSlice = createSlice({
@@ -79,13 +82,16 @@ const soundSlice = createSlice({
   reducers: {
   playSound: (state, action) => {
   const soundName: SoundName = action.payload;
+  
+
   const sound = sounds[soundName];
   if (sound) {
-    // Reset looping if it's the quiz sound
     if (soundName === "quiz") {
       sound.setIsLoopingAsync(true).catch((error: unknown) => {
         console.error(`Failed to set loop for quiz sound:`, (error as Error).message);
       });
+      state.isMuted= false; 
+
     }
     if (soundName === "timer") {
       sound.setIsLoopingAsync(true).catch((error: unknown) => {
@@ -105,13 +111,14 @@ const soundSlice = createSlice({
     console.warn(`Sound ${soundName} is not loaded.`);
   }
 },
-    stopQuizSound: () => {
+    stopQuizSound: (state) => {
       const quizSound = sounds.quiz;
       if (quizSound) {
         quizSound.stopAsync().catch((error: unknown) => {
           console.error("Failed to stop quiz sound:", (error as Error).message);
         });
       }
+      state.isMuted = true; 
     },
     stopTimerSound: () => { // Add this action
       const timerSound = sounds.timer;

@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { resetGame } from "./utils/resetGameUtils";
 import { flipCard } from "./utils/flipCardUtil";
-import { calculateTotalScores } from "./utils/totalScoreUtils";
 import {
   playSound,
   stopQuizSound,
@@ -73,9 +72,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [popupIndex, setPopupIndex] = useState<number | null>(null);
   const [firstCardClicked, setFirstCardClicked] = useState<boolean>(false);
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
-  const [mediaId, setMediaId] = useState<number>(1);
-  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
-    "image"
+  const [mediaId, setMediaId] = useState<number | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "video" | "gif" | null>(
+    null
   );
   const [playerData, setPlayerData] = useState<PlayerData>({
     image: null,
@@ -97,16 +96,13 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     (state: RootState) => state.player.playerNames
   );
   const playerInfo = useSelector((state: RootState) => state.player);
-  // const botIndexes = playerInfo.playerNames
-  //   .map((player, idx) => (player.isBot ? idx : -1))
-  //   .filter((idx) => idx !== -1);
 
   const router = useRouter();
   const dispatch = useDispatch();
 
   useEffect(() => {
     const handleBackButton = () => {
-      return true; // Prevent default behavior
+      return true;
     };
 
     const unsubscribe = BackHandler.addEventListener(
@@ -136,14 +132,49 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setPoliceIndex,
       setVideoIndex,
       setIsPlaying,
-      setPlayerScores
+      setPlayerScores,
+      setPolicePlayerName,
+      setPlayerData,
+      setIsModalVisible,
+      setPopupIndex,
+      setMediaId,
+      setMediaType,
+      setFirstCardClicked,
+      setIsDynamicPopUp
     );
+  }, []);
 
-    return () => {
-      dispatch(stopQuizSound());
-      dispatch(unloadSounds());
-    };
-  }, [dispatch]);
+  const handleResetgame = () => {
+    resetGame(
+      initialFlippedStates,
+      initialClickedCards,
+      initialFlipAnims,
+      playerNames,
+      setFlipAnims,
+      setFlippedStates,
+      setClickedCards,
+      setSelectedPlayer,
+      setIsPlayButtonDisabled,
+      setRound,
+      setMessage,
+      setPoliceClickCount,
+      setAdvisorIndex,
+      setThiefIndex,
+      setKingIndex,
+      setPoliceIndex,
+      setVideoIndex,
+      setIsPlaying,
+      setPlayerScores,
+      setPolicePlayerName,
+      setPlayerData,
+      setIsModalVisible,
+      setPopupIndex,
+      setMediaId,
+      setMediaType,
+      setFirstCardClicked,
+      setIsDynamicPopUp
+    );
+  };
 
   const randomMessageWin = useRandomMessage(
     policeIndex !== null && policeIndex >= 0
@@ -374,7 +405,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     });
   };
 
-
   const resetForNextRoundHandler = () => {
     resetForNextRound(
       round,
@@ -437,7 +467,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     isRoundStartPopupVisible,
     roundStartMessage,
     playerNamesRedux,
-    randomMessageThinking
+    randomMessageThinking,
+    handleResetgame,
+    setPopupIndex,
   };
 };
 
