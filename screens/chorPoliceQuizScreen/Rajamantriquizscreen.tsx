@@ -16,7 +16,7 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { RootState } from "@/redux/store";
 import { playerNamesArray } from "@/redux/selectors/playerDataSelector";
 import { useSelector } from "react-redux";
-import useRandomMessage from "@/hooks/useRandomMessage";
+
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
 
@@ -40,12 +40,6 @@ const ChorPoliceQuiz: React.FC = () => {
 
   const [popupTable, setPopupTable] = useState(false);
   const playerNames = useSelector(playerNamesArray);
-
-  const [status, setStatus] = useState<"win" | "lose" | "thinking">("thinking");
-
-  const playerScores = useSelector(
-    (state: RootState) => state.player.playerScoresByRound
-  );
 
   const toggleModal = () => {
     setPopupTable(!popupTable);
@@ -95,7 +89,7 @@ const ChorPoliceQuiz: React.FC = () => {
           />
         </ImageBackground>
       )}
-      {isPopUp ? (
+      {!isBotThinking && isPopUp && (
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
           style={chorPoliceQuizstyles.imageBackground}
@@ -113,7 +107,8 @@ const ChorPoliceQuiz: React.FC = () => {
             }}
           />
         </ImageBackground>
-      ) : (
+      )}
+      {!isBotThinking && !isPopUp && (
         <SafeAreaView style={globalstyles.container}>
           <StatusBar backgroundColor={"transparent"} />
           <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
@@ -130,8 +125,6 @@ const ChorPoliceQuiz: React.FC = () => {
               style={chorPoliceQuizstyles.imageBackground}
               resizeMode="cover"
             >
-              {/* <View style={chorPoliceQuizstyles.overlay} /> */}
-
               <View style={chorPoliceQuizstyles.quizContainer}>
                 <Components.PlayerInfo playerImage={playerImage} />
 

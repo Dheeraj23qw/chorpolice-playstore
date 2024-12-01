@@ -83,12 +83,12 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   useEffect(() => {
     if (modalVisible && mediaType === "gif" && [2, 4, 7].includes(mediaId)) {
       dispatch(playSound("winning"));
-    // } else if (
-    //   modalVisible &&
-    //   mediaType === "gif" &&
-    //   [1, 3, 6].includes(mediaId)
-    // ) {
-    //   dispatch(playSound("lose"));
+    } else if (
+      modalVisible &&
+      mediaType === "gif" &&
+      [1, 3, 6].includes(mediaId)
+    ) {
+      dispatch(playSound("losing"));
     }
   }, [modalVisible, mediaType, mediaId, dispatch]);
 

@@ -38,7 +38,7 @@ const useQuizLogic = (router: any) => {
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
   const winMessage = useRandomMessage(currentPlayerName, "win");
   const loseMessage = useRandomMessage(currentPlayerName, "lose");
-  const thinkingMessage =useRandomMessage(currentPlayerName, "thinking");
+  const thinkingMessage = useRandomMessage(currentPlayerName, "thinking");
 
   const [isBotThinking, setIsBotThinking] = useState(false);
   useEffect(() => {
@@ -57,6 +57,8 @@ const useQuizLogic = (router: any) => {
   useEffect(() => {
     generateOptionsForPlayer();
   }, [currentPlayerIndex]);
+
+  
   useEffect(() => {
     let timeoutToShow: NodeJS.Timeout | undefined;
     let timeoutToHide: NodeJS.Timeout | undefined;
@@ -231,7 +233,7 @@ const useQuizLogic = (router: any) => {
     playerNames,
     playerScores,
     isBotThinking,
-    thinkingMessage
+    thinkingMessage,
   };
 };
 

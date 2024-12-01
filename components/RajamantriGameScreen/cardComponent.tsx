@@ -61,7 +61,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
     const playerImages = useSelector(
       (state: RootState) => state.playerImages.images
     );
-const dispatch =useDispatch()
+    const dispatch = useDispatch();
     const playerData = useSelector((state: RootState) => state.player);
     const botIndexes = playerData.playerNames
       .map((player, idx) => (player.isBot ? idx : -1))
@@ -79,12 +79,17 @@ const dispatch =useDispatch()
 
     useEffect(() => {
       if (botIndexes.includes(index)) {
-        const targetIndex = advisorIndex !== null ? advisorIndex : thiefIndex;
+        // Only proceed if both advisorIndex and thiefIndex are not null
+        const validIndices = [advisorIndex, thiefIndex].filter(
+          (index) => index !== null
+        );
 
-        if (targetIndex !== null) {
+        if (validIndices.length > 0) {
+          const targetIndex =
+            validIndices[Math.floor(Math.random() * validIndices.length)];
+
           if (role === "Police") {
             const timeout = setTimeout(() => {
-             
               onBounceEffect(targetIndex);
               onClick(targetIndex);
             }, 4000);
@@ -101,7 +106,6 @@ const dispatch =useDispatch()
       advisorIndex,
       thiefIndex,
       handleClick,
-    
     ]);
 
     const renderContent = () => {

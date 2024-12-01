@@ -15,7 +15,8 @@ type SoundName =
   | "timer"
   | "timesup"
   | "police"
-  | "winning";
+  | "winning"
+  | "losing";
 
 // Define paths to your sound files
 const soundPaths: Record<SoundName, any> = {
@@ -32,7 +33,7 @@ const soundPaths: Record<SoundName, any> = {
   timer: require("@/assets/audio/QuizScreen/timer.mp3"),
   timesup: require("@/assets/audio/QuizScreen/timesup.mp3"),
   winning: require("@/assets/audio/chorPolice/winning.mp3"),
-  // losing: require("@/assets/audio/chorPolice/losing.mp3"),
+  losing: require("@/assets/audio/chorPolice/losing.mp3"),
 };
 
 // Object to store loaded sounds
@@ -50,7 +51,7 @@ const sounds: Record<SoundName, Audio.Sound | null> = {
   timer: null,
   timesup: null,
   winning: null,
-  // losing: null,
+  losing: null,
 };
 
 // Thunk to load sounds asynchronously with error handling

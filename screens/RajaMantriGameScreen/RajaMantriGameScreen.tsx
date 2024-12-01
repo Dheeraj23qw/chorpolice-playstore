@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   ImageBackground,
@@ -23,19 +23,18 @@ import { styles } from "./styles";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 
 // Components
-import { Components } from "@/imports/allComponentImports";
 import OverlayPopUp from "@/modal/overlaypop";
 import CustomModal from "@/modal/CustomModal";
-import CustomButton from "@/components/CustomButton";
 import ScoreTable from "@/modal/ShowTableModal";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+import { GamePlaySection } from "./GameplaySection";
 
 // Animation imports
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 import { RootState } from "@/redux/store";
 import { setIsThinking } from "@/redux/reducers/botReducer";
-import useRandomMessage from "@/hooks/useRandomMessage";
 import { useRouter } from "expo-router";
+import { Components } from "@/imports/allComponentImports";
 const RajaMantriGameScreen: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -71,7 +70,7 @@ const RajaMantriGameScreen: React.FC = () => {
     roundStartMessage,
     randomMessageThinking,
     handleResetgame,
-    setPopupIndex
+    setPopupIndex,
   } = useRajaMantriGame({ playerNames });
 
   const [popupTable, setPopupTable] = useState(false);
@@ -91,9 +90,9 @@ const RajaMantriGameScreen: React.FC = () => {
 
   // Handle game exit
   const handleExitGame = async () => {
-    setPopupIndex(null)
-    handleResetgame()
-    router.replace("/modeselect"); // Replace with your actual route
+    setPopupIndex(null);
+    handleResetgame();
+    router.replace("/modeselect");
     toggleExitModal();
   };
 
@@ -102,10 +101,10 @@ const RajaMantriGameScreen: React.FC = () => {
     const backAction = () => {
       if (exitModalVisible) {
         setExitModalVisible(false);
-        return true; // Prevent default behavior
+        return true;
       }
-      toggleExitModal(); // Show exit modal
-      return true; // Prevent default back navigation
+      toggleExitModal();
+      return true;
     };
 
     const backHandler = BackHandler.addEventListener(
@@ -113,7 +112,7 @@ const RajaMantriGameScreen: React.FC = () => {
       backAction
     );
 
-    return () => backHandler.remove(); // Cleanup on unmount
+    return () => backHandler.remove();
   }, [exitModalVisible]);
 
   // Function to handle card click with bounce animation
@@ -123,7 +122,6 @@ const RajaMantriGameScreen: React.FC = () => {
   const getCardStyle = (index: number) =>
     flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
- 
   useEffect(() => {
     if (isBotThinking && policeIndex != null) {
       const timer = setTimeout(() => {
@@ -163,9 +161,10 @@ const RajaMantriGameScreen: React.FC = () => {
           displayDuration={3000}
         />
       )}
+
       {isRoundStartPopupVisible && (
         <OverlayPopUp
-          index={1} // or you can set a static index if needed
+          index={1}
           policeIndex={policeIndex}
           kingIndex={kingIndex}
           advisorIndex={advisorIndex}
@@ -175,6 +174,7 @@ const RajaMantriGameScreen: React.FC = () => {
           customMessage={roundStartMessage}
         />
       )}
+
       {isBotThinking && policeIndex != null && (
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
@@ -211,7 +211,7 @@ const RajaMantriGameScreen: React.FC = () => {
         </ImageBackground>
       )}
 
-      {!isDynamicPopUp && (
+      {!isDynamicPopUp && !isBotThinking && (
         <View style={[styles.container]}>
           {isPlaying ? (
             <Components.VideoPlayerComponent
@@ -219,80 +219,24 @@ const RajaMantriGameScreen: React.FC = () => {
               onVideoEnd={() => setIsPlaying(false)}
             />
           ) : (
-            <ImageBackground
-              source={require("../../assets/images/bg/quiz.png")}
-              style={chorPoliceQuizstyles.imageBackground}
-              resizeMode="cover"
-            >
-              <StatusBar backgroundColor={"transparent"} />
-
-              <View style={chorPoliceQuizstyles.overlay} />
-              <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-                <Components.PlayButton
-                  disabled={isPlayButtonDisabled}
-                  onPress={handlePlay}
-                  buttonText={
-                    isPlayButtonDisabled
-                      ? message
-                        ? message
-                        : `Round ${round}`
-                      : `Press me to play!`
-                  }
-                />
-
-                <View style={styles.cardRow}>
-                  {roles.slice(0, 2).map((_, index) => (
-                    <Components.PlayerCard
-                      key={index}
-                      index={index}
-                      role={roles[index]}
-                      playerName={playerNames[index]}
-                      flipped={flippedStates[index]}
-                      clicked={clickedCards[index]}
-                      onClick={handleCardClick}
-                      onBounceEffect={() => handleCardClickWithBounce(index)} // new handler
-                      roles={roles}
-                      policeIndex={policeIndex}
-                      kingIndex={kingIndex}
-                      advisorIndex={advisorIndex}
-                      thiefIndex={thiefIndex}
-                      animatedStyle={getCardStyle(index)}
-                    />
-                  ))}
-                </View>
-                <View style={styles.cardRow}>
-                  {roles.slice(2).map((_, index) => (
-                    <Components.PlayerCard
-                      key={index + 2}
-                      index={index + 2}
-                      role={roles[index + 2]}
-                      playerName={playerNames[index + 2]}
-                      flipped={flippedStates[index + 2]}
-                      clicked={clickedCards[index + 2]}
-                      onClick={handleCardClick}
-                      onBounceEffect={() =>
-                        handleCardClickWithBounce(index + 2)
-                      } // new handler
-                      roles={roles}
-                      policeIndex={policeIndex}
-                      kingIndex={kingIndex}
-                      advisorIndex={advisorIndex}
-                      thiefIndex={thiefIndex}
-                      animatedStyle={getCardStyle(index + 2)}
-                    />
-                  ))}
-                </View>
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <CustomButton label="Scoreboard" onPress={toggleModal} />
-                </View>
-              </ScrollView>
-            </ImageBackground>
+            <GamePlaySection
+              isPlayButtonDisabled={isPlayButtonDisabled}
+              handlePlay={handlePlay}
+              roles={roles}
+              playerNames={playerNames}
+              flippedStates={flippedStates}
+              clickedCards={clickedCards}
+              handleCardClick={handleCardClick}
+              handleCardClickWithBounce={handleCardClickWithBounce}
+              policeIndex={policeIndex}
+              kingIndex={kingIndex}
+              advisorIndex={advisorIndex}
+              thiefIndex={thiefIndex}
+              toggleModal={toggleModal}
+              round={round}
+              message={message}
+              getCardStyle={getCardStyle}
+            />
           )}
         </View>
       )}
