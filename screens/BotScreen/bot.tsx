@@ -24,13 +24,8 @@ import ConfirmChangeModal from "../playerNameScreen/modals/ConfirmChangeModal";
 import InfoAddMoreModal from "../playerNameScreen/modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
 
-
 const BotScreen: React.FC = () => {
-  // Local State
-  const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
-  const [selectedOption, setSelectedOption] = useState<string | null>(
-    null
-  );
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [loading, setLoading] = useState(false); // New loading state
 
   // Custom Hook - Player Name Screen
@@ -69,24 +64,21 @@ const BotScreen: React.FC = () => {
     { label: "Upload from Gallery", value: "gallery" },
   ];
 
-
-
   // Check if the image grid should be shown
-  const showImageGrid = selectedOption ;
+  const showImageGrid = selectedOption;
 
   // Function to handle option change and show loading
   const handleOptionChange = (option: string | null) => {
-    setLoading(true); 
-    setSelectedOption(option); 
+    setLoading(true);
+    setSelectedOption(option);
     setTimeout(() => {
-      setLoading(false); 
-    }, 1000); 
+      setLoading(false);
+    }, 1000);
   };
-
 
   return (
     <SafeAreaView style={globalstyles.container}>
-      <StatusBar backgroundColor={"transparent"}/>
+      <StatusBar backgroundColor={"transparent"} />
 
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
@@ -104,7 +96,7 @@ const BotScreen: React.FC = () => {
           resizeMode="cover"
         >
           {/* Option Header for Muting Sound */}
-          <Components.OptionHeader isMuted={isMuted} setIsMuted={setIsMuted} />
+          <Components.OptionHeader />
 
           {/* Scroll View for Content */}
           <ScrollView
@@ -182,14 +174,12 @@ const BotScreen: React.FC = () => {
         onClose={() => setConfirmChangeVisible(false)}
         onConfirm={handleAlertConfirm}
         content={alertMessage}
-
       />
 
       <InfoAddMoreModal
         visible={infoAddMoreVisible}
         onClose={closeInfoAddMoreModal}
         content={alertMessage}
-
       />
 
       <CustomModal

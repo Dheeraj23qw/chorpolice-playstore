@@ -6,7 +6,7 @@ export type MediaItem = {
 
 import useRandomMessage from "@/hooks/useRandomMessage";
 
-const random = useRandomMessage("","winwithoutname")
+const random = useRandomMessage("", "winwithoutname");
 
 export const videoData: MediaItem[] = [
   {
@@ -73,18 +73,19 @@ export const gifData: MediaItem[] = [
   {
     id: 10,
     url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 500 Coins!\n Answer 7/7 Correctly."
+    description: "Win 500 Coins!\n Answer 7/7 Correctly.",
   },
   {
     id: 11,
     url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 2000 Coins! \n Answer 7/7 Correctly."
+    description: "Win 2000 Coins! \n Answer 7/7 Correctly.",
   },
   {
     id: 12,
     url: require("@/assets/gif/quiz/chest.gif"),
     description: "Your treasure sparkles with victory!",
-  }
+  },
+
 ];
 
 // Image data (with IDs and URLs)

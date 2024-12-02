@@ -10,7 +10,6 @@ import {
 } from "@/redux/reducers/soundReducer";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
-import QuizResult from "@/screens/QuizScreen/quizResult";
 import { initializeCoins } from "@/redux/reducers/coinsReducer";
 import { AppDispatch } from "@/redux/store";
 
@@ -18,8 +17,6 @@ export default function Index() {
   const navigation = useNavigation<NavigationProp<any>>();
   const dispatch = useDispatch<AppDispatch>(); // Use AppDispatch type here
   const [isLoading, setIsLoading] = useState(true);
-
-
 
   useEffect(() => {
     // Initialize coins state from SecureStore
@@ -62,5 +59,5 @@ export default function Index() {
   }
 
   // Render main content after video ends
-  return <GameModeScreen/>;
+  return <GameModeScreen />;
 }

@@ -35,6 +35,8 @@ import { RootState } from "@/redux/store";
 import { setIsThinking } from "@/redux/reducers/botReducer";
 import { useRouter } from "expo-router";
 import { Components } from "@/imports/allComponentImports";
+// import { NoConnectionScreen } from "../NoConnectionScreen/nonet";
+
 const RajaMantriGameScreen: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -87,6 +89,7 @@ const RajaMantriGameScreen: React.FC = () => {
   // Toggle modal visibility
   const toggleModal = () => setPopupTable(!popupTable);
   const toggleExitModal = () => setExitModalVisible(!exitModalVisible);
+  const [isConnected, setIsConnected] = useState(true);
 
   // Handle game exit
   const handleExitGame = async () => {
@@ -133,8 +136,11 @@ const RajaMantriGameScreen: React.FC = () => {
     }
   }, [isBotThinking]);
 
+
+
   return (
     <>
+
       <ScoreTable
         playerNames={playerNames}
         playerScores={playerScores}

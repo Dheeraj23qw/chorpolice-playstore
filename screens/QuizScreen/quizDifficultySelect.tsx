@@ -16,6 +16,7 @@ import { setDifficulty } from "@/redux/reducers/quiz";
 import { playSound } from "@/redux/reducers/soundReducer";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { Ionicons } from "@expo/vector-icons";
+import { responsiveFontSize } from "react-native-responsive-dimensions";
 
 type DifficultyOption = "easy" | "medium" | "hard";
 const GIF_IDS: Record<DifficultyOption, number> = {
@@ -92,16 +93,11 @@ const ImageSelectScreen = () => {
 
           <View style={styles.overlay} />
           <Pressable
-            onPress={() => router.push("/modeselect")}
-            style={[styles.backButton]}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={35}
-              color="gold"
-              style={styles.icon3D}
-            />
-          </Pressable>
+        style={styles.backButton}
+        onPress={() => router.replace("/modeselect")}
+      >
+        <Ionicons name="arrow-back" size={responsiveFontSize(3)} color="#FFD700" />
+      </Pressable>
 
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             {/* Circular Section */}

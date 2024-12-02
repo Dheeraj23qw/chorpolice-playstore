@@ -89,11 +89,13 @@ export const styles = StyleSheet.create({
     },
 
     backButton: {
-      paddingTop: 60,  // Adjust to space the button below the status bar
-      position: 'absolute',
-      top: 0,
-      left: 30, // Adjust for desired horizontal position
-      zIndex: 1000,  // Ensure button is above other elements
+      position: "absolute",
+      top: responsiveHeight(6), // Dynamically positioned
+      left: responsiveWidth(5),
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      borderRadius: 50,
+      padding: responsiveWidth(3),
+      zIndex: 2,
     },
     icon3D: {
       

@@ -9,7 +9,7 @@ import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionButtons";
 import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
-import OptionHeader from "@/components/playerNameScreen/optionHeader";
+import OptionHeader from "@/components/optionHeader";
 import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGrid";
 import { AvatarSelectionMemo } from "@/components/playerNameScreen/toggleContainer";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";

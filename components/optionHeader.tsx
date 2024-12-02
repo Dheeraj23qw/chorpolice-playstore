@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Pressable, View } from "react-native";
-import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { styles } from "./_css/optionbarcss";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { styles } from "./playerNameScreen/_css/optionbarcss";
 import { useDispatch, useSelector } from "react-redux";
 import { stopQuizSound, playSound } from "@/redux/reducers/soundReducer";
 import { useRouter } from "expo-router";
@@ -9,15 +9,15 @@ import { RootState } from "@/redux/store";
 import CustomRatingModal from "@/modal/RatingModal";
 import { handleShare } from "@/utils/share";
 
-const OptionHeader = () => {
+const OptionHeader = React.memo(() => {
   const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
   const isMuted = useSelector((state: RootState) => state.sound.isMuted);
   const dispatch = useDispatch();
 
-
+  // Memoized handlers
   const handleCloseModal = useCallback(() => {
-    setModalVisible(false); 
+    setModalVisible(false);
   }, []);
 
   const toggleModal = useCallback(() => {
@@ -32,14 +32,22 @@ const OptionHeader = () => {
     }
   }, [dispatch, isMuted]);
 
+  // Optimized button styles using useMemo to avoid recalculation on every render
+  const buttonStyle = useMemo(() => [
+    styles.headerButton,
+    { opacity: 1 }, // default opacity
+  ], []);
+
+  const pressedStyle = useMemo(() => [
+    styles.headerButton,
+    { opacity: 0.7 }, // opacity when pressed
+  ], []);
+
   return (
     <View style={styles.headerButtonsContainer}>
       {/* Mute/Unmute Button */}
       <Pressable
-        style={({ pressed }) => [
-          styles.headerButton,
-          { opacity: pressed ? 0.7 : 1 },
-        ]}
+        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
         onPress={handleQuizSound}
       >
         <Ionicons
@@ -51,10 +59,7 @@ const OptionHeader = () => {
 
       {/* Share Button */}
       <Pressable
-        style={({ pressed }) => [
-          styles.headerButton,
-          { opacity: pressed ? 0.7 : 1 },
-        ]}
+        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
         onPress={handleShare}
       >
         <Ionicons name="share-social" size={24} color="#FFF" />
@@ -62,10 +67,7 @@ const OptionHeader = () => {
 
       {/* Star Rate Button */}
       <Pressable
-        style={({ pressed }) => [
-          styles.headerButton,
-          { opacity: pressed ? 0.7 : 1 },
-        ]}
+        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
         onPress={toggleModal}
       >
         <MaterialIcons name="star-rate" size={24} color="#FFF" />
@@ -73,10 +75,7 @@ const OptionHeader = () => {
 
       {/* Navigate to Awards */}
       <Pressable
-        style={({ pressed }) => [
-          styles.headerButton,
-          { opacity: pressed ? 0.7 : 1 },
-        ]}
+        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
         onPress={() => router.push("/award")}
       >
         <Ionicons name="trophy" size={24} color="#FFF" />
@@ -90,6 +89,6 @@ const OptionHeader = () => {
       />
     </View>
   );
-};
+});
 
-export default React.memo(OptionHeader);
+export default OptionHeader;
