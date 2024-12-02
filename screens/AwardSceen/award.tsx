@@ -11,21 +11,21 @@ const TREASURE_GIF = 12;
 
 export default function Award() {
   const router = useRouter();
-  const [isDynamicPopUp, setIsDynamicPopUp] = useState(true); 
+  const [isDynamicPopUp, setIsDynamicPopUp] = useState(true);
   const coins = useSelector((state: RootState) => state.coins.coins);
-const msg =`you have won ${coins} coins`
+  const msg = `you have won ${coins} coins`;
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsDynamicPopUp(false); 
-      router.back()
-    }, 2500); 
+      setIsDynamicPopUp(false);
+      router.back();
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [router]);
 
   return (
     <SafeAreaView style={[globalstyles.container]}>
-      <StatusBar backgroundColor={"transparent"}/>
+      <StatusBar backgroundColor={"transparent"} />
 
       <ImageBackground
         source={require("../../assets/images/bg/quiz.png")}
@@ -37,11 +37,11 @@ const msg =`you have won ${coins} coins`
       >
         <DynamicOverlayPopUp
           isPopUp={isDynamicPopUp}
-          mediaId={TREASURE_GIF} 
-          mediaType="gif" 
+          mediaId={TREASURE_GIF}
+          mediaType="gif"
           closeVisibleDelay={2500}
           playerData={{
-            message:msg,
+            message: msg,
           }}
         />
       </ImageBackground>

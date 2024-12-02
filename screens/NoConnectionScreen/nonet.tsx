@@ -28,9 +28,10 @@ export const NoConnectionScreen: React.FC<NoConnectionScreenProps> = ({
 
   const handleRetry = () => {
     setIsLoading(true);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setIsLoading(false);
     }, 8000);
+    return () => clearTimeout(timer);
   };
 
   return (

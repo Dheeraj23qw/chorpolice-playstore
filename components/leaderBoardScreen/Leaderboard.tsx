@@ -20,7 +20,9 @@ const PlayerItem: React.FC<{
   playerIndex: number;
   playerNames: { name: string }[];
 }> = ({ player, playerIndex, playerNames }) => {
-  const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images
+  ); // Adjust the path according to your state shape
   const playerImage = playerImages[playerIndex].src;
 
   // Animation refs
@@ -91,9 +93,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
   return (
     <View>
-      <Text style={ChorPoloceLeaderboardStyles.leaderboardHeading}>
-        Leaderboard
-      </Text>
       <View style={ChorPoloceLeaderboardStyles.rankContainer}>
         {sortedScores.map((player, index) => {
           // Get player index using the map, fallback to 0 if not found

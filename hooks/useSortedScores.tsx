@@ -18,22 +18,48 @@ export const useSortedScores = () => {
   const playerScores = useSelector(
     (state: RootState) => state.player.playerScores
   );
-  //const playerImages = useSelector((state: RootState) => state.playerImages.images); // Adjust the path according to your state shape
 
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // State to manage the disabled state of buttons
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
-  // Memoized sorted scores
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images
+  ); // Fetch player images from Redux
+  const fallbackImage = require("@/assets/images/image.png");
+
   const sortedScores = useMemo(() => {
     return [...playerScores].sort(
       (a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0)
     );
   }, [playerScores]);
 
-  // Handler for replaying the game
+  const winner = sortedScores[0] ?? { playerName: "", totalScore: 0 };
+
+  const winnerName = useMemo(() => {
+    return (
+      playerNames.find((player) => player.name === winner.playerName)?.name ||
+      "Unknown Player"
+    );
+  }, [winner.playerName, playerNames]);
+
+  const winnerIndex = playerNames.findIndex(
+    (player) => player.name === winner.playerName
+  );
+  // Memoize the winner's image based on their index
+  const winnerImage = useMemo(() => {
+    // Ensure the selectedImages array has valid indexes
+    if (winnerIndex >= 0 && winnerIndex < selectedImages.length) {
+      const image = playerImages[selectedImages[winnerIndex]];
+      return image && image.src ? image.src : fallbackImage; // Use fallback image if not found
+    }
+
+    return fallbackImage; // Fallback to default image if index is invalid
+  }, [winner.playerName, selectedImages, playerNames, playerImages]);
+
+  const winnerPlayerImageType = playerImages[selectedImages[winnerIndex]]?.type;
+
   const handlePlayAgain = useCallback(() => {
     if (isButtonDisabled) return;
     setIsButtonDisabled(true);
@@ -46,33 +72,26 @@ export const useSortedScores = () => {
   const handleBack = useCallback(() => {
     if (isButtonDisabled) return;
     setIsButtonDisabled(true);
-
-    // Delay navigation to ensure state is updated
-    router.push("/modeselect"); // Navigate to playerName without checking isReady
+    router.push("/modeselect");
 
     setTimeout(() => {
       dispatch(resetGame());
     }, 500);
-    // Dispatch resetGame action
   }, [dispatch, router, isButtonDisabled]);
 
-  // Handler for sharing the screenshot of the game results
   const handleShare = useCallback(async () => {
     try {
-      // Capture the screen as an image
       const uri = await captureScreen({
         format: "png",
         quality: 0.8,
       });
 
-      // Check if the file exists
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
         console.error("File does not exist:", uri);
         return;
       }
 
-      // Share the image if sharing is available
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: "image/png",
@@ -94,6 +113,10 @@ export const useSortedScores = () => {
     handlePlayAgain,
     handleBack,
     handleShare,
-    isButtonDisabled, // return this to manage the button's disabled state in the component
+    isButtonDisabled,
+    winnerName,
+    winnerImage,
+    winnerPlayerImageType,
+    winner
   };
 };
