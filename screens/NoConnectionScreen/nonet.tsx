@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,29 +6,48 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  BackHandler,
+  StatusBar,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./nonetStyles";
+import {
+  responsiveHeight as rh,
+  responsiveWidth as rw,
+  responsiveFontSize as rf,
+} from "react-native-responsive-dimensions";
 
+interface NoConnectionScreenProps {
+  handleExitGame: () => void; // Define prop type for handleExitGame function
+}
 
-export const NoConnectionScreen = () => {
+export const NoConnectionScreen: React.FC<NoConnectionScreenProps> = ({
+  handleExitGame,
+}) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRetry = () => {
     setIsLoading(true);
-
     setTimeout(() => {
-      console.log("Retry logic goes here");
-      setIsLoading(false); 
-    }, 2000); 
+      setIsLoading(false);
+    }, 8000);
   };
+
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor={"transparent"} />
+
       <Image
         source={require("@/assets/images/bg/net.png")}
         style={styles.image}
         resizeMode="contain"
       />
 
+      <Pressable style={styles.backButton} onPress={handleExitGame}>
+        <Ionicons name="arrow-back" size={rf(2.5)} color="#FFD700" />
+      </Pressable>
+
+      {/* Main Content */}
       <View style={styles.content}>
         <Text style={styles.message}>No Internet Connection</Text>
 
@@ -50,3 +69,5 @@ export const NoConnectionScreen = () => {
     </View>
   );
 };
+
+// Add styles as needed

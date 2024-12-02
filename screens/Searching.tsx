@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ImageBackground,
   Dimensions,
+  StatusBar,
 } from "react-native";
 import { useDeveloperMessages } from "@/hooks/useDeveloperMessages";
 import {
@@ -23,6 +24,7 @@ const SearchingForPlayers = () => {
       style={styles.container}
       resizeMode="cover"
     >
+      <StatusBar backgroundColor={"transparent"} />
       <View style={styles.overlay} />
       <Text style={styles.heading}>Finding Opponents...</Text>
       <View style={styles.message}>

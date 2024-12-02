@@ -7,6 +7,7 @@ import {
   StatusBar,
   BackHandler,
 } from "react-native";
+import * as Network from "expo-network";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
@@ -35,6 +36,8 @@ import { RootState } from "@/redux/store";
 import { setIsThinking } from "@/redux/reducers/botReducer";
 import { useRouter } from "expo-router";
 import { Components } from "@/imports/allComponentImports";
+import SearchingForPlayers from "../Searching";
+import { NoConnectionScreen } from "../NoConnectionScreen/nonet";
 // import { NoConnectionScreen } from "../NoConnectionScreen/nonet";
 
 const RajaMantriGameScreen: React.FC = () => {
@@ -77,7 +80,7 @@ const RajaMantriGameScreen: React.FC = () => {
 
   const [popupTable, setPopupTable] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
-
+  const [isSearchScreenVisiable, setIsSearchScreenVisiable] = useState(false);
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
 
   const isBotThinking = useSelector((state: RootState) => state.bot.isThinking);
@@ -85,11 +88,12 @@ const RajaMantriGameScreen: React.FC = () => {
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
   );
+  const gamemode = useSelector((state: RootState) => state.player.gameMode);
 
   // Toggle modal visibility
   const toggleModal = () => setPopupTable(!popupTable);
   const toggleExitModal = () => setExitModalVisible(!exitModalVisible);
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
   // Handle game exit
   const handleExitGame = async () => {
@@ -98,6 +102,33 @@ const RajaMantriGameScreen: React.FC = () => {
     router.replace("/modeselect");
     toggleExitModal();
   };
+
+  useEffect(() => {
+    const checkNetwork = async () => {
+      try {
+        const networkState = await Network.getNetworkStateAsync();
+        setIsConnected(networkState.isConnected ?? null);
+      } catch (error) {
+        console.error("Error checking network state:", error);
+        setIsConnected(null);
+      }
+    };
+
+    checkNetwork();
+  }, []);
+
+  useEffect(() => {
+    if (isConnected === false) {
+      setIsSearchScreenVisiable(false);
+    } else if (gamemode === "ONLINE_WITH_BOTS" && !isPlaying) {
+      setIsSearchScreenVisiable(true);
+      const randomDuration =
+        Math.floor(Math.random() * (20000 - 10000 + 1)) + 10000;
+      setTimeout(() => {
+        setIsSearchScreenVisiable(false);
+      }, randomDuration);
+    }
+  }, [gamemode, isPlaying, isConnected]);
 
   // Handle back button press
   useEffect(() => {
@@ -136,117 +167,123 @@ const RajaMantriGameScreen: React.FC = () => {
     }
   }, [isBotThinking]);
 
-
-
   return (
-    <>
-
-      <ScoreTable
-        playerNames={playerNames}
-        playerScores={playerScores}
-        popupTable={popupTable}
-      />
-      <CustomModal
-        visible={exitModalVisible}
-        onClose={toggleExitModal}
-        title="Exit Game"
-        content="Do you want to exit the game?"
-        buttons={[
-          { text: "Yes", onPress: handleExitGame },
-          { text: "No", onPress: toggleExitModal },
-        ]}
-      />
-
-      {popupIndex && (
-        <OverlayPopUp
-          index={popupIndex}
-          policeIndex={policeIndex}
-          kingIndex={kingIndex}
-          advisorIndex={advisorIndex}
-          thiefIndex={thiefIndex}
-          displayDuration={3000}
-        />
-      )}
-
-      {isRoundStartPopupVisible && (
-        <OverlayPopUp
-          index={1}
-          policeIndex={policeIndex}
-          kingIndex={kingIndex}
-          advisorIndex={advisorIndex}
-          thiefIndex={thiefIndex}
-          displayDuration={3000}
-          contentType="textOnly"
-          customMessage={roundStartMessage}
-        />
-      )}
-
-      {isBotThinking && policeIndex != null && (
-        <ImageBackground
-          source={require("../../assets/images/bg/quiz.png")}
-          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
-          resizeMode="cover"
-        >
-          <DynamicOverlayPopUp
-            isPopUp={isBotThinking}
-            mediaId={5}
-            mediaType={"gif"}
-            closeVisibleDelay={7300}
-            playerData={{
-              image: playerImages[selectedImages[policeIndex]]?.src,
-              imageType: playerImages[selectedImages[policeIndex]]?.type,
-              message: randomMessageThinking,
-            }}
+    <View style={{ flex: 1 }}>
+      {isConnected === false ? (
+        <NoConnectionScreen handleExitGame={handleExitGame} /> // Show NoConnection screen if not connected
+      ) : isSearchScreenVisiable && !isPlaying ? (
+        <SearchingForPlayers />
+      ) : (
+        <>
+          <ScoreTable
+            playerNames={playerNames}
+            playerScores={playerScores}
+            popupTable={popupTable}
           />
-        </ImageBackground>
-      )}
 
-      {isDynamicPopUp && mediaId != null && mediaType != null && (
-        <ImageBackground
-          source={require("../../assets/images/bg/quiz.png")}
-          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
-          resizeMode="cover"
-        >
-          <DynamicOverlayPopUp
-            isPopUp={isDynamicPopUp}
-            mediaId={mediaId}
-            mediaType={mediaType}
-            closeVisibleDelay={3000}
-            playerData={playerData}
+          <CustomModal
+            visible={exitModalVisible}
+            onClose={toggleExitModal}
+            title="Exit Game"
+            content="Do you want to exit the game?"
+            buttons={[
+              { text: "Yes", onPress: handleExitGame },
+              { text: "No", onPress: toggleExitModal },
+            ]}
           />
-        </ImageBackground>
-      )}
 
-      {!isDynamicPopUp && !isBotThinking && (
-        <View style={[styles.container]}>
-          {isPlaying ? (
-            <Components.VideoPlayerComponent
-              videoIndex={videoIndex}
-              onVideoEnd={() => setIsPlaying(false)}
-            />
-          ) : (
-            <GamePlaySection
-              isPlayButtonDisabled={isPlayButtonDisabled}
-              handlePlay={handlePlay}
-              roles={roles}
-              playerNames={playerNames}
-              flippedStates={flippedStates}
-              clickedCards={clickedCards}
-              handleCardClick={handleCardClick}
-              handleCardClickWithBounce={handleCardClickWithBounce}
+          {popupIndex && (
+            <OverlayPopUp
+              index={popupIndex}
               policeIndex={policeIndex}
               kingIndex={kingIndex}
               advisorIndex={advisorIndex}
               thiefIndex={thiefIndex}
-              toggleModal={toggleModal}
-              round={round}
-              message={message}
-              getCardStyle={getCardStyle}
+              displayDuration={3000}
             />
           )}
-        </View>
+
+          {isRoundStartPopupVisible && (
+            <OverlayPopUp
+              index={1}
+              policeIndex={policeIndex}
+              kingIndex={kingIndex}
+              advisorIndex={advisorIndex}
+              thiefIndex={thiefIndex}
+              displayDuration={3000}
+              contentType="textOnly"
+              customMessage={roundStartMessage}
+            />
+          )}
+
+          {isBotThinking && policeIndex != null && (
+            <ImageBackground
+              source={require("../../assets/images/bg/quiz.png")}
+              style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
+              resizeMode="cover"
+            >
+              <DynamicOverlayPopUp
+                isPopUp={isBotThinking}
+                mediaId={5}
+                mediaType={"gif"}
+                closeVisibleDelay={7300}
+                playerData={{
+                  image: playerImages[selectedImages[policeIndex]]?.src,
+                  imageType: playerImages[selectedImages[policeIndex]]?.type,
+                  message: randomMessageThinking,
+                }}
+              />
+            </ImageBackground>
+          )}
+
+          {isDynamicPopUp && mediaId != null && mediaType != null && (
+            <ImageBackground
+              source={require("../../assets/images/bg/quiz.png")}
+              style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
+              resizeMode="cover"
+            >
+              <DynamicOverlayPopUp
+                isPopUp={isDynamicPopUp}
+                mediaId={mediaId}
+                mediaType={mediaType}
+                closeVisibleDelay={3000}
+                playerData={playerData}
+              />
+            </ImageBackground>
+          )}
+
+          {!isDynamicPopUp && !isBotThinking && (
+            <View style={[styles.container]}>
+              {isPlaying ? (
+                <Components.VideoPlayerComponent
+                  videoIndex={videoIndex}
+                  onVideoEnd={() => setIsPlaying(false)}
+                />
+              ) : (
+                <GamePlaySection
+                  isPlayButtonDisabled={isPlayButtonDisabled}
+                  handlePlay={handlePlay}
+                  roles={roles}
+                  playerNames={playerNames}
+                  flippedStates={flippedStates}
+                  clickedCards={clickedCards}
+                  handleCardClick={handleCardClick}
+                  handleCardClickWithBounce={handleCardClickWithBounce}
+                  policeIndex={policeIndex}
+                  kingIndex={kingIndex}
+                  advisorIndex={advisorIndex}
+                  thiefIndex={thiefIndex}
+                  toggleModal={toggleModal}
+                  round={round}
+                  message={message}
+                  getCardStyle={getCardStyle}
+                />
+              )}
+            </View>
+          )}
+        </>
       )}
-    </>
+    </View>
   );
 };
 
