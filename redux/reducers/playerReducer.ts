@@ -6,6 +6,7 @@ import {
   PlayerState,
 } from "@/types/redux/reducers";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { AppDispatch } from "../store";
 
 // Define the initial state for the Player slice
 const initialState: PlayerState = {
@@ -132,3 +133,5 @@ export const {
 } = playerSlice.actions;
 
 export default playerSlice.reducer;
+
+

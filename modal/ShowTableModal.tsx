@@ -84,7 +84,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({
         animationType="fade"
         onRequestClose={handleModalClose}
       >
-        <StatusBar hidden={true} />
+      <StatusBar backgroundColor={"transparent"} />
 
         <TouchableWithoutFeedback>
           <View style={styles.modalContainer}>

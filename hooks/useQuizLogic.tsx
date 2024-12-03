@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
-import { updatePlayerScores, resetGame } from "@/redux/reducers/playerReducer";
+import { updatePlayerScores } from "@/redux/reducers/playerReducer";
 import { BackHandler } from "react-native";
 import { playSound } from "@/redux/reducers/soundReducer";
 import useRandomMessage from "@/hooks/useRandomMessage";
@@ -58,7 +58,6 @@ const useQuizLogic = (router: any) => {
     generateOptionsForPlayer();
   }, [currentPlayerIndex]);
 
-  
   useEffect(() => {
     let timeoutToShow: NodeJS.Timeout | undefined;
     let timeoutToHide: NodeJS.Timeout | undefined;
@@ -146,17 +145,28 @@ const useQuizLogic = (router: any) => {
   };
 
   const simulateBotOptionSelection = () => {
-    const minDelay = 1000; // Minimum delay of 1 seconds
+    const minDelay = 1000; // Minimum delay of 1 second
     const maxDelay = 2000; // Maximum delay of 2 seconds
     const randomDelay =
-      Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay between 2000 and 6000
+        Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay
 
     setTimeout(() => {
-      const botChoice = options[Math.floor(Math.random() * options.length)];
+        const correctScore = playerScores.find(
+            (score) => score.playerName === currentPlayerName
+        )?.totalScore ?? 0;
 
-      handleOptionPress(botChoice);
+        // 50% chance to select the correct answer
+        if (Math.random() < 0.5) {
+            handleOptionPress(correctScore); // Select the correct answer
+        } else {
+            // Select a random incorrect answer
+            const incorrectOptions = options.filter(option => option !== correctScore);
+            const botChoice =
+                incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
+            handleOptionPress(botChoice);
+        }
     }, randomDelay);
-  };
+};
 
   const updateScore = (playerName: string, points: number) => {
     dispatch(

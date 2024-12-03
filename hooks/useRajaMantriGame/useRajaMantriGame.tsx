@@ -14,7 +14,7 @@ import { RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
 import { updatePlayerScores } from "@/redux/reducers/playerReducer";
 import * as Network from "expo-network";
-import { resetGamefromRedux, playAgain } from "@/redux/reducers/playerReducer";
+import { resetGamefromRedux } from "@/redux/reducers/playerReducer";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
@@ -96,9 +96,11 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     (state: RootState) => state.player.playerNames
   );
   const playerInfo = useSelector((state: RootState) => state.player);
+
   const selectedRounds = useSelector(
     (state: RootState) => state.player.gameRound
   );
+
   const router = useRouter();
   const dispatch = useDispatch();
 
@@ -108,8 +110,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   const handleExitGame = () => {
     dispatch(resetGamefromRedux());
-
-    handleResetgame(); 
+    handleResetgame();
     router.replace("/modeselect");
   };
 
@@ -118,9 +119,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const handleBackPress = () => {
     if (exitModalVisible) {
       toggleExitModal();
-      return true; 
+      return true;
     }
-    toggleExitModal(); 
+    toggleExitModal();
     return true;
   };
 
