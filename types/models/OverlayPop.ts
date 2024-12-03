@@ -1,5 +1,5 @@
 export interface OverlayPopUpProps {
-    index: number;
+    index: number | null;
     policeIndex: number | null;
     advisorIndex: number | null;
     thiefIndex: number | null;

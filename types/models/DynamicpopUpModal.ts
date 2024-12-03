@@ -8,7 +8,7 @@ export interface PlayerData {
   export interface OverlayPopUpProps {
     isPopUp: boolean;
     mediaId: number;
-    mediaType: "image" | "video" | "gif";
+    mediaType: "image" | "video" | "gif" | null;
     playerData?: PlayerData;
     closeVisibleDelay: number; // Time in milliseconds before "Tap to Close" becomes visible
   }

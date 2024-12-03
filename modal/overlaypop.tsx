@@ -53,70 +53,71 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
     opacityAnim.setValue(0);
     tapToCloseAnim.setValue(0); // Reset "Tap to close" opacity
     setShowTapToClose(false);
+    if (index != null) {
+      if (index >= 1 && index <= data.length) {
+        const selectedItem = data[index - 1];
+        let roleMessage = "";
+        switch (index) {
+          case 1:
+            roleMessage = `Congratulations ${kingName},\n\n you are the King! 👑`;
+            break;
+          case 2:
+            roleMessage = `${policeName}, you are the Police!🚔 \n\n Catch the Thief`;
+            break;
+          case 3:
+            roleMessage = `Congratulations ${thiefName} 🎉,\n\n lucky escape!`;
+            break;
+          case 4:
+            roleMessage = `🚔 Well done, ${policeName}! 🎉,\n\n you’re the hero! `;
+            break;
+          default:
+            roleMessage = "";
+        }
 
-    if (index >= 1 && index <= data.length) {
-      const selectedItem = data[index - 1];
-      let roleMessage = "";
-      switch (index) {
-        case 1:
-          roleMessage = `Congratulations ${kingName},\n\n you are the King! 👑`;
-          break;
-        case 2:
-          roleMessage = `${policeName}, you are the Police!🚔 \n\n Catch the Thief`;
-          break;
-        case 3:
-          roleMessage = `Congratulations ${thiefName} 🎉,\n\n lucky escape!`;
-          break;
-        case 4:
-          roleMessage = `🚔 Well done, ${policeName}! 🎉,\n\n you’re the hero! `;
-          break;
-        default:
-          roleMessage = "";
+        setModalData({
+          message: selectedItem.message,
+          point: selectedItem.point || null,
+          image: selectedItem.image,
+          roleMessage: roleMessage,
+        });
+
+        setModalVisible(true);
+
+        // Start entry animations
+        Animated.parallel([
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 900,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        // Set a timer to show "Tap to close" after the display duration
+        const showTapTimer = setTimeout(() => {
+          setShowTapToClose(true);
+          // Animate "Tap to close" text visibility
+          Animated.timing(tapToCloseAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }).start();
+        }, displayDuration);
+
+        // Set a timer to close the popup automatically after the display duration + buffer time
+        const closeTimer = setTimeout(() => {
+          closeModal();
+        }, displayDuration + 1000); // Add buffer time for "Tap to close" message visibility
+
+        return () => {
+          clearTimeout(showTapTimer);
+          clearTimeout(closeTimer);
+        };
       }
-
-      setModalData({
-        message: selectedItem.message,
-        point: selectedItem.point || null,
-        image: selectedItem.image,
-        roleMessage: roleMessage,
-      });
-
-      setModalVisible(true);
-
-      // Start entry animations
-      Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Set a timer to show "Tap to close" after the display duration
-      const showTapTimer = setTimeout(() => {
-        setShowTapToClose(true);
-        // Animate "Tap to close" text visibility
-        Animated.timing(tapToCloseAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-      }, displayDuration);
-
-      // Set a timer to close the popup automatically after the display duration + buffer time
-      const closeTimer = setTimeout(() => {
-        closeModal();
-      }, displayDuration + 1000); // Add buffer time for "Tap to close" message visibility
-
-      return () => {
-        clearTimeout(showTapTimer);
-        clearTimeout(closeTimer);
-      };
     } else {
       setModalVisible(false);
     }
@@ -154,7 +155,7 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
       animationType="fade"
       onRequestClose={() => {}}
     >
-                <StatusBar backgroundColor={"#000000CC"} />
+      <StatusBar backgroundColor={"#000000CC"} />
 
       <TouchableWithoutFeedback onPress={handleScreenTap}>
         <View style={styles.overlay}>

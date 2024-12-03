@@ -15,7 +15,7 @@ import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
 interface PlayerMessage {
   message?: string | null;
 }
-const NUM_QUESTIONS = 8;
+const NUM_QUESTIONS = 7;
 const CORRECT_ANSWER_GIF = 7;
 const INCORRECT_ANSWER_GIF = 6;
 const TIMER_UP_GIF = 8;
@@ -224,7 +224,7 @@ export const useQuizGameLogic = () => {
           closeModal();
           resetGame();
           dispatch(resetDifficulty());
-          router.replace("/gamelevel"); 
+          router.replace("/gamelevel");
         },
       },
     ]);
@@ -307,7 +307,7 @@ export const useQuizGameLogic = () => {
     setIsFiftyFiftyUsed(false);
     setFiftyFiftyUsageCount(0);
     dispatch(stopTimerSound());
-    dispatch(playSound("quiz"))
+    dispatch(playSound("quiz"));
   };
 
   return {

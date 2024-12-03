@@ -40,7 +40,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   const closeTextAnim = useRef(new Animated.Value(0)).current; // for close text
   const descriptionAnim = useRef(new Animated.Value(-50)).current; // for description
   const dispatch = useDispatch();
-  const getMediaData = (id: number, type: "image" | "video" | "gif") => {
+  const getMediaData = (id: number, type: "image" | "video" | "gif" | null) => {
     let data;
     switch (type) {
       case "video":
