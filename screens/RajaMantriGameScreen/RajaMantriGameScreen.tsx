@@ -1,13 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  ImageBackground,
-  ScrollView,
-  Animated,
-  StatusBar,
-  BackHandler,
-} from "react-native";
-import * as Network from "expo-network";
+import { View, ImageBackground, Animated } from "react-native";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
@@ -38,7 +30,6 @@ import { useRouter } from "expo-router";
 import { Components } from "@/imports/allComponentImports";
 import SearchingForPlayers from "../Searching";
 import { NoConnectionScreen } from "../NoConnectionScreen/nonet";
-// import { NoConnectionScreen } from "../NoConnectionScreen/nonet";
 
 const RajaMantriGameScreen: React.FC = () => {
   const router = useRouter();
@@ -74,13 +65,14 @@ const RajaMantriGameScreen: React.FC = () => {
     isRoundStartPopupVisible,
     roundStartMessage,
     randomMessageThinking,
-    handleResetgame,
-    setPopupIndex,
+    isConnected,
+    isSearchScreenVisiable,
+    exitModalVisible,
+    toggleExitModal,
+    handleExitGame,
   } = useRajaMantriGame({ playerNames });
 
   const [popupTable, setPopupTable] = useState(false);
-  const [exitModalVisible, setExitModalVisible] = useState(false);
-  const [isSearchScreenVisiable, setIsSearchScreenVisiable] = useState(false);
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
 
   const isBotThinking = useSelector((state: RootState) => state.bot.isThinking);
@@ -88,66 +80,9 @@ const RajaMantriGameScreen: React.FC = () => {
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
   );
-  const gamemode = useSelector((state: RootState) => state.player.gameMode);
 
   // Toggle modal visibility
   const toggleModal = () => setPopupTable(!popupTable);
-  const toggleExitModal = () => setExitModalVisible(!exitModalVisible);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
-
-  // Handle game exit
-  const handleExitGame = async () => {
-    setPopupIndex(null);
-    handleResetgame();
-    router.replace("/modeselect");
-    toggleExitModal();
-  };
-
-  useEffect(() => {
-    const checkNetwork = async () => {
-      try {
-        const networkState = await Network.getNetworkStateAsync();
-        setIsConnected(networkState.isConnected ?? null);
-      } catch (error) {
-        console.error("Error checking network state:", error);
-        setIsConnected(null);
-      }
-    };
-
-    checkNetwork();
-  }, []);
-
-  useEffect(() => {
-    if (isConnected === false) {
-      setIsSearchScreenVisiable(false);
-    } else if (gamemode === "ONLINE_WITH_BOTS" && !isPlaying) {
-      setIsSearchScreenVisiable(true);
-      const randomDuration =
-        Math.floor(Math.random() * (20000 - 10000 + 1)) + 10000;
-      setTimeout(() => {
-        setIsSearchScreenVisiable(false);
-      }, randomDuration);
-    }
-  }, [gamemode, isPlaying, isConnected]);
-
-  // Handle back button press
-  useEffect(() => {
-    const backAction = () => {
-      if (exitModalVisible) {
-        setExitModalVisible(false);
-        return true;
-      }
-      toggleExitModal();
-      return true;
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-
-    return () => backHandler.remove();
-  }, [exitModalVisible]);
 
   // Function to handle card click with bounce animation
   const handleCardClickWithBounce = (index: number) => {
@@ -170,7 +105,7 @@ const RajaMantriGameScreen: React.FC = () => {
   return (
     <View style={{ flex: 1 }}>
       {isConnected === false ? (
-        <NoConnectionScreen handleExitGame={handleExitGame} /> // Show NoConnection screen if not connected
+        <NoConnectionScreen handleExitGame={handleExitGame} />
       ) : isSearchScreenVisiable && !isPlaying ? (
         <SearchingForPlayers />
       ) : (

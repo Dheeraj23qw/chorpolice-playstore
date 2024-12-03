@@ -1,15 +1,21 @@
-import { GameMode, PlayerName, PlayerScore, PlayerScoresByRound, PlayerState } from "@/types/redux/reducers";
+import {
+  GameMode,
+  PlayerName,
+  PlayerScore,
+  PlayerScoresByRound,
+  PlayerState,
+} from "@/types/redux/reducers";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-
 
 // Define the initial state for the Player slice
 const initialState: PlayerState = {
   selectedImages: [],
   playerNames: [],
   playerScores: [],
-  playerScoresByRound: [],  // Initialize empty playerScoresByRound
+  playerScoresByRound: [], // Initialize empty playerScoresByRound
   gameMode: "OFFLINE",
+  isGameReset: false, // New property to track if the game is reset
+  gameRound: 7,
 };
 
 // Create the player slice
@@ -62,8 +68,17 @@ const playerSlice = createSlice({
     setGameMode(state, action: PayloadAction<GameMode>) {
       state.gameMode = action.payload;
     },
-    resetGame() {
-      return initialState;
+    resetGamefromRedux(state) {
+      const { gameRound } = state;
+      return { ...initialState, gameRound, isGameReset: true };
+    },
+    setIsGameReset(state, action: PayloadAction<boolean>) {
+      state.isGameReset = action.payload; // Set the value of isGameReset
+    },
+    setGameRound(state, action: PayloadAction<number>) {
+      if (Number.isInteger(action.payload) && action.payload > 0) {
+        state.gameRound = action.payload;
+      }
     },
     playAgain(state) {
       // Reset playerScores while keeping player names intact
@@ -74,17 +89,14 @@ const playerSlice = createSlice({
     },
     // New action to update player scores by round
     updateScoresByRound: {
-      reducer(
-        state,
-        action: PayloadAction<PlayerScoresByRound[]>
-      ) {
+      reducer(state, action: PayloadAction<PlayerScoresByRound[]>) {
         const roundScores = action.payload;
         // Update or add player round scores
         roundScores.forEach(({ playerName, scores }) => {
           const player = state.playerScoresByRound.find(
             (player) => player.playerName === playerName
           );
-          
+
           if (!player) {
             state.playerScoresByRound.push({ playerName, scores: [...scores] });
           } else {
@@ -96,7 +108,9 @@ const playerSlice = createSlice({
         return {
           payload: roundScores.map((roundScore) => ({
             playerName: roundScore.playerName,
-            scores: roundScore.scores.filter((score) => typeof score === "number" && score >= 0),
+            scores: roundScore.scores.filter(
+              (score) => typeof score === "number" && score >= 0
+            ),
           })),
         };
       },
@@ -110,9 +124,11 @@ export const {
   setPlayerNames,
   updatePlayerScores,
   setGameMode,
-  resetGame,
+  resetGamefromRedux,
   playAgain,
-  updateScoresByRound, // Export the new action
+  updateScoresByRound,
+  setGameRound,
+  setIsGameReset,
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

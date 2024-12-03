@@ -32,20 +32,18 @@ const OptionHeader = React.memo(() => {
     }
   }, [dispatch, isMuted]);
 
-  // Optimized button styles using useMemo to avoid recalculation on every render
   const buttonStyle = useMemo(() => [
     styles.headerButton,
-    { opacity: 1 }, // default opacity
+    { opacity: 1 }, 
   ], []);
 
   const pressedStyle = useMemo(() => [
     styles.headerButton,
-    { opacity: 0.7 }, // opacity when pressed
+    { opacity: 0.7 }, 
   ], []);
 
   return (
     <View style={styles.headerButtonsContainer}>
-      {/* Mute/Unmute Button */}
       <Pressable
         style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
         onPress={handleQuizSound}
@@ -79,6 +77,14 @@ const OptionHeader = React.memo(() => {
         onPress={() => router.push("/award")}
       >
         <Ionicons name="trophy" size={24} color="#FFF" />
+      </Pressable>
+
+         {/* Settings Button */}
+         <Pressable
+        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
+        onPress={() => router.push("/settings")}
+      >
+        <Ionicons name="settings" size={24} color="#FFF" />
       </Pressable>
 
       {/* Custom Rating Modal */}

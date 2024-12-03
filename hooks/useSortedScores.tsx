@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { captureScreen } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
-import { resetGame, playAgain } from "@/redux/reducers/playerReducer";
+import { resetGamefromRedux, playAgain } from "@/redux/reducers/playerReducer";
 
 // Custom hook for managing and sharing sorted scores
 export const useSortedScores = () => {
@@ -26,7 +26,7 @@ export const useSortedScores = () => {
 
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
-  ); // Fetch player images from Redux
+  );
   const fallbackImage = require("@/assets/images/image.png");
 
   const sortedScores = useMemo(() => {
@@ -47,18 +47,28 @@ export const useSortedScores = () => {
   const winnerIndex = playerNames.findIndex(
     (player) => player.name === winner.playerName
   );
-  // Memoize the winner's image based on their index
+
   const winnerImage = useMemo(() => {
-    // Ensure the selectedImages array has valid indexes
     if (winnerIndex >= 0 && winnerIndex < selectedImages.length) {
       const image = playerImages[selectedImages[winnerIndex]];
-      return image && image.src ? image.src : fallbackImage; // Use fallback image if not found
+      return image?.src || fallbackImage;
     }
+    return fallbackImage;
+  }, [winnerIndex, selectedImages, playerImages]);
 
-    return fallbackImage; // Fallback to default image if index is invalid
-  }, [winner.playerName, selectedImages, playerNames, playerImages]);
+  const winnerPlayerImageType = useMemo(() => {
+    if (winnerIndex >= 0 && winnerIndex < selectedImages.length) {
+      const imageType = playerImages[selectedImages[winnerIndex]]?.type;
+      return imageType || "default";
+    }
+    return "default";
+  }, [winnerIndex, selectedImages, playerImages]);
 
-  const winnerPlayerImageType = playerImages[selectedImages[winnerIndex]]?.type;
+  const botIndexes = playerNames
+    .map((player, idx) => (player.isBot ? idx : -1))
+    .filter((idx) => idx !== -1);
+
+  const isCurrentWinnerIsBot = botIndexes.includes(winnerIndex);
 
   const handlePlayAgain = useCallback(() => {
     if (isButtonDisabled) return;
@@ -72,11 +82,8 @@ export const useSortedScores = () => {
   const handleBack = useCallback(() => {
     if (isButtonDisabled) return;
     setIsButtonDisabled(true);
+    dispatch(resetGamefromRedux());
     router.push("/modeselect");
-
-    setTimeout(() => {
-      dispatch(resetGame());
-    }, 500);
   }, [dispatch, router, isButtonDisabled]);
 
   const handleShare = useCallback(async () => {
@@ -117,6 +124,7 @@ export const useSortedScores = () => {
     winnerName,
     winnerImage,
     winnerPlayerImageType,
-    winner
+    winner,
+    isCurrentWinnerIsBot,
   };
 };

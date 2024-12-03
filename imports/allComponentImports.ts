@@ -14,7 +14,6 @@ import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGr
 import { AvatarSelectionMemo } from "@/components/playerNameScreen/toggleContainer";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
-import ScoreTable  from '@/components/RajamantriGameScreen/scoretable';
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 
 
@@ -40,7 +39,6 @@ export const Components = {
   //RajamantriGameScreen components imports
   PlayerCard,
   PlayButton,
-  ScoreTable,
   VideoPlayerComponent,
 
   //individual components imports

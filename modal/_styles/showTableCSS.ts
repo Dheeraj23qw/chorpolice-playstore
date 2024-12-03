@@ -6,13 +6,10 @@ export const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: responsiveWidth(3),
+    paddingHorizontal: responsiveWidth(1),
     backgroundColor: '#121212',  // Dark background for contrast
-    padding: responsiveHeight(2),
+    paddingVertical: responsiveHeight(6),
     borderRadius: 25,
-    width: '100%',
-    maxWidth: 420,
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.4,
     shadowRadius: 15,
@@ -40,6 +37,7 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333', // Adds subtle border to separate rows
     paddingBottom: responsiveHeight(1),
+    paddingHorizontal: responsiveWidth(2),
   },
 
   tableCellHeader: {
@@ -95,5 +93,21 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: responsiveWidth(2), // Adds padding to prevent text clashing with edges
   },
-
+  scrollableContainer: {
+    flex: 1,
+  },
+  closeButton: {
+    marginTop: responsiveHeight(2),
+    backgroundColor: "#1E1E1E",
+    paddingVertical: responsiveHeight(1.2),
+    paddingHorizontal: responsiveWidth(5),
+    borderRadius: responsiveWidth(2),
+    alignItems: "center",
+    marginHorizontal: responsiveHeight(3.2)
+  },
+  closeButtonText: {
+    color: "#FFF",
+    fontSize: responsiveFontSize(2),
+    fontWeight: "bold",
+  },
 });

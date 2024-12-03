@@ -36,12 +36,12 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
     backgroundColor: "#FFFFFF", // Ensures image background is white
   },
   winnerName: {
-    fontSize: responsiveFontSize(2.7),
+    fontSize: responsiveFontSize(2.9),
     color: "#8E5DE9", // Matches the header color for consistency
     fontFamily: "outfit-bold", // Using outfit-bold
   },
   congratulations: {
-    fontSize: responsiveFontSize(2.8),
+    fontSize: responsiveFontSize(3.5),
     fontWeight: "bold",
     color: "#8E5DE9", // Vibrant purple for a cohesive look
     marginBottom: responsiveHeight(1),
@@ -50,7 +50,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
     textShadowRadius: 4,
   },
   winnerScore: {
-    fontSize: responsiveFontSize(2.7),
+    fontSize: responsiveFontSize(2.9),
     fontWeight: "bold",
     color: "#4B0082", // Darker indigo for contrast
     margin: responsiveHeight(1),
@@ -61,7 +61,7 @@ export const ChorPoloceLeaderboardStyles = StyleSheet.create({
   rankContainer: {
     marginTop: responsiveHeight(1),
     backgroundColor: "#E8F4FD", // Light pastel blue for a soft touch
-    padding: responsiveWidth(1),
+    padding: responsiveWidth(2),
     borderRadius: 20,
     shadowColor: "#FFD700", // Golden shadow
     shadowOffset: { width: 0, height: 8 },

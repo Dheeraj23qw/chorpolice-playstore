@@ -5,22 +5,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { resetGame } from "./utils/resetGameUtils";
 import { flipCard } from "./utils/flipCardUtil";
-import {
-  playSound,
-  stopQuizSound,
-  stopSound,
-  unloadSounds,
-} from "@/redux/reducers/soundReducer";
+import { playSound } from "@/redux/reducers/soundReducer";
 import { revealAllCards } from "./utils/revealAllCardsUtils";
 import { resetForNextRound } from "./utils/resetForNextRound";
 import { handlePlayHelper } from "./gameHelper/handleplay";
 import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
-import {
-  updatePlayerScores,
-  updateScoresByRound,
-} from "@/redux/reducers/playerReducer";
+import { updatePlayerScores } from "@/redux/reducers/playerReducer";
+import * as Network from "expo-network";
+import { resetGamefromRedux, playAgain } from "@/redux/reducers/playerReducer";
 
 interface UseRajaMantriGameOptions {
   playerNames: string[];
@@ -85,6 +79,11 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [isRoundStartPopupVisible, setIsRoundStartPopupVisible] =
     useState(false);
   const [roundStartMessage, setRoundStartMessage] = useState("");
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [isSearchScreenVisiable, setIsSearchScreenVisiable] = useState(false);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+
+  const gamemode = useSelector((state: RootState) => state.player.gameMode);
 
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
@@ -97,53 +96,79 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     (state: RootState) => state.player.playerNames
   );
   const playerInfo = useSelector((state: RootState) => state.player);
-
+  const selectedRounds = useSelector(
+    (state: RootState) => state.player.gameRound
+  );
   const router = useRouter();
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const handleBackButton = () => {
-      return true;
+    handleResetgame();
+  }, []);
+
+  const handleExitGame = () => {
+    dispatch(resetGamefromRedux());
+
+    handleResetgame(); 
+    router.replace("/modeselect");
+  };
+
+  const toggleExitModal = () => setExitModalVisible(!exitModalVisible);
+
+  const handleBackPress = () => {
+    if (exitModalVisible) {
+      toggleExitModal();
+      return true; 
+    }
+    toggleExitModal(); 
+    return true;
+  };
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleBackPress
+    );
+
+    return () => backHandler.remove();
+  }, [exitModalVisible]);
+
+  useEffect(() => {
+    const checkNetwork = async () => {
+      try {
+        const networkState = await Network.getNetworkStateAsync();
+        setIsConnected(networkState.isConnected ?? null);
+      } catch (error) {
+        console.error("Error checking network state:", error);
+        setIsConnected(null);
+      }
     };
 
-    const unsubscribe = BackHandler.addEventListener(
-      "hardwareBackPress",
-      handleBackButton
-    );
-    return () => unsubscribe.remove();
+    checkNetwork();
   }, []);
 
   useEffect(() => {
-    resetGame(
-      initialFlippedStates,
-      initialClickedCards,
-      initialFlipAnims,
-      playerNames,
-      setFlipAnims,
-      setFlippedStates,
-      setClickedCards,
-      setSelectedPlayer,
-      setIsPlayButtonDisabled,
-      setRound,
-      setMessage,
-      setPoliceClickCount,
-      setAdvisorIndex,
-      setThiefIndex,
-      setKingIndex,
-      setPoliceIndex,
-      setVideoIndex,
-      setIsPlaying,
-      setPlayerScores,
-      setPolicePlayerName,
-      setPlayerData,
-      setIsModalVisible,
-      setPopupIndex,
-      setMediaId,
-      setMediaType,
-      setFirstCardClicked,
-      setIsDynamicPopUp
-    );
-  }, []);
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    if (isConnected === false) {
+      setIsSearchScreenVisiable(false);
+    } else if (gamemode === "ONLINE_WITH_BOTS" && !isPlaying) {
+      setIsSearchScreenVisiable(true);
+
+      const randomDuration =
+        Math.floor(Math.random() * (20000 - 10000 + 1)) + 10000;
+
+      timeoutId = setTimeout(() => {
+        setIsSearchScreenVisiable(false);
+      }, randomDuration);
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isPlaying]);
 
   const handleResetgame = () => {
     resetGame(
@@ -200,14 +225,15 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const handlesetRoundStartMessage = () => {
     setRoundStartMessage("Round " + round + " starts!");
     setIsRoundStartPopupVisible(true);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setIsRoundStartPopupVisible(false);
     }, 3000);
+    return () => clearTimeout(timer);
   };
 
   const handlePlay = () => {
     handlesetRoundStartMessage();
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       dispatch(playSound("select"));
       handlePlayHelper(
         dispatch,
@@ -233,6 +259,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         playerInfo
       );
     }, 1000);
+    return () => clearTimeout(timer);
   };
 
   const updateScore = (
@@ -245,7 +272,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
   };
 
-  //isse se hai matlab
   const handleCardClick = (index: number) => {
     dispatch(playSound("select"));
     if (
@@ -274,14 +300,20 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       const currentPlayerImageType =
         playerImages[selectedImages[policeIndex]]?.type;
 
+      // Store timeout IDs
+      let winTimeoutId: NodeJS.Timeout | null = null;
+      let loseTimeoutId: NodeJS.Timeout | null = null;
+      let resetTimeoutId: NodeJS.Timeout | null = null;
+      let gifTimeoutId: NodeJS.Timeout | null = null;
+
       if (playerRole === "Thief" && thiefIndex !== null) {
         handleRevealAllCards();
 
-        setTimeout(() => {
+        winTimeoutId = setTimeout(() => {
           dispatch(playSound("win"));
         }, 2000);
 
-        setTimeout(() => {
+        gifTimeoutId = setTimeout(() => {
           setMediaType("gif");
           setIsDynamicPopUp(true);
           setMediaId(4);
@@ -297,15 +329,15 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         updateScore(policeIndex, 500, round - 1);
         updateScore(advisorIndex, 800, round - 1);
         updateScore(kingIndex, 1000, round - 1);
-        setTimeout(() => resetForNextRoundHandler(), 8000);
+        resetTimeoutId = setTimeout(() => resetForNextRoundHandler(), 8000);
       } else {
         handleRevealAllCards();
 
-        setTimeout(() => {
+        loseTimeoutId = setTimeout(() => {
           dispatch(playSound("lose"));
         }, 2000);
 
-        setTimeout(() => {
+        gifTimeoutId = setTimeout(() => {
           setMediaType("gif");
           setIsDynamicPopUp(true);
           setMediaId(3);
@@ -366,6 +398,12 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           return newClickedCards;
         });
       }
+      return () => {
+        if (winTimeoutId) clearTimeout(winTimeoutId);
+        if (loseTimeoutId) clearTimeout(loseTimeoutId);
+        if (resetTimeoutId) clearTimeout(resetTimeoutId);
+        if (gifTimeoutId) clearTimeout(gifTimeoutId);
+      };
     }
   };
 
@@ -383,6 +421,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const calculateTotalScores = () => {
+    let updateTimeoutId: NodeJS.Timeout | null = null;
+
     setPlayerScores((prevScores) => {
       const updatedScores = prevScores.map((player) => {
         const totalScore = player.scores.reduce((sum, score) => sum + score, 0);
@@ -392,19 +432,23 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         };
       });
 
-      // Create an array with only player names and total scores
       const totalScoresArray = updatedScores.map((player) => ({
         playerName: player.playerName,
         totalScore: player.totalScore,
       }));
 
-      // Dispatch the array with only player names and total scores to the store
-      setTimeout(() => {
+      if (updateTimeoutId) clearTimeout(updateTimeoutId);
+
+      updateTimeoutId = setTimeout(() => {
         dispatch(updatePlayerScores(totalScoresArray));
-      }, 1000);
+      }, 500);
 
       return updatedScores;
     });
+
+    return () => {
+      if (updateTimeoutId) clearTimeout(updateTimeoutId);
+    };
   };
 
   const resetForNextRoundHandler = () => {
@@ -431,8 +475,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setAreCardsClickable,
       setIsDynamicPopUp,
       setMediaId,
-      setMediaType
-      // setIsRoundStartPopupVisible
+      setMediaType,
+      selectedRounds
     );
   };
 
@@ -472,6 +516,12 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     randomMessageThinking,
     handleResetgame,
     setPopupIndex,
+    setIsDynamicPopUp,
+    isConnected,
+    isSearchScreenVisiable,
+    exitModalVisible,
+    toggleExitModal,
+    handleExitGame,
   };
 };
 

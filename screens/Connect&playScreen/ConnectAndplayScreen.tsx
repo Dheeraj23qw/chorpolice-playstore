@@ -84,7 +84,7 @@ const ConnectAndPlay: React.FC = () => {
             isPopUp={isAwardModelOpen}
             mediaId={TREASURE_GIF}
             mediaType="gif"
-            closeVisibleDelay={3000}
+            closeVisibleDelay={2500}
             playerData={{
               message: msg,
             }}

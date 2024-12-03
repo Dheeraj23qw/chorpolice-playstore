@@ -61,7 +61,6 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
     const playerImages = useSelector(
       (state: RootState) => state.playerImages.images
     );
-    const dispatch = useDispatch();
     const playerData = useSelector((state: RootState) => state.player);
     const botIndexes = playerData.playerNames
       .map((player, idx) => (player.isBot ? idx : -1))

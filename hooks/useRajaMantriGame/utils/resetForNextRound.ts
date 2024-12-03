@@ -27,15 +27,15 @@ export const resetForNextRound = (
   setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>,
   setIsDynamicPopUp:React.Dispatch<React.SetStateAction<boolean>>,
   setMediaId:React.Dispatch<React.SetStateAction<number | null>>,
-  setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif"| null>>
+  setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif"| null>>,
+  selectedRounds:number
 ) => {
-  if (round == 1) {
+  if (round == selectedRounds) {
     dispatch(playSound("next"));
-
     calculateTotalScores();
     setTimeout(() => {
       router.push("/chorPoliceQuiz");
-    }, 2000);
+    }, 3000);
 
     return;
   } else {

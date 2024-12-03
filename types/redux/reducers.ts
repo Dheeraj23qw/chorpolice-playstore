@@ -65,4 +65,6 @@ export interface PlayerScore {
     playerScores: PlayerScore[];
     playerScoresByRound: PlayerScoresByRound[];  // New state for storing scores by round
     gameMode: GameMode;
+    isGameReset: boolean, // New property to track if the game is reset
+    gameRound: number, 
   }

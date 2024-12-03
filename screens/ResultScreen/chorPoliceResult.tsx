@@ -11,9 +11,15 @@ import { Components } from "@/imports/allComponentImports";
 import { useSortedScores } from "@/hooks/useSortedScores";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+import { addCoins } from "@/redux/reducers/coinsReducer";
+
+// Constants
+const REWARD_POINTS = 1000;
+const GAME_MODE_BOTS = "ONLINE_WITH_BOTS";
+const POPUP_TIMEOUT = 5000;
 
 const ChorPoliceResult = () => {
   const {
@@ -27,48 +33,63 @@ const ChorPoliceResult = () => {
     winnerName,
     winnerImage,
     winnerPlayerImageType,
-    winner
+    winner,
+    isCurrentWinnerIsBot,
   } = useSortedScores();
+
+  const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
+
+  const gamemode = useSelector((state: RootState) => state.player.gameMode);
+  const dispatch = useDispatch();
 
   const onPlayAgain = useCallback(handlePlayAgain, [handlePlayAgain]);
   const onBack = useCallback(handleBack, [handleBack]);
   const onShare = useCallback(handleShare, [handleShare]);
 
-  const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
-  const gamemode = useSelector((state: RootState) => state.player.gameMode);
-
   useEffect(() => {
-    if (gamemode === "ONLINE_WITH_BOTS") {
+    if (gamemode === GAME_MODE_BOTS) {
       setIsDynamicPopUp(true);
+
+      if (!isCurrentWinnerIsBot) {
+        dispatch(addCoins(REWARD_POINTS));
+      }
 
       const timeout = setTimeout(() => {
         setIsDynamicPopUp(false);
-      }, 5000);
+      }, POPUP_TIMEOUT);
 
-      return () => clearTimeout(timeout); // Cleanup
+      return () => clearTimeout(timeout);
     }
-  }, [gamemode]);
+  }, []);
+
+  const renderDynamicPopUp = () => {
+    const winnerMessage = `${winnerName}, you have won ${REWARD_POINTS} coins!`;
+
+    return (
+      <ImageBackground
+        source={require("../../assets/images/bg/quiz.png")}
+        style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
+        resizeMode="cover"
+      >
+        <DynamicOverlayPopUp
+          isPopUp={isDynamicPopUp}
+          mediaId={12}
+          mediaType="gif"
+          closeVisibleDelay={POPUP_TIMEOUT}
+          playerData={{
+            image: winnerImage,
+            message: winnerMessage,
+            imageType: winnerPlayerImageType,
+          }}
+        />
+      </ImageBackground>
+    );
+  };
 
   return (
     <>
-      {isDynamicPopUp && winnerImage != null ? (
-        <ImageBackground
-          source={require("../../assets/images/bg/quiz.png")}
-          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
-          resizeMode="cover"
-        >
-          <DynamicOverlayPopUp
-            isPopUp={isDynamicPopUp}
-            mediaId={12}
-            mediaType={"gif"}
-            closeVisibleDelay={5000}
-            playerData={{
-              image: winnerImage,
-              message: `${winnerName}, you have won 1000 coins!`,
-              imageType: winnerPlayerImageType,
-            }}
-          />
-        </ImageBackground>
+      {isDynamicPopUp && winnerImage && winnerPlayerImageType ? (
+        renderDynamicPopUp()
       ) : (
         <SafeAreaView style={globalstyles.container}>
           <StatusBar backgroundColor="#7653ec" barStyle="dark-content" />
@@ -87,12 +108,11 @@ const ChorPoliceResult = () => {
             >
               <View style={chorPoliceQuizstyles.overlay} />
               <MemoizedWinnerSection
-                 winnerName={winnerName}
-                 winnerImage={winnerImage}
-                 winner={winner}
-                />
+                winnerName={winnerName}
+                winnerImage={winnerImage}
+                winner={winner}
+              />
               <ScrollView showsVerticalScrollIndicator={false}>
-               
                 <MemoizedLeaderboard
                   sortedScores={sortedScores}
                   playerNames={playerNames}
@@ -102,7 +122,7 @@ const ChorPoliceResult = () => {
                   handlePlayAgain={onPlayAgain}
                   handleBack={onBack}
                   handleShare={onShare}
-                  isButtonDisabled={isButtonDisabled} // Pass the disabled state here
+                  isButtonDisabled={isButtonDisabled}
                 />
               </ScrollView>
             </ImageBackground>
