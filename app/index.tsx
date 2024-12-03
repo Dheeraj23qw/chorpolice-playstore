@@ -12,6 +12,7 @@ import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer"
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import { initializeCoins } from "@/redux/reducers/coinsReducer";
 import { AppDispatch } from "@/redux/store";
+import { Onboarding } from "@/screens/onboardingScreen/onboardingScreen";
 
 export default function Index() {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -59,5 +60,5 @@ export default function Index() {
   }
 
   // Render main content after video ends
-  return <GameModeScreen />;
+  return <Onboarding />;
 }
