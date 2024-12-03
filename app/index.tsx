@@ -9,15 +9,17 @@ import {
   unloadSounds,
 } from "@/redux/reducers/soundReducer";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
-import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import { initializeCoins } from "@/redux/reducers/coinsReducer";
 import { AppDispatch } from "@/redux/store";
+import * as SecureStore from "expo-secure-store";
+import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen"; // Adjust path as needed
 import { Onboarding } from "@/screens/onboardingScreen/onboardingScreen";
 
 export default function Index() {
   const navigation = useNavigation<NavigationProp<any>>();
-  const dispatch = useDispatch<AppDispatch>(); // Use AppDispatch type here
+  const dispatch = useDispatch<AppDispatch>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   useEffect(() => {
     // Initialize coins state from SecureStore
@@ -49,6 +51,25 @@ export default function Index() {
     });
   }, [navigation]);
 
+  // Check if this is the first launch
+  useEffect(() => {
+    const checkFirstLaunch = async () => {
+      try {
+        const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
+        if (hasLaunched === null) {
+          setIsFirstLaunch(true);
+          await SecureStore.setItemAsync("hasLaunched", "true");
+        } else {
+          setIsFirstLaunch(false);
+        }
+      } catch (error) {
+        console.error("Error checking first launch:", error);
+      }
+    };
+
+    checkFirstLaunch();
+  }, []);
+
   // Handle video end callback to hide splash screen
   const handleVideoEnd = () => {
     setIsLoading(false);
@@ -59,6 +80,11 @@ export default function Index() {
     return <VideoPlayerComponent videoIndex={1} onVideoEnd={handleVideoEnd} />;
   }
 
-  // Render main content after video ends
-  return <Onboarding />;
+  // Render onboarding screen if it's the first launch, otherwise render the home screen
+  if (isFirstLaunch) {
+    return <Onboarding />;
+  }
+
+  // Render the main content (e.g., GameModeScreen or whatever your main screen is)
+  return <GameModeScreen />;
 }

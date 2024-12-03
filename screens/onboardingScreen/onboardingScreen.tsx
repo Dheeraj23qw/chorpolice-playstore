@@ -14,12 +14,13 @@ import {
 const { width } = Dimensions.get("window");
 import { styles } from "./onboardinstyles";
 import { onboardingData } from "@/constants/onboardingData";
+import { useRouter } from "expo-router";
 
 export const Onboarding = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current; // Initial opacity value for fade-in effect
   const scaleAnim = useRef(new Animated.Value(0.8)).current; // Initial scale value
-
+  const router = useRouter();
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
     const index = Math.round(scrollPosition / width);
@@ -86,7 +87,12 @@ export const Onboarding = () => {
           </View>
         )}
         {currentIndex === onboardingData.length - 1 && (
-          <Pressable style={styles.button}>
+          <Pressable
+            style={styles.button}
+            onPress={() => {
+              router.replace("/modeselect");
+            }}
+          >
             <Text style={styles.buttonText}>Let's Get Started</Text>
           </Pressable>
         )}
