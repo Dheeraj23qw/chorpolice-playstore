@@ -12,16 +12,11 @@ import Animated, {
 } from "react-native-reanimated";
 import { useFocusEffect } from "@react-navigation/native"; // Import useFocusEffect
 import { StatusBar } from "react-native";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-
+import { optionsGameMode } from "@/constants/gamemode";
 const GameModeScreen: React.FC = () => {
-  // Local State
 
-  // Animation State
   const animationValue = useSharedValue(0);
 
-  // Animation Style
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateY: animationValue.value * 50 }, // Slide from 50px above
@@ -29,40 +24,12 @@ const GameModeScreen: React.FC = () => {
     opacity: animationValue.value, // Fade in
   }));
 
-  // Trigger animation on screen focus
   useFocusEffect(
     React.useCallback(() => {
       animationValue.value = 0; // Reset animation value
       animationValue.value = withTiming(1, { duration: 800 }); // Start animation
     }, [])
   );
-
-  const optionsGameMode = [
-    {
-      label: "Think & Count !",
-      value: "QUIZ_WITH_BOTS",
-      backgroundId: 1,
-      route: "/gamelevel",
-    },
-    {
-      label: "Connect & Play!",
-      value: "ONLINE_WITH_BOTS",
-      backgroundId: 2,
-      route: "/connectandplay",
-    },
-    {
-      label: "Play with Bots!",
-      value: "bots",
-      backgroundId: 3,
-      route: "/playwithbot",
-    },
-    {
-      label: "Play with Friends!",
-      value: "Offline",
-      backgroundId: 4,
-      route: "/playerName",
-    },
-  ];
 
   return (
     <SafeAreaView style={[globalstyles.container]}>

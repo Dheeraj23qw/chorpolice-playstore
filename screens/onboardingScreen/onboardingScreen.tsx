@@ -15,6 +15,8 @@ const { width } = Dimensions.get("window");
 import { styles } from "./onboardinstyles";
 import { onboardingData } from "@/constants/onboardingData";
 import { useRouter } from "expo-router";
+import { useDispatch } from "react-redux";
+import { playSound } from "@/redux/reducers/soundReducer";
 
 export const Onboarding = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -40,6 +42,7 @@ export const Onboarding = () => {
     </Animated.View>
   );
 
+  const dispatch = useDispatch();
   useEffect(() => {
     // Animate opacity and scale on index change
     Animated.parallel([
@@ -56,6 +59,9 @@ export const Onboarding = () => {
     ]).start();
   }, [currentIndex]);
 
+  const handleNavigation = () => {
+    router.replace("/modeselect");
+  };
   return (
     <ImageBackground
       source={require("../../assets/images/bg/quiz.png")}
@@ -90,7 +96,7 @@ export const Onboarding = () => {
           <Pressable
             style={styles.button}
             onPress={() => {
-              router.replace("/modeselect");
+              handleNavigation();
             }}
           >
             <Text style={styles.buttonText}>Let's Get Started</Text>

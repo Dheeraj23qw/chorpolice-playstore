@@ -29,29 +29,27 @@ export default function Index() {
   // Load sounds on mount
   useEffect(() => {
     async function initializeSounds() {
-      try {
-        await dispatch(loadSounds() as any);
-        dispatch(playSound("quiz"));
-      } catch (error) {
-        console.error("Failed to load or play sounds:", error);
-      }
+      await dispatch(loadSounds() as any);
+      dispatch(playSound("quiz"));
     }
     initializeSounds();
-
+  
+    // Clean up only if the component is truly unmounted (not navigating)
     return () => {
-      dispatch(stopQuizSound());
-      dispatch(unloadSounds());
+      if (navigation.isFocused()) {
+        dispatch(stopQuizSound());
+        dispatch(unloadSounds());
+      }
     };
-  }, [dispatch]);
+  }, [dispatch, navigation]);
+  
 
-  // Set navigation options to hide header
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, [navigation]);
 
-  // Check if this is the first launch
   useEffect(() => {
     const checkFirstLaunch = async () => {
       try {
@@ -70,21 +68,17 @@ export default function Index() {
     checkFirstLaunch();
   }, []);
 
-  // Handle video end callback to hide splash screen
   const handleVideoEnd = () => {
     setIsLoading(false);
   };
 
-  // Render splash screen video if loading
   if (isLoading) {
     return <VideoPlayerComponent videoIndex={1} onVideoEnd={handleVideoEnd} />;
   }
 
-  // Render onboarding screen if it's the first launch, otherwise render the home screen
   if (isFirstLaunch) {
     return <Onboarding />;
   }
 
-  // Render the main content (e.g., GameModeScreen or whatever your main screen is)
   return <GameModeScreen />;
 }
