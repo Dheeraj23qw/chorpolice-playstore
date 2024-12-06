@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, ImageBackground, Pressable } from "react-native";
+import React, { useRef } from "react";
+import { View, Text, ImageBackground, Pressable, Animated } from "react-native";
 import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { useDispatch } from "react-redux";
 import { playSound } from "@/redux/reducers/soundReducer";
@@ -28,10 +28,28 @@ export const QuizButton: React.FC<ButtonProps> = ({
   handleQuit,
 }) => {
   const dispatch = useDispatch();
+  
+  // Create an animated value for each button
+  const buttonAnimation = useRef(BUTTONS.map(() => new Animated.Value(1))).current;
 
   // Function to handle the sound dispatch and prevent repeated code
-  const handleButtonPress = (buttonText: string) => {
+  const handleButtonPress = (buttonText: string, index: number) => {
     dispatch(playSound("select"));
+
+    // Animate the button press
+    Animated.sequence([
+      Animated.timing(buttonAnimation[index], {
+        toValue: 1.5, // Scale down
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonAnimation[index], {
+        toValue: 1, // Scale back to original
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     switch (buttonText) {
       case "Quiz Table":
         setIsTableOpen(true);
@@ -52,31 +70,37 @@ export const QuizButton: React.FC<ButtonProps> = ({
 
   return (
     <View style={styles.buttonsSection}>
-      {BUTTONS.map(({ id, text }) => {
+      {BUTTONS.map(({ id, text }, index) => {
         // Conditional rendering based on button visibility logic
         if ((text === "50-50" && showHint) || (text === "Next" && !showHint)) {
           return null; // Hide specific buttons based on state
         }
 
         return (
-          <Pressable
+          <Animated.View
             key={id}
-            onPress={() => handleButtonPress(text)}
-            style={({ pressed }) => [
-              styles.iconBackground // Visual feedback on press
-            ]}
-            accessible
-            accessibilityLabel={text}
-            accessibilityRole="button" // Adding accessibility role for screen readers
+            style={{
+              transform: [{ scale: buttonAnimation[index] }], // Apply scale animation
+            }}
           >
-            <ImageBackground
-              source={require("../../assets/images/bg/quiz3.png")}
-              style={styles.iconBackground}
-              imageStyle={styles.iconBackgroundImage}
+            <Pressable
+              onPress={() => handleButtonPress(text, index)}
+              style={({ pressed }) => [
+                styles.iconBackground // Visual feedback on press
+              ]}
+              accessible
+              accessibilityLabel={text}
+              accessibilityRole="button" // Adding accessibility role for screen readers
             >
-              <Text style={styles.iconText}>{text}</Text>
-            </ImageBackground>
-          </Pressable>
+              <ImageBackground
+                source={require("../../assets/images/bg/quiz3.png")}
+                style={styles.iconBackground}
+                imageStyle={styles.iconBackgroundImage}
+              >
+                <Text style={styles.iconText}>{text}</Text>
+              </ImageBackground>
+            </Pressable>
+          </Animated.View>
         );
       })}
     </View>

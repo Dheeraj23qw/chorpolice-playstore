@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ImageBackground, ScrollView, StatusBar } from "react-native";
+import { View, ImageBackground, ScrollView, StatusBar, Animated } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 
@@ -18,6 +18,8 @@ export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
   const [coinsAwarded, setCoinsAwarded] = useState<string>("");
   const [coinsAwardedOnce, setCoinsAwardedOnce] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0)); // For fade-in animation
+  const [scaleAnim] = useState(new Animated.Value(0.8)); // For scale animation
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -47,7 +49,24 @@ export default function QuizResult() {
       setCoinsAwarded(levelMessage);
       setCoinsAwardedOnce(true); // Lock the effect
     }
-  }, []);
+  }, [coinsAwardedOnce, level, isWinner, dispatch]);
+
+  // Animation effect for fade and scale
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 2,
+        tension: 160,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, scaleAnim]);
 
   // Clean up modal visibility to avoid memory leaks
   useEffect(() => {
@@ -58,7 +77,7 @@ export default function QuizResult() {
 
   // Handlers
   const handleHome = () => {
-    dispatch(playSound("quiz"))
+    dispatch(playSound("quiz"));
     router.push("/modeselect");
   };
 
@@ -71,9 +90,17 @@ export default function QuizResult() {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        <StatusBar backgroundColor={"transparent"}/>
+        <StatusBar backgroundColor={"transparent"} />
 
-        <View style={styles.overlay}>
+        <Animated.View
+          style={[
+            styles.overlay,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
           <ResultInfo
             Correct={Correct}
             Total={Total}
@@ -86,7 +113,8 @@ export default function QuizResult() {
             handleHome={handleHome}
             toggleModal={toggleModal}
           />
-        </View>
+        </Animated.View>
+        
         <CustomRatingModal
           visible={modalVisible}
           onClose={toggleModal}

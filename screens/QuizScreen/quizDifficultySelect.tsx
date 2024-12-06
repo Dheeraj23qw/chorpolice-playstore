@@ -25,17 +25,84 @@ const GIF_IDS: Record<DifficultyOption, number> = {
   hard: 11,
 };
 
+// BackButton Component
+const BackButton = ({ onPress }: { onPress: () => void }) => (
+  <Pressable style={styles.backButton} onPress={onPress}>
+    <Ionicons name="arrow-back" size={responsiveFontSize(3)} color="#FFD700" />
+  </Pressable>
+);
+
+// QuestionSection Component
+const QuestionSection = () => (
+  <View style={styles.questionSection}>
+    <ImageBackground
+      source={require("../../assets/images/bg/quiz3.png")}
+      style={styles.questionBackground}
+      imageStyle={styles.questionBackgroundImage}
+    >
+      <Text style={styles.questionText}>Select Quiz Difficulty Level</Text>
+    </ImageBackground>
+  </View>
+);
+
+// Option Component
+const Option = ({
+  option,
+  isSelected,
+  onSelect,
+}: {
+  option: DifficultyOption;
+  isSelected: boolean;
+  onSelect: (option: DifficultyOption) => void;
+}) => (
+  <Pressable
+    onPress={() => onSelect(option)}
+    style={({ pressed }) => [
+      styles.optionPressable,
+      pressed && styles.optionPressed,
+    ]}
+  >
+    <ImageBackground
+      source={require("../../assets/images/bg/quiz3.png")}
+      style={styles.optionBackground}
+      imageStyle={styles.optionBackgroundImage}
+    >
+      <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
+        {option}
+      </Text>
+    </ImageBackground>
+  </Pressable>
+);
+
+// OptionsSection Component
+const OptionsSection = ({
+  options,
+  selectedOption,
+  onSelect,
+}: {
+  options: DifficultyOption[];
+  selectedOption: DifficultyOption | null;
+  onSelect: (option: DifficultyOption) => void;
+}) => (
+  <View style={styles.optionsSection}>
+    {options.map((option, index) => (
+      <Option
+        key={index}
+        option={option}
+        isSelected={selectedOption === option}
+        onSelect={onSelect}
+      />
+    ))}
+  </View>
+);
+
 const ImageSelectScreen = () => {
   const router = useRouter();
   const options: DifficultyOption[] = ["easy", "medium", "hard"];
-  const [selectedOption, setSelectedOption] = useState<DifficultyOption | null>(
-    null
-  );
+  const [selectedOption, setSelectedOption] = useState<DifficultyOption | null>(null);
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
   const [mediaId, setMediaId] = useState<number>(1);
-  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
-    "image"
-  );
+  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">("image");
   const dispatch = useDispatch();
 
   const handleOptionSelect = useCallback(
@@ -89,15 +156,9 @@ const ImageSelectScreen = () => {
           source={require("../../assets/images/bg/quizbg2.png")}
           style={styles.backgroundImage}
         >
-          <StatusBar backgroundColor={"transparent"}/>
-
+          <StatusBar backgroundColor={"transparent"} />
           <View style={styles.overlay} />
-          <Pressable
-        style={styles.backButton}
-        onPress={() => router.replace("/modeselect")}
-      >
-        <Ionicons name="arrow-back" size={responsiveFontSize(3)} color="#FFD700" />
-      </Pressable>
+          <BackButton onPress={() => router.replace("/modeselect")} />
 
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             {/* Circular Section */}
@@ -110,56 +171,18 @@ const ImageSelectScreen = () => {
             </View>
 
             {/* Question Section */}
-            <View style={styles.questionSection}>
-              <ImageBackground
-                source={require("../../assets/images/bg/quiz3.png")}
-                style={styles.questionBackground}
-                imageStyle={styles.questionBackgroundImage}
-              >
-                <Text style={styles.questionText}>
-                  Select Quiz Difficulty Level
-                </Text>
-              </ImageBackground>
-            </View>
+            <QuestionSection />
 
             {/* Options Section */}
-            <View style={styles.optionsSection}>
-              {options.map((option, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => handleOptionSelect(option)}
-                  style={({ pressed }) => [
-                    styles.optionPressable,
-                    pressed && styles.optionPressed,
-                  ]}
-                >
-                  <ImageBackground
-                    source={require("../../assets/images/bg/quiz3.png")}
-                    style={styles.optionBackground}
-                    imageStyle={styles.optionBackgroundImage}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selectedOption === option && styles.selectedOptionText,
-                      ]}
-                    >
-                      {option}
-                    </Text>
-                  </ImageBackground>
-                </Pressable>
-              ))}
-            </View>
+            <OptionsSection
+              options={options}
+              selectedOption={selectedOption}
+              onSelect={handleOptionSelect}
+            />
 
             {/* Start Button */}
             {selectedOption && (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
+              <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                 <CustomButton
                   label={"Start"}
                   onPress={() => router.push("/quiz")}

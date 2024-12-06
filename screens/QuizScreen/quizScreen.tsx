@@ -1,10 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 import {
   View,
   StatusBar,
   ImageBackground,
   ScrollView,
   Text,
+  Animated,
 } from "react-native";
 
 import GameTable from "../../components/thinkAndCountScreen/GameTable";
@@ -17,6 +18,8 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import CustomModal from "@/modal/CustomModal";
+import { animateComponent, createAnimation } from "./animation.";
+
 
 export default function QuizScreen() {
   const {
@@ -42,42 +45,100 @@ export default function QuizScreen() {
     modalContent,
     modalButtons,
     closeModal,
-    playerMessage
+    playerMessage,
   } = useQuizGameLogic();
 
-  // Memoize parts of the UI to prevent unnecessary re-renders
-  const renderQuestionSection = useMemo(() => {
-    return <QuestionSection question={question?.question} />;
+  // Animation values
+  const questionAnimation = useRef(new Animated.Value(0)).current;
+  const optionsAnimation = useRef(new Animated.Value(0)).current;
+  const buttonsAnimation = useRef(new Animated.Value(0)).current;
+  const textAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Delay the start of animations
+    const timer = setTimeout(() => {
+      questionAnimation.setValue(0);
+      optionsAnimation.setValue(0);
+      buttonsAnimation.setValue(0);
+      textAnimation.setValue(0);
+      animateComponent(questionAnimation).start(); // Animate question
+    }, 2000); // 2-second delay
+
+    return () => clearTimeout(timer);
   }, [question]);
 
-  const renderOptionsSection = useMemo(() => {
-    return (
-      !showHint && question?.options && (
+  useEffect(() => {
+    // Trigger options animation after the question has animated in
+    const timer = setTimeout(() => {
+      animateComponent(optionsAnimation).start();
+    }, 4000); // Delay to sync with question animation
+
+    return () => clearTimeout(timer);
+  }, [question]);
+
+  useEffect(() => {
+    // Trigger buttons and text animation after a delay
+    const timer = setTimeout(() => {
+      animateComponent(buttonsAnimation).start();
+      animateComponent(textAnimation).start();
+    }, 4000); // Same delay as options animation
+
+    return () => clearTimeout(timer);
+  }, [question]);
+
+  // Memoized render components
+  const renderQuestionSection = useMemo(() => (
+    <Animated.View style={createAnimation(questionAnimation)}>
+      <QuestionSection question={question?.question} />
+    </Animated.View>
+  ), [question, questionAnimation]);
+
+  const renderOptionsSection = useMemo(() => (
+    !showHint && question?.options && (
+      <Animated.View style={createAnimation(optionsAnimation)}>
         <OptionsSection
           options={isFiftyFiftyActive ? remainingOptions : question?.options}
           handleAnswerSelection={handleAnswerSelection}
         />
-      )
-    );
-  }, [showHint, question, remainingOptions, isFiftyFiftyActive]);
+      </Animated.View>
+    )
+  ), [showHint, question, remainingOptions, isFiftyFiftyActive, optionsAnimation]);
 
-  const renderHintSection = useMemo(() => {
-    return showHint && <HintSection hint={question?.hint} />;
-  }, [showHint, question]);
+  const renderHintSection = useMemo(() => (
+    showHint && <HintSection hint={question?.hint} />
+  ), [showHint, question]);
 
-  const renderInstructionText = useMemo(() => {
-    return (
+  const renderInstructionText = useMemo(() => (
+    <Animated.View style={createAnimation(textAnimation)}>
       <View style={styles.instructionContainer}>
-        <StatusBar backgroundColor={"transparent"}/>
-
+        <StatusBar backgroundColor={"transparent"} />
         <Text style={styles.instructionText}>
           {showHint
             ? "Tap on the Next to move to the next question."
             : "Tap on the Quiz Table to solve the question."}
         </Text>
       </View>
-    );
-  }, [showHint]);
+    </Animated.View>
+  ), [showHint, textAnimation]);
+
+  const renderButtonSection = useMemo(() => (
+    <Animated.View style={createAnimation(buttonsAnimation)}>
+      <QuizButton
+        showHint={showHint}
+        setIsTableOpen={setIsTableOpen}
+        handleNextQuestion={handleNextQuestion}
+        handleFiftyFifty={handleFiftyFifty}
+        handleQuit={handleQuit}
+      />
+    </Animated.View>
+  ), [
+    showHint,
+    setIsTableOpen,
+    handleNextQuestion,
+    handleFiftyFifty,
+    handleQuit,
+    buttonsAnimation,
+  ]);
 
   return (
     <>
@@ -113,11 +174,10 @@ export default function QuizScreen() {
           style={styles.backgroundImage}
         >
           <View style={styles.overlay} />
-            {/* Timer Countdown */}
-            <Timer countdown={countdown} />
+          {/* Timer Countdown */}
+          <Timer countdown={countdown} />
 
-            <ScrollView contentContainerStyle={styles.scrollViewContent}>
-
+          <ScrollView contentContainerStyle={styles.scrollViewContent}>
             {/* Question Section */}
             {renderQuestionSection}
 
@@ -128,13 +188,7 @@ export default function QuizScreen() {
             {renderOptionsSection}
 
             {/* Quiz Buttons */}
-            <QuizButton
-              showHint={showHint}
-              setIsTableOpen={setIsTableOpen}
-              handleNextQuestion={handleNextQuestion}
-              handleFiftyFifty={handleFiftyFifty}
-              handleQuit={handleQuit}
-            />
+            {renderButtonSection}
 
             {/* Instruction Text */}
             {renderInstructionText}
