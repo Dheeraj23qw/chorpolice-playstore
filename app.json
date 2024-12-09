@@ -2,14 +2,11 @@
   "expo": {
     "name": "Chor Police",
     "slug": "chorpolice",
-    "version": "1.0.0",
+    "version": "1.0.1", // Incremented version
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -30,7 +27,9 @@
         "expo-build-properties",
         {
           "android": {
-            "enablePngCrunchInReleaseBuilds": false
+            "enablePngCrunchInReleaseBuilds": false,
+            "enableProguardInReleaseBuilds": true,
+            "enableHermes": true
           }
         }
       ]
@@ -39,6 +38,9 @@
       "typedRoutes": true
     },
     "assetBundlePatterns": ["assets/fonts/*"],
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
 
     "extra": {
       "router": {
