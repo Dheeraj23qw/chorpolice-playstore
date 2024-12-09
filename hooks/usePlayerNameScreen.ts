@@ -61,7 +61,7 @@ export const usePlayerNameScreen = () => {
       }
 
       if (isBot && botCount >= 3) {
-        setAlertMessage("3 bots max. Select your Avatar to play.");
+        setAlertMessage("3 bots max. Select from player's Avatars");
         setModals((prev) => ({ ...prev, modalVisible: true }));
         return;
       }
@@ -94,7 +94,7 @@ export const usePlayerNameScreen = () => {
           if (gameMode === "OFFLINE") {
             alertMsg = "Select 3 more avatars to play";
           } else if (gameMode === "OFFLINE_WITH_BOTS") {
-            alertMsg = "Select 3 more (bots or humans) avatars to play!";
+            alertMsg = "Select 3 more avatars to play!";
           } else if (gameMode === "ONLINE_WITH_BOTS") {
             alertMsg = "image selected";
           }

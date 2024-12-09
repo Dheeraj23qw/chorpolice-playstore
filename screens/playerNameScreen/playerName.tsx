@@ -87,7 +87,7 @@ const PlayerNameScreen: React.FC = () => {
             message="Loading, please wait..."
           />
           {/* Option Header for Muting Sound */}
-          <Components.OptionHeader isMuted={isMuted} setIsMuted={setIsMuted} />
+          <Components.OptionHeader  />
 
           {/* Scroll View for Content */}
           <ScrollView

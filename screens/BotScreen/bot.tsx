@@ -4,6 +4,7 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -23,10 +24,14 @@ import CustomAlertModal from "../playerNameScreen/modals/CustomAlertModal";
 import ConfirmChangeModal from "../playerNameScreen/modals/ConfirmChangeModal";
 import InfoAddMoreModal from "../playerNameScreen/modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
+import { AvatarWithBackgroundMemo } from "@/components/horizontalBoxSlider";
 
 const BotScreen: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false); // New loading state
+  const [loading, setLoading] = useState(false);
+  const [selectedAvatarOption, setSelectedAvatarOption] = useState<
+    string | null
+  >(null);
 
   // Custom Hook - Player Name Screen
   const {
@@ -45,47 +50,47 @@ const BotScreen: React.FC = () => {
     handleSelectedImageClick,
     infoAddMoreVisible,
     isButtonDisabled,
+    botCount,
+    humanCount,
   } = usePlayerNameScreen();
 
   // Custom Hook - Gallery Picker
   const {
     pickImage,
-    loading: galleryLoading, // To manage loading from gallery picker
     isModalVisible,
     modalTitle,
     modalContent,
     setIsModalVisible,
   } = useGalleryPicker();
 
-  // Initial options
-  const options = [
-    { label: "Choose Computer Avatar", value: "Bots-Avatar" },
-    { label: "Choose your Avatar", value: "player-Avatar" },
-    { label: "Upload from Gallery", value: "gallery" },
+  const avatarOptions = [
+    {
+      label: "Robot",
+      value: "robot",
+      backgroundImage: require("@/assets/modalImages/image.png"),
+    },
+    {
+      label: "Human",
+      value: "human",
+      backgroundImage: require("@/assets/images/chorsipahi/kid9.png"),
+    },
   ];
 
-  // Check if the image grid should be shown
-  const showImageGrid = selectedOption;
-
-  // Function to handle option change and show loading
+  // Handle option change with loading indicator
   const handleOptionChange = (option: string | null) => {
     setLoading(true);
-    setSelectedOption(option);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    setSelectedAvatarOption(option);
+    setTimeout(() => setLoading(false), 500);
   };
-
   return (
     <SafeAreaView style={globalstyles.container}>
-      <StatusBar backgroundColor={"transparent"} />
-
+      <StatusBar backgroundColor="transparent" />
       {/* Screen Header */}
       <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-        <Components.ScreenHeader name="Play With Bots!" showBackButton={true} />
+        <Components.ScreenHeader name="Play With Bots!" showBackButton />
       </View>
 
-      {/* Main Content Container */}
+      {/* Main Content */}
       <View style={[globalstyles.Container2, { flex: 10 }]}>
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
@@ -95,63 +100,89 @@ const BotScreen: React.FC = () => {
           ]}
           resizeMode="cover"
         >
-          {/* Option Header for Muting Sound */}
-          <Components.OptionHeader />
+          {selectedImages.length === 0 && <Components.OptionHeader />}
 
-          {/* Scroll View for Content */}
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1 }}
           >
-            {/* Avatar Selection Component */}
-            <Components.AvatarSelectionMemo
-              selectedOption={selectedOption}
-              setSelectedOption={handleOptionChange} // Pass the handler for option change
-              pickImage={pickImage}
-              options={[...options]} // Combine options here
-            />
+            {/* Avatar Selection */}
+
+            {!loading && selectedImages.length < 4 && (
+              <Components.AvatarSelectionMemo
+                selectedOption={selectedOption}
+                setSelectedOption={handleOptionChange}
+                pickImage={pickImage}
+                options={[{ label: "Upload from Gallery", value: "gallery" }]}
+              />
+            )}
             {/* Loading Indicator */}
             {loading && (
               <Components.LoadingIndicator
-                loading={true}
+                loading
                 message="Loading, please wait..."
               />
             )}
+
+            {selectedImages.length === 4 && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>
+                  To change the image, click on it.
+                </Text>
+              </View>
+            )}
+
+            {/* Avatar Options */}
+            {!loading && selectedImages.length < 4 && (
+              <AvatarWithBackgroundMemo
+                selectedOption={selectedAvatarOption}
+                setSelectedOption={setSelectedAvatarOption}
+                options={avatarOptions}
+                title={
+                  selectedAvatarOption === "robot"
+                    ? "Select Bot's Avatar"
+                    : "Select Your Player's Avatar"
+                }
+                botCount={botCount}
+                humanCount={humanCount}
+              />
+            )}
+
             {/* Conditional Image Grid for Avatar Selection */}
-            {!loading &&
-              showImageGrid && ( // Don't show grid while loading
-                <>
-                  {selectedOption === "Bots-Avatar" ? (
-                    <Components.ImageGrid
-                      selectedImages={selectedImages}
-                      handleImageSelect={handleImageSelect}
-                      imagesPerRow={15}
-                      isBot={true}
-                      gameMode="OFFLINE_WITH_BOTS"
-                    />
-                  ) : selectedOption === "player-Avatar" ? (
-                    <>
-                      <Components.ImageGrid
-                        selectedImages={selectedImages}
-                        handleImageSelect={handleImageSelect}
-                        imagesPerRow={15}
-                        isBot={false}
-                        gameMode="OFFLINE_WITH_BOTS"
-                        selectedOption={selectedOption}
-                      />
-                    </>
-                  ) : null}
-                </>
-              )}
+            {!loading && selectedAvatarOption && selectedImages.length < 4 && (
+              <>
+                {selectedAvatarOption === "robot" ? (
+                  <Components.ImageGrid
+                    selectedImages={selectedImages}
+                    handleImageSelect={handleImageSelect}
+                    imagesPerRow={15}
+                    isBot={true}
+                    gameMode="OFFLINE_WITH_BOTS"
+                  />
+                ) : (
+                  <Components.ImageGrid
+                    selectedImages={selectedImages}
+                    handleImageSelect={handleImageSelect}
+                    imagesPerRow={15}
+                    isBot={false}
+                    gameMode="OFFLINE_WITH_BOTS"
+                    selectedOption={selectedOption}
+                  />
+                )}
+              </>
+            )}
 
-            <Components.SelectedImageGrid
-              selectedImages={selectedImages}
-              imageNames={imageNames}
-              handleNameChange={handleNameChange}
-              handleSelectedImageClick={handleSelectedImageClick}
-            />
+            {/* Selected Image Grid */}
+            {!loading && (
+              <Components.SelectedImageGrid
+                selectedImages={selectedImages}
+                imageNames={imageNames}
+                handleNameChange={handleNameChange}
+                handleSelectedImageClick={handleSelectedImageClick}
+              />
+            )}
 
-            {/* Action Buttons for Starting Adventure - Show only if 4 images selected */}
+            {/* Start Adventure Button */}
             {selectedImages.length === 4 && (
               <Components.PlayernameActionButtons
                 handleStartAdventure={handleStartAdventure}
@@ -168,20 +199,17 @@ const BotScreen: React.FC = () => {
         onClose={closeAlertModal}
         alertMessage={alertMessage}
       />
-
       <ConfirmChangeModal
         visible={confirmChangeVisible}
         onClose={() => setConfirmChangeVisible(false)}
         onConfirm={handleAlertConfirm}
         content={alertMessage}
       />
-
       <InfoAddMoreModal
         visible={infoAddMoreVisible}
         onClose={closeInfoAddMoreModal}
         content={alertMessage}
       />
-
       <CustomModal
         visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
@@ -193,5 +221,23 @@ const BotScreen: React.FC = () => {
   );
 };
 
-// Exporting Component with React Memo for Optimization
 export default React.memo(BotScreen);
+
+const styles = StyleSheet.create({
+  instructionContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    padding: 5,
+    borderRadius: 10,
+    marginVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    marginTop: 100,
+  },
+  instructionText: {
+    fontSize: 20, // Slightly larger for better readability
+    color: "#fff", // A softer white for a modern look
+    textAlign: "center",
+    fontFamily: "outfit-bold", // Using a premium and clean font
+  },
+});

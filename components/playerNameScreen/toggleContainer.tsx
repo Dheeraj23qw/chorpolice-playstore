@@ -10,9 +10,9 @@ interface ButtonOption {
 }
 
 interface AvatarSelectionProps {
-  selectedOption: string | null; 
-  setSelectedOption: (option: string | null) => void; 
-  pickImage: () => Promise<void>; 
+  selectedOption: string | null;
+  setSelectedOption: (option: string | null) => void;
+  pickImage: () => Promise<void>;
   options: ButtonOption[];
 }
 
@@ -30,18 +30,9 @@ const AvatarSelection: React.FC<AvatarSelectionProps> = ({
     if (option.value === "gallery") {
       handleGallerySelection();
     } else {
-      // Set the selected option directly based on whether it is currently selected or not
-      const newSelection = selectedOption === option.value ? null : option.value;
+      const newSelection =
+        selectedOption === option.value ? null : option.value;
       setSelectedOption(newSelection);
-
-      // Example routing logic, adjust based on your actual routes
-      if (option.value === "bots") {
-        router.push("/playwithbot");
-      }
-
-      if(option.value === "ONLINE_WITH_BOTS"){
-        router.push("/connectandplay"); 
-      }
     }
   };
 
