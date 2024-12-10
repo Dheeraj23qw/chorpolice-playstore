@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from "react";
+import React, { memo, useEffect, useRef } from "react";
 import {
   Text,
   Pressable,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   ImageBackground,
   StyleSheet,
+  Animated,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { styles } from "./_CSS/horizontalBoxslider";
@@ -13,14 +14,14 @@ import { styles } from "./_CSS/horizontalBoxslider";
 interface ButtonOption {
   label: string;
   value: string;
-  backgroundImage: string | ReturnType<typeof require>; // Accept both URI string or require
+  backgroundImage: string | ReturnType<typeof require>;
 }
 
 interface AvatarWithBackgroundProps {
   selectedOption: string | null;
   setSelectedOption: (option: string | null) => void;
   options: ButtonOption[];
-  title: string; // Text to overlay on the background image
+  title: string;
   botCount: number;
   humanCount: number;
 }
@@ -33,24 +34,41 @@ const AvatarWithBackground: React.FC<AvatarWithBackgroundProps> = ({
   botCount,
   humanCount,
 }) => {
+  const animation = useRef(new Animated.Value(1)).current;
+
   const handleOptionSelect = (option: ButtonOption) => {
+    // Set selected option
     setSelectedOption(selectedOption === option.value ? null : option.value);
+
+    // Trigger bounce animation
+    Animated.spring(animation, {
+      toValue: 1.4, // Scale up
+      friction: 3, // Adjust friction for a smoother bounce
+      tension: 100, // Adjust tension for better response
+      useNativeDriver: true,
+    }).start(() => {
+      Animated.spring(animation, {
+        toValue: 1.4, // Scale back down
+        friction: 3,
+        tension: 100,
+        useNativeDriver: true,
+      }).start();
+    });
   };
 
   useEffect(() => {
     if (!selectedOption && options.length > 0) {
-      // Automatically select the first option if none is selected
       setSelectedOption(options[0].value);
     }
   }, [options, selectedOption]);
 
   useEffect(() => {
     if (botCount === 3) {
-      setSelectedOption("human"); // Automatically select human if bots reach 3
+      setSelectedOption("human");
     } else if (humanCount === 3) {
-      setSelectedOption("robot"); // Automatically select robot if humans reach 3
+      setSelectedOption("robot");
     }
-  }, [botCount, humanCount]); // Ensure these are properly monitored
+  }, [botCount, humanCount]);
 
   return (
     <View style={styles.backgroundImage}>
@@ -63,38 +81,49 @@ const AvatarWithBackground: React.FC<AvatarWithBackgroundProps> = ({
         style={styles.scrollView}
       >
         <View style={styles.toggleContainer}>
-          {options.map((option) => (
-            <Pressable
-              key={option.value}
-              onPress={() => handleOptionSelect(option)}
-              style={[
-                styles.optionButton,
-                selectedOption === option.value && styles.selectedOption,
-              ]}
-              accessibilityLabel={`${option.label} option`}
-              accessible
-            >
-              <ImageBackground
-                source={
-                  typeof option.backgroundImage === "string"
-                    ? { uri: option.backgroundImage }
-                    : option.backgroundImage
-                }
-                style={styles.optionBackground}
-                resizeMode="cover"
+          {options.map((option) => {
+            // Create an individual animated value for each option
+            const optionAnimation = selectedOption === option.value ? animation : new Animated.Value(1);
+            
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => handleOptionSelect(option)}
+                style={[
+                  styles.optionButton,
+                  selectedOption === option.value && styles.selectedOption,
+                ]}
+                accessibilityLabel={`${option.label} option`}
+                accessible
               >
-                {/* Overlay for better text visibility */}
-                <View style={overlayStyles.overlay}>
-                  <MaterialIcons
-                    name="check-circle"
-                    size={24}
-                    color={selectedOption === option.value ? "#FFD700" : "#ccc"}
-                  />
-                  <Text style={overlayStyles.optionText}>{option.label}</Text>
-                </View>
-              </ImageBackground>
-            </Pressable>
-          ))}
+                <Animated.View
+                  style={{
+                    transform: [{ scale: optionAnimation }],
+                  }}
+                >
+                  <ImageBackground
+                    source={
+                      typeof option.backgroundImage === "string"
+                        ? { uri: option.backgroundImage }
+                        : option.backgroundImage
+                    }
+                    style={styles.optionBackground}
+                    resizeMode="cover"
+                  >
+                    {/* Overlay for better text visibility */}
+                    <View style={overlayStyles.overlay}>
+                      <MaterialIcons
+                        name="check-circle"
+                        size={24}
+                        color={selectedOption === option.value ? "#FFD700" : "#ccc"}
+                      />
+                      <Text style={styles.optionText}>{option.label}</Text>
+                    </View>
+                  </ImageBackground>
+                </Animated.View>
+              </Pressable>
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -107,15 +136,9 @@ export const AvatarWithBackgroundMemo = memo(AvatarWithBackground);
 // Overlay styles for better text visibility
 const overlayStyles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject, // Makes the overlay cover the entire ImageBackground
-    backgroundColor: "rgba(0, 0, 0, 0.3)", // Semi-transparent black overlay
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     justifyContent: "center",
     alignItems: "center",
-  },
-  optionText: {
-    color: "#FFD700", // Gold text color for better contrast
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
   },
 });

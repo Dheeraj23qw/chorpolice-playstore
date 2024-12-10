@@ -16,7 +16,6 @@ import { styles } from "./onboardinstyles";
 import { onboardingData } from "@/constants/onboardingData";
 import { useRouter } from "expo-router";
 import { useDispatch } from "react-redux";
-import { playSound } from "@/redux/reducers/soundReducer";
 
 export const Onboarding = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
