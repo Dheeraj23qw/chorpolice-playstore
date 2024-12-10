@@ -25,10 +25,7 @@
   },
   "submit": {
     "production": {
-      "autoIncrement": true,
-      "android": {
-        "track": "production"
-      }
+    
     }
   }
 }
