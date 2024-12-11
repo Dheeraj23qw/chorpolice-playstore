@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chor Police",
     "slug": "chorpolice",
-    "version": "1.0.1", // Incremented version
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
@@ -12,7 +12,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dheeraj_kumar_yadav.chorpolice"
+      "package": "com.dheeraj.chorpolice"
     },
     "web": {
       "bundler": "metro",
@@ -37,17 +37,12 @@
     "experiments": {
       "typedRoutes": true
     },
-    "assetBundlePatterns": ["assets/fonts/*"],
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
-        "projectId": "5a994300-ffc6-47c0-924f-1531c293711a"
+        "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
     }
   }
