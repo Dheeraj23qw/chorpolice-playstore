@@ -98,7 +98,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
       StoreReview.requestReview();
     } else if (Platform.OS === "android") {
       // Redirect Android users to Play Store review section
-      const androidPackageName = "com.dheeraj_kumar_yadav.chorpolice"; // Replace with your app's package name
+      const androidPackageName = "com.dheeraj.chorpolice"; // Replace with your app's package name
       Linking.openURL(
         `https://play.google.com/store/apps/details?id=${androidPackageName}&showAllReviews=true`
       );
