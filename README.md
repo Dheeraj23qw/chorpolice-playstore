@@ -102,7 +102,7 @@ MIT License. Feel free to use and modify for personal or educational purposes.
 
 ## 🙌 Acknowledgements
 
-* Inspired by classic Indian party game "Raja, Mantri, Chor, Sipahi"
+* Inspired by classic Indian game "Raja, Mantri, Chor, Sipahi"
 * Thanks to the React Native and Expo community for their amazing tools
 
 
