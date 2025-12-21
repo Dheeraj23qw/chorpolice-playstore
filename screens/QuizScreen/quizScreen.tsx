@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from "react";
+import React, { useMemo, useEffect, useRef, useCallback } from "react";
 import {
   View,
   StatusBar,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   Text,
   Animated,
+  BackHandler,
 } from "react-native";
 
 import GameTable from "../../components/thinkAndCountScreen/GameTable";
@@ -19,6 +20,7 @@ import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import CustomModal from "@/modal/CustomModal";
 import { animateComponent, createAnimation } from "./animation.";
+import { useFocusEffect } from "expo-router";
 
 
 export default function QuizScreen() {
@@ -53,6 +55,20 @@ export default function QuizScreen() {
   const optionsAnimation = useRef(new Animated.Value(0)).current;
   const buttonsAnimation = useRef(new Animated.Value(0)).current;
   const textAnimation = useRef(new Animated.Value(0)).current;
+
+  useFocusEffect(
+  useCallback(() => {
+    const onBackPress = () => {
+      handleQuit();
+      return true; // ⛔ block default back behavior
+    };
+
+    BackHandler.addEventListener("hardwareBackPress", onBackPress);
+
+    return () =>
+      BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+  }, [])
+);
 
   useEffect(() => {
     // Delay the start of animations

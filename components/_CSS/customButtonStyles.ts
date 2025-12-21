@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: responsiveHeight(2.5),
+      padding: responsiveHeight(1.2),
       marginVertical: responsiveHeight(1.5),
       borderRadius: responsiveHeight(3),
       borderWidth: 3,

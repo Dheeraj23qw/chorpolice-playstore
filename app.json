@@ -2,17 +2,19 @@
   "expo": {
     "name": "Chor Police",
     "slug": "chorpolice",
-    "version": "1.0.1",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
+   
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dheeraj.chorpolice"
+     
+      "package": "com.dheeraj.chorpolice_version_1"
     },
     "web": {
       "bundler": "metro",

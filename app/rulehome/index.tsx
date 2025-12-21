@@ -1,9 +1,11 @@
 import React, { useLayoutEffect } from 'react';
 import { useNavigation } from 'expo-router';
 import { NavigationProp } from '@react-navigation/native';
-import Bot from '@/screens/BotScreen/bot';
 
-export default function PlaywithBotRoute() {
+import RulesScreen from '@/screens/RuleScreen/ruleScreen';
+import RulesHome from '@/screens/RuleScreen/ruleHomeScreen';
+
+export default function RuleRoute() {
   const navigation = useNavigation<NavigationProp<any>>();
 
   useLayoutEffect(() => {
@@ -12,5 +14,5 @@ export default function PlaywithBotRoute() {
     });
   }, [navigation]);
 
-  return <Bot/>
+  return <RulesHome />;
 }

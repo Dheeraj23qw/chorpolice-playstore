@@ -13,8 +13,10 @@ import Animated, {
 import { useFocusEffect } from "@react-navigation/native"; // Import useFocusEffect
 import { StatusBar } from "react-native";
 import { optionsGameMode } from "@/constants/gamemode";
-const GameModeScreen: React.FC = () => {
+import RulesButton from "@/components/rules/rulesButton";
+import { router } from "expo-router";
 
+const GameModeScreen: React.FC = () => {
   const animationValue = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -31,6 +33,7 @@ const GameModeScreen: React.FC = () => {
     }, [])
   );
 
+
   return (
     <SafeAreaView style={[globalstyles.container]}>
       <StatusBar backgroundColor={"transparent"} />
@@ -46,6 +49,9 @@ const GameModeScreen: React.FC = () => {
       >
         <Animated.View style={[{ marginTop: 32 }, animatedStyle]}>
           <Components.OptionHeader />
+        </Animated.View>
+        <Animated.View style={[{ margin: 5 }, animatedStyle]}>
+          <RulesButton onPress={() =>  router.push("/rulehome")} />
         </Animated.View>
 
         {/* Scroll View for Content */}

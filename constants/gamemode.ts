@@ -5,18 +5,7 @@ export const optionsGameMode = [
     backgroundId: 1,
     route: "/gamelevel",
   },
-  {
-    label: "Connect & Play!",
-    value: "ONLINE_WITH_BOTS",
-    backgroundId: 2,
-    route: "/connectandplay",
-  },
-  {
-    label: "Play with Bots!",
-    value: "bots",
-    backgroundId: 3,
-    route: "/playwithbot",
-  },
+ 
   {
     label: "Play with Friends!",
     value: "Offline",

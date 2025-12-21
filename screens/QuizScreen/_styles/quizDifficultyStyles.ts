@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     },
     overlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0, 0, 0, 0.3)",
+      backgroundColor: "rgba(0, 0, 0, 0.4)",
     },
     scrollViewContent: {
       flexGrow: 1,
@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
       alignItems: "center",
     },
     questionBackgroundImage: {
-      borderRadius: responsiveWidth(4),
+      borderRadius: responsiveWidth(9),
     },
     questionText: {
       color: "#FFF",
@@ -51,7 +51,7 @@ export const styles = StyleSheet.create({
       textAlign: "center",
     },
     optionsSection: {
-      paddingHorizontal: responsiveWidth(15),
+      paddingHorizontal: responsiveWidth(10),
     },
   
     optionButton: {
@@ -64,7 +64,7 @@ export const styles = StyleSheet.create({
     optionPressable: {
       width: "100%", // Ensure Pressable stretches within the container
       height: responsiveHeight(8), // Set a consistent height for options
-      borderRadius: responsiveWidth(4),
+      borderRadius: responsiveWidth(9),
       marginBottom: responsiveHeight(3),
       overflow: "hidden",
     },
@@ -92,7 +92,7 @@ export const styles = StyleSheet.create({
       position: "absolute",
       top: responsiveHeight(6), // Dynamically positioned
       left: responsiveWidth(5),
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: "rgba(0, 0, 0, 0.28)",
       borderRadius: 50,
       padding: responsiveWidth(3),
       zIndex: 2,

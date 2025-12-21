@@ -28,8 +28,7 @@ import { RootState } from "@/redux/store";
 import { setIsThinking } from "@/redux/reducers/botReducer";
 import { useRouter } from "expo-router";
 import { Components } from "@/imports/allComponentImports";
-import SearchingForPlayers from "../Searching";
-import { NoConnectionScreen } from "../NoConnectionScreen/nonet";
+
 
 const RajaMantriGameScreen: React.FC = () => {
   const router = useRouter();
@@ -65,8 +64,6 @@ const RajaMantriGameScreen: React.FC = () => {
     isRoundStartPopupVisible,
     roundStartMessage,
     randomMessageThinking,
-    isConnected,
-    isSearchScreenVisiable,
     exitModalVisible,
     toggleExitModal,
     handleExitGame,
@@ -104,12 +101,7 @@ const RajaMantriGameScreen: React.FC = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      {isConnected === false ? (
-        <NoConnectionScreen handleExitGame={handleExitGame} />
-      ) : isSearchScreenVisiable && !isPlaying ? (
-        <SearchingForPlayers />
-      ) : (
-        <>
+     
           <ScoreTable
             playerNames={playerNames}
             playerScores={playerScores}
@@ -216,8 +208,7 @@ const RajaMantriGameScreen: React.FC = () => {
               )}
             </View>
           )}
-        </>
-      )}
+        
     </View>
   );
 };
