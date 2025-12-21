@@ -1,16 +1,19 @@
-import React, { useLayoutEffect } from 'react';
-import { useNavigation } from 'expo-router';
-import { NavigationProp } from '@react-navigation/native';
+import React from 'react';
+import { Stack} from 'expo-router';
+
 import QuizResult from '@/screens/QuizScreen/quizResult';
 
 export default function QuizResultRoute() {
-  const navigation = useNavigation<NavigationProp<any>>();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
-  }, [navigation]);
-
-  return <QuizResult/>;
+ return (
+    <>
+      <Stack.Screen 
+        options={{
+          headerShown: false,
+        }} 
+      />
+      
+      <QuizResult/>
+    </>
+  );
+ 
 }

@@ -1,18 +1,17 @@
-import React, { useLayoutEffect } from 'react';
-import { useNavigation } from 'expo-router';
-import { NavigationProp } from '@react-navigation/native';
-
-import RulesScreen from '@/screens/RuleScreen/ruleScreen';
+import React from 'react';
+import { Stack } from 'expo-router'; // Import Stack from expo-router
 import RulesHome from '@/screens/RuleScreen/ruleHomeScreen';
 
 export default function RuleRoute() {
-  const navigation = useNavigation<NavigationProp<any>>();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
-  }, [navigation]);
-
-  return <RulesHome />;
+  return (
+    <>
+      <Stack.Screen 
+        options={{
+          headerShown: false,
+        }} 
+      />
+      
+      <RulesHome />
+    </>
+  );
 }

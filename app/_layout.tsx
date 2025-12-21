@@ -4,6 +4,8 @@ import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import store from "@/redux/store";
 import { StatusBar } from "react-native";
+// 1. Import SafeAreaProvider
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -26,11 +28,13 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <StatusBar backgroundColor={"transparent"} />
-
-      <Stack>
-        <Stack.Screen name="index" />
-      </Stack>
+      {/* 2. Wrap in SafeAreaProvider to handle Android 15 Edge-to-Edge */}
+      <SafeAreaProvider>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+        </Stack>
+      </SafeAreaProvider>
     </Provider>
   );
 }

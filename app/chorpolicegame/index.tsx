@@ -1,16 +1,17 @@
-import React, { useLayoutEffect } from 'react';
-import { useNavigation } from 'expo-router';
-import { NavigationProp } from '@react-navigation/native';
+import React from 'react';
+import { Stack } from 'expo-router';
 import RajaMantriGameScreen from '@/screens/RajaMantriGameScreen/RajaMantriGameScreen';
 
 export default function ChorPoliceGameRoute() {
-  const navigation = useNavigation<NavigationProp<any>>();
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
-  }, [navigation]);
-
-  return <RajaMantriGameScreen />;
+ return (
+    <>
+      <Stack.Screen 
+        options={{
+          headerShown: false,
+        }} 
+      />
+      
+      <RajaMantriGameScreen/>
+    </>
+  );
 }

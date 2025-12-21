@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
-import { NavigationProp } from "@react-navigation/native";
-import { useDispatch } from "react-redux";
 import {
   loadSounds,
   playSound,
@@ -10,75 +8,69 @@ import {
 } from "@/redux/reducers/soundReducer";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 import { initializeCoins } from "@/redux/reducers/coinsReducer";
-import { AppDispatch } from "@/redux/store";
 import * as SecureStore from "expo-secure-store";
-import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen"; // Adjust path as needed
+import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import { Onboarding } from "@/screens/onboardingScreen/onboardingScreen";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+
+
 
 export default function Index() {
-  const navigation = useNavigation<NavigationProp<any>>();
-  const dispatch = useDispatch<AppDispatch>();
+
+  const navigation = useNavigation();
+
   const [isLoading, setIsLoading] = useState(true);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
+  const dispatch = useDispatch<AppDispatch>();
+  
   useEffect(() => {
-    // Initialize coins state from SecureStore
     dispatch(initializeCoins());
   }, [dispatch]);
 
-  // Load sounds on mount
   useEffect(() => {
-    async function initializeSounds() {
-      await dispatch(loadSounds() as any);
-      dispatch(playSound("quiz"));
+    let isMounted = true;
+
+    async function initialize() {
+      await dispatch(loadSounds());
+      if (isMounted) dispatch(playSound("quiz"));
     }
-    initializeSounds();
-  
-    // Clean up only if the component is truly unmounted (not navigating)
+    initialize();
+
     return () => {
-      if (navigation.isFocused()) {
-        dispatch(stopQuizSound());
-        dispatch(unloadSounds());
-      }
+      isMounted = false;
+      // Standard cleanup for SDK 54
+      dispatch(stopQuizSound());
+      dispatch(unloadSounds());
     };
-  }, [dispatch, navigation]);
-  
+  }, [dispatch]);
 
   useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: false,
-    });
+    navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
-      try {
-        const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
-        if (hasLaunched === null) {
-          setIsFirstLaunch(true);
-          await SecureStore.setItemAsync("hasLaunched", "true");
-        } else {
-          setIsFirstLaunch(false);
-        }
-      } catch (error) {
-        console.error("Error checking first launch:", error);
+      const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
+      if (hasLaunched === null) {
+        setIsFirstLaunch(true);
+        await SecureStore.setItemAsync("hasLaunched", "true");
+      } else {
+        setIsFirstLaunch(false);
       }
     };
-
     checkFirstLaunch();
   }, []);
 
-  const handleVideoEnd = () => {
-    setIsLoading(false);
-  };
-
   if (isLoading) {
-    return <VideoPlayerComponent videoIndex={1} onVideoEnd={handleVideoEnd} />;
+    return (
+      <VideoPlayerComponent
+        videoIndex={1}
+        onVideoEnd={() => setIsLoading(false)}
+      />
+    );
   }
 
-  if (isFirstLaunch) {
-    return <Onboarding />;
-  }
-
-  return <GameModeScreen />;
+  return isFirstLaunch ? <Onboarding /> : <GameModeScreen />;
 }
