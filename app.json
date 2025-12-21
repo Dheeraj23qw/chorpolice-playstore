@@ -14,7 +14,7 @@
         "backgroundColor": "#ffffff"
       },
      
-      "package": "com.dheeraj.chorpolicegame"
+      "package": "com.dheeraj.chorpolice"
     },
     "web": {
       "bundler": "metro",

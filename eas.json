@@ -12,15 +12,18 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "credentialsSource": "remote",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
- "submit": {
+  "submit": {
     "production": {
       "android": {
         "track": "production"
       }
     }
   }
-  
 }
