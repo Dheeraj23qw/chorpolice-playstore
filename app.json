@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chor Police",
     "slug": "chorpolice",
-    "version": "1.1.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
@@ -14,7 +14,7 @@
         "backgroundColor": "#ffffff"
       },
      
-      "package": "com.dheeraj.chorpolice_version_1"
+      "package": "com.dheeraj.chorpolicegame"
     },
     "web": {
       "bundler": "metro",

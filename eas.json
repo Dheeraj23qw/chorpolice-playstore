@@ -15,7 +15,12 @@
       "autoIncrement": true
     }
   },
-  "submit": {
-    "production": {}
+ "submit": {
+    "production": {
+      "android": {
+        "track": "production"
+      }
+    }
   }
+  
 }
