@@ -4,7 +4,7 @@ import { RootState } from "@/redux/store";
 import { useRouter } from "expo-router";
 import { captureScreen } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from 'expo-file-system/legacy';
 import { resetGamefromRedux, playAgain } from "@/redux/reducers/playerReducer";
 
 // Custom hook for managing and sharing sorted scores

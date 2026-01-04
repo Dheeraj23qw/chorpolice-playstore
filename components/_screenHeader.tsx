@@ -27,7 +27,7 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
       return (
         <TouchableOpacity onPress={handleGoBack}>
           <AntDesign
-            name="arrowleft"
+            name="arrow-left"
             size={34}
             color="#FFD700"
             style={styles.iconStyle}

@@ -16,7 +16,7 @@ const initialState: PlayerState = {
   playerScoresByRound: [], // Initialize empty playerScoresByRound
   gameMode: "OFFLINE",
   isGameReset: false, // New property to track if the game is reset
-  gameRound: 4,
+  gameRound: 1,
 };
 
 // Create the player slice

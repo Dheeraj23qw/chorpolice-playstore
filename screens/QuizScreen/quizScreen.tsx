@@ -56,18 +56,19 @@ export default function QuizScreen() {
   const buttonsAnimation = useRef(new Animated.Value(0)).current;
   const textAnimation = useRef(new Animated.Value(0)).current;
 
-  useFocusEffect(
+useFocusEffect(
   useCallback(() => {
     const onBackPress = () => {
-      handleQuit();
-      return true; // ⛔ block default back behavior
+      // If the modal is already open, maybe close it? 
+      // Otherwise, open the quit confirmation modal.
+      handleQuit(); 
+      return true; // Always intercept the hardware back button
     };
 
-    BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
 
-    return () =>
-      BackHandler.removeEventListener("hardwareBackPress", onBackPress);
-  }, [])
+    return () => subscription.remove(); // Correct modern cleanup
+  }, [handleQuit]) // Dependency ensures the latest function version is used
 );
 
   useEffect(() => {
