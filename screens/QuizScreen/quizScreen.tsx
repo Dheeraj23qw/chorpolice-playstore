@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, useCallback } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 import {
   View,
   StatusBar,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   Text,
   Animated,
-  BackHandler,
 } from "react-native";
 
 import GameTable from "../../components/thinkAndCountScreen/GameTable";
@@ -20,7 +19,6 @@ import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import CustomModal from "@/modal/CustomModal";
 import { animateComponent, createAnimation } from "./animation.";
-import { useFocusEffect } from "expo-router";
 
 
 export default function QuizScreen() {
@@ -55,21 +53,6 @@ export default function QuizScreen() {
   const optionsAnimation = useRef(new Animated.Value(0)).current;
   const buttonsAnimation = useRef(new Animated.Value(0)).current;
   const textAnimation = useRef(new Animated.Value(0)).current;
-
-useFocusEffect(
-  useCallback(() => {
-    const onBackPress = () => {
-      // If the modal is already open, maybe close it? 
-      // Otherwise, open the quit confirmation modal.
-      handleQuit(); 
-      return true; // Always intercept the hardware back button
-    };
-
-    const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
-
-    return () => subscription.remove(); // Correct modern cleanup
-  }, [handleQuit]) // Dependency ensures the latest function version is used
-);
 
   useEffect(() => {
     // Delay the start of animations

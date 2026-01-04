@@ -29,7 +29,8 @@
           "android": {
             "enablePngCrunchInReleaseBuilds": false,
             "enableProguardInReleaseBuilds": true,
-            "enableHermes": true
+            "enableHermes": true,
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ],
@@ -46,6 +47,13 @@
       "eas": {
         "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
-    }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241"
+    },
+    "ios": {}
   }
 }
