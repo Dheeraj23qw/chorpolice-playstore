@@ -58,7 +58,7 @@ export const useQuizGameLogic = () => {
   const router = useRouter(); // Initialize router
   const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
   const dispatch = useDispatch();
 

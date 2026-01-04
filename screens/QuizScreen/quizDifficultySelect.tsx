@@ -123,7 +123,18 @@ const ImageSelectScreen = () => {
     [dispatch, options, selectedOption]
   );
 
+  useEffect(() => {
+    const backAction = () => {
+      return true; 
+    };
 
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // Clean up the listener when component unmounts
+  }, []);
 
   return (
     <>
