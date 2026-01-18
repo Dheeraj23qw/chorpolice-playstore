@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { Audio } from "expo-av";
+import { createAudioPlayer, AudioSource } from "expo-audio";
 
 // Define sound names
 type SoundName =
@@ -36,32 +36,16 @@ const soundPaths: Record<SoundName, any> = {
   losing: require("@/assets/audio/chorPolice/losing.mp3"),
 };
 
-// Object to store loaded sounds
-const sounds: Record<SoundName, Audio.Sound | null> = {
-  win: null,
-  lose: null,
-  spin: null,
-  next: null,
-  quiz: null,
-  level: null,
-  select: null,
-  selected: null,
-  king: null,
-  police: null,
-  timer: null,
-  timesup: null,
-  winning: null,
-  losing: null,
-};
 
-// Thunk to load sounds asynchronously with error handling
+const players: Record<string, any> = {};
+
 export const loadSounds = createAsyncThunk(
   "sound/loadSounds",
   async (_, { rejectWithValue }) => {
     try {
       for (const key of Object.keys(soundPaths) as SoundName[]) {
-        const { sound } = await Audio.Sound.createAsync(soundPaths[key]);
-        sounds[key] = sound;
+        // In expo-audio, we create a player for each source
+        players[key] = createAudioPlayer(soundPaths[key]);
       }
     } catch (error) {
       return rejectWithValue((error as Error).message);
@@ -87,88 +71,47 @@ const soundSlice = createSlice({
   reducers: {
     playSound: (state, action) => {
       const soundName: SoundName = action.payload;
+      const player = players[soundName];
 
-      const sound = sounds[soundName];
-      if (sound) {
-        if (soundName === "quiz") {
-          sound.setIsLoopingAsync(true).catch((error: unknown) => {
-            console.error(
-              `Failed to set loop for quiz sound:`,
-              (error as Error).message
-            );
-          });
-          state.isMuted = false;
+      if (player) {
+        // Handle looping for specific sounds
+        if (soundName === "quiz" || soundName === "timer") {
+          player.loop = true;
+          if (soundName === "quiz") state.isMuted = false;
         }
-        if (soundName === "timer") {
-          sound.setIsLoopingAsync(true).catch((error: unknown) => {
-            console.error(
-              `Failed to set loop for timer sound:`,
-              (error as Error).message
-            );
-          });
-        }
-        // Stop the sound before replaying
-        sound.stopAsync().catch((error: unknown) => {
-          console.error(
-            `Failed to stop sound ${soundName}:`,
-            (error as Error).message
-          );
-        });
 
-        // Replay the sound after stopping it
-        sound.replayAsync().catch((error: unknown) => {
-          console.error(
-            `Failed to play sound ${soundName}:`,
-            (error as Error).message
-          );
-        });
+        // Restart and play
+        player.seekTo(0); // Equivalent to stop/replay
+        player.play();
       } else {
         console.warn(`Sound ${soundName} is not loaded.`);
       }
     },
+    stopSound: (state, action) => {
+      const soundName: SoundName = action.payload;
+      const player = players[soundName];
+      if (player) {
+        player.pause(); // expo-audio uses play/pause
+        player.seekTo(0);
+      }
+    },
     stopQuizSound: (state) => {
-      const quizSound = sounds.quiz;
-      if (quizSound) {
-        quizSound.stopAsync().catch((error: unknown) => {
-          console.error("Failed to stop quiz sound:", (error as Error).message);
-        });
+      if (players.quiz) {
+        players.quiz.pause();
+        players.quiz.seekTo(0);
       }
       state.isMuted = true;
     },
     stopTimerSound: () => {
-      // Add this action
-      const timerSound = sounds.timer;
-      if (timerSound) {
-        timerSound.stopAsync().catch((error: unknown) => {
-          console.error(
-            "Failed to stop timer sound:",
-            (error as Error).message
-          );
-        });
+      if (players.timer) {
+        players.timer.pause();
+        players.timer.seekTo(0);
       }
     },
-    stopSound: (state, action) => {
-      const soundName: SoundName = action.payload;
-      const sound = sounds[soundName];
-      if (sound) {
-        sound.stopAsync().catch((error: unknown) => {
-          console.error(
-            `Failed to stop sound ${soundName}:`,
-            (error as Error).message
-          );
-        });
-      } else {
-        console.warn(`Sound ${soundName} is not loaded or already stopped.`);
-      }
-    },
-    
     unloadSounds: () => {
-      Object.values(sounds).forEach((sound) => {
-        if (sound) {
-          sound.unloadAsync().catch((error: unknown) => {
-            console.error("Failed to unload sound:", (error as Error).message);
-          });
-        }
+      Object.keys(players).forEach((key) => {
+        players[key]?.release(); // Release resources
+        delete players[key];
       });
     },
   },
@@ -176,7 +119,6 @@ const soundSlice = createSlice({
     builder
       .addCase(loadSounds.pending, (state) => {
         state.isLoading = true;
-        state.error = null;
       })
       .addCase(loadSounds.fulfilled, (state) => {
         state.isLoading = false;
@@ -188,7 +130,12 @@ const soundSlice = createSlice({
   },
 });
 
-export const { playSound, stopQuizSound, stopTimerSound, unloadSounds,stopSound} =
-  soundSlice.actions;
+export const {
+  playSound,
+  stopQuizSound,
+  stopTimerSound,
+  unloadSounds,
+  stopSound,
+} = soundSlice.actions;
 
 export default soundSlice.reducer;

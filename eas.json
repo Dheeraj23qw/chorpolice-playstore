@@ -1,24 +1,51 @@
 {
   "cli": {
-    "version": ">= 14.0.3",
+    "version": ">= 14.0.3", 
+    /* USE CASE: Force everyone on the team to use a modern EAS version.
+       IMPORTANCE: Prevents build failures caused by outdated local CLI tools. */
+
     "appVersionSource": "remote"
+    /* USE CASE: Tells Expo to track version numbers in the cloud.
+       IMPORTANCE: You don't have to manually update "versionCode" in app.json; 
+                   EAS ensures every build gets a unique, higher number automatically. */
   },
   "build": {
     "development": {
       "developmentClient": true,
+      /* USE CASE: This is what makes it a "Development Build" vs a normal app.
+         IMPORTANCE: Essential for using custom native modules or libraries not in Expo Go. */
+
       "distribution": "internal"
+      /* USE CASE: Makes the build available via a download link/QR code.
+         IMPORTANCE: Allows you to install the build on your physical device without a store. */
     },
+
     "preview": {
       "distribution": "internal"
+      /* USE CASE: Creating a "Production-like" app for testing or QA.
+         IMPORTANCE: Useful for seeing how the app performs without the debug overhead 
+                     before you send it to the App Store. */
     },
+
     "production": {
       "credentialsSource": "remote",
+      /* USE CASE: Uses signing keys (certificates) stored in Expo's secure cloud.
+         IMPORTANCE: You don't have to manage sensitive .keystore or .p12 files locally. */
+
       "autoIncrement": true,
+      /* USE CASE: Works with appVersionSource to bump the version number.
+         IMPORTANCE: Google Play/App Store will reject builds with the same version number. */
+
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       },
+      /* USE CASE: Forces NPM to ignore version conflicts between libraries.
+         IMPORTANCE: Stops the "npm ci exited with non-zero code 1" error you saw earlier. */
+
       "android": {
         "buildType": "app-bundle"
+        /* USE CASE: Generates a .aab file instead of an .apk.
+           IMPORTANCE: This is the mandatory format for uploading to the Google Play Store. */
       }
     }
   },
@@ -26,6 +53,9 @@
     "production": {
       "android": {
         "track": "production"
+        /* USE CASE: Automated store submission.
+           IMPORTANCE: Running 'eas submit' will push the build directly to the live 
+                       Production track in Google Play. */
       }
     }
   }

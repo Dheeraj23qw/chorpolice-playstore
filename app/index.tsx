@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
-import {
-  loadSounds,
-  playSound,
-  stopQuizSound,
-  unloadSounds,
+// 1. Ensure you are using the correct library for Safe Areas
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { 
+  loadSounds, 
+  playSound, 
+  stopQuizSound, 
+  unloadSounds 
 } from "@/redux/reducers/soundReducer";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 import { initializeCoins } from "@/redux/reducers/coinsReducer";
@@ -14,35 +16,34 @@ import { Onboarding } from "@/screens/onboardingScreen/onboardingScreen";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 
-
-
 export default function Index() {
-
   const navigation = useNavigation();
-
   const [isLoading, setIsLoading] = useState(true);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-
   const dispatch = useDispatch<AppDispatch>();
-  
+
   useEffect(() => {
     dispatch(initializeCoins());
   }, [dispatch]);
 
+  // Handle Sound Lifecycle
   useEffect(() => {
     let isMounted = true;
 
     async function initialize() {
+      // With expo-audio, loading is faster
       await dispatch(loadSounds());
-      if (isMounted) dispatch(playSound("quiz"));
+      if (isMounted) {
+        dispatch(playSound("quiz"));
+      }
     }
+    
     initialize();
 
     return () => {
       isMounted = false;
-      // Standard cleanup for SDK 54
       dispatch(stopQuizSound());
-      dispatch(unloadSounds());
+      dispatch(unloadSounds()); // This now calls .release() internally
     };
   }, [dispatch]);
 
@@ -52,17 +53,22 @@ export default function Index() {
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
-      const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
-      if (hasLaunched === null) {
-        setIsFirstLaunch(true);
-        await SecureStore.setItemAsync("hasLaunched", "true");
-      } else {
-        setIsFirstLaunch(false);
+      try {
+        const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
+        if (hasLaunched === null) {
+          setIsFirstLaunch(true);
+          await SecureStore.setItemAsync("hasLaunched", "true");
+        } else {
+          setIsFirstLaunch(false);
+        }
+      } catch (e) {
+        setIsFirstLaunch(false); // Fallback
       }
     };
     checkFirstLaunch();
   }, []);
 
+  // Show Video Splash Screen
   if (isLoading) {
     return (
       <VideoPlayerComponent
@@ -72,5 +78,10 @@ export default function Index() {
     );
   }
 
-  return isFirstLaunch ? <Onboarding /> : <GameModeScreen />;
+  // Wrap the return in SafeAreaProvider to resolve the SafeAreaView warning globally
+  return (
+    <SafeAreaProvider>
+      {isFirstLaunch ? <Onboarding /> : <GameModeScreen />}
+    </SafeAreaProvider>
+  );
 }

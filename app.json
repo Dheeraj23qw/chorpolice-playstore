@@ -1,59 +1,206 @@
-{
-  "expo": {
-    "name": "Chor Police",
-    "slug": "chorpolice",
-    "version": "1.0.2",
-    "orientation": "portrait",
-    "icon": "./assets/images/adaptive-icon.png",
-    "scheme": "myapp",
-    "userInterfaceStyle": "light",
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+// This file controls how your Expo app behaves at build time and runtime.
+// It defines app identity, icons, performance settings, plugins, updates,
+// platform-specific behavior, and experimental features.
+
+export default {
+  expo: {
+    // -------------------------
+    // 🏷️ BASIC APP INFORMATION
+    // -------------------------
+
+    // The name visible on the user's phone home screen and app drawer.
+    // This is what users see when they install your app.
+    name: "Chor Police",
+
+    // A short unique identifier for your project inside Expo ecosystem.
+    // Used internally by Expo for URLs, builds, caching, etc.
+    // Should be lowercase and without spaces.
+    slug: "chorpolice",
+
+    // App version shown in Play Store / App Store.
+    // Also used by Expo OTA (over-the-air) updates compatibility.
+    // Increment this when releasing a new version.
+    version: "1.0.2",
+
+    // Locks screen orientation for the entire app.
+    // "portrait" prevents unwanted rotation during gameplay.
+    // Important for consistent UI layout and performance stability.
+    orientation: "portrait",
+
+    // Main app icon used for splash screen and stores.
+    // Must be high resolution (1024x1024 recommended).
+    icon: "./assets/images/adaptive-icon.png",
+
+    // URL scheme for deep linking.
+    // Example: myapp://profile/123 will open your app directly.
+    // Useful for notifications, marketing links, and integrations.
+    scheme: "myapp",
+
+    // Forces UI theme for the app.
+    // "light" disables dark mode which avoids color mismatch bugs in games.
+    userInterfaceStyle: "light",
+
+    // -------------------------
+    // 🤖 ANDROID CONFIGURATION
+    // -------------------------
+
+    android: {
+      adaptiveIcon: {
+        // Foreground image layer for Android adaptive icons.
+        // This image sits on top of the background color.
+        foregroundImage: "./assets/images/adaptive-icon.png",
+
+        // Background color visible behind the foreground icon.
+        // Important for visual consistency on different launchers.
+        backgroundColor: "#ffffff"
       },
-      "package": "com.dheeraj.chorpolice"
+
+      // Unique application ID for Android.
+      // Once published to Play Store, DO NOT CHANGE this value.
+      // It uniquely identifies your app globally.
+      package: "com.dheeraj.chorpolice",
+
+      // Forces Android to stay in light theme.
+      // Prevents automatic dark-mode overrides on UI.
+      userInterfaceStyle: "light"
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+
+    // -------------------------
+    // 🌐 WEB CONFIGURATION
+    // -------------------------
+
+    web: {
+      // Bundler responsible for compiling web version.
+      // "metro" keeps consistency with React Native bundler.
+      bundler: "metro",
+
+      // Output type for web build.
+      // "static" means it generates static files for deployment (Netlify, Vercel).
+      output: "static",
+
+      // Browser favicon shown in tab and bookmarks.
+      favicon: "./assets/images/favicon.png"
     },
-    "plugins": [
+
+    // -------------------------
+    // 🔌 PLUGINS CONFIGURATION
+    // -------------------------
+    // Plugins extend native functionality and optimize build behavior.
+
+    plugins: [
+      // Custom plugin that disables forced dark mode on Android devices.
+      // Prevents UI breaking when system dark mode is enabled.
+      "./withDisableForcedDarkMode",
+
+      // Enables file-based routing similar to Next.js.
+      // Makes navigation faster and more scalable.
       "expo-router",
+
+      // Handles efficient asset loading and caching (images, sounds, etc).
+      // Reduces loading time and memory overhead.
       "expo-asset",
+
+      // Provides encrypted local storage.
+      // Used for storing tokens, settings, user data securely.
       "expo-secure-store",
+
       [
+        // Allows changing native Android/iOS build settings without ejecting.
         "expo-build-properties",
         {
-          "android": {
-            "enablePngCrunchInReleaseBuilds": false,
-            "enableProguardInReleaseBuilds": true,
-            "enableHermes": true,
-            "enableMinifyInReleaseBuilds": true
+          android: {
+            // Disables PNG crunching to prevent build slowdown and image distortion.
+            enablePngCrunchInReleaseBuilds: false,
+
+            // Enables Proguard for code shrinking and obfuscation.
+            // Reduces APK size and protects source code.
+            enableProguardInReleaseBuilds: true,
+
+            // Enables Hermes JavaScript engine.
+            // Improves startup speed, memory usage, and performance.
+            enableHermes: true,
+
+            // Enables code minification in production builds.
+            // Removes unused code and reduces bundle size.
+            enableMinifyInReleaseBuilds: true
           }
         }
       ],
+
+      // Allows loading and managing custom fonts.
+      // Essential for branding and game UI consistency.
       "expo-font",
-      "expo-web-browser"
+
+      // Enables in-app browser opening.
+      // Useful for payments, authentication, help pages, etc.
+      "expo-web-browser",
+
+      [
+        // Video playback plugin.
+        // Supports advanced features like background playback.
+        "expo-video",
+        {
+          // Allows video/audio to continue when app goes into background.
+          supportsBackgroundPlayback: true,
+
+          // Enables picture-in-picture mode on supported devices.
+          supportsPictureInPicture: true
+        }
+      ],
+
+      // Audio playback support for sounds, music, effects.
+      // Important for game experience and feedback.
+      "expo-audio"
     ],
-    "experiments": {
-      "typedRoutes": true
+
+    // -------------------------
+    // 🧪 EXPERIMENTAL FEATURES
+    // -------------------------
+
+    experiments: {
+      // Enables strongly typed routes with TypeScript.
+      // Prevents navigation bugs and improves IDE autocomplete.
+      typedRoutes: true
     },
-    "extra": {
-      "router": {
-        "origin": false
+
+    // -------------------------
+    // ⚙️ EXTRA METADATA
+    // -------------------------
+
+    extra: {
+      router: {
+        // Controls routing behavior internally.
+        // Setting false avoids unnecessary origin tracking.
+        origin: false
       },
-      "eas": {
-        "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
+
+      eas: {
+        // Expo Application Services project ID.
+        // Used for cloud builds, OTA updates, credentials.
+        projectId: "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
+
+    // -------------------------
+    // 🔄 OTA UPDATE MANAGEMENT
+    // -------------------------
+
+    // Determines compatibility between builds and OTA updates.
+    // If runtimeVersion mismatches, OTA update will not apply.
+    runtimeVersion: "1.0.2",
+
+    updates: {
+      // URL where Expo hosts your OTA updates.
+      // Used automatically by Expo Update service.
+      url: "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241"
     },
-    "updates": {
-      "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241"
-    },
-    "ios": {}
+
+    // -------------------------
+    // 🍎 iOS CONFIGURATION
+    // -------------------------
+
+    // iOS-specific settings can be added here later.
+    // Currently empty because your focus is Android.
+    ios: {}
   }
-}
+};
