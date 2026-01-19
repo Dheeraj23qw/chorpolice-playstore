@@ -1,6 +1,5 @@
 import React, { memo, useCallback, useEffect, useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   View,
@@ -15,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { addCoins } from "@/redux/reducers/coinsReducer";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Constants
 const REWARD_POINTS = 1000;

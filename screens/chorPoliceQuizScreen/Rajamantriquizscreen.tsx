@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  SafeAreaView,
   View,
   ImageBackground,
   Animated,
@@ -13,9 +12,9 @@ import { Components } from "@/imports/allComponentImports";
 import useQuizLogic from "@/hooks/useQuizLogic";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
-import { RootState } from "@/redux/store";
 import { playerNamesArray } from "@/redux/selectors/playerDataSelector";
 import { useSelector } from "react-redux";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();

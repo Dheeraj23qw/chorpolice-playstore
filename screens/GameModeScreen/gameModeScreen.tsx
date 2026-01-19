@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ImageBackground, SafeAreaView, ScrollView, View } from "react-native";
+import { ImageBackground } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 import { responsiveHeight } from "react-native-responsive-dimensions";
@@ -15,6 +15,7 @@ import { StatusBar } from "react-native";
 import { optionsGameMode } from "@/constants/gamemode";
 import RulesButton from "@/components/rules/rulesButton";
 import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const GameModeScreen: React.FC = () => {
   const animationValue = useSharedValue(0);

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   ImageBackground,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -23,6 +22,7 @@ import CustomAlertModal from "./modals/CustomAlertModal";
 import ConfirmChangeModal from "./modals/ConfirmChangeModal";
 import InfoAddMoreModal from "./modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const PlayerNameScreen: React.FC = () => {
   // Local State

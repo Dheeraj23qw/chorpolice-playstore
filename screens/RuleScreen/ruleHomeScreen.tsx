@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  SafeAreaView,
   Text,
   View,
   StyleSheet,
@@ -20,6 +19,7 @@ import {
 } from "react-native-responsive-dimensions";
 import { rulesGroups } from "@/constants/gameRules";
 import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

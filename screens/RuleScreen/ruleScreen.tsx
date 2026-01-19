@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   Text,
   View,
   ImageBackground,
@@ -13,6 +12,7 @@ import Animated, {
 import { useLocalSearchParams, router } from "expo-router";
 import { rulesGroups } from "@/constants/gameRules";
 import { styles } from "./ruleScreenStyle";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RulesView() {
   const { id } = useLocalSearchParams<{ id: string }>();

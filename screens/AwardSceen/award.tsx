@@ -1,4 +1,4 @@
-import { View, SafeAreaView, ImageBackground, StatusBar } from "react-native";
+import {  ImageBackground, StatusBar } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
@@ -6,6 +6,7 @@ import { globalstyles } from "@/styles/global";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const TREASURE_GIF = 12;
 
