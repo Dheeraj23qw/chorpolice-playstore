@@ -1,14 +1,14 @@
-
+import "../global.css";
 
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
 // 1. Ensure you are using the correct library for Safe Areas
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { 
-  loadSounds, 
-  playSound, 
-  stopQuizSound, 
-  unloadSounds 
+import {
+  loadSounds,
+  playSound,
+  stopQuizSound,
+  unloadSounds,
 } from "@/redux/reducers/soundReducer";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 import { initializeCoins } from "@/redux/reducers/coinsReducer";
@@ -17,7 +17,8 @@ import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import { Onboarding } from "@/screens/onboardingScreen/onboardingScreen";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-
+import MaintenanceScreen from "./+not-found";
+import ProfileScreen from "@/screens/profileScreen/profile";
 export default function Index() {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
@@ -39,13 +40,13 @@ export default function Index() {
         dispatch(playSound("quiz"));
       }
     }
-    
+
     initialize();
 
     return () => {
       isMounted = false;
       dispatch(stopQuizSound());
-      dispatch(unloadSounds()); 
+      dispatch(unloadSounds());
     };
   }, [dispatch]);
 
@@ -80,9 +81,5 @@ export default function Index() {
   //   );
   // }
 
-  return (
-    <SafeAreaProvider>
-      {isFirstLaunch ? <Onboarding /> : <GameModeScreen />}
-    </SafeAreaProvider>
-  );
+  return <>{isFirstLaunch ? <Onboarding /> : <GameModeScreen />}</>;
 }

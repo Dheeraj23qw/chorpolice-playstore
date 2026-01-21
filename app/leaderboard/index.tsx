@@ -1,16 +1,18 @@
 import React from 'react';
-import { Stack } from 'expo-router';
-import AwardSection from '@/screens/AwardSceen/award1';
 
-export default function AwardRoute() {
-return (
+import { Stack } from 'expo-router';
+import LeaderboardScreen from '@/screens/LeaderBoard/leaderboard';
+
+export default function LeaderboardRoute() {
+ return (
     <>
       <Stack.Screen 
         options={{
           headerShown: false,
         }} 
       />
-      <AwardSection/>
+      
+      <LeaderboardScreen/>
     </>
   );
 }

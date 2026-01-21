@@ -120,6 +120,17 @@ const OptionHeader = () => {
         />
       </AnimatedCircleBtn>
 
+      {/* 🪙 Earn */}
+<AnimatedCircleBtn
+  btnDim={btnDim}
+  marginBetween={marginBetween}
+  backgroundColor={SLATE_TRANSPARENT}
+  onPress={() => router.push("./earn")}
+>
+  <Ionicons name="flash" size={iconSize} color={ICON_COLOR} />
+</AnimatedCircleBtn>
+
+
       {/* 📤 Share */}
       <AnimatedCircleBtn
         btnDim={btnDim}
@@ -144,15 +155,7 @@ const OptionHeader = () => {
         <MaterialIcons name="star" size={iconSize} color={ICON_COLOR} />
       </AnimatedCircleBtn>
 
-      {/* 🏆 Awards */}
-      <AnimatedCircleBtn
-        btnDim={btnDim}
-        marginBetween={marginBetween}
-        backgroundColor={SLATE_TRANSPARENT}
-        onPress={() => router.push("/award")}
-      >
-        <Ionicons name="trophy" size={iconSize} color={ICON_COLOR} />
-      </AnimatedCircleBtn>
+
 
       {/* ⚙️ Menu */}
       <AnimatedCircleBtn

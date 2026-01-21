@@ -1,16 +1,17 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import AwardSection from '@/screens/AwardSceen/award1';
+import EarnScreen from '@/screens/earn/earnScreen';
 
-export default function AwardRoute() {
-return (
+export default function FriendRoute() {
+ return (
     <>
       <Stack.Screen 
         options={{
           headerShown: false,
         }} 
       />
-      <AwardSection/>
+      <EarnScreen/>
+      
     </>
   );
 }
