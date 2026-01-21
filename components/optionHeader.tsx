@@ -1,100 +1,183 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { Pressable, View } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { styles } from "./playerNameScreen/_css/optionbarcss";
-import { useDispatch, useSelector } from "react-redux";
-import { stopQuizSound, playSound } from "@/redux/reducers/soundReducer";
+import React, { useState } from "react";
+import { View, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  responsiveWidth,
+  responsiveHeight,
+  responsiveFontSize,
+} from "react-native-responsive-dimensions";
+
+import { stopQuizSound, playSound } from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
-import CustomRatingModal from "@/modal/RatingModal";
 import { handleShare } from "@/utils/share";
+import { FullScreenMenu } from "@/components/sidebar";
+import CustomRatingModal from "@/modal/RatingModal";
 
-const OptionHeader = React.memo(() => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const router = useRouter();
-  const isMuted = useSelector((state: RootState) => state.sound.isMuted);
-  const dispatch = useDispatch();
+/* ---------------------------------------------------
+   ✅ Animated Button Component (MUST be outside)
+--------------------------------------------------- */
 
-  // Memoized handlers
-  const handleCloseModal = useCallback(() => {
-    setModalVisible(false);
-  }, []);
+type CircleBtnProps = {
+  children: React.ReactNode;
+  onPress?: () => void;
+  btnDim: number;
+  marginBetween: number;
+  backgroundColor: string;
+};
 
-  const toggleModal = useCallback(() => {
-    setModalVisible((prevState) => !prevState);
-  }, []);
+const AnimatedCircleBtn = ({
+  children,
+  onPress,
+  btnDim,
+  marginBetween,
+  backgroundColor,
+}: CircleBtnProps) => {
+  const scale = useSharedValue(1);
 
-  const handleQuizSound = useCallback(() => {
-    if (isMuted) {
-      dispatch(playSound("quiz"));
-    } else {
-      dispatch(stopQuizSound());
-    }
-  }, [dispatch, isMuted]);
-
-  const buttonStyle = useMemo(() => [
-    styles.headerButton,
-    { opacity: 1 }, 
-  ], []);
-
-  const pressedStyle = useMemo(() => [
-    styles.headerButton,
-    { opacity: 0.7 }, 
-  ], []);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
-    <View style={styles.headerButtonsContainer}>
-      <Pressable
-        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
-        onPress={handleQuizSound}
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => (scale.value = withSpring(0.85))}
+      onPressOut={() => (scale.value = withSpring(1))}
+      style={{ marginLeft: marginBetween }}
+    >
+      <Animated.View
+        style={[
+          animatedStyle,
+          {
+            backgroundColor,
+            width: btnDim,
+            height: btnDim,
+            borderRadius: btnDim / 2,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.1)",
+          },
+        ]}
+      >
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+/* ---------------------------------------------------
+   ✅ OptionHeader Component
+--------------------------------------------------- */
+
+const OptionHeader = () => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const isMuted = useSelector((state: RootState) => state.sound.isMuted);
+
+  // COLORS
+  const SLATE_TRANSPARENT = "rgba(118, 83, 236, 0.2)";
+  const ICON_COLOR = "#FFFFFF";
+
+  // RESPONSIVE MEASUREMENTS
+  const btnDim = responsiveWidth(11);
+  const iconSize = responsiveFontSize(2.8);
+  const marginBetween = responsiveWidth(3);
+
+  return (
+    <View
+      style={{
+        paddingVertical: responsiveHeight(1.5),
+        paddingHorizontal: responsiveWidth(4),
+      }}
+      className="flex-row items-center justify-end"
+    >
+      {/* 🔊 Sound Toggle */}
+      <AnimatedCircleBtn
+        btnDim={btnDim}
+        marginBetween={marginBetween}
+        backgroundColor={SLATE_TRANSPARENT}
+        onPress={() =>
+          isMuted
+            ? dispatch(playSound("quiz"))
+            : dispatch(stopQuizSound())
+        }
       >
         <Ionicons
           name={isMuted ? "volume-mute" : "volume-high"}
-          size={24}
-          color="#FFF"
+          size={iconSize}
+          color={ICON_COLOR}
         />
-      </Pressable>
+      </AnimatedCircleBtn>
 
-      {/* Share Button */}
-      <Pressable
-        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
+      {/* 📤 Share */}
+      <AnimatedCircleBtn
+        btnDim={btnDim}
+        marginBetween={marginBetween}
+        backgroundColor={SLATE_TRANSPARENT}
         onPress={handleShare}
       >
-        <Ionicons name="share-social" size={24} color="#FFF" />
-      </Pressable>
+        <Ionicons
+          name="share-social"
+          size={iconSize}
+          color={ICON_COLOR}
+        />
+      </AnimatedCircleBtn>
 
-      {/* Star Rate Button */}
-      <Pressable
-        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
-        onPress={toggleModal}
+      {/* ⭐ Rating */}
+      <AnimatedCircleBtn
+        btnDim={btnDim}
+        marginBetween={marginBetween}
+        backgroundColor={SLATE_TRANSPARENT}
+        onPress={() => setModalVisible(true)}
       >
-        <MaterialIcons name="star-rate" size={24} color="#FFF" />
-      </Pressable>
+        <MaterialIcons name="star" size={iconSize} color={ICON_COLOR} />
+      </AnimatedCircleBtn>
 
-      {/* Navigate to Awards */}
-      <Pressable
-        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
+      {/* 🏆 Awards */}
+      <AnimatedCircleBtn
+        btnDim={btnDim}
+        marginBetween={marginBetween}
+        backgroundColor={SLATE_TRANSPARENT}
         onPress={() => router.push("/award")}
       >
-        <Ionicons name="trophy" size={24} color="#FFF" />
-      </Pressable>
+        <Ionicons name="trophy" size={iconSize} color={ICON_COLOR} />
+      </AnimatedCircleBtn>
 
-         {/* Settings Button */}
-         <Pressable
-        style={({ pressed }) => (pressed ? pressedStyle : buttonStyle)}
-        onPress={() => router.push("/settings")}
+      {/* ⚙️ Menu */}
+      <AnimatedCircleBtn
+        btnDim={btnDim}
+        marginBetween={marginBetween}
+        backgroundColor={SLATE_TRANSPARENT}
+        onPress={() => setMenuOpen(true)}
       >
-        <Ionicons name="settings" size={24} color="#FFF" />
-      </Pressable>
+        <Ionicons name="settings" size={iconSize} color={ICON_COLOR} />
+      </AnimatedCircleBtn>
 
-      {/* Custom Rating Modal */}
+      {/* 🪟 Modals */}
       <CustomRatingModal
+        title="Rate Chor Police"
         visible={modalVisible}
-        onClose={handleCloseModal}
-        title="Enjoying the App?"
+        onClose={() => setModalVisible(false)}
+      />
+
+      <FullScreenMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        router={router}
       />
     </View>
   );
-});
+};
 
 export default OptionHeader;

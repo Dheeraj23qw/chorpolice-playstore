@@ -7,22 +7,24 @@
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "light",
-
+    "runtimeVersion": "1.0.2",
+    "assetBundlePatterns": ["**/*"],
     "android": {
+      "package": "com.dheeraj.chorpolice",
+    "userInterfaceStyle": "light",
+    "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dheeraj.chorpolice",
-      "userInterfaceStyle": "light"
+      "navigationBar": {
+        "visible": "hidden",
+        "behavior": "overlay-swipe"
+      },
+      "statusBar": {
+        "hidden": true
+      }
     },
-
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-
     "plugins": [
       "./withDisableForcedDarkMode",
       "expo-router",
@@ -50,11 +52,9 @@
       ],
       "expo-audio"
     ],
-
     "experiments": {
       "typedRoutes": true
     },
-
     "extra": {
       "router": {
         "origin": false
@@ -63,13 +63,13 @@
         "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
     },
-
-    "runtimeVersion": "1.0.2",
-
     "updates": {
       "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241"
     },
-
-    "ios": {}
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    }
   }
 }

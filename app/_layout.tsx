@@ -1,11 +1,13 @@
+import "../global.css";
 import React, { useEffect } from "react";
 import { Provider } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import store from "@/redux/store";
-import { StatusBar } from "react-native";
-// 1. Import SafeAreaProvider
+import { Platform, Text, TextInput } from "react-native"; 
+import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as NavigationBar from 'expo-navigation-bar';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -17,7 +19,26 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    async function setupSystemUI() {
+      if (Platform.OS === 'android') {
+        await NavigationBar.setVisibilityAsync("hidden");
+      }
+
+      // --- GLOBAL DEFAULT FONT CONFIG ---
+      const globalConfig = {
+        allowFontScaling: true,
+        maxFontSizeMultiplier: 1.1, // Capped growth
+        style: { fontFamily: 'outfit' } // YOUR DEFAULT FONT
+      };
+
+      // @ts-ignore - Applies font to every <Text> automatically
+      Text.defaultProps = { ...(Text.defaultProps || {}), ...globalConfig };
+      // @ts-ignore - Applies font to every <TextInput> automatically
+      TextInput.defaultProps = { ...(TextInput.defaultProps || {}), ...globalConfig };
+    }
+
     if (fontsLoaded) {
+      setupSystemUI();
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
@@ -28,9 +49,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      {/* 2. Wrap in SafeAreaProvider to handle Android 15 Edge-to-Edge */}
       <SafeAreaProvider>
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
         </Stack>

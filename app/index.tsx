@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
 // 1. Ensure you are using the correct library for Safe Areas
@@ -43,7 +45,7 @@ export default function Index() {
     return () => {
       isMounted = false;
       dispatch(stopQuizSound());
-      dispatch(unloadSounds()); // This now calls .release() internally
+      dispatch(unloadSounds()); 
     };
   }, [dispatch]);
 
@@ -69,16 +71,15 @@ export default function Index() {
   }, []);
 
   // Show Video Splash Screen
-  if (isLoading) {
-    return (
-      <VideoPlayerComponent
-        videoIndex={1}
-        onVideoEnd={() => setIsLoading(false)}
-      />
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <VideoPlayerComponent
+  //       videoIndex={1}
+  //       onVideoEnd={() => setIsLoading(false)}
+  //     />
+  //   );
+  // }
 
-  // Wrap the return in SafeAreaProvider to resolve the SafeAreaView warning globally
   return (
     <SafeAreaProvider>
       {isFirstLaunch ? <Onboarding /> : <GameModeScreen />}
