@@ -1,48 +1,70 @@
 import "../global.css";
-
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
-// 1. Ensure you are using the correct library for Safe Areas
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { View, ActivityIndicator } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { useDispatch } from "react-redux";
+
+// Redux Actions
+import { AppDispatch } from "@/redux/store";
+import { initializeCoins } from "@/redux/reducers/coinsReducer";
 import {
   loadSounds,
   playSound,
   stopQuizSound,
   unloadSounds,
 } from "@/redux/reducers/soundReducer";
-import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
-import { initializeCoins } from "@/redux/reducers/coinsReducer";
-import * as SecureStore from "expo-secure-store";
+
+// Screens/Components
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
-import { Onboarding } from "@/screens/onboardingScreen/onboardingScreen";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
-import MaintenanceScreen from "./+not-found";
-import ProfileScreen from "@/screens/profileScreen/profile";
+import { AppText } from "@/components/AppText";
+
 export default function Index() {
   const navigation = useNavigation();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
   const dispatch = useDispatch<AppDispatch>();
 
-  useEffect(() => {
-    dispatch(initializeCoins());
-  }, [dispatch]);
+  const [isAppReady, setIsAppReady] = useState(false);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
-  // Handle Sound Lifecycle
+  // 1. Hide Header immediately
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  // 2. Comprehensive Initialization logic
   useEffect(() => {
     let isMounted = true;
 
-    async function initialize() {
-      // With expo-audio, loading is faster
-      await dispatch(loadSounds());
-      if (isMounted) {
-        dispatch(playSound("quiz"));
+    async function prepareApp() {
+      try {
+        // Sync tasks (Coins & Storage)
+        dispatch(initializeCoins());
+        
+        const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
+        if (hasLaunched === null) {
+          await SecureStore.setItemAsync("hasLaunched", "true");
+          if (isMounted) setIsFirstLaunch(true);
+        } else {
+          if (isMounted) setIsFirstLaunch(false);
+        }
+
+        // Async tasks (Sound loading)
+        await dispatch(loadSounds());
+        
+        // Start background music only if still on this screen
+        if (isMounted) {
+          dispatch(playSound("quiz"));
+          setIsAppReady(true);
+        }
+      } catch (error) {
+        console.error("Initialization Error:", error);
+        if (isMounted) setIsAppReady(true); // Fail gracefully
       }
     }
 
-    initialize();
+    prepareApp();
 
+    // Cleanup logic: Stop sounds when user leaves the entry point
     return () => {
       isMounted = false;
       dispatch(stopQuizSound());
@@ -50,36 +72,19 @@ export default function Index() {
     };
   }, [dispatch]);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
+  // 3. Advanced Loading State (Premium Feel)
+  if (!isAppReady) {
+    return (
+      <View className="flex-1 bg-[#0B0B18] items-center justify-center">
+        {/* You can replace this with your VideoPlayerComponent later */}
+        <ActivityIndicator size="large" color="#6366f1" />
+        <AppText className="mt-4 text-white/50 tracking-[3px] uppercase text-[10px]">
+          Initializing Experience
+        </AppText>
+      </View>
+    );
+  }
 
-  useEffect(() => {
-    const checkFirstLaunch = async () => {
-      try {
-        const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
-        if (hasLaunched === null) {
-          setIsFirstLaunch(true);
-          await SecureStore.setItemAsync("hasLaunched", "true");
-        } else {
-          setIsFirstLaunch(false);
-        }
-      } catch (e) {
-        setIsFirstLaunch(false); // Fallback
-      }
-    };
-    checkFirstLaunch();
-  }, []);
-
-  // Show Video Splash Screen
-  // if (isLoading) {
-  //   return (
-  //     <VideoPlayerComponent
-  //       videoIndex={1}
-  //       onVideoEnd={() => setIsLoading(false)}
-  //     />
-  //   );
-  // }
-
-  return <>{isFirstLaunch ? <Onboarding /> : <GameModeScreen />}</>;
+  // 4. Main Entry Point
+  return <GameModeScreen />;
 }

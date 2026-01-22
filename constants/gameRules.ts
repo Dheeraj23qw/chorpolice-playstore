@@ -3,7 +3,7 @@ export const rulesGroups = [
     id: "raja_group",
     title: "Raja Mantri Chor Sipahi",
     subtitle: "Chor Police",
-    image: require("@/assets/images/bg/chorpolice.png"), // 👈 game image
+    image: require("@/assets/images/bg/gamemode/2.png"), // 👈 game image
     rules: [
       {
         id: "1",

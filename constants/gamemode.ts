@@ -9,7 +9,7 @@ export const optionsGameMode = [
   {
     label: "Play with Friends!",
     value: "Offline",
-    backgroundId: 4,
+    backgroundId: 2,
     route: "/playerName",
   },
 ];

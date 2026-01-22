@@ -1,178 +1,92 @@
-import React from "react";
-import {
-  Text,
-  View,
-  StyleSheet,
-  Pressable,
-  ImageBackground,
-} from "react-native";
+import React, { memo } from "react";
+import { Text, View, Pressable, ImageBackground, Dimensions } from "react-native";
 import Animated, {
   FadeInUp,
   useAnimatedStyle,
   withSpring,
   useSharedValue,
 } from "react-native-reanimated";
-import {
-  responsiveFontSize,
-  responsiveHeight,
-  responsiveWidth,
-} from "react-native-responsive-dimensions";
-import { rulesGroups } from "@/constants/gameRules";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { rulesGroups } from "@/constants/gameRules";
 
+const { width } = Dimensions.get("window");
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// 1. Separate Component for performance & following Hook rules
+const RuleGroupCard = memo(({ group, index }: { group: any; index: number }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => { scale.value = withSpring(0.97, { damping: 15 }); };
+  const handlePressOut = () => { scale.value = withSpring(1); };
+
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(index * 100).duration(600).springify()}
+      className="mb-5 shadow-lg"
+    >
+      <AnimatedPressable
+        style={animatedStyle}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={() => router.push({ pathname: "/rule", params: { id: group.id } })}
+        className="rounded-[32px] overflow-hidden bg-[#1A1A2E] border border-white/10"
+      >
+        <ImageBackground source={group.image} className="min-h-[130px] justify-center px-8 py-6">
+          {/* High-performance gradient overlay alternative */}
+          <View className="absolute inset-0 bg-black/50" />
+          
+          <View>
+            <Text className="text-white text-[22px] font-black tracking-tight">
+              {group.title}
+            </Text>
+            <View className="h-1 w-8 bg-amber-500 rounded-full my-1.5" />
+            <Text className="text-gray-300 text-[14px] font-medium">
+              {group.subtitle}
+            </Text>
+          </View>
+        </ImageBackground>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+});
 
 export default function RulesHome() {
   return (
-    <ImageBackground
-      source={require("@/assets/images/bg/quiz.png")}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      {/* Global overlay */}
-      <View style={styles.screenOverlay} />
+    <View className="flex-1 bg-[#0F0F1E]">
+      <ImageBackground
+        source={require("@/assets/images/bg/quiz.png")}
+        resizeMode="cover"
+        className="flex-1"
+      >
+        {/* Dark subtle overlay for depth */}
+        <View className="absolute inset-0 bg-[#0F0F1E]/70" />
 
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.header}>Game Rules</Text>
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-6">
+            {/* Header: Centered vertically in top section */}
+            <View className="h-[25%] justify-end pb-8">
+              <Text className="text-white text-xs font-bold tracking-[4px] text-center uppercase opacity-60 mb-2">
+                Knowledge Base
+              </Text>
+              <Text className="text-white text-4xl font-black text-center tracking-tighter">
+                Game Rules
+              </Text>
+            </View>
 
-        <View style={styles.cards}>
-          {rulesGroups.map((group, index) => {
-            const scale = useSharedValue(1);
-
-            const animatedStyle = useAnimatedStyle(() => ({
-              transform: [{ scale: scale.value }],
-            }));
-
-            return (
-              <Animated.View
-                key={group.id}
-                entering={FadeInUp.delay(index * 150).springify()}
-              >
-                <AnimatedPressable
-                  style={[styles.cardWrapper, animatedStyle]}
-                  onPressIn={() => (scale.value = withSpring(0.96))}
-                  onPressOut={() => (scale.value = withSpring(1))}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/rule",
-                      params: { id: group.id },
-                    })
-                  }
-                >
-                  {/* UNIQUE CARD IMAGE */}
-                  <ImageBackground
-                    source={group.image}
-                    resizeMode="cover"
-                    style={styles.card}
-                    imageStyle={styles.cardImage}
-                  >
-                    {/* Card overlay */}
-                    <View style={styles.cardOverlay} />
-
-                    <Text style={styles.title}>{group.title}</Text>
-                    <Text style={styles.subtitle}>{group.subtitle}</Text>
-                  </ImageBackground>
-                </AnimatedPressable>
-              </Animated.View>
-            );
-          })}
-        </View>
-      </SafeAreaView>
-    </ImageBackground>
+            {/* List: Using simple View for best performance on low-end devices */}
+            <View className="flex-1">
+              {rulesGroups.map((group, index) => (
+                <RuleGroupCard key={group.id} group={group} index={index} />
+              ))}
+            </View>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
+    </View>
   );
 }
-
-
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: responsiveWidth(6),
-  },
-
-  /* ===== HEADER ===== */
-  header: {
-    marginTop: responsiveHeight(23),
-    fontSize: responsiveFontSize(3.4),
-    fontWeight: "900",
-    color: "#FFF",
-    textAlign: "center",
-    letterSpacing: 1.5,
-
-    // Glow effect
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 8,
-  },
-
-  /* ===== CARD LIST ===== */
-  cards: {
-    marginTop: responsiveHeight(6),
-    gap: responsiveHeight(3.2),
-  },
-
-  /* ===== GLOBAL OVERLAY ===== */
-  screenOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(16,16,28,0.45)",
-  },
-
-  /* ===== CARD ===== */
-  cardWrapper: {
-    borderRadius: responsiveWidth(7),
-    overflow: "hidden",
-
-    // Subtle outer glow
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: responsiveWidth(4),
-    shadowOffset: { width: 0, height: responsiveHeight(1.2) },
-  },
-
-  card: {
-    minHeight: responsiveHeight(16),
-    paddingVertical: responsiveHeight(4.5),
-    paddingHorizontal: responsiveWidth(6),
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: responsiveWidth(7),
-
-    elevation: 14,
-  },
-
-  cardImage: {
-    borderRadius: responsiveWidth(7),
-  },
-
-  /* Gradient-like overlay using layers */
-  cardOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-
-  /* ===== TEXT ===== */
-  title: {
-    fontSize: responsiveFontSize(3),
-    fontWeight: "900",
-    color: "#FFFFFF",
-    textAlign: "center",
-
-    // Title pop
-    textShadowColor: "rgba(0,0,0,0.7)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
-  },
-
-  subtitle: {
-    fontSize: responsiveFontSize(2),
-    color: "#F1F1F1",
-    marginTop: responsiveHeight(0.8),
-    textAlign: "center",
-    fontWeight: "700",
-
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-});

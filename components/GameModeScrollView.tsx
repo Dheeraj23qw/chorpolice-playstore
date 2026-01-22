@@ -23,8 +23,7 @@ export interface Option {
 const BACKGROUND_IMAGES: Record<number, any> = {
   1: require("../assets/images/bg/gamemode/1.png"),
   2: require("../assets/images/bg/gamemode/2.png"),
-  3: require("../assets/images/bg/gamemode/3.png"),
-  4: require("../assets/images/bg/gamemode/4.png"),
+
 };
 
 const GameModeScrollView: React.FC<{ options: Option[] }> = ({ options }) => {

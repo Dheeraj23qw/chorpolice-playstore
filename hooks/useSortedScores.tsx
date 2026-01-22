@@ -27,7 +27,7 @@ export const useSortedScores = () => {
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images
   );
-  const fallbackImage = require("@/assets/images/image.png");
+  const fallbackImage = require("@/assets/images/bg/gamemode/2.png");
 
   const sortedScores = useMemo(() => {
     return [...playerScores].sort(

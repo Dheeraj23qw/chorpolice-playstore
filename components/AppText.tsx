@@ -1,14 +1,19 @@
-// components/AppText.tsx
-import { Text } from 'react-native';
+import React from 'react';
+import { Text, TextProps } from 'react-native';
 
-export function AppText({ children, className, ...props }) {
+interface AppTextProps extends TextProps {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export function AppText({ children, className = "", ...props }: AppTextProps) {
   return (
     <Text 
-      // 1. We hardcode the default font here
+      // Ensure 'font-[outfit]' is your default, then append custom classes
       className={`font-[outfit] ${className}`} 
       {...props}
     >
-      {children} {/* 2. This is the actual text content */}
+      {children}
     </Text>
   );
 }

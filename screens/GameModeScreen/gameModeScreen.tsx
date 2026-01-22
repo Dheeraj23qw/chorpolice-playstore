@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { ImageBackground } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
-import { responsiveHeight } from "react-native-responsive-dimensions";
 import { Components } from "@/imports/allComponentImports";
 import GameModeScrollView from "@/components/GameModeScrollView";
 import Animated, {
