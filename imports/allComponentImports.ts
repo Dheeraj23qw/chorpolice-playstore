@@ -1,4 +1,3 @@
-import ScreenHeader from "@/components/_screenHeader";
 import FeedbackMessage from "@/components/chorPoliceQuiz/feedback";
 import QuizOptions from "@/components/chorPoliceQuiz/option";
 import PlayerInfo from "@/components/chorPoliceQuiz/playerInfo";
@@ -43,5 +42,4 @@ export const Components = {
 
   //individual components imports
   LoadingIndicator,
-  ScreenHeader,
 };

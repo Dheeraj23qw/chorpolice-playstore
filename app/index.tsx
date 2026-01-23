@@ -26,6 +26,7 @@ export default function Index() {
   const [isAppReady, setIsAppReady] = useState(false);
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
+ 
   // 1. Hide Header immediately
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });

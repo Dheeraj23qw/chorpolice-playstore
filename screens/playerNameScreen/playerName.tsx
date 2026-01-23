@@ -1,34 +1,72 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   ImageBackground,
   ScrollView,
-  StatusBar,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
-import { globalstyles } from "@/styles/global";
-import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
-import { responsiveFontSize, responsiveHeight, responsiveWidth } from "react-native-responsive-dimensions";
-// Custom Hooks
+import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  withSpring,
+  Easing,
+} from "react-native-reanimated";
+import { StatusBar } from "expo-status-bar";
+
+import { useFocusEffect } from "expo-router";
+import { Pressable } from "react-native";
+import { router } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
+
+// Hooks
 import { usePlayerNameScreen } from "@/hooks/usePlayerNameScreen";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
 
-// Import all components from a single file for modularity
+// Components
 import { Components } from "@/imports/allComponentImports";
 
-// Import Modals
+// Modals
 import CustomAlertModal from "./modals/CustomAlertModal";
 import ConfirmChangeModal from "./modals/ConfirmChangeModal";
 import InfoAddMoreModal from "./modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const PlayerNameScreen: React.FC = () => {
-  // Local State
-  const [isMuted, setIsMuted] = useState(false); // For toggling sound mute
-  const [selectedOption, setSelectedOption] = useState<string | null>(null); // For avatar selection
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
+  /* -------------------- 🎬 Entrance Animation -------------------- */
+  const translateY = useSharedValue(40);
+  const opacity = useSharedValue(0);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  useFocusEffect(
+    useCallback(() => {
+      translateY.value = 40;
+      opacity.value = 0;
+
+      translateY.value = withTiming(0, {
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+      });
+
+      opacity.value = withTiming(1, { duration: 600 });
+    }, []),
+  );
+
+  /* -------------------- 🔙 Back Button Animation -------------------- */
+  const backScale = useSharedValue(1);
+
+  const backAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: backScale.value }],
+  }));
+
+  /* -------------------- 🧠 Business Logic -------------------- */
   const {
     selectedImages,
     imageNames,
@@ -47,7 +85,6 @@ const PlayerNameScreen: React.FC = () => {
     isButtonDisabled,
   } = usePlayerNameScreen();
 
-  // Custom Hook - Gallery Picker
   const {
     pickImage,
     loading,
@@ -60,94 +97,107 @@ const PlayerNameScreen: React.FC = () => {
   const options = [{ label: "Upload from Gallery", value: "gallery" }];
 
   return (
-    <SafeAreaView style={globalstyles.container}>
-      <StatusBar backgroundColor={"transparent"}/>
+    <View className="flex-1">
+      <StatusBar hidden />
 
-      {/* Screen Header */}
-      <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-        <Components.ScreenHeader
-          name="Play with Friends!"
-          showBackButton={true}
-        />
-      </View>
+      <ImageBackground
+        source={require("../../assets/images/bg/quiz.png")}
+        resizeMode="cover"
+        className="flex-1"
+      >
+        {/* 🌑 Dark Overlay */}
+        <View className="absolute inset-0 bg-black/40" />
 
-      {/* Main Content Container */}
-      <View style={[globalstyles.Container2, { flex: 10 }]}>
-        <ImageBackground
-          source={require("../../assets/images/bg/quiz.png")}
-          style={[
-            chorPoliceQuizstyles.overlay,
-            chorPoliceQuizstyles.imageBackground,
-          ]}
-          resizeMode="cover"
+        {/* 🔙 Back Button */}
+        <Animated.View
+          style={backAnimatedStyle}
+          className="absolute top-10 left-4 z-50"
         >
-          {/* Loading Indicator */}
-          <Components.LoadingIndicator
-            loading={loading}
-            message="Loading, please wait..."
-          />
-          {/* Option Header for Muting Sound */}
-          <Components.OptionHeader  />
-
-          {/* Scroll View for Content */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ flexGrow: 1 }}
+          <Pressable
+            onPressIn={() => (backScale.value = withSpring(0.9))}
+            onPressOut={() => (backScale.value = withSpring(1))}
+            onPress={() => router.back()}
+            className="h-11 w-11 rounded-full bg-white/70 items-center justify-center"
           >
-            {/* Avatar Selection */}
-            {selectedImages.length <4 &&
+            <ArrowLeft size={22} color="grey" />
+          </Pressable>
+        </Animated.View>
 
+        {/* ⏳ Loader */}
+        <Components.LoadingIndicator
+          loading={loading}
+          message="Loading, please wait..."
+        />
+
+        {/* 🔥 Animated Header */}
+        <Animated.View style={animatedStyle} className="mt-20 px-4">
+          <Components.OptionHeader />
+        </Animated.View>
+
+        {/* 📜 Content */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          className="flex-1 px-4"
+        >
+          {/* Avatar Selection */}
+          {selectedImages.length < 4 && (
             <Components.AvatarSelectionMemo
               selectedOption={selectedOption}
               setSelectedOption={setSelectedOption}
               pickImage={pickImage}
-              options={options} // Pass the dynamic options array
+              options={options}
             />
-            }
+          )}
 
-{selectedImages.length === 0 && (
-              <View style={styles.instructionContainer}>
-                <Text style={styles.instructionText}>
-                  Select 4 Images to Play
-                </Text>
-              </View>
-            )}
-            {/* Image Grid for Selected Images */}
-            {selectedImages.length < 4 &&
+          {/* Instruction */}
+          {selectedImages.length === 0 && (
+            <View className="bg-white/30 rounded-xl py-3 px-4 my-4 items-center">
+              <Text className="text-white text-base font-bold">
+                Select 4 Images to Play
+              </Text>
+            </View>
+          )}
+
+          {/* Image Grid */}
+          {selectedImages.length < 4 && (
             <Components.ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
-              imagesPerRow={10}
+              imagesPerRow={3}
               gameMode="OFFLINE"
               isBot={false}
-            />}
-            {selectedImages.length === 4 && (
-              <View style={styles.instructionContainer}>
-                <Text style={styles.instructionText}>
-                  To change the image, click on it.
-                </Text>
-              </View>
-            )}
-            {/* Selected Image Grid with Name Change and Click Handling */}
-            <Components.SelectedImageGrid
-              selectedImages={selectedImages}
-              imageNames={imageNames}
-              handleNameChange={handleNameChange}
-              handleSelectedImageClick={handleSelectedImageClick}
             />
+          )}
 
-            {/* Action Buttons for Starting Adventure - Show only if 4 images selected */}
-            {selectedImages.length === 4 && (
-              <Components.PlayernameActionButtons
-                handleStartAdventure={handleStartAdventure}
-                disabled={isButtonDisabled}
-              />
-            )}
-          </ScrollView>
-        </ImageBackground>
-      </View>
+          {/* Change Instruction */}
+          {selectedImages.length === 4 && (
+            <View className="bg-white/30 rounded-xl py-3 px-4 my-4 items-center">
+              <Text className="text-white text-base font-bold">
+                To change the image, click on it.
+              </Text>
+            </View>
+          )}
 
-      {/* Modals */}
+          {/* Selected Images */}
+          <Components.SelectedImageGrid
+            selectedImages={selectedImages}
+            imageNames={imageNames}
+            handleNameChange={handleNameChange}
+            handleSelectedImageClick={handleSelectedImageClick}
+          />
+
+          {/* Start Button */}
+          {selectedImages.length === 4 && (
+            <Components.PlayernameActionButtons
+              handleStartAdventure={handleStartAdventure}
+              disabled={isButtonDisabled}
+            />
+          )}
+        </ScrollView>
+      </ImageBackground>
+
+      {/* 🪟 Modals */}
       <CustomAlertModal
         visible={modalVisible}
         onClose={closeAlertModal}
@@ -172,29 +222,10 @@ const PlayerNameScreen: React.FC = () => {
         onClose={() => setIsModalVisible(false)}
         title={modalTitle}
         content={modalContent}
-        buttons={[{ text: "OK", onPress: () => setIsModalVisible(false) }]} // Button to close modal
+        buttons={[{ text: "OK", onPress: () => setIsModalVisible(false) }]}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
-// Exporting Component with React Memo for Optimization
 export default React.memo(PlayerNameScreen);
-
-const styles = StyleSheet.create({
-  instructionContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-    padding: responsiveWidth(2), // Responsive padding
-    borderRadius: responsiveWidth(2), // Responsive border radius
-    marginVertical: responsiveHeight(2), // Responsive vertical margin
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: responsiveHeight(1.5), // Responsive vertical padding
-  },
-  instructionText: {
-    fontSize: responsiveFontSize(2.5), // Responsive font size
-    color: "#fff", // Modern white color
-    textAlign: "center",
-    fontFamily: "outfit-bold", // Premium and clean font
-  },
-});

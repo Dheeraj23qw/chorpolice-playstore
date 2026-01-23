@@ -10,8 +10,8 @@ import {
 import { useSelector } from "react-redux";
 import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
 import { RootState } from "@/redux/store";
-import { GameMode } from "@/redux/slices/playerSlice";
 import { PulsatingImage } from "@/Animations/animation";
+import { GameMode } from "@/types/redux/reducers";
 
 interface ImageGridProps {
   selectedImages: number[];

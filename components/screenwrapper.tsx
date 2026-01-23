@@ -73,7 +73,7 @@ const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
               onPress={handleBack}
               className="h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white"
             >
-              <ChevronLeft size={22} color="#ffffff" strokeWidth={3.5} />
+              <ChevronLeft size={22} color="grey" strokeWidth={3.5} />
             </TouchableOpacity>
           ) : (
             <View className="h-10 w-10" />
