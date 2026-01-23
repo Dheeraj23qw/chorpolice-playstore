@@ -27,14 +27,14 @@ export const playerNameStyles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 2,
-    borderColor: "#f7dc6f",
+    borderColor: "grey",
   },
   image: {
     width: 90,
     height: 90,
     borderRadius: 45,
     borderWidth: 3,
-    borderColor: "#f7dc6f",
+    borderColor: "grey",
   },
 
   selectedImageGrid: {

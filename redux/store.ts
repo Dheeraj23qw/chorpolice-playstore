@@ -6,6 +6,7 @@ import playerImagesReducer from "./reducers/dynamicImagesReducer";
 import botReducer from "@/redux/reducers/botReducer";
 import difficultyReducer from "@/redux/reducers/quiz";
 import coinsReducer from "@/redux/reducers/coinsReducer";
+import loaderReducer from "./reducers/loaderReducer";
 
 const store = configureStore({
   reducer: {
@@ -15,6 +16,8 @@ const store = configureStore({
     playerImages: playerImagesReducer,
     difficulty: difficultyReducer,
     coins: coinsReducer,
+    loader: loaderReducer,
+
   },
   // Include thunk middleware
   middleware: (getDefaultMiddleware) =>

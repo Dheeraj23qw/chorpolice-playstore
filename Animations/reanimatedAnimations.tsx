@@ -10,9 +10,7 @@ import {
   withTiming,
 } from "react-native-reanimated";
 
-/* ======================================================
-   INTERNAL SPRING PRESETS (Consistency + Performance)
-====================================================== */
+
 
 const SOFT_SPRING = { damping: 14, stiffness: 180 };
 const FAST_SPRING = { damping: 18, stiffness: 240 };

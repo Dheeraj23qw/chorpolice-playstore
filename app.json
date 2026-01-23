@@ -16,17 +16,10 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "navigationBar": {
-        "visible": "hidden",
-        "behavior": "overlay-swipe"
-      },
-      "statusBar": {
-        "hidden": true
       }
+   
     },
     "plugins": [
-      "./withDisableForcedDarkMode",
       "expo-router",
       "expo-asset",
       "expo-secure-store",
@@ -38,7 +31,14 @@
             "enableProguardInReleaseBuilds": true,
             "enableHermes": true,
             "enableMinifyInReleaseBuilds": true
-          }
+          },
+             "navigationBar": {
+               "visible": "hidden",
+               "behavior": "overlay-swipe"
+              },
+              "statusBar": {
+               "hidden": true
+             }
         }
       ],
       "expo-font",

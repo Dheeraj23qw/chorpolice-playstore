@@ -1,13 +1,34 @@
 import "../global.css";
 import React, { useEffect } from "react";
-import { Provider } from "react-redux";
+import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
-import store from "@/redux/store";
-import { Platform, Text, TextInput } from "react-native"; 
-import { StatusBar } from "expo-status-bar";
+import store, { RootState } from "@/redux/store";
+import { Appearance, Text, TextInput } from "react-native";
+import * as NavigationBar from "expo-navigation-bar";
+import GlobalLoader from "@/components/globalLoader";
+import RouteLoader from "@/components/RouteLoader";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as NavigationBar from 'expo-navigation-bar';
+import { StatusBar } from "expo-status-bar";
+import { Platform } from "react-native";
+
+
+function AppLayout() {
+
+  const loader = useSelector((state: RootState) => state.loader);
+
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+      </Stack>
+
+      <RouteLoader />
+
+      <GlobalLoader visible={loader.visible} message={loader.message} />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -20,21 +41,25 @@ export default function RootLayout() {
 
   useEffect(() => {
     async function setupSystemUI() {
-      if (Platform.OS === 'android') {
+      if (Platform.OS === "android") {
         await NavigationBar.setVisibilityAsync("hidden");
+        Appearance.setColorScheme("light"); 
       }
 
-      // --- GLOBAL DEFAULT FONT CONFIG ---
-      const globalConfig = {
+      // ✅ Safe font patch
+      (Text as any).defaultProps = {
+        ...(Text as any).defaultProps,
         allowFontScaling: true,
-        maxFontSizeMultiplier: 1.1, // Capped growth
-        style: { fontFamily: 'outfit' } // YOUR DEFAULT FONT
+        maxFontSizeMultiplier: 1.1,
+        style: { fontFamily: "outfit" },
       };
 
-      // @ts-ignore - Applies font to every <Text> automatically
-      Text.defaultProps = { ...(Text.defaultProps || {}), ...globalConfig };
-      // @ts-ignore - Applies font to every <TextInput> automatically
-      TextInput.defaultProps = { ...(TextInput.defaultProps || {}), ...globalConfig };
+      (TextInput as any).defaultProps = {
+        ...(TextInput as any).defaultProps,
+        allowFontScaling: true,
+        maxFontSizeMultiplier: 1.1,
+        style: { fontFamily: "outfit" },
+      };
     }
 
     if (fontsLoaded) {
@@ -43,16 +68,13 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-        </Stack>
+        <StatusBar hidden />
+        <AppLayout />
       </SafeAreaProvider>
     </Provider>
   );

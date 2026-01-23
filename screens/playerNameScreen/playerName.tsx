@@ -32,6 +32,7 @@ import CustomAlertModal from "./modals/CustomAlertModal";
 import ConfirmChangeModal from "./modals/ConfirmChangeModal";
 import InfoAddMoreModal from "./modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
+import { SafeBackButton } from "@/components/SafeBackButton";
 
 const PlayerNameScreen: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -98,7 +99,6 @@ const PlayerNameScreen: React.FC = () => {
 
   return (
     <View className="flex-1">
-      <StatusBar hidden />
 
       <ImageBackground
         source={require("../../assets/images/bg/quiz.png")}
@@ -109,19 +109,8 @@ const PlayerNameScreen: React.FC = () => {
         <View className="absolute inset-0 bg-black/40" />
 
         {/* 🔙 Back Button */}
-        <Animated.View
-          style={backAnimatedStyle}
-          className="absolute top-10 left-4 z-50"
-        >
-          <Pressable
-            onPressIn={() => (backScale.value = withSpring(0.9))}
-            onPressOut={() => (backScale.value = withSpring(1))}
-            onPress={() => router.back()}
-            className="h-11 w-11 rounded-full bg-white/70 items-center justify-center"
-          >
-            <ArrowLeft size={22} color="grey" />
-          </Pressable>
-        </Animated.View>
+        <SafeBackButton />
+
 
         {/* ⏳ Loader */}
         <Components.LoadingIndicator
