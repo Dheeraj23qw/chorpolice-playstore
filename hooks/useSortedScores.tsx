@@ -1,79 +1,85 @@
 import { useMemo, useCallback, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector, useDispatch, shallowEqual } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useRouter } from "expo-router";
 import { captureScreen } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from 'expo-file-system/legacy';
-import { resetGamefromRedux, playAgain } from "@/redux/reducers/playerReducer";
+import * as FileSystem from "expo-file-system/legacy";
+import {
+  resetGamefromRedux,
+  playAgain,
+} from "@/redux/reducers/playerReducer";
 
-// Custom hook for managing and sharing sorted scores
 export const useSortedScores = () => {
-  const selectedImages = useSelector(
-    (state: RootState) => state.player.selectedImages
-  );
-  const playerNames = useSelector(
-    (state: RootState) => state.player.playerNames
-  );
-  const playerScores = useSelector(
-    (state: RootState) => state.player.playerScores
-  );
-
-  const router = useRouter();
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
-  const playerImages = useSelector(
-    (state: RootState) => state.playerImages.images
+  // ✅ Group selectors to reduce re-renders
+  const { selectedImages, playerNames, playerScores } = useSelector(
+    (state: RootState) => ({
+      selectedImages: state.player.selectedImages,
+      playerNames: state.player.playerNames,
+      playerScores: state.player.playerScores,
+    }),
+    shallowEqual
   );
+
+  const playerImages = useSelector(
+    (state: RootState) => state.playerImages.images,
+    shallowEqual
+  );
+
   const fallbackImage = require("@/assets/images/bg/gamemode/2.png");
 
+  // -------------------- Sorted Scores --------------------
   const sortedScores = useMemo(() => {
+    if (!playerScores.length) return [];
     return [...playerScores].sort(
-      (a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0)
+      (a, b) => (b.totalScore || 0) - (a.totalScore || 0)
     );
   }, [playerScores]);
 
   const winner = sortedScores[0] ?? { playerName: "", totalScore: 0 };
 
+  // -------------------- Winner Name --------------------
   const winnerName = useMemo(() => {
-    return (
-      playerNames.find((player) => player.name === winner.playerName)?.name ||
-      "Unknown Player"
+    const player = playerNames.find(
+      (p) => p.name === winner.playerName
+    );
+    return player?.name ?? "Unknown Player";
+  }, [winner.playerName, playerNames]);
+
+  // -------------------- Winner Image --------------------
+  const winnerIndex = useMemo(() => {
+    return playerNames.findIndex(
+      (p) => p.name === winner.playerName
     );
   }, [winner.playerName, playerNames]);
 
-  const winnerIndex = playerNames.findIndex(
-    (player) => player.name === winner.playerName
-  );
-
   const winnerImage = useMemo(() => {
-    if (winnerIndex >= 0 && winnerIndex < selectedImages.length) {
-      const image = playerImages[selectedImages[winnerIndex]];
-      return image?.src || fallbackImage;
-    }
-    return fallbackImage;
+    if (winnerIndex < 0) return fallbackImage;
+
+    const imageId = selectedImages[winnerIndex];
+    return playerImages[imageId]?.src ?? fallbackImage;
   }, [winnerIndex, selectedImages, playerImages]);
 
   const winnerPlayerImageType = useMemo(() => {
-    if (winnerIndex >= 0 && winnerIndex < selectedImages.length) {
-      const imageType = playerImages[selectedImages[winnerIndex]]?.type;
-      return imageType || "default";
-    }
-    return "default";
+    if (winnerIndex < 0) return "default";
+
+    const imageId = selectedImages[winnerIndex];
+    return playerImages[imageId]?.type ?? "default";
   }, [winnerIndex, selectedImages, playerImages]);
 
-  const botIndexes = playerNames
-    .map((player, idx) => (player.isBot ? idx : -1))
-    .filter((idx) => idx !== -1);
-
-  const isCurrentWinnerIsBot = botIndexes.includes(winnerIndex);
-
+  // -------------------- Actions --------------------
   const handlePlayAgain = useCallback(() => {
     if (isButtonDisabled) return;
+
     setIsButtonDisabled(true);
     dispatch(playAgain());
+
+    // Small delay to avoid accidental double navigation
     setTimeout(() => {
       router.push("/chorpolicegame");
     }, 100);
@@ -81,6 +87,7 @@ export const useSortedScores = () => {
 
   const handleBack = useCallback(() => {
     if (isButtonDisabled) return;
+
     setIsButtonDisabled(true);
     dispatch(resetGamefromRedux());
     router.push("/modeselect");
@@ -94,10 +101,7 @@ export const useSortedScores = () => {
       });
 
       const fileInfo = await FileSystem.getInfoAsync(uri);
-      if (!fileInfo.exists) {
-        console.error("File does not exist:", uri);
-        return;
-      }
+      if (!fileInfo.exists) return;
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
@@ -105,8 +109,6 @@ export const useSortedScores = () => {
           dialogTitle: "Share Game Results",
           UTI: "public.image",
         });
-      } else {
-        console.error("Sharing is not available on this device");
       }
     } catch (error) {
       console.error("Error sharing:", error);
@@ -125,6 +127,5 @@ export const useSortedScores = () => {
     winnerImage,
     winnerPlayerImageType,
     winner,
-    isCurrentWinnerIsBot,
   };
 };

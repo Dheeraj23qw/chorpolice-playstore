@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { ImageBackground } from "react-native";
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
-import { Components } from "@/imports/allComponentImports";
 import GameModeScrollView from "@/components/GameModeScrollView";
 import Animated, {
   useSharedValue,
@@ -15,6 +14,7 @@ import { optionsGameMode } from "@/constants/gamemode";
 import RulesButton from "@/components/rules/rulesButton";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import OptionHeader from "@/components/optionHeader";
 
 const GameModeScreen: React.FC = () => {
   const animationValue = useSharedValue(0);
@@ -48,7 +48,7 @@ const GameModeScreen: React.FC = () => {
         resizeMode="cover"
       >
         <Animated.View style={[{ marginTop: 32 }, animatedStyle]}>
-          <Components.OptionHeader />
+          <OptionHeader />
         </Animated.View>
         <Animated.View style={[{ margin: 5 }, animatedStyle]}>
           <RulesButton onPress={() =>  router.push("/rulehome")} />

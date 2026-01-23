@@ -8,13 +8,14 @@ import {
 import { globalstyles } from "@/styles/global";
 import { chorPoliceQuizstyles } from "./quizStyle";
 import { useRouter } from "expo-router";
-import { Components } from "@/imports/allComponentImports";
 import useQuizLogic from "@/hooks/useQuizLogic";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { playerNamesArray } from "@/redux/selectors/playerDataSelector";
 import { useSelector } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PlayerInfo from "@/components/chorPoliceQuiz/playerInfo";
+import QuizOptions from "@/components/chorPoliceQuiz/option";
 
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
@@ -33,7 +34,6 @@ const ChorPoliceQuiz: React.FC = () => {
     currentPlayerImage,
     currentPlayerImageType,
     feedbackMessage,
-    isBotThinking,
     thinkingMessage,
   } = useQuizLogic(router);
 
@@ -69,26 +69,8 @@ const ChorPoliceQuiz: React.FC = () => {
 
   return (
     <>
-      {isBotThinking && (
-        <ImageBackground
-          source={require("../../assets/images/bg/quiz.png")}
-          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
-          resizeMode="cover"
-        >
-          <DynamicOverlayPopUp
-            isPopUp={isBotThinking}
-            mediaId={5}
-            mediaType={"gif"}
-            closeVisibleDelay={7300}
-            playerData={{
-              image: currentPlayerImage,
-              imageType: currentPlayerImageType,
-              message: thinkingMessage,
-            }}
-          />
-        </ImageBackground>
-      )}
-      {!isBotThinking && isPopUp && (
+     
+      { isPopUp && (
         <ImageBackground
           source={require("../../assets/images/bg/quiz.png")}
           style={chorPoliceQuizstyles.imageBackground}
@@ -107,15 +89,9 @@ const ChorPoliceQuiz: React.FC = () => {
           />
         </ImageBackground>
       )}
-      {!isBotThinking && !isPopUp && (
+      {!isPopUp && (
         <SafeAreaView style={globalstyles.container}>
-          <StatusBar backgroundColor={"transparent"} />
-          <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-            <Components.ScreenHeader
-              name="Boost Your Score!"
-              showBackButton={false}
-            />
-          </View>
+         
 
           <View style={[globalstyles.Container2, { flex: 10 }]}>
             <View style={chorPoliceQuizstyles.overlay} />
@@ -125,9 +101,9 @@ const ChorPoliceQuiz: React.FC = () => {
               resizeMode="cover"
             >
               <View style={chorPoliceQuizstyles.quizContainer}>
-                <Components.PlayerInfo playerImage={playerImage} />
+                <PlayerInfo playerImage={playerImage} />
 
-                <Components.QuizOptions
+                <QuizOptions
                   playerName={currentPlayer.name}
                   options={options}
                   onOptionPress={handleOptionPress}

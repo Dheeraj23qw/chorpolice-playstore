@@ -6,120 +6,110 @@ import {
   PlayerState,
 } from "@/types/redux/reducers";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppDispatch } from "../store";
 
-// Define the initial state for the Player slice
+// Initial State
 const initialState: PlayerState = {
   selectedImages: [],
   playerNames: [],
   playerScores: [],
-  playerScoresByRound: [], // Initialize empty playerScoresByRound
+  playerScoresByRound: [],
   gameMode: "OFFLINE",
-  isGameReset: false, // New property to track if the game is reset
+  isGameReset: false,
   gameRound: 1,
 };
 
-// Create the player slice
 const playerSlice = createSlice({
   name: "player",
   initialState,
   reducers: {
-    setSelectedImages: {
-      reducer(state, action: PayloadAction<number[]>) {
-        state.selectedImages = action.payload;
-      },
-      prepare(images: number[]) {
-        return {
-          payload: images.filter((img) => Number.isInteger(img) && img >= 0),
-        };
-      },
+    // -------------------- Images --------------------
+    setSelectedImages(state, action: PayloadAction<number[]>) {
+      state.selectedImages = action.payload.filter(
+        (img) => Number.isInteger(img) && img >= 0
+      );
     },
-    setPlayerNames: {
-      reducer(state, action: PayloadAction<PlayerName[]>) {
-        state.playerNames = action.payload;
-      },
-      prepare(names: PlayerName[]) {
-        return {
-          payload: names.filter(
-            (player) =>
-              player.id >= 0 &&
-              typeof player.name === "string" &&
-              player.name.trim() !== "" &&
-              (typeof player.isBot === "boolean" || player.isBot === undefined)
-          ),
-        };
-      },
+
+    // -------------------- Player Names --------------------
+    setPlayerNames(state, action: PayloadAction<PlayerName[]>) {
+      // ✅ Removed bot logic completely
+      state.playerNames = action.payload.filter(
+        (player) =>
+          player.id >= 0 &&
+          typeof player.name === "string" &&
+          player.name.trim().length > 0
+      );
     },
-    updatePlayerScores: {
-      reducer(state, action: PayloadAction<PlayerScore[]>) {
-        state.playerScores = action.payload;
-      },
-      prepare(scores: PlayerScore[]) {
-        return {
-          payload: scores.filter(
-            (score) =>
-              typeof score.playerName === "string" &&
-              score.playerName.trim() !== "" &&
-              typeof score.totalScore === "number" &&
-              Number.isFinite(score.totalScore)
-          ),
-        };
-      },
+
+    // -------------------- Player Scores --------------------
+    updatePlayerScores(state, action: PayloadAction<PlayerScore[]>) {
+      state.playerScores = action.payload.filter(
+        (score) =>
+          typeof score.playerName === "string" &&
+          score.playerName.trim().length > 0 &&
+          typeof score.totalScore === "number" &&
+          Number.isFinite(score.totalScore)
+      );
     },
+
+    // -------------------- Game Mode --------------------
     setGameMode(state, action: PayloadAction<GameMode>) {
       state.gameMode = action.payload;
     },
+
+    // -------------------- Reset --------------------
     resetGamefromRedux(state) {
       const { gameRound } = state;
       return { ...initialState, gameRound, isGameReset: true };
     },
+
     setIsGameReset(state, action: PayloadAction<boolean>) {
-      state.isGameReset = action.payload; // Set the value of isGameReset
+      state.isGameReset = action.payload;
     },
+
+    // -------------------- Round --------------------
     setGameRound(state, action: PayloadAction<number>) {
-      if (Number.isInteger(action.payload) && action.payload > 0) {
-        state.gameRound = action.payload;
+      if (action.payload > 0) {
+        state.gameRound = action.payload | 0; // fast integer cast
       }
     },
+
+    // -------------------- Play Again --------------------
     playAgain(state) {
-      // Reset playerScores while keeping player names intact
+      // Reset scores only (cheap map)
       state.playerScores = state.playerNames.map((player) => ({
         playerName: player.name,
         totalScore: 0,
       }));
     },
-    // New action to update player scores by round
-    updateScoresByRound: {
-      reducer(state, action: PayloadAction<PlayerScoresByRound[]>) {
-        const roundScores = action.payload;
-        // Update or add player round scores
-        roundScores.forEach(({ playerName, scores }) => {
-          const player = state.playerScoresByRound.find(
-            (player) => player.playerName === playerName
-          );
 
-          if (!player) {
-            state.playerScoresByRound.push({ playerName, scores: [...scores] });
-          } else {
-            player.scores = [...scores];
-          }
-        });
-      },
-      prepare(roundScores: PlayerScoresByRound[]) {
-        return {
-          payload: roundScores.map((roundScore) => ({
-            playerName: roundScore.playerName,
-            scores: roundScore.scores.filter(
-              (score) => typeof score === "number" && score >= 0
-            ),
-          })),
-        };
-      },
+    // -------------------- Scores By Round --------------------
+    updateScoresByRound(
+      state,
+      action: PayloadAction<PlayerScoresByRound[]>
+    ) {
+      action.payload.forEach(({ playerName, scores }) => {
+        const cleanScores = scores.filter(
+          (s) => typeof s === "number" && s >= 0
+        );
+
+        const existing = state.playerScoresByRound.find(
+          (p) => p.playerName === playerName
+        );
+
+        if (existing) {
+          existing.scores = cleanScores;
+        } else {
+          state.playerScoresByRound.push({
+            playerName,
+            scores: cleanScores,
+          });
+        }
+      });
     },
   },
 });
 
-// Export actions and reducer
+// Exports
 export const {
   setSelectedImages,
   setPlayerNames,
@@ -133,5 +123,3 @@ export const {
 } = playerSlice.actions;
 
 export default playerSlice.reducer;
-
-

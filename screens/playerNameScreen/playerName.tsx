@@ -5,7 +5,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -13,19 +12,14 @@ import Animated, {
   withSpring,
   Easing,
 } from "react-native-reanimated";
-import { StatusBar } from "expo-status-bar";
 
 import { useFocusEffect } from "expo-router";
-import { Pressable } from "react-native";
-import { router } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+
 
 // Hooks
 import { usePlayerNameScreen } from "@/hooks/usePlayerNameScreen";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
 
-// Components
-import { Components } from "@/imports/allComponentImports";
 
 // Modals
 import CustomAlertModal from "./modals/CustomAlertModal";
@@ -33,6 +27,12 @@ import ConfirmChangeModal from "./modals/ConfirmChangeModal";
 import InfoAddMoreModal from "./modals/InfoAddMoreModal";
 import CustomModal from "@/modal/CustomModal";
 import { SafeBackButton } from "@/components/SafeBackButton";
+import LoadingIndicator from "@/components/LoadingIndicator";
+import OptionHeader from "@/components/optionHeader";
+import { AvatarSelectionMemo } from "@/components/playerNameScreen/toggleContainer";
+import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
+import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGrid";
+import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionButtons";
 
 const PlayerNameScreen: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -113,14 +113,14 @@ const PlayerNameScreen: React.FC = () => {
 
 
         {/* ⏳ Loader */}
-        <Components.LoadingIndicator
+        <LoadingIndicator
           loading={loading}
           message="Loading, please wait..."
         />
 
         {/* 🔥 Animated Header */}
         <Animated.View style={animatedStyle} className="mt-20 px-4">
-          <Components.OptionHeader />
+          <OptionHeader />
         </Animated.View>
 
         {/* 📜 Content */}
@@ -131,7 +131,7 @@ const PlayerNameScreen: React.FC = () => {
         >
           {/* Avatar Selection */}
           {selectedImages.length < 4 && (
-            <Components.AvatarSelectionMemo
+            <AvatarSelectionMemo
               selectedOption={selectedOption}
               setSelectedOption={setSelectedOption}
               pickImage={pickImage}
@@ -150,12 +150,12 @@ const PlayerNameScreen: React.FC = () => {
 
           {/* Image Grid */}
           {selectedImages.length < 4 && (
-            <Components.ImageGrid
+            <ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
               imagesPerRow={3}
               gameMode="OFFLINE"
-              isBot={false}
+              
             />
           )}
 
@@ -169,7 +169,7 @@ const PlayerNameScreen: React.FC = () => {
           )}
 
           {/* Selected Images */}
-          <Components.SelectedImageGrid
+          <SelectedImageGrid
             selectedImages={selectedImages}
             imageNames={imageNames}
             handleNameChange={handleNameChange}
@@ -178,7 +178,7 @@ const PlayerNameScreen: React.FC = () => {
 
           {/* Start Button */}
           {selectedImages.length === 4 && (
-            <Components.PlayernameActionButtons
+            <PlayernameActionButtons
               handleStartAdventure={handleStartAdventure}
               disabled={isButtonDisabled}
             />

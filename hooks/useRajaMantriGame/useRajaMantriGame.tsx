@@ -13,7 +13,6 @@ import { updateScoreUtil } from "./utils/updateScoreUtil";
 import { RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
 import { updatePlayerScores } from "@/redux/reducers/playerReducer";
-import * as Network from "expo-network";
 import { resetGamefromRedux } from "@/redux/reducers/playerReducer";
 
 interface UseRajaMantriGameOptions {
@@ -57,7 +56,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     playerNames.map((name) => ({
       playerName: name,
       scores: [],
-    }))
+    })),
   );
   const [round, setRound] = useState<number>(1);
   const [videoIndex, setVideoIndex] = useState<number>(1);
@@ -69,7 +68,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
   const [mediaId, setMediaId] = useState<number | null>(null);
   const [mediaType, setMediaType] = useState<"image" | "video" | "gif" | null>(
-    null
+    null,
   );
   const [playerData, setPlayerData] = useState<PlayerData>({
     image: null,
@@ -83,22 +82,20 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [isSearchScreenVisiable, setIsSearchScreenVisiable] = useState(false);
   const [exitModalVisible, setExitModalVisible] = useState(false);
 
-  const gamemode = useSelector((state: RootState) => state.player.gameMode);
-
   const playerImages = useSelector(
-    (state: RootState) => state.playerImages.images
+    (state: RootState) => state.playerImages.images,
   );
 
   const selectedImages = useSelector(
-    (state: RootState) => state.player.selectedImages
+    (state: RootState) => state.player.selectedImages,
   );
   const playerNamesRedux = useSelector(
-    (state: RootState) => state.player.playerNames
+    (state: RootState) => state.player.playerNames,
   );
   const playerInfo = useSelector((state: RootState) => state.player);
 
   const selectedRounds = useSelector(
-    (state: RootState) => state.player.gameRound
+    (state: RootState) => state.player.gameRound,
   );
 
   const router = useRouter();
@@ -128,48 +125,11 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
-      handleBackPress
+      handleBackPress,
     );
 
     return () => backHandler.remove();
   }, [exitModalVisible]);
-
-  useEffect(() => {
-    const checkNetwork = async () => {
-      try {
-        const networkState = await Network.getNetworkStateAsync();
-        setIsConnected(networkState.isConnected ?? null);
-      } catch (error) {
-        console.error("Error checking network state:", error);
-        setIsConnected(null);
-      }
-    };
-
-    checkNetwork();
-  }, []);
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
-
-    if (isConnected === false) {
-      setIsSearchScreenVisiable(false);
-    } else if (gamemode === "ONLINE_WITH_BOTS" && !isPlaying) {
-      setIsSearchScreenVisiable(true);
-
-      const randomDuration =
-        Math.floor(Math.random() * (20000 - 10000 + 1)) + 10000;
-
-      timeoutId = setTimeout(() => {
-        setIsSearchScreenVisiable(false);
-      }, randomDuration);
-    }
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [isPlaying]);
 
   const handleResetgame = () => {
     resetGame(
@@ -199,7 +159,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setMediaId,
       setMediaType,
       setFirstCardClicked,
-      setIsDynamicPopUp
+      setIsDynamicPopUp,
     );
   };
 
@@ -207,20 +167,13 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     policeIndex !== null && policeIndex >= 0
       ? playerNamesRedux[policeIndex]?.name || ""
       : "",
-    "win"
+    "win",
   );
   const randomMessageLose = useRandomMessage(
     policeIndex !== null && policeIndex >= 0
       ? playerNamesRedux[policeIndex]?.name || ""
       : "",
-    "lose"
-  );
-
-  const randomMessageThinking = useRandomMessage(
-    policeIndex !== null && policeIndex >= 0
-      ? playerNamesRedux[policeIndex]?.name || ""
-      : "",
-    "thinking"
+    "lose",
   );
 
   const handlesetRoundStartMessage = () => {
@@ -257,7 +210,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         clickedCards,
         setFlippedStates,
         setPopupIndex,
-        playerInfo
       );
     }, 1000);
     return () => clearTimeout(timer);
@@ -266,10 +218,10 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const updateScore = (
     playerIndex: number,
     newScore: number,
-    roundIndex: number
+    roundIndex: number,
   ) => {
     setPlayerScores((prevScores) =>
-      updateScoreUtil(prevScores, playerIndex, newScore, roundIndex)
+      updateScoreUtil(prevScores, playerIndex, newScore, roundIndex),
     );
   };
 
@@ -302,10 +254,10 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         playerImages[selectedImages[policeIndex]]?.type;
 
       // Store timeout IDs
-      let winTimeoutId: NodeJS.Timeout | null = null;
-      let loseTimeoutId: NodeJS.Timeout | null = null;
-      let resetTimeoutId: NodeJS.Timeout | null = null;
-      let gifTimeoutId: NodeJS.Timeout | null = null;
+      let winTimeoutId: number | null = null;
+      let loseTimeoutId: number | null = null;
+      let resetTimeoutId: number | null = null;
+      let gifTimeoutId: number | null = null;
 
       if (playerRole === "Thief" && thiefIndex !== null) {
         handleRevealAllCards();
@@ -372,7 +324,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           clickedCards,
           setRound,
           resetForNextRoundHandler,
-          dispatch
+          dispatch,
         );
         setClickedCards((prev) => {
           const newClickedCards = [...prev];
@@ -391,7 +343,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           clickedCards,
           setRound,
           resetForNextRoundHandler,
-          dispatch
+          dispatch,
         );
         setClickedCards((prev) => {
           const newClickedCards = [...prev];
@@ -417,12 +369,12 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       clickedCards,
       setRound,
       resetForNextRoundHandler,
-      dispatch
+      dispatch,
     );
   };
 
   const calculateTotalScores = () => {
-    let updateTimeoutId: NodeJS.Timeout | null = null;
+    let updateTimeoutId: number | null = null;
 
     setPlayerScores((prevScores) => {
       const updatedScores = prevScores.map((player) => {
@@ -477,7 +429,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       setIsDynamicPopUp,
       setMediaId,
       setMediaType,
-      selectedRounds
+      selectedRounds,
     );
   };
 
@@ -514,7 +466,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     isRoundStartPopupVisible,
     roundStartMessage,
     playerNamesRedux,
-    randomMessageThinking,
     handleResetgame,
     setPopupIndex,
     setIsDynamicPopUp,

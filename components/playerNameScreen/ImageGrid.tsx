@@ -15,12 +15,7 @@ import { GameMode } from "@/types/redux/reducers";
 
 interface ImageGridProps {
   selectedImages: number[];
-  handleImageSelect: (
-    imageId: number,
-    isBot: boolean,
-    gameMode: GameMode
-  ) => void;
-  isBot: boolean;
+  handleImageSelect: (imageId: number, gameMode: GameMode) => void;
   imagesPerRow: number;
   gameMode?: GameMode;
   selectedOption?: string | null;
@@ -43,14 +38,13 @@ const chunkArray = (array: any[], chunkSize: number) => {
 const ImageGridComponent: React.FC<ImageGridProps> = ({
   selectedImages,
   handleImageSelect,
-  isBot,
   imagesPerRow,
   gameMode = "OFFLINE",
-  selectedOption,
+  selectedOption, 
 }) => {
-  const playerImages = useSelector(
-    (state: RootState) => state.playerImages.images
-  );
+
+  
+  const playerImages = useSelector((state: RootState) => state.playerImages.images,);
 
   const imagesArray = Object.entries(playerImages).map(([key, image]) => ({
     id: Number(key),
@@ -60,8 +54,8 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   // Split images into rows with imagesPerRow images each
   const rows = chunkArray(imagesArray, imagesPerRow);
 
-  const handlePress = (imageId: number, isBot: boolean, gameMode: GameMode) => {
-    handleImageSelect(imageId, isBot, gameMode);
+  const handlePress = (imageId: number, gameMode: GameMode) => {
+    handleImageSelect(imageId, gameMode);
   };
 
   return (
@@ -82,7 +76,7 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
                   return (
                     <Pressable
                       key={`row-${rowIndex}-image-${item.id}`}
-                      onPress={() => handlePress(item.id, isBot, gameMode)}
+                      onPress={() => handlePress(item.id, gameMode)}
                       style={[
                         playerNameStyles.imageContainer,
                         isSelected && styles.selectedImageContainer,
@@ -107,7 +101,7 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
                 return (
                   <Pressable
                     key={`row-${rowIndex}-image-${item.id}`}
-                    onPress={() => handlePress(item.id, isBot, gameMode)}
+                    onPress={() => handlePress(item.id, gameMode)}
                     style={[
                       playerNameStyles.imageContainer,
                       isSelected && styles.selectedImageContainer,

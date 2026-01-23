@@ -46,16 +46,15 @@ export interface PlayerScore {
   export interface PlayerName {
     id: number;
     name: string;
-    isBot: boolean;
   }
   
   // Define the GameMode type
-  export type GameMode = "OFFLINE" | "ONLINE_WITH_REAL_PLAYERS" | "ONLINE_WITH_FRIENDS" | "ONLINE_WITH_BOTS" | "OFFLINE_WITH_BOTS" | "QUIZ_WITH_BOTS";
+  export type GameMode = "OFFLINE" | "ONLINE";
   
   // Define the PlayerScoresByRound interface to store scores by round
   export interface PlayerScoresByRound {
     playerName: string;
-    scores: number[];  // Array to store scores for each round
+    scores: number[];  
   }
   
   // Define the PlayerState interface

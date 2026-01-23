@@ -2,8 +2,6 @@ import { playSound } from "@/redux/reducers/soundReducer";
 import { AppDispatch } from "@/redux/store";
 import { shuffleArray } from "../utils/suffleArrayUtils";
 import { Dispatch, SetStateAction } from "react";
-import { PlayerState } from "@/types/redux/reducers";
-import { setIsThinking } from "@/redux/reducers/botReducer";
 
 export const handlePlayHelper = (
   dispatch: AppDispatch,
@@ -26,12 +24,9 @@ export const handlePlayHelper = (
   clickedCards: boolean[],
   setFlippedStates: Dispatch<SetStateAction<boolean[]>>,
   setPopupIndex: Dispatch<SetStateAction<number | null>>,
-  playerInfo: PlayerState
 ) => {
   try {
-    const botIndexes = playerInfo.playerNames
-      .map((player, idx) => (player.isBot ? idx : -1))
-      .filter((idx) => idx !== -1);
+  
 
     dispatch(playSound("level"));
 
@@ -74,11 +69,7 @@ export const handlePlayHelper = (
           setPopupIndex(1);
           dispatch(playSound("king"));
 
-          if (policeIndex !== null && botIndexes.includes(policeIndex)) {
-            await delay(4000);
-            dispatch(setIsThinking(true));
-          }
-
+     
           setAreCardsClickable(true);
         } else {
           setAreCardsClickable(true);

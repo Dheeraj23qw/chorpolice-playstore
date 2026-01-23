@@ -6,7 +6,6 @@ import {
   ImageBackground,
 } from "react-native";
 import { globalstyles } from "@/styles/global";
-import { Components } from "@/imports/allComponentImports";
 import { useSortedScores } from "@/hooks/useSortedScores";
 import { responsiveHeight } from "react-native-responsive-dimensions";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
@@ -15,10 +14,12 @@ import { RootState } from "@/redux/store";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { addCoins } from "@/redux/reducers/coinsReducer";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
+import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
+import { ActionButtons } from "@/components/leaderBoardScreen/ActionButtons";
 
 // Constants
 const REWARD_POINTS = 1000;
-const GAME_MODE_BOTS = "ONLINE_WITH_BOTS";
 const POPUP_TIMEOUT = 5000;
 
 const ChorPoliceResult = () => {
@@ -34,33 +35,17 @@ const ChorPoliceResult = () => {
     winnerImage,
     winnerPlayerImageType,
     winner,
-    isCurrentWinnerIsBot,
   } = useSortedScores();
 
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
 
-  const gamemode = useSelector((state: RootState) => state.player.gameMode);
-  const dispatch = useDispatch();
+  
 
   const onPlayAgain = useCallback(handlePlayAgain, [handlePlayAgain]);
   const onBack = useCallback(handleBack, [handleBack]);
   const onShare = useCallback(handleShare, [handleShare]);
 
-  useEffect(() => {
-    if (gamemode === GAME_MODE_BOTS) {
-      setIsDynamicPopUp(true);
-
-      if (!isCurrentWinnerIsBot) {
-        dispatch(addCoins(REWARD_POINTS));
-      }
-
-      const timeout = setTimeout(() => {
-        setIsDynamicPopUp(false);
-      }, POPUP_TIMEOUT);
-
-      return () => clearTimeout(timeout);
-    }
-  }, []);
+ 
 
   const renderDynamicPopUp = () => {
     const winnerMessage = `${winnerName}, you have won ${REWARD_POINTS} coins!`;
@@ -92,13 +77,7 @@ const ChorPoliceResult = () => {
         renderDynamicPopUp()
       ) : (
         <SafeAreaView style={globalstyles.container}>
-          <StatusBar backgroundColor="#7653ec" barStyle="dark-content" />
-          <View style={{ flex: 1, paddingTop: responsiveHeight(4) }}>
-            <Components.ScreenHeader
-              name="Who's the Winner?"
-              showBackButton={false}
-            />
-          </View>
+        
           <View style={[globalstyles.Container2, { flex: 10 }]}>
             <View style={chorPoliceQuizstyles.overlay} />
             <ImageBackground
@@ -134,8 +113,8 @@ const ChorPoliceResult = () => {
 };
 
 // Memoize components to prevent unnecessary re-renders
-const MemoizedWinnerSection = memo(Components.WinnerSection);
-const MemoizedLeaderboard = memo(Components.Leaderboard);
-const MemoizedActionButtons = memo(Components.ActionButtons);
+const MemoizedWinnerSection = memo(WinnerSection);
+const MemoizedLeaderboard = memo(Leaderboard);
+const MemoizedActionButtons = memo(ActionButtons);
 
 export default memo(ChorPoliceResult);
