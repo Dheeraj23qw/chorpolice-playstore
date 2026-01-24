@@ -1,107 +1,126 @@
 import React, { Dispatch, SetStateAction, useMemo } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-  FlatList,
-  ImageBackground,
-  Platform,
-  StatusBar,
-} from "react-native";
-import { styles } from "@/components/thinkAndCountScreen/_styles/GameTableStyles"; // Import styles
+import { View, Text, Modal, FlatList, Pressable} from "react-native"; // Added StatusBar
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { hp, wp, rf } from "@/utils/responsive";
 
-// Define props type
 interface GameTableProps {
   isTableOpen: boolean;
   setIsTableOpen: Dispatch<SetStateAction<boolean>>;
   table: (string | number)[][];
 }
 
-// Annotate the component
-const GameTable: React.FC<GameTableProps> = ({
-  isTableOpen,
-  setIsTableOpen,
-  table,
-}) => {
+const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, table }) => {
+  const insets = useSafeAreaInsets();
   const memoizedTable = useMemo(() => table, [table]);
 
-  // Render table header row
-  const renderHeader = () => {
-    return (
-      <View style={[styles.row, styles.headerRow]}>
-        {memoizedTable[0].map((cell, cellIndex) => (
-          <View style={[styles.cell, styles.headerCell]} key={cellIndex}>
-            <Text style={[styles.cellText, styles.headerCellText]}>{cell}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
+  const handleClose = () => setIsTableOpen(false);
 
-  // Render table row
-  const renderRow = ({
-    item,
-    index,
-  }: {
-    item: (string | number)[];
-    index: number;
-  }) => (
-    <View style={styles.row} key={index}>
-      {item.map((cell, cellIndex) => (
-        <View style={styles.cell} key={cellIndex}>
-          <Text style={styles.cellText}>{cell}</Text>
+  const renderHeader = () => (
+    <View className="flex-row bg-indigo-600/20 border-y border-white/10 py-4">
+      {memoizedTable[0].map((cell, index) => (
+        <View key={index} className="flex-1 items-center justify-center px-1">
+          <Text 
+            style={{ fontSize: rf(1.4) }} 
+            className="text-indigo-300 font-black uppercase tracking-widest text-center"
+          >
+            {cell}
+          </Text>
         </View>
       ))}
     </View>
   );
 
-  // Close modal handler
-  const handleClose = () => setIsTableOpen(false);
+  const renderRow = ({ item, index }: { item: (string | number)[]; index: number }) => (
+    <View 
+      className={`flex-row border-b border-white/5 py-4 ${index % 2 === 0 ? 'bg-black/[0.02]' : 'bg-transparent'}`}
+    >
+      {item.map((cell, cellIndex) => (
+        <View key={cellIndex} className="flex-1 items-center justify-center px-1">
+          <Text style={{ fontSize: rf(1.6) }} className="text-slate-300 font-medium text-center">
+            {cell}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
 
   return (
-    <Modal
-      visible={isTableOpen}
-      transparent={true} // Enables overlay effect
-      animationType="fade" // Smooth animation
-      onRequestClose={handleClose} // Handle back press on Android
-    >
-      <StatusBar backgroundColor={"#000000CC"} />
+    <Modal visible={isTableOpen} transparent animationType="slide" onRequestClose={handleClose}>
+     
+      
+      <View className="flex-1 bg-[#09090b]">
+        
+        {/* Aesthetic Background Orbs */}
+        <View 
+          style={{ width: wp(100), height: wp(100), top: -hp(10), right: -wp(30) }} 
+          className="absolute bg-indigo-600/10 rounded-full blur-[100px]" 
+        />
+        <View 
+          style={{ width: wp(80), height: wp(80), bottom: -hp(10), left: -wp(20) }} 
+          className="absolute bg-purple-600/10 rounded-full blur-[100px]" 
+        />
 
-      <ImageBackground
-        source={require("../../assets/images/bg/quizbg2.png")} // Background image
-        style={styles.backgroundImage}
-      >
-        <View style={styles.overlay} />
+        {/* Content Wrapper */}
+        <View 
+          style={{ 
+            flex: 1, 
+            paddingTop: insets.top || hp(2), // Content starts below notch
+            paddingBottom: insets.bottom || hp(2) 
+          }}
+          className="px-4"
+        >
+          
+          {/* Header Title Area */}
+          <View className="flex-row items-center justify-between mb-6 px-2">
+            <View>
+              <Text 
+                style={{ fontSize: rf(1.2) }} 
+                className="text-indigo-400 font-bold tracking-[3px] uppercase"
+              >
+                Data Reference
+              </Text>
+              <Text 
+                style={{ fontSize: rf(3.2) }} 
+                className="text-white font-black tracking-tighter"
+              >
+                Quiz Table
+              </Text>
+            </View>
+            
+            <View className="h-10 w-10 rounded-full bg-white/5 border border-white/10 items-center justify-center">
+              <View className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+            </View>
+          </View>
 
-        <View style={styles.tableContainer}>
-          {/* Header */}
-          <Text style={styles.header}>Quiz Table</Text>
+          {/* Glass Table Container */}
+          <View className="flex-1 rounded-[32px] bg-white/5 border border-white/10 overflow-hidden mb-6">
+            {memoizedTable.length > 0 && renderHeader()}
+            
+            <FlatList
+              data={memoizedTable.slice(1)}
+              renderItem={renderRow}
+              keyExtractor={(_, index) => index.toString()}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            />
+          </View>
 
-          {/* Table Header Row */}
-          {memoizedTable.length > 0 && renderHeader()}
-
-          {/* Scrollable Rows */}
-          <FlatList
-            data={memoizedTable.slice(1)} // Skip the header row
-            renderItem={renderRow}
-            keyExtractor={(_, index) => index.toString()}
-            style={styles.scrollableContainer}
-            showsVerticalScrollIndicator={false}
-          />
-
-          {/* Close Button */}
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={handleClose} // Close the table
-            accessibilityLabel="Close the table"
-            accessibilityRole="button"
+          {/* Minimalist Action Button */}
+          <Pressable
+            onPress={handleClose}
+            style={{ height: hp(7) }}
+            className="w-full bg-indigo-600 rounded-2xl border-b-4 border-indigo-800 items-center justify-center active:border-b-0 active:translate-y-[2px]"
           >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+            <Text 
+              style={{ fontSize: rf(1.8) }} 
+              className="text-white font-black uppercase tracking-widest"
+            >
+              Back to Quest
+            </Text>
+          </Pressable>
+          
         </View>
-      </ImageBackground>
+      </View>
     </Modal>
   );
 };

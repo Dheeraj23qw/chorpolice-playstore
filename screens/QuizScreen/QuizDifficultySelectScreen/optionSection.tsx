@@ -2,9 +2,8 @@
 
 import React from "react";
 import { View } from "react-native";
-import { DifficultyOption } from "@/constants/DifficultyConstant"; // Ensure this path is correct
-import Option from "./option"; // Adjust the path if necessary
-import { styles } from "@/screens/QuizScreen/_styles/quizDifficultyStyles"; // Ensure this path is correct
+import { DifficultyOption } from "@/constants/DifficultyConstant";
+import Option from "./option";
 
 interface OptionsSectionProps {
   options: DifficultyOption[];
@@ -16,15 +15,17 @@ export const OptionsSection: React.FC<OptionsSectionProps> = ({
   options,
   selectedOption,
   onSelect,
-}) => (
-  <View style={styles.optionsSection}>
-    {options.map((option, index) => (
-      <Option
-        key={index}
-        option={option}
-        isSelected={selectedOption === option}
-        onSelect={onSelect}
-      />
-    ))}
-  </View>
-);
+}) => {
+  return (
+    <View className="gap-3 px-4 mt-4">
+      {options.map((option, index) => (
+        <Option
+          key={index}
+          option={option}
+          isSelected={selectedOption === option}
+          onSelect={onSelect}
+        />
+      ))}
+    </View>
+  );
+};

@@ -12,21 +12,7 @@ interface TextAnimationProps {
   style?: TextStyle;
 }
 
-// Pulsating Image Component
-export const PulsatingImage: React.FC<ImageAnimationProps> = ({ source, style }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleAnim, { toValue: 1.2, duration: 500, useNativeDriver: true }),
-        Animated.timing(scaleAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      ])
-    ).start();
-  }, [scaleAnim]);
-
-  return <Animated.Image source={source} style={[style, { transform: [{ scale: scaleAnim }] }]} />;
-};
 
 // Rotating Image Component
 export const RotatingImage: React.FC<ImageAnimationProps> = ({ source, style }) => {

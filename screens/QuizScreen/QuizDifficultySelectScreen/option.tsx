@@ -1,33 +1,56 @@
 // src/components/Option.tsx
 
-import React from "react";
-import { Pressable, Text, ImageBackground } from "react-native";
-import { styles } from "@/screens/QuizScreen/_styles/quizDifficultyStyles"; // Ensure this path is correct
+import React, { memo } from "react";
+import { Pressable, Text, View } from "react-native";
 import { DifficultyOption } from "@/constants/DifficultyConstant";
+
 interface OptionProps {
   option: DifficultyOption;
   isSelected: boolean;
   onSelect: (option: DifficultyOption) => void;
 }
 
-const Option: React.FC<OptionProps> = ({ option, isSelected, onSelect }) => (
-  <Pressable
-    onPress={() => onSelect(option)}
-    style={({ pressed }) => [
-      styles.optionPressable,
-      pressed && styles.optionPressed,
-    ]}
-  >
-    <ImageBackground
-      source={require("../../assets/images/bg/quiz3.png")} // Adjust the image path as needed
-      style={styles.optionBackground}
-      imageStyle={styles.optionBackgroundImage}
+const Option: React.FC<OptionProps> = ({ option, isSelected, onSelect }) => {
+  return (
+    <Pressable
+      onPress={() => onSelect(option)}
+      className="active:scale-95"
     >
-      <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
-        {option}
-      </Text>
-    </ImageBackground>
-  </Pressable>
-);
+      <View
+        className={`
+          min-h-[56px]
+          items-center
+          justify-center
+          rounded-2xl
+          border
+          px-4
+          py-3
+          shadow-sm
 
-export default Option;
+          ${
+            isSelected
+              ? "bg-indigo-600 border-indigo-400"
+              : "bg-white/10 border-white/20"
+          }
+        `}
+      >
+        <Text
+          className={`
+            text-base
+            font-semibold
+            tracking-wide
+            ${
+              isSelected
+                ? "text-white"
+                : "text-slate-200"
+            }
+          `}
+        >
+          {option}
+        </Text>
+      </View>
+    </Pressable>
+  );
+};
+
+export default memo(Option);

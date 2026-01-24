@@ -1,34 +1,59 @@
 import React from "react";
-import { View, Text, Pressable, ImageBackground } from "react-native";
-import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
+import { View, Text, Pressable } from "react-native";
 
 interface OptionsSectionProps {
   options: string[] | null;
   handleAnswerSelection: (answer: string) => void;
 }
 
-const OptionsSection: React.FC<OptionsSectionProps> = ({ options, handleAnswerSelection }) => {
+const OptionsSection: React.FC<OptionsSectionProps> = ({
+  options,
+  handleAnswerSelection,
+}) => {
   return (
-    <View style={styles.optionsSection}>
+    <View className="flex-row flex-wrap justify-between px-3 mt-4">
       {options?.map((option, index) => (
-        <Pressable
+        <OptionButton
           key={index}
+          label={option}
           onPress={() => handleAnswerSelection(option)}
-          style={styles.optionWrapper}
-          accessible
-          accessibilityLabel={`Option ${index + 1}: ${option}`}
-        >
-          <ImageBackground
-            source={require("../../assets/images/bg/quiz3.png")}
-            style={styles.optionBackground}
-            imageStyle={styles.optionBackgroundImage}
-          >
-            <Text style={styles.optionText}>{option}</Text>
-          </ImageBackground>
-        </Pressable>
+        />
       ))}
     </View>
   );
 };
 
 export default OptionsSection;
+
+/* -------------------------------------------
+   Single Option Button (No Animation)
+-------------------------------------------- */
+
+interface OptionButtonProps {
+  label: string;
+  onPress: () => void;
+}
+
+const OptionButton: React.FC<OptionButtonProps> = ({
+  label,
+  onPress,
+}) => {
+  return (
+    <View className="w-[48%] mb-3">
+      <Pressable
+        onPress={onPress}
+        className="h-[64px] rounded-2xl 
+                   bg-[#151515] 
+                   border border-white/10
+                   items-center justify-center px-2"
+      >
+        <Text
+          numberOfLines={2}
+          className="text-white text-sm font-semibold text-center"
+        >
+          {label}
+        </Text>
+      </Pressable>
+    </View>
+  );
+};

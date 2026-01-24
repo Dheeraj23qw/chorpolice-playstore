@@ -1,25 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { View, ImageBackground, ScrollView, StatusBar, Animated } from "react-native";
+import { View, StatusBar } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 
-import { styles } from "@/screens/QuizScreen/_styles/quizResultStyles";
+import { hp, wp } from "@/utils/responsive";
 import useRandomMessage from "@/hooks/useRandomMessage";
 import CustomRatingModal from "@/modal/RatingModal";
 import { RootState } from "@/redux/store";
-import { resetDifficulty } from "@/redux/reducers/quiz";
-import { handleShare } from "@/utils/share";
-import { addCoins, resetCoins } from "@/redux/reducers/coinsReducer";
+import { playSound } from "@/redux/reducers/soundReducer";
+import { addCoins } from "@/redux/reducers/coinsReducer";
+
 import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
-import { playSound } from "@/redux/reducers/soundReducer";
+import { handleShare } from "@/utils/share";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
   const [coinsAwarded, setCoinsAwarded] = useState<string>("");
   const [coinsAwardedOnce, setCoinsAwardedOnce] = useState(false);
-  const [fadeAnim] = useState(new Animated.Value(0)); // For fade-in animation
-  const [scaleAnim] = useState(new Animated.Value(0.8)); // For scale animation
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -35,7 +33,6 @@ export default function QuizResult() {
 
   useEffect(() => {
     if (!coinsAwardedOnce && level != null) {
-      // Check if coins have already been awarded
       const coinValues = {
         easy: isWinner ? 100 : 10,
         medium: isWinner ? 500 : 25,
@@ -43,64 +40,42 @@ export default function QuizResult() {
       };
       const levelMessage = isWinner
         ? `You won ${coinValues[level]} coins!`
-        : `You won ${coinValues[level]} coins for participating!`;
+        : `Participation Reward: ${coinValues[level]} coins`;
 
-      dispatch(addCoins(coinValues[level])); // Award coins to the player
+      dispatch(addCoins(coinValues[level]));
       setCoinsAwarded(levelMessage);
-      setCoinsAwardedOnce(true); // Lock the effect
+      setCoinsAwardedOnce(true);
     }
-  }, [coinsAwardedOnce, level, isWinner, dispatch]);
+  }, [level, isWinner]);
 
-  // Animation effect for fade and scale
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 2,
-        tension: 160,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [fadeAnim, scaleAnim]);
-
-  // Clean up modal visibility to avoid memory leaks
-  useEffect(() => {
-    return () => {
-      setModalVisible(false);
-    };
-  }, []);
-
-  // Handlers
   const handleHome = () => {
     dispatch(playSound("quiz"));
-    router.push("/modeselect");
+    router.replace("/modeselect");
   };
 
   const toggleModal = () => setModalVisible((prev) => !prev);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <ImageBackground
-        source={require("../../assets/images/bg/quiz.png")}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      >
-        <StatusBar backgroundColor={"transparent"} />
+    <View className="flex-1 bg-[#09090b]">
+      {/* 1. System UI Setup */}
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-        <Animated.View
-          style={[
-            styles.overlay,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
-        >
+      {/* 2. Responsive Background Glows (Fixed) */}
+      <View 
+        style={{ width: wp(120), height: wp(120), top: -hp(15), left: -wp(30) }} 
+        className={`absolute rounded-full opacity-20 blur-[100px] ${isWinner ? "bg-emerald-500" : "bg-indigo-600"}`} 
+      />
+      
+      <View 
+        style={{ width: wp(100), height: wp(100), bottom: -hp(10), right: -wp(20) }} 
+        className={`absolute rounded-full opacity-10 blur-[100px] ${isWinner ? "bg-emerald-600" : "bg-purple-600"}`} 
+      />
+
+      {/* 3. Main Content Container (No ScrollView for cleaner centering) */}
+      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: wp(4) }}>
+        
+        {/* Result Information Section */}
+        <View style={{ marginBottom: hp(2) }}>
           <ResultInfo
             Correct={Correct}
             Total={Total}
@@ -108,19 +83,22 @@ export default function QuizResult() {
             coinsMessage={coinsAwarded}
             isWinner={isWinner}
           />
-          <RenderButtons
-            handleShare={handleShare}
-            handleHome={handleHome}
-            toggleModal={toggleModal}
-          />
-        </Animated.View>
-        
-        <CustomRatingModal
-          visible={modalVisible}
-          onClose={toggleModal}
-          title="Enjoying the App?"
+        </View>
+
+        {/* Action Buttons Section */}
+        <RenderButtons
+          handleShare={handleShare}
+          handleHome={handleHome}
+          toggleModal={toggleModal}
         />
-      </ImageBackground>
-    </ScrollView>
+      </View>
+
+      {/* 4. Overlay Modals */}
+      <CustomRatingModal
+        visible={modalVisible}
+        onClose={toggleModal}
+        title="Enjoying the Journey?"
+      />
+    </View>
   );
 }

@@ -1,16 +1,8 @@
-import React, { useRef } from "react";
-import { View, Text, ImageBackground, Pressable, Animated } from "react-native";
-import { styles } from "@/screens/QuizScreen/_styles/quizScreenstyles";
+import React, { memo } from "react";
+import { View, Text, Pressable } from "react-native";
 import { useDispatch } from "react-redux";
-import { playSound } from "@/redux/reducers/soundReducer";
 
-// Constants for button texts to avoid repetition and improve maintainability
-const BUTTONS = [
-  { id: 1, text: "50-50" },
-  { id: 2, text: "Quit" },
-  { id: 3, text: "Quiz Table" },
-  { id: 4, text: "Next" },
-];
+import { playSound } from "@/redux/reducers/soundReducer";
 
 interface ButtonProps {
   showHint: boolean;
@@ -20,89 +12,94 @@ interface ButtonProps {
   handleQuit: () => void;
 }
 
-export const QuizButton: React.FC<ButtonProps> = ({
-  showHint,
-  setIsTableOpen,
-  handleNextQuestion,
-  handleFiftyFifty,
-  handleQuit,
-}) => {
-  const dispatch = useDispatch();
-  
-  // Create an animated value for each button
-  const buttonAnimation = useRef(BUTTONS.map(() => new Animated.Value(1))).current;
+/* -------------------------------------------
+   Single Button (isolated re-render)
+-------------------------------------------- */
+const ActionButton = memo(
+  ({
+    label,
+    onPress,
+    variant = "primary",
+  }: {
+    label: string;
+    onPress: () => void;
+    variant?: "primary" | "danger" | "ghost";
+  }) => {
+    const dispatch = useDispatch();
 
-  // Function to handle the sound dispatch and prevent repeated code
-  const handleButtonPress = (buttonText: string, index: number) => {
-    dispatch(playSound("select"));
+    const handlePress = () => {
+      dispatch(playSound("select"));
+      onPress();
+    };
 
-    // Animate the button press
-    Animated.sequence([
-      Animated.timing(buttonAnimation[index], {
-        toValue: 1.5, // Scale down
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonAnimation[index], {
-        toValue: 1, // Scale back to original
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    const base =
+      "h-12 min-w-[92px] rounded-xl items-center justify-center px-3";
 
-    switch (buttonText) {
-      case "Quiz Table":
-        setIsTableOpen(true);
-        break;
-      case "Next":
-        handleNextQuestion();
-        break;
-      case "Quit":
-        handleQuit();
-        break;
-      case "50-50":
-        handleFiftyFifty();
-        break;
-      default:
-        break;
-    }
-  };
+    const variantStyle =
+      variant === "danger"
+        ? "bg-red-500/90"
+        : variant === "ghost"
+        ? "bg-white/10"
+        : "bg-indigo-600";
 
-  return (
-    <View style={styles.buttonsSection}>
-      {BUTTONS.map(({ id, text }, index) => {
-        // Conditional rendering based on button visibility logic
-        if ((text === "50-50" && showHint) || (text === "Next" && !showHint)) {
-          return null; // Hide specific buttons based on state
-        }
+    return (
+      <Pressable
+        onPress={handlePress}
+        className={`${base} ${variantStyle}`}
+      >
+        <Text className="text-sm font-bold text-white">
+          {label}
+        </Text>
+      </Pressable>
+    );
+  }
+);
 
-        return (
-          <Animated.View
-            key={id}
-            style={{
-              transform: [{ scale: buttonAnimation[index] }], // Apply scale animation
-            }}
-          >
-            <Pressable
-              onPress={() => handleButtonPress(text, index)}
-              style={({ pressed }) => [
-                styles.iconBackground // Visual feedback on press
-              ]}
-              accessible
-              accessibilityLabel={text}
-              accessibilityRole="button" // Adding accessibility role for screen readers
-            >
-              <ImageBackground
-                source={require("../../assets/images/bg/quiz3.png")}
-                style={styles.iconBackground}
-                imageStyle={styles.iconBackgroundImage}
-              >
-                <Text style={styles.iconText}>{text}</Text>
-              </ImageBackground>
-            </Pressable>
-          </Animated.View>
-        );
-      })}
-    </View>
-  );
-};
+/* -------------------------------------------
+   Main Buttons Container
+-------------------------------------------- */
+export const QuizButton: React.FC<ButtonProps> = memo(
+  ({
+    showHint,
+    setIsTableOpen,
+    handleNextQuestion,
+    handleFiftyFifty,
+    handleQuit,
+  }) => {
+    return (
+      <View className="flex-row flex-wrap justify-center gap-3 mt-4">
+        {/* 50-50 */}
+        {!showHint && (
+          <ActionButton
+            label="50-50"
+            onPress={handleFiftyFifty}
+            variant="ghost"
+          />
+        )}
+
+        {/* Quit */}
+        <ActionButton
+          label="Quit"
+          onPress={handleQuit}
+          variant="danger"
+        />
+
+        {/* Quiz Table */}
+        <ActionButton
+          label="Quiz Table"
+          onPress={() => setIsTableOpen(true)}
+          variant="ghost"
+        />
+
+        {/* Next */}
+        {showHint && (
+          <ActionButton
+            label="Next"
+            onPress={handleNextQuestion}
+            variant="primary"
+          />
+        )}
+      </View>
+    );
+  }
+);
