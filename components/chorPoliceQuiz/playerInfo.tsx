@@ -1,87 +1,74 @@
-import React, { memo, useEffect, useRef, useState } from "react";
-import { View, Image, Animated, StyleSheet, Pressable } from "react-native";
-import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/quizStyle";
+import React, { memo } from "react";
+import { View, Image, Pressable } from "react-native";
+import { wp } from "@/utils/responsive";
 
-// Define the PlayerInfoProps type
 type PlayerInfoProps = {
-  playerImage?: { type: string; src: any }; // Make playerImage optional
+  playerImage?: { type: string; src: any };
 };
 
-// Utility function to get the image source
 const getImageSource = (imageData?: { type: string; src: any }) => {
-  if (!imageData) return null; // Return null if imageData is undefined
+  if (!imageData) return null;
   return imageData.type === "local" ? imageData.src : { uri: imageData.src };
 };
 
-// Define styles once using StyleSheet.create
-const styles = StyleSheet.create({
-  playerInfo: chorPoliceQuizstyles.playerInfo,
-  playerImage: chorPoliceQuizstyles.playerImage,
-});
-
 const PlayerInfo: React.FC<PlayerInfoProps> = memo(({ playerImage }) => {
-  const [bounceAnim] = useState(new Animated.Value(1)); // Bouncing effect on image click
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Fade-in effect when the component mounts
-  const scaleAnim = useRef(new Animated.Value(0.8)).current; // Scale-up effect for the image
-
   const imageSource = getImageSource(playerImage);
 
-  // Only start the fade and scale animations if an image is provided
-  useEffect(() => {
-    if (imageSource) {
-      // Start fade-in effect when component mounts
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [imageSource]);
-
-  // Handle the bounce effect when the image is clicked
-  const handleImagePress = () => {
-    Animated.sequence([
-      Animated.spring(bounceAnim, {
-        toValue: 1.1, // Scale up
-        friction: 3, // Control the bounce effect
-        tension: 100,
-        useNativeDriver: true,
-      }),
-      Animated.spring(bounceAnim, {
-        toValue: 1, // Return to the original size
-        friction: 3,
-        tension: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  // If no image is provided, return null
   if (!imageSource) return null;
 
   return (
-    <View style={styles.playerInfo}>
-      <Pressable onPress={handleImagePress}>
-        <Animated.View
-          style={[
-            {
-              opacity: fadeAnim, // Fade-in effect
-              transform: [
-                { scale: scaleAnim }, // Scale-up effect
-                { scale: bounceAnim }, // Bounce effect on click
-              ],
-            },
-          ]}
-        >
-          <Image source={imageSource} style={styles.playerImage} />
-        </Animated.View>
+    <View className="items-center justify-center py-6">
+      {/* Metamorphism Principle: Using scale on Pressable via inline style 
+         to keep tactile feedback without triggering the Interop crash.
+      */}
+      <Pressable 
+        style={({ pressed }) => ({
+          transform: [{ scale: pressed ? 0.96 : 1 }],
+        })}
+      >
+        <View className="items-center justify-center">
+          
+          {/* 1. Ambient Floor Glow (Static Light Source) */}
+          <View 
+            style={{ 
+              width: wp(40), 
+              height: wp(10), 
+              bottom: -5,
+              transform: [{ scaleX: 1.5 }] 
+            }}
+            className="absolute bg-indigo-500/20 rounded-full blur-xl"
+          />
+
+          {/* 2. Outer Cyber-Ring with Glow */}
+          <View 
+            style={{ width: wp(36), height: wp(36) }}
+            className="rounded-full border border-white/10 items-center justify-center bg-white/5 shadow-2xl shadow-indigo-500/30"
+          >
+            {/* 3. The Frosted Glass Container */}
+            <View 
+              style={{ width: wp(32), height: wp(32) }}
+              className="rounded-full border-2 border-indigo-500/40 bg-indigo-950/40 items-center justify-center overflow-hidden"
+            >
+              <Image 
+                source={imageSource} 
+                style={{ width: wp(32), height: wp(32) }}
+                className="opacity-90"
+                resizeMode="cover"
+              />
+              
+              {/* 4. Diagonal Glass Glare (Key Metamorphism detail) */}
+              <View 
+                style={{ width: wp(40), height: wp(10) }}
+                className="absolute bg-white/20 -rotate-45 -translate-y-12 opacity-30"
+              />
+            </View>
+          </View>
+
+          {/* 5. Status Indicator (The "Active Operative" Dot) */}
+          <View 
+            className="absolute top-2 right-2 h-4 w-4 rounded-full bg-indigo-500 border-2 border-[#09090b] shadow-lg shadow-indigo-500" 
+          />
+        </View>
       </Pressable>
     </View>
   );

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, Easing } from 'react-native';
-import { winnerstyles } from './buttonStyle';
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { rf, hp } from '@/utils/responsive';
 
 interface ActionButtonsProps {
   handlePlayAgain: () => void;
@@ -9,84 +9,77 @@ interface ActionButtonsProps {
   isButtonDisabled: boolean;
 }
 
-export const ActionButtons: React.FC<ActionButtonsProps> = ({ handlePlayAgain, handleBack, handleShare, isButtonDisabled }) => {
-  // Animation refs for each button
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Fade-in effect
-  const scaleAnim = useRef(new Animated.Value(0.8)).current; // Scale-up effect
+export const ActionButtons: React.FC<ActionButtonsProps> = ({ 
+  handlePlayAgain, 
+  handleBack, 
+  handleShare, 
+  isButtonDisabled 
+}) => {
   
-  // Start animations when the component is mounted
-  useEffect(() => {
-    // Sequence of animations: fade-in + scale-up
-    Animated.stagger(200, [
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        easing: Easing.ease,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 600,
-        easing: Easing.ease,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, []);
+  const ButtonWrapper = ({ onPress, label, isPrimary = false, isDanger = false }: any) => (
+    <View className="flex-1 mx-2"> 
+      <Pressable
+        onPress={onPress}
+        disabled={isButtonDisabled}
+        style={({ pressed }) => [
+          {
+            // Large vertical padding ensures the text has plenty of space
+            paddingVertical: hp(2.5), 
+            transform: [{ scale: pressed ? 0.94 : 1 }],
+            opacity: isButtonDisabled ? 0.4 : 1,
+          }
+        ]}
+        // Metamorphism Styling: Thicker borders and stronger glass effect
+        className={`
+          rounded-[24px] items-center justify-center overflow-hidden border-2
+          ${isPrimary ? 'bg-indigo-600/40 border-indigo-400/60' : 'bg-white/10 border-white/20'}
+          ${isDanger ? 'border-red-500/50 bg-red-500/10' : ''}
+        `}
+      >
+        {/* Top Shine Layer */}
+        <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/20" />
+
+        <Text 
+          style={{ fontSize: rf(1.6) }} // Bigger font for better legibility
+          className={`font-black uppercase tracking-widest ${isPrimary ? 'text-white' : 'text-white/80'}`}
+        >
+          {label}
+        </Text>
+
+        {/* Internal Glow for tactile feel */}
+        {!isButtonDisabled && (
+          <View className="absolute inset-0 bg-white/5" />
+        )}
+      </Pressable>
+    </View>
+  );
 
   return (
-    <View style={winnerstyles.buttonContainer}>
-      {/* Home Button */}
-      <Animated.View
-        style={{
-          opacity: fadeAnim,  // Apply fade effect
-          transform: [{ scale: scaleAnim }],  // Apply scale effect
-        }}
-      >
-        <Pressable 
-          style={winnerstyles.button} 
+    <View className="w-full px-4 py-6">
+      {/* Visual divider to separate from content above */}
+      <View className="h-[1px] w-full bg-white/5 mb-6" />
+
+      <View className="flex-row justify-between items-center">
+        {/* Home Button */}
+        <ButtonWrapper 
+          label="Home" 
           onPress={handleBack} 
-          accessibilityLabel="Go to Home"
-          accessibilityHint="Navigates back to the home screen"
-          disabled={isButtonDisabled} // Disable the button if `isButtonDisabled` is true
-        >
-          <Text style={winnerstyles.buttonText}>Home</Text>
-        </Pressable>
-      </Animated.View>
-      
-      {/* Share Button */}
-      <Animated.View
-        style={{
-          opacity: fadeAnim,  // Apply fade effect
-          transform: [{ scale: scaleAnim }],  // Apply scale effect
-        }}
-      >
-        <Pressable 
-          style={winnerstyles.button} 
+          isDanger={true}
+        />
+        
+        {/* Share Button */}
+        <ButtonWrapper 
+          label="Share" 
           onPress={handleShare} 
-          accessibilityLabel="Share"
-          accessibilityHint="Shares your result with others"
-        >
-          <Text style={winnerstyles.buttonText}>Share</Text>
-        </Pressable>
-      </Animated.View>
-      
-      {/* Play Again Button */}
-      <Animated.View
-        style={{
-          opacity: fadeAnim,  // Apply fade effect
-          transform: [{ scale: scaleAnim }],  // Apply scale effect
-        }}
-      >
-        <Pressable
-          style={winnerstyles.button} 
+        />
+        
+        {/* Retry Button */}
+        <ButtonWrapper 
+          label="Retry" 
           onPress={handlePlayAgain} 
-          accessibilityLabel="Play Again"
-          accessibilityHint="Restarts the game for another round"
-          disabled={isButtonDisabled} // Disable the button if `isButtonDisabled` is true
-        >
-          <Text style={winnerstyles.buttonText}>Play Again</Text>
-        </Pressable>
-      </Animated.View>
+          isPrimary={true}
+        />
+      </View>
     </View>
   );
 };

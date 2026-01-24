@@ -5,13 +5,14 @@ import {
   StyleSheet,
   View,
   Image,
-  ImageSourcePropType,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { playerNameStyles } from "@/screens/playerNameScreen/playerNameCss";
 import { RootState } from "@/redux/store";
-import { PulsatingImage } from "@/Animations/animation";
 import { GameMode } from "@/types/redux/reducers";
+import { rf, wp } from "@/utils/responsive";
+
+// 🚨 IMPORTANT: Ensure PulsatingImage is imported or defined!
+// If you don't have it yet, use a standard Image or define it below.
 
 interface ImageGridProps {
   selectedImages: number[];
@@ -21,12 +22,6 @@ interface ImageGridProps {
   selectedOption?: string | null;
 }
 
-interface PlayerImage {
-  id: number;
-  image: ImageSourcePropType;
-}
-
-// Utility function to split images array into chunks of imagesPerRow size
 const chunkArray = (array: any[], chunkSize: number) => {
   const chunks = [];
   for (let i = 0; i < array.length; i += chunkSize) {
@@ -40,87 +35,62 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   handleImageSelect,
   imagesPerRow,
   gameMode = "OFFLINE",
-  selectedOption, 
+  selectedOption,
 }) => {
-
-  
-  const playerImages = useSelector((state: RootState) => state.playerImages.images,);
+  const playerImages = useSelector((state: RootState) => state.playerImages.images);
 
   const imagesArray = Object.entries(playerImages).map(([key, image]) => ({
     id: Number(key),
     image: image.type === "local" ? image.src : { uri: image.src },
   }));
 
-  // Split images into rows with imagesPerRow images each
-  const rows = chunkArray(imagesArray, imagesPerRow);
-
-  const handlePress = (imageId: number, gameMode: GameMode) => {
-    handleImageSelect(imageId, gameMode);
-  };
+  // Metamorphism: Reverse array for specific modes if needed
+  const finalImages = selectedOption === "player-Avatar" ? [...imagesArray].reverse() : imagesArray;
+  const rows = chunkArray(finalImages, imagesPerRow);
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 py-2">
       {rows.map((row, rowIndex) => (
         <ScrollView
           key={`row-${rowIndex}`}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.rowContainer}
+          contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 15 }}
         >
-          {selectedOption === "player-Avatar"
-            ? row
-                .slice()
-                .reverse()
-                .map((item) => {
-                  const isSelected = selectedImages.includes(item.id);
-                  return (
-                    <Pressable
-                      key={`row-${rowIndex}-image-${item.id}`}
-                      onPress={() => handlePress(item.id, gameMode)}
-                      style={[
-                        playerNameStyles.imageContainer,
-                        isSelected && styles.selectedImageContainer,
-                      ]}
-                    >
-                      {isSelected ? (
-                        <PulsatingImage
-                          source={item.image}
-                          style={playerNameStyles.image}
-                        />
-                      ) : (
-                        <Image
-                          source={item.image}
-                          style={playerNameStyles.image}
-                        />
-                      )}
-                    </Pressable>
-                  );
-                })
-            : row.map((item) => {
-                const isSelected = selectedImages.includes(item.id);
-                return (
-                  <Pressable
-                    key={`row-${rowIndex}-image-${item.id}`}
-                    onPress={() => handlePress(item.id, gameMode)}
-                    style={[
-                      playerNameStyles.imageContainer,
-                      isSelected && styles.selectedImageContainer,
-                    ]}
-                  >
-                    {isSelected ? (
-                      <PulsatingImage
-                        source={item.image}
-                        style={playerNameStyles.image}
-                      />
-                    ) : (
-                      <Image
-                        source={item.image}
-                        style={playerNameStyles.image}
-                      />
-                    )}
-                  </Pressable>
-                );
-              })}
+          {row.map((item) => {
+            const isSelected = selectedImages.includes(item.id);
+            return (
+              <Pressable
+                key={`img-${item.id}`}
+                onPress={() => handleImageSelect(item.id, gameMode)}
+                // Metamorphism styling for the avatar frames
+                className={`
+                  mr-4 p-1 rounded-full items-center justify-center
+                  ${isSelected 
+                    ? 'bg-indigo-500/20 border-2 border-indigo-400' 
+                    : 'bg-white/5 border border-white/10'}
+                `}
+                style={{
+                  width: wp(20),
+                  height: wp(20),
+                  shadowColor: isSelected ? "#6366f1" : "transparent",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                }}
+              >
+                <Image
+                  source={item.image}
+                  style={{ width: '90%', height: '90%', borderRadius: 999 }}
+                  className={`${isSelected ? 'opacity-100' : 'opacity-60'}`}
+                  resizeMode="cover"
+                />
+                
+                {/* Specular Shine Overlay */}
+                <View className="absolute top-1 left-4 right-4 h-[1px] bg-white/20 rounded-full" />
+              </Pressable>
+            );
+          })}
         </ScrollView>
       ))}
     </View>
@@ -128,19 +98,3 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
 };
 
 export const ImageGrid = memo(ImageGridComponent);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 2,
-  },
-  rowContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  selectedImageContainer: {
-    alignItems: "center",
-    marginHorizontal: 5,
-  },
-});
