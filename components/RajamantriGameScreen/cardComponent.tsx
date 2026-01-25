@@ -8,9 +8,9 @@ import {
   View,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { styles } from "@/screens/RajaMantriGameScreen/styles";
 import { selectSelectedImages } from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
+import { rf } from "@/utils/responsive";
 
 interface PlayerCardProps {
   index: number;
@@ -46,9 +46,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
     onBounceEffect,
   }) => {
     const selectedImages = useSelector(selectSelectedImages);
-    const playerImages = useSelector(
-      (state: RootState) => state.playerImages.images
-    );
+    const playerImages = useSelector((state: RootState) => state.playerImages.images);
 
     const handleClick = (idx: number) => {
       onBounceEffect(idx);
@@ -58,12 +56,20 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
     const renderContent = () => {
       if (flipped) {
         return (
-          <TouchableOpacity
-            disabled={role === "Police" || role === "King"}
-            onPress={() => handleClick(index)}
-          >
-            <Image source={roleImages[role]} style={styles.cardImage} />
-          </TouchableOpacity>
+          <View className="flex-1 items-center justify-center p-2">
+            {/* Role Reveal State */}
+            <View className="absolute inset-0 bg-indigo-500/10 rounded-[24px]" />
+            <Image 
+              source={roleImages[role]} 
+              className="w-full h-full rounded-[20px]" 
+              resizeMode="contain" 
+            />
+            <View className="absolute bottom-2 bg-black/60 px-3 py-1 rounded-full border border-indigo-500/30">
+              <Text className="text-white font-black uppercase text-[10px] tracking-widest italic">
+                {role}
+              </Text>
+            </View>
+          </View>
         );
       }
 
@@ -73,12 +79,20 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
       return (
         <ImageBackground
           source={playerImage}
-          style={styles.playerNmaeCardImage}
+          imageStyle={{ borderRadius: 24 }}
+          className="flex-1 overflow-hidden"
         >
-          <View style={styles.overlay}>
-            <TouchableOpacity onPress={() => handleClick(index)}>
-              <Text style={styles.cardText}>{playerName}</Text>
-            </TouchableOpacity>
+          {/* Glass Overlay with Player Name HUD */}
+          <View className="flex-1 bg-black/40 justify-end p-3">
+             <View className="bg-indigo-900/80 border border-white/20 rounded-xl py-2 px-1 items-center">
+                <Text 
+                   numberOfLines={1}
+                   style={{ fontSize: rf(1.2) }}
+                   className="text-white font-black uppercase tracking-tighter italic"
+                >
+                  {playerName}
+                </Text>
+             </View>
           </View>
         </ImageBackground>
       );
@@ -88,10 +102,32 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
       <TouchableOpacity
         onPress={() => handleClick(index)}
         disabled={flipped || clicked}
-        activeOpacity={0.85}
+        activeOpacity={0.9}
+        className="flex-1 aspect-[3/4]"
       >
-        <Animated.View style={[styles.card, animatedStyle]}>
+        <Animated.View 
+          style={[
+            animatedStyle,
+            {
+                // Physical Slab Depth
+                borderBottomWidth: flipped ? 1 : 5,
+                borderRightWidth: 1,
+                borderBottomColor: flipped ? 'rgba(255,255,255,0.1)' : '#312e81',
+                borderRightColor: 'rgba(255,255,255,0.1)',
+            }
+          ]}
+          className={`flex-1 rounded-[28px] border-t border-l ${
+            flipped 
+              ? "bg-[#08080a] border-white/30" 
+              : "bg-[#111118] border-white/10"
+          } ${clicked && !flipped ? "opacity-40" : "opacity-100"}`}
+        >
           {renderContent()}
+          
+          {/* Corner HUD Detail */}
+          {!flipped && (
+            <View className="absolute top-3 right-3 w-2 h-2 rounded-full bg-indigo-500/50 border border-indigo-400" />
+          )}
         </Animated.View>
       </TouchableOpacity>
     );

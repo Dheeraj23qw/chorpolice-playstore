@@ -1,10 +1,8 @@
 import React from "react";
-import { ImageBackground, ScrollView, StatusBar, View } from "react-native";
-import { styles } from "./styles"; // Import your styles here
+import { ScrollView, View, Text } from "react-native";
 import CustomButton from "@/components/CustomButton";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
-import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 
 interface GamePlaySectionProps {
   isPlayButtonDisabled: boolean;
@@ -39,70 +37,76 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   message,
   getCardStyle
 }) => {
-
-  
-   return (
-    <ImageBackground
-      source={require("../../assets/images/bg/quiz.png")}
-      style={chorPoliceQuizstyles.imageBackground}
-      resizeMode="cover"
-    >
-      <StatusBar backgroundColor={"transparent"} />
-
-      <View style={chorPoliceQuizstyles.overlay} />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <PlayButton
-          disabled={isPlayButtonDisabled}
-          onPress={handlePlay}
-          buttonText={
-            isPlayButtonDisabled
-              ? message
-                ? message
-                : `Round ${round}`
-              : `Press me to play!`
-          }
-        />
-
-        <View style={styles.cardRow}>
-          {roles.slice(0, 2).map((_, index) => (
-            <PlayerCard
-              key={index}
-              index={index}
-              role={roles[index]}
-              playerName={playerNames[index]}
-              flipped={flippedStates[index]}
-              clicked={clickedCards[index]}
-              onClick={handleCardClick}
-              onBounceEffect={() => handleCardClickWithBounce(index)} // new handler
-              animatedStyle={getCardStyle(index)}
-            />
-          ))}
+  return (
+    <View className="flex-1 bg-[#020205]">
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+        className="px-6"
+      >
+        {/* --- 1. Top Spacing & Phase Badge --- */}
+        <View className="items-center mt-6 mb-8">
+          <View className="bg-indigo-500/10 px-4 py-1.5 rounded-full border border-indigo-500/20">
+            <Text className="text-indigo-400 font-bold uppercase tracking-[3px] text-[10px]">
+              Round-{round}
+            </Text>
+          </View>
         </View>
-        <View style={styles.cardRow}>
-          {roles.slice(2).map((_, index) => (
-            <PlayerCard
-              key={index + 2}
-              index={index + 2}
-              role={roles[index + 2]}
-              playerName={playerNames[index + 2]}
-              flipped={flippedStates[index + 2]}
-              clicked={clickedCards[index + 2]}
-              onClick={handleCardClick}
-              onBounceEffect={() => handleCardClickWithBounce(index + 2)} // new handler
-              animatedStyle={getCardStyle(index + 2)}
-            />
-          ))}
+
+        {/* --- 2. Action Button Section (Large Padding) --- */}
+        <View className="mb-12">
+          <PlayButton
+            disabled={isPlayButtonDisabled}
+            onPress={handlePlay}
+            buttonText={
+              isPlayButtonDisabled
+                ? message ? message : `Round ${round}`
+                : `Press me to play!`
+            }
+          />
         </View>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <CustomButton label="Scoreboard" onPress={toggleModal} />
+
+        {/* --- 3. Card Grid Section --- */}
+        <View className="flex-col gap-y-8"> 
+          {/* Row 1 */}
+          <View className="flex-row justify-between">
+            {roles.slice(0, 2).map((_, index) => (
+              <View key={index} className="w-[47%] aspect-[3/4.2]">
+                <PlayerCard
+                  index={index}
+                  role={roles[index]}
+                  playerName={playerNames[index]}
+                  flipped={flippedStates[index]}
+                  clicked={clickedCards[index]}
+                  onClick={handleCardClick}
+                  onBounceEffect={() => handleCardClickWithBounce(index)}
+                  animatedStyle={getCardStyle(index)}
+                />
+              </View>
+            ))}
+          </View>
+
+          {/* Row 2 */}
+          <View className="flex-row justify-between">
+            {roles.slice(2).map((_, index) => (
+              <View key={index + 2} className="w-[47%] aspect-[3/4.2]">
+                <PlayerCard
+                  index={index + 2}
+                  role={roles[index + 2]}
+                  playerName={playerNames[index + 2]}
+                  flipped={flippedStates[index + 2]}
+                  clicked={clickedCards[index + 2]}
+                  onClick={handleCardClick}
+                  onBounceEffect={() => handleCardClickWithBounce(index + 2)}
+                  animatedStyle={getCardStyle(index + 2)}
+                />
+              </View>
+            ))}
+          </View>
         </View>
+
+ 
       </ScrollView>
-    </ImageBackground>
+    </View>
   );
 };
