@@ -1,58 +1,78 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { Link, Stack } from "expo-router";
-import Animated, { FadeIn } from "react-native-reanimated";
-import { Settings, RefreshCw, ChevronLeft } from "lucide-react-native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Hammer,  Construction, Rocket, ChevronLeft } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { rf } from "@/utils/responsive";
 
-export default function MaintenanceScreen() {
+export default function FeaturePendingScreen() {
+  const router = useRouter();
+
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
+    <View className="flex-1 bg-[#020205] items-center justify-center px-6">
       
-      <View className="flex-1 bg-slate-50 items-center justify-center px-8">
+      {/* --- HUD Background Element --- */}
+      <View className="absolute top-20 opacity-10">
+        <Construction size={300} color="#818cf8" />
+      </View>
+
+      {/* --- Main Glass Card --- */}
+      <View className="w-full rounded-[40px] bg-[#08080a] p-8 border-t-[1.5px] border-l-[1px] border-white/20 shadow-2xl shadow-indigo-500/20">
         
-        {/* Simple Icon Badge */}
-        <Animated.View 
-          entering={FadeIn.duration(800)}
-          className="mb-8 h-24 w-24 items-center justify-center rounded-3xl bg-amber-100"
+        {/* Pulsing Icon Container */}
+        <View className="items-center mb-6">
+          <View className="bg-indigo-500/10 p-6 rounded-full border border-indigo-500/30">
+            <Hammer size={48} color="#818cf8" strokeWidth={1.5} />
+          </View>
+          {/* Status Badge */}
+          <View className="mt-4 bg-indigo-500/20 px-4 py-1 rounded-full border border-indigo-500/40">
+            <Text className="text-[10px] font-black text-indigo-400 uppercase tracking-[3px]">
+              System Update In Progress
+            </Text>
+          </View>
+        </View>
+
+        {/* Text Content */}
+        <Text 
+          style={{ fontSize: rf(2.4) }} 
+          className="text-white font-black uppercase italic text-center tracking-tighter"
         >
-          <Settings size={48} color="#d97706" strokeWidth={1.5} />
-        </Animated.View>
-
-        {/* Content */}
-        <View className="items-center">
-          <Text className="text-2xl font-bold text-slate-900 mb-3">
-            System Maintenance
-          </Text>
-          <Text className="text-center text-slate-500 leading-6 mb-10">
-            We're currently fine-tuning this feature to improve your experience. 
-            We'll be back online shortly.
-          </Text>
-        </View>
-
-        {/* Action Buttons */}
-        <View className="w-full gap-y-3">
-          <Pressable 
-            className="h-14 w-full flex-row items-center justify-center rounded-2xl bg-slate-900 active:opacity-90"
-          >
-            <RefreshCw size={18} color="white" className="mr-2" />
-            <Text className="text-white font-semibold">Check for Updates</Text>
-          </Pressable>
-
-          <Link href="/" asChild>
-            <Pressable className="h-14 w-full flex-row items-center justify-center rounded-2xl border border-slate-200 bg-white active:bg-slate-50">
-              <ChevronLeft size={18} color="#64748b" />
-              <Text className="text-slate-600 font-semibold ml-1">Go Back</Text>
-            </Pressable>
-          </Link>
-        </View>
-
-        {/* Minimal Footer */}
-        <Text className="absolute bottom-12 text-xs font-medium uppercase tracking-tighter text-slate-400">
-          Estimated downtime: 30 mins
+          Feature Encrypted
         </Text>
         
+        <Text className="mt-4 text-center text-white/50 leading-6 font-medium">
+          Our team is continuously working on this module to ensure a seamless experience.
+        </Text>
+
+        {/* --- Deployment Slab --- */}
+        <View className="mt-8 bg-white/[0.03] rounded-3xl p-5 border border-white/10 items-center">
+          <Text className="text-[10px] font-bold text-white/30 uppercase tracking-[4px] mb-2">
+            Estimated Deployment
+          </Text>
+          <View className="flex-row items-center">
+            <Rocket size={18} color="#818cf8" className="mr-3" />
+            <Text style={{ fontSize: rf(2) }} className="text-white font-black italic">
+              15 MARCH 2026
+            </Text>
+          </View>
+        </View>
+
+        <Text className="mt-6 text-center text-[11px] font-bold text-indigo-400/60 uppercase tracking-widest">
+          Thanks for your patience, Traveler
+        </Text>
       </View>
-    </>
+
+      {/* --- Back to Safety Button --- */}
+      <TouchableOpacity
+        onPress={() => router.back()}
+        activeOpacity={0.8}
+        className="mt-10 flex-row items-center bg-[#08080a] px-8 py-4 rounded-2xl border-t border-l border-white/10"
+      >
+        <ChevronLeft size={20} color="#818cf8" />
+        <Text className="ml-2 text-white font-black uppercase tracking-widest text-[12px]">
+          Return to Dashboard
+        </Text>
+      </TouchableOpacity>
+
+    </View>
   );
 }

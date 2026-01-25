@@ -53,13 +53,13 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
 
   const menuItems = [
     { label: "Earn", icon: "flash", path: "/earn" },
-    { label: "Profile", icon: "person", path: "/profile" },
-    { label: "Friends", icon: "people", path: "/friends" },
-    { label: "Ranks", icon: "trophy", path: "/leaderboard" },
-    { label: "Awards", icon: "medal", path: "/award" },
-    { label: "Stats", icon: "bar-chart", path: "/stats" },
-    { label: "Bugs", icon: "bug", path: "/bug" },
-    { label: "Help", icon: "chatbubbles", path: "/support" },
+    { label: "Profile", icon: "person", path: "/profile/a" },
+    { label: "Friends", icon: "people", path: "/friends/b" },
+    { label: "Ranks", icon: "trophy", path: "/leaderboard/c" },
+    { label: "Awards", icon: "medal", path: "/award/d" },
+    { label: "Stats", icon: "bar-chart", path: "/stats/e" },
+    { label: "Bugs", icon: "bug", path: "/bug/f" },
+    { label: "Help", icon: "chatbubbles", path: "/support/g" },
   ];
 
   return (
