@@ -1,19 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  ImageBackground,
-  Animated,
-  StatusBar,
-} from "react-native";
-import { globalstyles } from "@/styles/global";
-import { chorPoliceQuizstyles } from "./quizStyle";
+import React from "react";
+import { View, Text,ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import useQuizLogic from "@/hooks/useQuizLogic";
-import { responsiveHeight } from "react-native-responsive-dimensions";
-import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
-import { playerNamesArray } from "@/redux/selectors/playerDataSelector";
-import { useSelector } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { wp, hp, rf } from "@/utils/responsive";
+
+// Logic & Components
+import useQuizLogic from "@/hooks/useQuizLogic";
+import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import PlayerInfo from "@/components/chorPoliceQuiz/playerInfo";
 import QuizOptions from "@/components/chorPoliceQuiz/option";
 
@@ -30,52 +23,26 @@ const ChorPoliceQuiz: React.FC = () => {
     isPopUp,
     mediaType,
     mediaId,
-    currentPlayerName,
     currentPlayerImage,
     currentPlayerImageType,
     feedbackMessage,
-    thinkingMessage,
   } = useQuizLogic(router);
 
-  const [popupTable, setPopupTable] = useState(false);
-  const playerNames = useSelector(playerNamesArray);
-
-  const toggleModal = () => {
-    setPopupTable(!popupTable);
-  };
-
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const startPulsing = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  };
-
-  useEffect(() => {
-    startPulsing();
-  }, []);
-
   return (
-    <>
-     
-      { isPopUp && (
-        <ImageBackground
-          source={require("../../assets/images/bg/quiz.png")}
-          style={chorPoliceQuizstyles.imageBackground}
-          resizeMode="cover"
-        >
+    <View className="flex-1 bg-[#020205]">
+
+      {/* --- LAYER 1: VIRTUAL SPACE --- */}
+      <View 
+        style={{ width: wp(120), height: wp(120), top: -hp(15), left: -wp(20), position: 'absolute' }}
+        className="bg-indigo-600/10 rounded-full blur-[110px]" 
+      />
+      <View 
+        style={{ width: wp(100), height: wp(100), bottom: -hp(10), right: -wp(30), position: 'absolute' }}
+        className="bg-purple-900/10 rounded-full blur-[90px]" 
+      />
+
+      {isPopUp ? (
+        <View className="flex-1 items-center justify-center">
           <DynamicOverlayPopUp
             isPopUp={isPopUp}
             mediaId={mediaId}
@@ -87,35 +54,62 @@ const ChorPoliceQuiz: React.FC = () => {
               imageType: currentPlayerImageType,
             }}
           />
-        </ImageBackground>
-      )}
-      {!isPopUp && (
-        <SafeAreaView style={globalstyles.container}>
-         
+        </View>
+      ) : (
+        <SafeAreaView style={{ flex: 1 }}>
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: hp(5) }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="flex-1 px-6">
+              
+            
 
-          <View style={[globalstyles.Container2, { flex: 10 }]}>
-            <View style={chorPoliceQuizstyles.overlay} />
-            <ImageBackground
-              source={require("../../assets/images/bg/quiz.png")}
-              style={chorPoliceQuizstyles.imageBackground}
-              resizeMode="cover"
-            >
-              <View style={chorPoliceQuizstyles.quizContainer}>
-                <PlayerInfo playerImage={playerImage} />
-
-                <QuizOptions
-                  playerName={currentPlayer.name}
-                  options={options}
-                  onOptionPress={handleOptionPress}
-                  isOptionDisabled={isOptionDisabled}
-                  currentPlayerIsBot={currentPlayerIsBot}
+              {/* --- LAYER 3: PLAYER STAGE --- */}
+              <View className="items-center justify-center mb-10">
+                {/* A light-beam effect behind the player */}
+                <View 
+                  style={{ width: wp(60), height: hp(15), position: 'absolute', top: 0 }}
+                  className="bg-indigo-500/5 blur-3xl rounded-full"
                 />
+                <PlayerInfo playerImage={playerImage} />
               </View>
-            </ImageBackground>
-          </View>
+
+              {/* --- LAYER 4: GLASS INTERFACE --- */}
+              <View 
+                className="w-full rounded-[40px] bg-white/[0.04] border border-white/10 overflow-hidden"
+                style={{
+                  paddingVertical: hp(4),
+                  paddingHorizontal: wp(2),
+                  // Using inline styles to avoid NativeWind TS issues with complex shadows
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 20 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 25,
+                  elevation: 10
+                }}
+              >
+                {/* The "Frosted" Bevel */}
+                <View className="absolute top-0 left-0 right-0 h-[1px] bg-white/20" />
+                
+                <View className="w-full">
+                  <QuizOptions
+                    playerName={currentPlayer.name}
+                    options={options}
+                    onOptionPress={handleOptionPress}
+                    isOptionDisabled={isOptionDisabled}
+                    currentPlayerIsBot={currentPlayerIsBot}
+                  />
+                </View>
+              </View>
+
+           
+
+            </View>
+          </ScrollView>
         </SafeAreaView>
       )}
-    </>
+    </View>
   );
 };
 
