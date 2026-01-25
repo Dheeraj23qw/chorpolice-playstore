@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { Text, Pressable, View, Animated, Easing } from "react-native";
+import { Text, Pressable, View, Animated } from "react-native";
 import { rf } from "@/utils/responsive";
 
 interface PlayButtonProps {
@@ -14,26 +14,46 @@ const PlayButton: React.FC<PlayButtonProps> = ({
   buttonText,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0.4)).current;
+  const glowAnim = useRef(new Animated.Value(0.3)).current;
 
-  // Pulse the ambient glow behind the button
+  /** 🌊 Ambient glow breathing */
   useEffect(() => {
     if (!disabled) {
-      Animated.loop(
+      const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
-          Animated.timing(glowAnim, { toValue: 0.4, duration: 1500, useNativeDriver: true }),
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 1800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0.35,
+            duration: 1800,
+            useNativeDriver: true,
+          }),
         ])
-      ).start();
+      );
+
+      loop.start();
+      return () => loop.stop();
     }
   }, [disabled]);
 
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, { toValue: 0.96, useNativeDriver: true, tension: 100 }).start();
+    Animated.spring(scaleAnim, {
+      toValue: 0.965,
+      useNativeDriver: true,
+      tension: 120,
+      friction: 8,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 6,
+    }).start();
     onPress();
   };
 
@@ -42,63 +62,64 @@ const PlayButton: React.FC<PlayButtonProps> = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}
-      className="w-full px-4 pt-12" // Proper padding from screen edges
+      className="w-full pt-8 px-2"
     >
-      <Animated.View style={[{ transform: [{ scale: scaleAnim }] }]} className="w-full">
-        
-        {/* 1. OUTER GLOW (The "Aura") */}
+      <Animated.View
+        style={{ transform: [{ scale: scaleAnim }] }}
+        className="w-full"
+      >
+        {/* 🌟 Soft Aura Glow */}
         {!disabled && (
-          <Animated.View 
+          <Animated.View
+            pointerEvents="none"
             style={{ opacity: glowAnim }}
-            className="absolute -inset-2 bg-indigo-600/20 blur-2xl rounded-[30px]" 
+            className="absolute -inset-3 rounded-[36px] bg-indigo-500/20 blur-3xl"
           />
         )}
 
-        {/* 2. THE MAIN SLAB (The "Glass Body") */}
+        {/* 🧊 Glass Body */}
         <View
-          className={`w-full rounded-[28px] overflow-hidden ${
-            disabled ? "bg-[#0a0a0c] border-white/5" : "bg-[#0d0d12] border-t border-l border-white/10"
+          className={`rounded-[30px] overflow-hidden ${
+            disabled
+              ? "bg-[#08080c] border border-white/5"
+              : "bg-[#0c0c12] border border-white/10"
           }`}
           style={{
-            borderBottomWidth: disabled ? 1 : 6,
-            borderRightWidth: 1.5,
-            borderBottomColor: disabled ? "#1a1a1e" : "#312e81", // Deep Indigo Base
-            borderRightColor: disabled ? "#1a1a1e" : "#1e1b4b",
+            borderBottomWidth: disabled ? 1 : 5,
+            borderBottomColor: disabled ? "#141418" : "#1e1b4b",
           }}
         >
-          {/* 3. INNER CONTAINER (Proper Padding & Content) */}
-          <View 
-            className={`py-6 px-8 items-center justify-between flex-row ${
-                !disabled && "bg-gradient-to-br from-white/5 to-transparent"
-            }`}
-          >
-            {/* Left HUD Detail */}
-            <View className="h-full w-1 bg-indigo-500/40 rounded-full" />
+          {/* ✨ Gradient Wash */}
+          {!disabled && (
+            <View className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-indigo-500/10" />
+          )}
 
-            <View className="flex-1 items-center">
-              <Text
-                style={{ fontSize: rf(1.8) }}
-                className={`font-black uppercase tracking-[5px] text-center italic ${
-                  disabled ? "text-white/20" : "text-white"
-                }`}
-              >
-                {buttonText}
+          {/* 💎 Inner Glow Border */}
+          {!disabled && (
+            <View className="absolute inset-[1px] rounded-[28px] border border-indigo-400/20" />
+          )}
+
+          {/* 🎯 Content */}
+          <View className="py-6 items-center justify-center">
+            <Text
+              style={{ fontSize: rf(1.9) }}
+              className={`font-extrabold uppercase tracking-[4px]  ${
+                disabled ? "text-white/25" : "text-white"
+              }`}
+            >
+              {buttonText}
+            </Text>
+
+            {!disabled && (
+              <Text className="mt-1 text-[9px] tracking-[3px] uppercase text-indigo-300/60 font-semibold">
+                Tap to continue
               </Text>
-              
-              {!disabled && (
-                <Text className="text-[8px] text-indigo-400/50 uppercase tracking-[2px] mt-1 font-bold">
-                  System.Link.Active
-                </Text>
-              )}
-            </View>
-
-            {/* Right HUD Detail (Status Dot) */}
-            <View className={`h-2 w-2 rounded-full ${disabled ? 'bg-white/10' : 'bg-indigo-400 shadow-sm shadow-indigo-400'}`} />
+            )}
           </View>
 
-          {/* 4. TOP "REFLECTION" LINE */}
+          {/* 🌈 Top Light Reflection */}
           {!disabled && (
-            <View className="absolute top-0 left-8 right-8 h-[1px] bg-white/20" />
+            <View className="absolute top-0 left-10 right-10 h-[1px] bg-white/30" />
           )}
         </View>
       </Animated.View>

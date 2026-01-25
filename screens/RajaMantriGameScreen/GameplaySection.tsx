@@ -1,6 +1,5 @@
 import React from "react";
 import { ScrollView, View, Text } from "react-native";
-import CustomButton from "@/components/CustomButton";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
 
@@ -13,14 +12,10 @@ interface GamePlaySectionProps {
   clickedCards: boolean[];
   handleCardClick: (index: number) => void;
   handleCardClickWithBounce: (index: number) => void;
-  policeIndex: number | null;
-  kingIndex: number | null;
-  advisorIndex: number | null;
-  thiefIndex: number | null;
   toggleModal: () => void;
   round: number;
   message: string | null;
-  getCardStyle: (index: number) => any; 
+  getCardStyle: (index: number) => any;
 }
 
 export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
@@ -32,42 +27,50 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   clickedCards,
   handleCardClick,
   handleCardClickWithBounce,
-  toggleModal,
   round,
   message,
-  getCardStyle
+  getCardStyle,
 }) => {
   return (
-    <View className="flex-1 bg-[#020205]">
-      <ScrollView 
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 60 }}
+    <View className="flex-1 bg-[#020207]">
+      {/* 🌌 Ambient Gradient Glow */}
+      <View className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full bg-indigo-600/20 blur-3xl" />
+      <View className="absolute top-40 -right-40 w-[360px] h-[360px] rounded-full bg-fuchsia-600/10 blur-3xl" />
+
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
         className="px-6"
       >
-        {/* --- 1. Top Spacing & Phase Badge --- */}
-        <View className="items-center mt-6 mb-8">
-          <View className="bg-indigo-500/10 px-4 py-1.5 rounded-full border border-indigo-500/20">
-            <Text className="text-indigo-400 font-bold uppercase tracking-[3px] text-[10px]">
-              Round-{round}
+        {/* 🧊 Glass Header */}
+        <View className="items-center mt-8 mb-10">
+          <View className="relative px-6 py-2 rounded-full border border-white/15 bg-white/5 overflow-hidden">
+            {/* Shine */}
+            <View className="absolute inset-x-2 top-0 h-[1px] bg-white/40 rounded-full" />
+
+            <Text className="text-indigo-300 font-extrabold uppercase tracking-[4px] text-[11px]">
+              ROUND — {round}
             </Text>
           </View>
         </View>
 
-        {/* --- 2. Action Button Section (Large Padding) --- */}
-        <View className="mb-12">
+        {/* 🚀 Play Button Glass Stage */}
+        <View className="mb-9">
           <PlayButton
             disabled={isPlayButtonDisabled}
             onPress={handlePlay}
             buttonText={
               isPlayButtonDisabled
-                ? message ? message : `Round ${round}`
+                ? message
+                  ? message
+                  : `Round ${round}`
                 : `Press me to play!`
             }
           />
         </View>
 
-        {/* --- 3. Card Grid Section --- */}
-        <View className="flex-col gap-y-8"> 
+        {/* 🎴 Card Arena */}
+        <View className="flex-col gap-y-8">
           {/* Row 1 */}
           <View className="flex-row justify-between">
             {roles.slice(0, 2).map((_, index) => (
@@ -104,8 +107,6 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
             ))}
           </View>
         </View>
-
- 
       </ScrollView>
     </View>
   );

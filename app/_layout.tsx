@@ -73,7 +73,7 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <StatusBar hidden />
+        <StatusBar hidden translucent backgroundColor="transparent"/>
         <AppLayout />
       </SafeAreaProvider>
     </Provider>

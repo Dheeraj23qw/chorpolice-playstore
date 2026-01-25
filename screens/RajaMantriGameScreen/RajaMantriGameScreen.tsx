@@ -25,6 +25,8 @@ import { GamePlaySection } from "./GameplaySection";
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
@@ -75,8 +77,18 @@ const RajaMantriGameScreen: React.FC = () => {
   const getCardStyle = (index: number) =>
     flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={{ flex: 1 }}>
+    <View
+      className="flex-1 bg-[#020205] "
+      style={{
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      <StatusBar hidden translucent />
+
       <ScoreTable
         playerNames={playerNames}
         playerScores={playerScores}
@@ -151,10 +163,6 @@ const RajaMantriGameScreen: React.FC = () => {
               clickedCards={clickedCards}
               handleCardClick={handleCardClick}
               handleCardClickWithBounce={handleCardClickWithBounce}
-              policeIndex={policeIndex}
-              kingIndex={kingIndex}
-              advisorIndex={advisorIndex}
-              thiefIndex={thiefIndex}
               toggleModal={toggleModal}
               round={round}
               message={message}
