@@ -1,10 +1,10 @@
 import React from "react";
 import { ImageBackground, ScrollView, StatusBar, View } from "react-native";
 import { styles } from "./styles"; // Import your styles here
-import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle"; // Adjust path if necessary
 import CustomButton from "@/components/CustomButton";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
+import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 
 interface GamePlaySectionProps {
   isPlayButtonDisabled: boolean;

@@ -13,10 +13,10 @@ import {
 import { VideoView, useVideoPlayer } from "expo-video"; 
 import { videoData, gifData, imageData } from "@/constants/DynamicPopUpData";
 import { styles } from "@/modal/_styles/DynamicOverlayPopCSS";
-import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/quizStyle";
 import { OverlayPopUpProps, PlayerData } from "@/types/models/DynamicpopUpModal";
 import { playSound } from "@/redux/reducers/soundReducer";
 import { useDispatch } from "react-redux";
+import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/qiuzStyle";
 
 const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   isPopUp,

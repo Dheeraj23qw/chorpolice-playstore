@@ -13,7 +13,6 @@ import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 
 // Styles
 import { styles } from "./styles";
-import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
 
 // Components
 import OverlayPopUp from "@/modal/overlaypop";
@@ -25,6 +24,7 @@ import { GamePlaySection } from "./GameplaySection";
 // Animation imports
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
+import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ImageBackground } from "react-native";
 import { globalstyles } from "@/styles/global";
-import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/quizStyle";
+import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 import GameModeScrollView from "@/components/GameModeScrollView";
 import Animated, {
   useSharedValue,
