@@ -13,61 +13,59 @@ const getImageSource = (imageData?: { type: string; src: any }) => {
 
 const PlayerInfo: React.FC<PlayerInfoProps> = memo(({ playerImage }) => {
   const imageSource = getImageSource(playerImage);
-
   if (!imageSource) return null;
+
+  const OUTER = wp(38);
+  const INNER = wp(32);
 
   return (
     <View className="items-center justify-center py-6">
-      {/* Metamorphism Principle: Using scale on Pressable via inline style 
-         to keep tactile feedback without triggering the Interop crash.
-      */}
-      <Pressable 
+      {/* Subtle Ambient Halo */}
+      <View
+        style={{ width: OUTER * 1.2, height: OUTER * 0.35 }}
+        className="absolute bottom-1 rounded-full bg-indigo-500/20 blur-2xl"
+      />
+
+      <Pressable
         style={({ pressed }) => ({
-          transform: [{ scale: pressed ? 0.96 : 1 }],
+          transform: [{ scale: pressed ? 0.95 : 1 }],
         })}
       >
         <View className="items-center justify-center">
-          
-          {/* 1. Ambient Floor Glow (Static Light Source) */}
-          <View 
-            style={{ 
-              width: wp(40), 
-              height: wp(10), 
-              bottom: -5,
-              transform: [{ scaleX: 1.5 }] 
-            }}
-            className="absolute bg-indigo-500/20 rounded-full blur-xl"
-          />
-
-          {/* 2. Outer Cyber-Ring with Glow */}
-          <View 
-            style={{ width: wp(36), height: wp(36) }}
-            className="rounded-full border border-white/10 items-center justify-center bg-white/5 shadow-2xl shadow-indigo-500/30"
+          {/* Outer Glass Ring */}
+          <View
+            style={{ width: OUTER, height: OUTER }}
+            className="rounded-full border border-white/15 bg-white/[0.04] shadow-2xl shadow-indigo-500/30 items-center justify-center overflow-hidden"
           >
-            {/* 3. The Frosted Glass Container */}
-            <View 
-              style={{ width: wp(32), height: wp(32) }}
-              className="rounded-full border-2 border-indigo-500/40 bg-indigo-950/40 items-center justify-center overflow-hidden"
+            {/* Ring Highlight */}
+            <View className="absolute top-0 h-[30%] w-full bg-white/10" />
+
+            {/* Inner Frosted Frame */}
+            <View
+              style={{ width: INNER, height: INNER }}
+              className="rounded-full overflow-hidden border border-indigo-400/40 bg-indigo-950/40"
             >
-              <Image 
-                source={imageSource} 
-                style={{ width: wp(32), height: wp(32) }}
-                className="opacity-90"
+              <Image
+                source={imageSource}
                 resizeMode="cover"
+                style={{ width: INNER, height: INNER }}
+                className="opacity-95"
               />
-              
-              {/* 4. Diagonal Glass Glare (Key Metamorphism detail) */}
-              <View 
-                style={{ width: wp(40), height: wp(10) }}
-                className="absolute bg-white/20 -rotate-45 -translate-y-12 opacity-30"
+
+              {/* Curved Gloss Reflection */}
+              <View
+                style={{
+                  width: INNER * 1.3,
+                  height: INNER * 0.35,
+                  borderRadius: INNER,
+                }}
+                className="absolute -top-3 -left-6 rotate-[-20deg] bg-white/25 opacity-30"
               />
             </View>
           </View>
 
-          {/* 5. Status Indicator (The "Active Operative" Dot) */}
-          <View 
-            className="absolute top-2 right-2 h-4 w-4 rounded-full bg-indigo-500 border-2 border-[#09090b] shadow-lg shadow-indigo-500" 
-          />
+          {/* Active Status Pulse Dot */}
+          <View className="absolute top-2 right-2 h-4 w-4 rounded-full bg-indigo-400 border-2 border-[#0b0b0f] shadow-lg shadow-indigo-500" />
         </View>
       </Pressable>
     </View>

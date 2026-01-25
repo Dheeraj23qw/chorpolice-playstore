@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Animated } from 'react-native';
-import { chorPoliceQuizstyles } from '@/screens/chorPoliceQuizScreen/quizStyle';
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { rf, hp } from "@/utils/responsive";
 
 type QuizOptionsProps = {
   playerName: string;
@@ -15,109 +15,80 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
   options,
   onOptionPress,
   isOptionDisabled,
-  currentPlayerIsBot
+  currentPlayerIsBot,
 }) => {
-  const [isOptionsDisabledForSeconds, setIsOptionsDisabledForSeconds] = useState(true); // State to disable options for 3 seconds
-  const optionsDisabled = isOptionDisabled || currentPlayerIsBot || isOptionsDisabledForSeconds; // Disable if the option is disabled for the duration
+  const [isOptionsDisabledForSeconds, setIsOptionsDisabledForSeconds] =
+    useState(true);
 
-  // Animated values
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Fade-in for text
-  const [pulseAnim] = useState(new Animated.Value(1)); // Pulsating effect for the player name text
-  const [optionAnim] = useState(new Animated.Value(0)); // Scale animation for options
+  const optionsDisabled =
+    isOptionDisabled || currentPlayerIsBot || isOptionsDisabledForSeconds;
 
   useEffect(() => {
-    // Disable options for 3 seconds after they appear
     const timer = setTimeout(() => {
-      setIsOptionsDisabledForSeconds(false); 
-    }, 700);  // 3 seconds
+      setIsOptionsDisabledForSeconds(false);
+    }, 700);
 
-    // Fade-in effect for player name and question text
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-
-    // Pulsating effect for player name
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,  // Slightly scale up
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,    // Return to normal size
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    pulse.start();
-
-    // Scale effect for options (when the component mounts)
-    Animated.timing(optionAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-
-    // Cleanup the pulse animation and timeout when the component unmounts
-    return () => {
-      clearTimeout(timer); // Clean up the timeout
-      pulse.stop();
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   const handleOptionPress = (score: number) => {
     if (!optionsDisabled) {
-      // Bounce effect on option press
-      Animated.sequence([
-        Animated.spring(optionAnim, {
-          toValue: 1.3,  // Scale up
-          friction: 3,   // Create a bounce effect
-          tension: 100,
-          useNativeDriver: true,
-        }),
-        Animated.spring(optionAnim, {
-          toValue: 1,    // Return to normal size
-          friction: 3,
-          tension: 100,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Call the onPress handler
       onOptionPress(score);
     }
   };
 
   return (
-    <>
-      <View style={chorPoliceQuizstyles.questionBox}>
-        <Animated.Text
-          style={[chorPoliceQuizstyles.question, { opacity: fadeAnim, transform: [{ scale: pulseAnim }] }]}
-        >
-          <Text style={chorPoliceQuizstyles.playerName}>{playerName}</Text>, Guess your Score?
-        </Animated.Text>
+    <View className="w-full px-4">
+      {/* 1. Original Question Header */}
+      <View className="mb-10 items-center">
+        <Text style={{ fontSize: rf(2.0) }} className="text-white text-center font-bold">
+          <Text className="text-indigo-400 font-black italic">{playerName}</Text>, Guess your Score?
+        </Text>
       </View>
 
-      {options.map((score, index) => (
-        <TouchableOpacity
-          key={index}
-          style={chorPoliceQuizstyles.option}
-          onPress={() => handleOptionPress(score)} 
-          disabled={optionsDisabled}
-        >
-          <Animated.Text
-            style={[chorPoliceQuizstyles.optionText, { transform: [{ scale: optionAnim }] }]}
+      {/* 2. Glossy Vertical Options */}
+      <View>
+        {options.map((score, index) => (
+          <TouchableOpacity
+            key={index}
+            activeOpacity={0.7}
+            onPress={() => handleOptionPress(score)}
+            disabled={optionsDisabled}
+            // Vertical Spacing: hp(2.5) provides the "space" you requested
+            style={{ 
+              marginBottom: hp(2.5), 
+              minHeight: hp(8.5),
+              shadowColor: optionsDisabled ? "transparent" : "#6366f1",
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.2,
+              shadowRadius: 15,
+              elevation: optionsDisabled ? 0 : 5
+            }}
+            className={`
+              w-full rounded-[32px] items-center justify-center border-2
+              ${optionsDisabled 
+                ? 'bg-white/[0.02] border-white/5 opacity-40' 
+                : 'bg-white/[0.08] border-white/15'}
+            `}
           >
-            {score}
-          </Animated.Text>
-        </TouchableOpacity>
-      ))}
-    </>
+            {/* Specular Highlight (The Glass Shine) */}
+            {!optionsDisabled && (
+              <View className="absolute top-0 left-8 right-8 h-[1.5px] bg-white/20 rounded-full" />
+            )}
+
+            <Text 
+              style={{ fontSize: rf(3.2) }} 
+              className={`font-black italic ${optionsDisabled ? 'text-white/20' : 'text-white'}`}
+            >
+              {score}
+            </Text>
+
+            {/* Subtle Bottom Bevel */}
+            <View className="absolute bottom-0 left-0 right-0 h-[2px] bg-black/10" />
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 };
 

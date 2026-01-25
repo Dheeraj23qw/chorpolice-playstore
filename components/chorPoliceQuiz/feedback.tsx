@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   Image,
   Modal,
   Pressable,
-  StatusBar,
 } from "react-native";
 import { rf, hp, wp } from "@/utils/responsive";
 
@@ -28,11 +27,11 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
     ? require("../../assets/gif/quiz/laugh.gif")
     : require("../../assets/gif/quiz/weep.gif");
 
-  const themeColor = isCorrect ? "#10b981" : "#ef4444"; // Emerald vs Red
+  const themeColor = isCorrect ? "#10b981" : "#ef4444"; 
 
   useEffect(() => {
     if (visible) {
-      const timer = setTimeout(() => setCanClose(true), 3000); // Reduced to 3s for better UX
+      const timer = setTimeout(() => setCanClose(true), 3000);
       return () => clearTimeout(timer);
     } else {
       setCanClose(false);
@@ -41,71 +40,94 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-
       <Pressable 
         onPress={() => canClose && onClose()} 
-        className="flex-1 items-center justify-center bg-black/60 px-6"
+        className="flex-1 items-center justify-center bg-black/80 px-6"
       >
-        {/* 1. Main Metamorphism Glass Card */}
+        {/* --- MAIN GLOSSY CARD --- */}
         <View 
-          style={{ width: wp(85), paddingVertical: hp(4) }}
-          className="bg-white/10 border border-white/20 rounded-[40px] items-center overflow-hidden shadow-2xl"
+          style={{ width: wp(88), paddingVertical: hp(5) }}
+          className="bg-white/[0.08] border-2 border-white/20 rounded-[48px] items-center overflow-hidden shadow-2xl"
         >
-          {/* 2. Color Glow Behind Content */}
+          {/* 1. Top Specular Shine (The 'Gloss' Line) */}
+          <View className="absolute top-0 left-10 right-10 h-[2px] bg-white/30 rounded-full" />
+
+          {/* 2. Radial Refraction Glow (Behind the Image) */}
           <View 
             style={{ 
-              width: wp(40), 
-              height: wp(40), 
+              width: wp(60), 
+              height: wp(60), 
               backgroundColor: themeColor,
-              opacity: 0.15 
+              opacity: 0.1,
+              top: -wp(10)
             }} 
-            className="absolute rounded-full blur-3xl"
+            className="absolute rounded-full blur-[50px]"
           />
 
-          {/* 3. Feedback GIF with Cyber-Ring */}
+          {/* 3. Image Container with Glass Bevel */}
           <View 
-            style={{ width: wp(35), height: wp(35), borderColor: themeColor + '40' }}
-            className="rounded-full border-2 p-2 mb-6 items-center justify-center bg-white/5"
+            style={{ 
+              width: wp(42), 
+              height: wp(42), 
+              borderColor: themeColor + '60',
+              backgroundColor: 'rgba(255,255,255,0.05)'
+            }}
+            className="rounded-full border-[3px] p-1 mb-8 items-center justify-center shadow-lg"
           >
+            <View className="absolute inset-0 rounded-full border border-white/10" />
             <Image
               source={imageSource}
-              style={{ width: wp(28), height: wp(28) }}
+              style={{ width: wp(32), height: wp(32) }}
               className="rounded-full"
               resizeMode="contain"
             />
           </View>
 
-          {/* 4. The Message */}
-          <View className="px-6">
+          {/* 4. Text Content */}
+          <View className="px-8 items-center">
             <Text 
-              style={{ fontSize: rf(1.2) }} 
-              className="text-white/40 font-bold tracking-[3px] uppercase text-center mb-2"
+              style={{ fontSize: rf(1.4), letterSpacing: 4 }} 
+              className="text-white/30 font-black uppercase text-center mb-3"
             >
-              {isCorrect ? "Mission Success" : "Mission Failed"}
+              {isCorrect ? "Mission Complete" : "System Error"}
             </Text>
             
+            <View className="h-[1px] w-12 bg-white/10 mb-4" />
+            
             <Text 
-              style={{ fontSize: rf(2.6), color: isCorrect ? '#d1fae5' : '#fee2e2' }} 
-              className="font-black text-center leading-tight shadow-sm"
+              style={{ fontSize: rf(2.8), color: isCorrect ? '#bef264' : '#fca5a5' }} 
+              className="font-black text-center italic tracking-tight leading-tight"
             >
-              {feedbackMessage}
+              {feedbackMessage.toUpperCase()}
             </Text>
           </View>
 
-          {/* 5. Contextual Close Indicator */}
-          <View className="mt-8 h-8 justify-center">
+          {/* 5. Progress / Close Indicator */}
+          <View className="mt-10 h-10 justify-center">
             {canClose ? (
-              <View className="flex-row items-center bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
-                <Text style={{ fontSize: rf(1.2) }} className="text-white/60 font-black uppercase tracking-widest">
-                  Tap to Continue
+              <View className="flex-row items-center bg-white/10 px-6 py-2 rounded-2xl border border-white/20">
+                <Text style={{ fontSize: rf(1.3) }} className="text-white font-bold uppercase tracking-widest">
+                  Tap to Dismiss
                 </Text>
               </View>
             ) : (
-              <View className="h-1 w-12 bg-white/10 rounded-full overflow-hidden">
-                 <View style={{ width: '40%', backgroundColor: themeColor }} className="h-full" />
+              <View className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                 <View 
+                   style={{ 
+                     width: '60%', 
+                     backgroundColor: themeColor,
+                     shadowColor: themeColor,
+                     shadowRadius: 10,
+                     shadowOpacity: 0.8
+                    }} 
+                   className="h-full rounded-full" 
+                 />
               </View>
             )}
           </View>
+
+          {/* 6. Bottom Edge Reflection */}
+          <View className="absolute bottom-0 left-0 right-0 h-[4px] bg-black/20" />
         </View>
       </Pressable>
     </Modal>
