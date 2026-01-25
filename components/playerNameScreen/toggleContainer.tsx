@@ -1,12 +1,11 @@
 import React, { memo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { styles } from "./_css/optionbarcss";
-import { useRouter } from "expo-router";
+import { rf } from "@/utils/responsive";
 
 interface ButtonOption {
-  label: string; // Label for the button to be displayed
-  value: string; // Value associated with the button option
+  label: string;
+  value: string;
 }
 
 interface AvatarSelectionProps {
@@ -16,60 +15,61 @@ interface AvatarSelectionProps {
   options: ButtonOption[];
 }
 
-// Create the AvatarSelection component
 const AvatarSelection: React.FC<AvatarSelectionProps> = ({
   selectedOption,
   setSelectedOption,
   pickImage,
   options,
 }) => {
-  const router = useRouter();
 
-  // Toggle the selected option and navigate to the corresponding route
-  const handleOptionSelect = (option: ButtonOption) => {
+  const handleOptionSelect = async (option: ButtonOption) => {
     if (option.value === "gallery") {
-      handleGallerySelection();
+      try {
+        setSelectedOption("gallery");
+        await pickImage();
+      } catch (error) {
+        console.error("Error picking image: ", error);
+      }
     } else {
-      const newSelection =
-        selectedOption === option.value ? null : option.value;
-      setSelectedOption(newSelection);
-    }
-  };
-
-  // Handle selection from the gallery and ensure pickImage is awaited
-  const handleGallerySelection = async () => {
-    try {
-      setSelectedOption("gallery"); // Set the option as selected
-      await pickImage(); // Await the image picking process
-    } catch (error) {
-      console.error("Error picking image: ", error);
+      setSelectedOption(selectedOption === option.value ? null : option.value);
     }
   };
 
   return (
-    <View style={styles.toggleContainer}>
-      {options.map((option) => (
-        <TouchableOpacity
-          key={option.value} // Unique key for each option
-          onPress={() => handleOptionSelect(option)}
-          style={[
-            styles.optionButton,
-            selectedOption === option.value && styles.selectedOption,
-          ]}
-          accessibilityLabel={`${option.label} option`}
-          accessible
-        >
-          <MaterialIcons
-            name="check-circle"
-            size={24}
-            color={selectedOption === option.value ? "#FFD700" : "#ccc"}
-          />
-          <Text style={styles.optionText}>{option.label}</Text>
-        </TouchableOpacity>
-      ))}
+    <View className="w-full flex-row justify-center items-center py-4">
+      {options.map((option) => {
+        const isSelected = selectedOption === option.value;
+        
+        return (
+          <TouchableOpacity
+            key={option.value}
+            onPress={() => handleOptionSelect(option)}
+            activeOpacity={0.8}
+            className={`flex-row items-center px-8 py-4 rounded-[24px] border-t-[1.5px] border-l-[1px] ${
+                isSelected 
+                  ? "bg-indigo-500/40 border-indigo-300/60" 
+                  : "bg-white/[0.07] border-white/20"
+              }`}
+          >
+            <MaterialIcons
+              name={option.value === "gallery" ? "add-photo-alternate" : "face"}
+              size={22}
+              color={isSelected ? "#fff" : "rgba(255,255,255,0.5)"}
+            />
+            
+            <Text 
+              style={{ fontSize: rf(1.3) }}
+              className={`ml-3 font-black uppercase tracking-[2px] ${
+                isSelected ? "text-white" : "text-white/50"
+              }`}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
 
-// Wrap the component with React.memo for optimization
 export const AvatarSelectionMemo = memo(AvatarSelection);

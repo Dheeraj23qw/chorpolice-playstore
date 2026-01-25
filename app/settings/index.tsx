@@ -1,16 +1,16 @@
 import React from "react";
 import { Stack } from "expo-router"; // Use Stack from expo-router
-import { SettingScreen } from "@/screens/setting";
+import { SettingScreen } from "@/screens/RoundSelector";
 
 export default function SettingRoute() {
   return (
     <>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           headerShown: false,
-        }} 
+        }}
       />
-      
+
       <SettingScreen />
     </>
   );
