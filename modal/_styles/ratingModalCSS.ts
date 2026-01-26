@@ -1,106 +1,118 @@
-import { StyleSheet } from 'react-native';
-import { responsiveFontSize, responsiveHeight, responsiveWidth } from 'react-native-responsive-dimensions';
+import { StyleSheet } from "react-native";
+import {
+  responsiveFontSize as rf,
+  responsiveHeight as rh,
+  responsiveWidth as rw,
+} from "react-native-responsive-dimensions";
 
-export const style = StyleSheet.create({
-  modalContainer: {
+export const styles = StyleSheet.create({
+  overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Darker overlay for better contrast
+    backgroundColor: "rgba(2, 2, 5, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: rw(6),
   },
-  modalContent: {
-    width: responsiveWidth(85),
-    padding: 25,
-    borderRadius: 15,
-    backgroundColor: '#fff', // White background for clarity
-    alignItems: 'center',
-    borderColor: '#ffcb05', // Yellow border color
-    borderWidth: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10, // Adds depth to the modal
 
-  },
-  modalText: {
-    fontSize: responsiveFontSize(2.5), // Increased font size for better readability
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#333', // Darker text for readability
-    fontFamily: 'outfit', // Playful font for kids
-    paddingHorizontal: 5, // Adds padding to prevent text from touching edges
-  },
-  modaltitle: {
-    fontSize: responsiveFontSize(3.5), // Increased font size for better visibility
-    marginBottom: responsiveHeight(2), // Space between title and text below
-    color: '#f59e42', // Purple color for title
-    fontFamily: 'outfit-bold', // Playful, bold font for kids
-    lineHeight: 40, // Increases line height for better spacing
-    textAlign: 'center', // Center the title
-    paddingHorizontal: 15, // Padding to ensure text doesn't touch the edges
-
-  },
-  starsContainer: {
-    marginBottom: responsiveHeight(1),
-    alignItems: 'center', // Center the stars
-    flexDirection:"row"
-
-  },
-  star: {
-    fontSize: responsiveFontSize(4.2), // Increased star size for visibility
-    marginVertical: responsiveHeight(1), // Adds space between stars vertically
-    color: '#ffcb05', 
-    paddingHorizontal:responsiveWidth(1)
-  },
-  modalButton: {
-    backgroundColor: '#ffcb05', // Bright and fun yellow color
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 12, // Slightly more rounded for a friendlier look
-    borderColor: '#f59e42', // Border color for the button
-    borderWidth: 2,
-    elevation: 5, // Adds shadow to the button
-    alignItems: 'center', // Center the text in the button
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: responsiveFontSize(2.5), // Larger text for better readability
-    fontWeight: 'bold',
-    fontFamily: 'outfit', // Consistent playful font
-    letterSpacing: 1, // Adds spacing between letters for clarity
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-    gap: 9, // Space between buttons
-  },
-  textInput: {
-    width: '100%',
-    height: responsiveHeight(12),
-    borderColor: '#f59e42', // Green border color
+  modalBox: {
+    width: "100%",
+    maxWidth: rw(92),
+    backgroundColor: "#0a0a0f",
+    borderRadius: rw(8),
     borderWidth: 1.5,
-    borderRadius: 10,
-    padding: responsiveHeight(1),
-    textAlignVertical: 'top',
-    fontSize: responsiveFontSize(2.1),
-    marginBottom: responsiveHeight(2),
-    backgroundColor: '#f9f9f9', // Light background for contrast
-    shadowColor: '#000', // Shadow for depth
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-    fontFamily: 'outfit',
-    fontWeight:"condensed",
-    color:"#333"
-
+    borderColor: "rgba(99, 102, 241, 0.2)",
+    padding: rw(7),
+    alignItems: "center",
   },
-  wordCount: {
-    fontSize: responsiveFontSize(1.5),
-    color: 'gray',
-    marginTop: responsiveHeight(1),
-    textAlign: 'right',
-  }
+
+  accentLine: {
+    position: "absolute",
+    top: 0,
+    width: rw(18),
+    height: rh(0.4),
+    backgroundColor: "#6366f1",
+    borderBottomLeftRadius: rw(2),
+    borderBottomRightRadius: rw(2),
+  },
+
+  iconContainer: {
+    width: rw(20),
+    height: rw(20),
+    borderRadius: rw(6),
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: rh(3),
+  },
+
+  titleText: {
+    color: "#ffffff",
+    fontSize: rf(2.6),
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  descText: {
+    color: "rgba(199, 210, 254, 0.5)",
+    fontSize: rf(1.7),
+    textAlign: "center",
+    marginTop: rh(1),
+    marginBottom: rh(4),
+  },
+
+  starsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: rh(5),
+  },
+
+  starIcon: {
+    fontSize: rf(4.8),
+  },
+
+  inputContainer: {
+    width: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: rw(4),
+    padding: rw(3),
+    marginBottom: rh(4),
+  },
+
+  textInput: {
+    color: "#ffffff",
+    fontSize: rf(1.7),
+    minHeight: rh(8),
+    textAlignVertical: "top",
+  },
+
+  submitBtn: {
+    height: rh(7),
+    borderRadius: rw(5),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  submitBtnText: {
+    color: "#ffffff",
+    fontSize: rf(2),
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+
+  laterBtn: {
+    marginTop: rh(2),
+    height: rh(5),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  laterBtnText: {
+    color: "#64748b",
+    fontSize: rf(1.7),
+    fontWeight: "600",
+  },
 });

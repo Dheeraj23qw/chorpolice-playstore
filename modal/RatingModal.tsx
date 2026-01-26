@@ -1,137 +1,78 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
-  Text,
-  Pressable,
   View,
-  Animated,
+  Text,
   TouchableOpacity,
   TextInput,
-  Linking,
-  Platform,
-  StatusBar,
+  StyleSheet,
 } from "react-native";
-import * as StoreReview from "expo-store-review"; // Import expo-store-review
-
-import { style } from "@/modal/_styles/ratingModalCSS";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { CustomRatingModalProps } from "@/types/models/RatingModal";
-
+import { styles } from "./_styles/ratingModalCSS";
+// --- IMPORT YOUR UTILS ---
+import { handleAppReview } from "@/utils/reviewHelper";
+import { logGameEvent } from "@/utils/analytics";
 const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
   visible,
   onClose,
-  title,
-  description,
+  title = "Do you like the game?",
+  description = "Please give us a star rating to help us improve!",
 }) => {
-  const [rating, setRating] = useState(0); // Rating state
-  const [comment, setComment] = useState(""); // Comment state
-  const scaleAnim = useRef(new Animated.Value(0)).current; // Initial scale value
-  const opacityAnim = useRef(new Animated.Value(0)).current; // Initial opacity value
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
 
-  // Animate the modal appearance when visible
   useEffect(() => {
-    const animationConfig = {
-      useNativeDriver: true,
-    };
-
-    if (visible) {
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 3,
-          tension: 100,
-          ...animationConfig,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 500,
-          ...animationConfig,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 300,
-          ...animationConfig,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 0,
-          duration: 300,
-          ...animationConfig,
-        }),
-      ]).start();
+    if (!visible) {
+      setRating(0);
+      setComment("");
     }
   }, [visible]);
 
-  // Handle the star selection
-  const handleRating = (star: number) => {
-    setRating(star);
-  };
-
-  // Handle submitting the rating
-  const handleClose = () => {
-    setComment(""); // Reset comment state when submit is clicked
-    onClose(); // Close the modal when rating is submitted
-    triggerReview(); // Trigger review after submitting the rating
-  };
-
-  // Cancel the modal and clear comment
-  const handleCancel = () => {
-    setComment(""); // Reset comment state when cancel is clicked
-    onClose(); // Close the modal
-  };
-
-  // Limit comment input to 80 characters
-  const handleCommentChange = (text: string) => {
-    if (text.length <= 80) {
-      setComment(text);
-    } else {
-      // If the length exceeds 80, only allow the first 80 characters
-      setComment(text.substring(0, 80));
-    }
-  };
-
-  // Function to trigger review prompt or Play Store review section
-  const triggerReview = () => {
-    if (Platform.OS === "ios") {
-      // Trigger review prompt on iOS
-      StoreReview.requestReview();
-    } else if (Platform.OS === "android") {
-      // Redirect Android users to Play Store review section
-      const androidPackageName = "com.dheeraj.chorpolice"; // Replace with your app's package name
-      Linking.openURL(
-        `https://play.google.com/store/apps/details?id=${androidPackageName}&showAllReviews=true`
-      );
-    }
+  const handleSubmit = async () => {
+    await handleAppReview({
+      rating,
+      comment,
+      onComplete: onClose,
+      onAnalytics: (event, payload) => {
+        logGameEvent(event, payload);
+      },
+    });
   };
 
   return (
     <Modal
-      animationType="fade"
       transparent
       visible={visible}
+      animationType="fade"
       onRequestClose={onClose}
     >
-      <StatusBar backgroundColor={"#000000CC"} />
-
-      <View style={style.modalContainer}>
+      <View style={styles.overlay}>
         <Animated.View
-          style={[
-            style.modalContent,
-            { transform: [{ scale: scaleAnim }], opacity: opacityAnim },
-          ]}
+          entering={FadeInDown.duration(600)}
+          style={styles.modalBox}
         >
-          <Text style={style.modaltitle}>{title}</Text>
-          {description && <Text style={style.modalText}>{description}</Text>}
+          <View style={styles.accentLine} />
 
-          {/* Rating stars */}
-          <View style={style.starsContainer}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity key={star} onPress={() => handleRating(star)}>
+          <View style={styles.iconContainer}>
+            <Text style={{ fontSize: 40 }}>⭐</Text>
+          </View>
+
+          <Text style={styles.titleText}>{title}</Text>
+          <Text style={styles.descText}>{description}</Text>
+
+          <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((num) => (
+              <TouchableOpacity
+                key={num}
+                onPress={() => setRating(num)}
+                activeOpacity={0.6}
+                style={{ marginHorizontal: 6 }}
+              >
                 <Text
                   style={[
-                    style.star,
-                    { color: star <= rating ? "gold" : "gray" },
+                    styles.starIcon,
+                    { color: num <= rating ? "#818cf8" : "#1e293b" },
                   ]}
                 >
                   ★
@@ -140,26 +81,33 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
             ))}
           </View>
 
-          {/* Comment TextInput */}
-          <TextInput
-            style={style.textInput}
-            placeholder="Write your feedback (up to 80 characters)"
-            value={comment}
-            onChangeText={handleCommentChange}
-            multiline
-          />
-          <Text
-            style={style.wordCount}
-          >{`Characters: ${comment.length}/80`}</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder="Write a message (Optional)"
+              placeholderTextColor="#475569"
+              value={comment}
+              onChangeText={setComment}
+              style={styles.textInput}
+              multiline
+            />
+          </View>
 
-          {/* Action buttons */}
-          <View style={style.buttonRow}>
-            <Pressable style={style.modalButton} onPress={handleClose}>
-              <Text style={style.modalButtonText}>Submit</Text>
-            </Pressable>
-            <Pressable style={style.modalButton} onPress={handleCancel}>
-              <Text style={style.modalButtonText}>Cancel</Text>
-            </Pressable>
+          <View style={{ width: "100%" }}>
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={rating === 0}
+              activeOpacity={0.8}
+              style={[
+                styles.submitBtn,
+                { backgroundColor: rating === 0 ? "#1e293b" : "#4f46e5" },
+              ]}
+            >
+              <Text style={styles.submitBtnText}>Submit Rating</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={onClose} style={styles.laterBtn}>
+              <Text style={styles.laterBtnText}>Maybe Later</Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </View>

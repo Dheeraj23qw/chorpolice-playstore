@@ -11,8 +11,7 @@ import RouteLoader from "@/components/RouteLoader";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Platform } from "react-native";
-
-
+import { AlertNotificationRoot } from 'react-native-alert-notification'; 
 function AppLayout() {
 
   const loader = useSelector((state: RootState) => state.loader);
@@ -70,11 +69,13 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null;
 
-  return (
+return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <StatusBar hidden translucent backgroundColor="transparent"/>
-        <AppLayout />
+        <AlertNotificationRoot theme="light">
+          <StatusBar hidden translucent backgroundColor="transparent"/>
+          <AppLayout />
+        </AlertNotificationRoot> 
       </SafeAreaProvider>
     </Provider>
   );

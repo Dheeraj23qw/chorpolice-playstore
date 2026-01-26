@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "919454179360",
+    "project_id": "chor-police-cd7e7",
+    "storage_bucket": "chor-police-cd7e7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:919454179360:android:a94f5e4612d5c147515c45",
+        "android_client_info": {
+          "package_name": "com.dheeraj.chorpolice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBv1fNQyGsIspdNhckhPXkcGqhp1sv4DU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

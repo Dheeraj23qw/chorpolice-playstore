@@ -15,9 +15,11 @@
       /* USE CASE: This is what makes it a "Development Build" vs a normal app.
          IMPORTANCE: Essential for using custom native modules or libraries not in Expo Go. */
 
-      "distribution": "internal"
+      "distribution": "internal",
       /* USE CASE: Makes the build available via a download link/QR code.
          IMPORTANCE: Allows you to install the build on your physical device without a store. */
+
+      "channel": "development"
     },
 
     "preview": {

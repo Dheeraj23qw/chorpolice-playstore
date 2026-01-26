@@ -8,21 +8,26 @@
     "scheme": "myapp",
     "userInterfaceStyle": "light",
     "runtimeVersion": "1.0.2",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.dheeraj.chorpolice",
-    "userInterfaceStyle": "light",
-    "edgeToEdgeEnabled": true,
+      "userInterfaceStyle": "light",
+      "edgeToEdgeEnabled": true,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
-   
     },
     "plugins": [
       "expo-router",
       "expo-asset",
       "expo-secure-store",
+      "expo-font",
+      "expo-web-browser",
+      "expo-audio",
       [
         "expo-build-properties",
         {
@@ -31,18 +36,9 @@
             "enableProguardInReleaseBuilds": true,
             "enableHermes": true,
             "enableMinifyInReleaseBuilds": true
-          },
-             "navigationBar": {
-               "visible": "hidden",
-               "behavior": "overlay-swipe"
-              },
-              "statusBar": {
-               "hidden": true
-             }
+          }
         }
       ],
-      "expo-font",
-      "expo-web-browser",
       [
         "expo-video",
         {
@@ -50,7 +46,7 @@
           "supportsPictureInPicture": true
         }
       ],
-      "expo-audio"
+      "@react-native-firebase/app"
     ],
     "experiments": {
       "typedRoutes": true
