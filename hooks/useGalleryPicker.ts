@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system/legacy";
+import { File, Paths } from "expo-file-system"; 
 import { useDispatch } from "react-redux";
 import { addImage } from "@/redux/reducers/dynamicImagesReducer";
 
@@ -18,66 +18,50 @@ const useGalleryPicker = () => {
   };
 
   const pickImage = useCallback(async () => {
-    setLoading(true); // Start loading state
+    setLoading(true);
 
-    // Request permission to access media library
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // 1. Permissions check
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      showAlert(
-        "Permission Required",
-        "Permission to access media library is required to pick an image."
-      );
-      setLoading(false); // Stop loading state
+      showAlert("Permission Required", "Gallery access is needed to pick an image.");
+      setLoading(false);
       return;
     }
 
-    // Launch the image picker
+    // 2. Launch Picker (Updated MediaType syntax for 2026)
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'], // Array syntax is now preferred over MediaTypeOptions
       allowsEditing: false,
       quality: 1,
     });
 
-    // Handle the result
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const localUri = result.assets[0].uri;
-      if (!localUri) {
-        console.warn("Received empty URI");
-        showAlert("Error", "Received an empty URI.");
-        setLoading(false);
-        return;
-      }
-
-      const documentDirectory = FileSystem.documentDirectory;
-      if (documentDirectory === null) {
-        console.error("Document directory is null");
-        showAlert("Error", "Could not access the document directory.");
-        setLoading(false);
-        return;
-      }
-
-      // Create the destination file URI
-      const fileUri = `${documentDirectory}${localUri.split("/").pop()}`;
+    if (!result.canceled && result.assets?.[0]) {
+      const selectedAsset = result.assets[0];
+      const fileName = selectedAsset.fileName ?? `img_${Date.now()}.jpg`;
 
       try {
-        await FileSystem.copyAsync({
-          from: localUri,
-          to: fileUri,
-        });
+        // 3. Modern File System usage
+        // Paths.document points to the app's persistent document directory
+        const destinationFile = new File(Paths.document, fileName);
+        
+        // The source is the temporary URI from the picker
+        const sourceFile = new File(selectedAsset.uri);
 
-        // Dispatch the new image URI to the Redux slice
-        dispatch(addImage({ type: "gallery", src: fileUri }));
-        showAlert("Success", "Image has been successfully saved.");
+        // Copy using the modern .copy() method
+        await sourceFile.copy(destinationFile);
+
+        // 4. Update Redux with the permanent URI
+        dispatch(addImage({ type: "gallery", src: destinationFile.uri }));
+        showAlert("Success", "Image has been saved to your gallery.");
       } catch (error) {
-        console.error("Error saving image locally:", error);
-        showAlert("Error", "Failed to save the image. Please try again.");
+        console.error("Modern FS Error:", error);
+        showAlert("Error", "Failed to save the image locally.");
       }
     } else {
-      showAlert("No Image Selected", "You did not select any image.");
+      showAlert("No Image Selected", "Selection was cancelled.");
     }
 
-    setLoading(false); // Stop loading state
+    setLoading(false);
   }, [dispatch]);
 
   return {

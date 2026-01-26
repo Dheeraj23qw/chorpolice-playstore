@@ -5,14 +5,12 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  StyleSheet,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { CustomRatingModalProps } from "@/types/models/RatingModal";
 import { styles } from "./_styles/ratingModalCSS";
 // --- IMPORT YOUR UTILS ---
 import { handleAppReview } from "@/utils/reviewHelper";
-import { logGameEvent } from "@/utils/analytics";
 const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
   visible,
   onClose,
@@ -34,9 +32,6 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
       rating,
       comment,
       onComplete: onClose,
-      onAnalytics: (event, payload) => {
-        logGameEvent(event, payload);
-      },
     });
   };
 
