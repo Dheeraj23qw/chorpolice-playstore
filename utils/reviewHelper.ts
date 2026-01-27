@@ -1,6 +1,7 @@
 import { Platform, Linking } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as StoreReview from "expo-store-review";
+import * as Haptics from "expo-haptics"; // 1. Import Haptics
 import { ALERT_TYPE, Dialog, Toast } from 'react-native-alert-notification';
 
 const ANDROID_PACKAGE = "com.dheeraj.chorpolice";
@@ -20,17 +21,22 @@ export const handleAppReview = async ({
   onComplete,
 }: ReviewOptions) => {
   try {
-    // 1. Copy comment to clipboard & show a quick Toast
+    // Copy comment to clipboard
     if (comment.trim().length > 0) {
       try {
         await Clipboard.setStringAsync(comment.trim());
+        // Light haptic to confirm the copy action
+        Haptics.selectionAsync(); 
       } catch (err) {
         console.warn("Clipboard failed", err);
       }
     }
 
-    // 2. Low Rating: Internal feedback (No store redirect)
+    // 2. Low Rating: Internal feedback
     if (rating < 4) {
+      // Trigger a Warning haptic for "room for improvement"
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
       Dialog.show({
         type: ALERT_TYPE.SUCCESS,
         title: 'Thank you!',
@@ -45,9 +51,12 @@ export const handleAppReview = async ({
     }
 
     // 3. High Rating: Go to Store
+    // Trigger a Success haptic for a great review
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
     Dialog.show({
       type: ALERT_TYPE.SUCCESS,
-      title: 'Thanks for the love!',
+      title: 'Thanks for the love! ❤️',
       textBody: 'Your review helps other players find us. Just paste your message in the store!',
       button: 'Go to Store',
       onPressButton: async () => {
@@ -63,7 +72,6 @@ export const handleAppReview = async ({
               await Linking.openURL(`https://apps.apple.com/app/id${IOS_APP_ID}?action=write-review`);
             }
           } else {
-            // Android Review Link (Standard format for 2026)
             const deepLink = `market://details?id=${ANDROID_PACKAGE}&showAllReviews=true`;
             const canOpen = await Linking.canOpenURL(deepLink);
             

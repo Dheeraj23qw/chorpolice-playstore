@@ -23,14 +23,6 @@ export const usePlayerNameScreen = () => {
   const [selectedImages, setSelectedImagesState] = useState<number[]>([]);
   const [imageNames, setImageNamesState] = useState<Record<number, string>>({});
   const [gameModeStatus, setGameModeStatus] = useState<GameMode | null>(null);
-  const [modals, setModals] = useState({
-    modalVisible: false,
-    infoModalVisible: false,
-    confirmChangeVisible: false,
-    infoAddMoreVisible: false,
-  });
-  const [alertMessage, setAlertMessage] = useState<string>("");
-  const [currentImageId, setCurrentImageId] = useState<number | null>(null);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [playerNames, setPlayerNamesState] = useState<PlayerName[]>([]);
 
@@ -38,7 +30,7 @@ export const usePlayerNameScreen = () => {
   const router = useRouter();
 
   const playerImages = useSelector(
-    (state: RootState) => state.playerImages.images
+    (state: RootState) => state.playerImages.images,
   );
 
   useEffect(() => {
@@ -54,31 +46,17 @@ export const usePlayerNameScreen = () => {
     (imageId: number, gameMode: GameMode) => {
       setGameModeStatus(gameMode);
 
-      if (!playerImages[imageId]) {
-        setAlertMessage("Selected image is not available.");
-        setModals((prev) => ({ ...prev, modalVisible: true }));
-        return;
-      }
+      if (!playerImages[imageId]) return;
 
-      if (selectedImages.includes(imageId)) {
-        setAlertMessage("Do you want to change Selected Superhero?");
-        setCurrentImageId(imageId);
-        setModals((prev) => ({ ...prev, confirmChangeVisible: true }));
-        return;
-      }
-
-      if (selectedImages.length >= MAX_SELECTED_IMAGES) {
-        setAlertMessage("You can only pick 4 superheroes.");
-        setModals((prev) => ({ ...prev, modalVisible: true }));
+      // Logic to prevent adding more than 4 or duplicates
+      if (
+        selectedImages.includes(imageId) ||
+        selectedImages.length >= MAX_SELECTED_IMAGES
+      ) {
         return;
       }
 
       dispatch(playSound("level"));
-
-      if (selectedImages.length === 0) {
-        setAlertMessage("Select 3 more avatars to play!");
-        setModals((prev) => ({ ...prev, infoAddMoreVisible: true }));
-      }
 
       setSelectedImagesState((prev) => [...prev, imageId]);
 
@@ -90,34 +68,14 @@ export const usePlayerNameScreen = () => {
       setPlayerNamesState((prev) => [...prev, newPlayer]);
       dispatch(setPlayerNames([...playerNames, newPlayer]));
     },
-    [selectedImages, playerImages, dispatch, playerNames]
-  );
-
-  // ---------------------------
-  // SELECTED IMAGE CLICK
-  // ---------------------------
-  const handleSelectedImageClick = useCallback(
-    (imageId: number) => {
-      if (selectedImages.includes(imageId)) {
-        dispatch(playSound("select"));
-        setAlertMessage("Do you want to change Selected Superhero?");
-        setCurrentImageId(imageId);
-        setModals((prev) => ({ ...prev, confirmChangeVisible: true }));
-      }
-    },
-    [selectedImages, dispatch]
+    [selectedImages, playerImages, dispatch, playerNames],
   );
 
   // ---------------------------
   // NAME CHANGE
   // ---------------------------
   const handleNameChange = useCallback((imageId: number, name: string) => {
-    if (name.length > MAX_NAME_LENGTH) {
-      setAlertMessage(`Name cannot exceed ${MAX_NAME_LENGTH} characters.`);
-      setModals((prev) => ({ ...prev, modalVisible: true }));
-      return;
-    }
-
+    if (name.length > MAX_NAME_LENGTH) return;
     setImageNamesState((prev) => ({ ...prev, [imageId]: name }));
   }, []);
 
@@ -126,23 +84,29 @@ export const usePlayerNameScreen = () => {
   // ---------------------------
   const getDefaultNames = useCallback(
     (imageIds: number[], gameMode: GameMode | null) => {
-      const usedNames = new Set<string>();
+      const usedNames = new Set<string>(
+        Object.values(imageNames)
+          .map((n) => n.trim())
+          .filter((n) => n !== ""),
+      );
 
-      return imageIds
-        .map((id, index) => ({ id, index }))
-        .reduce((acc, { id, index }) => {
+      return imageIds.reduce(
+        (acc, id, index) => {
+          // 2. Only generate a name if the current image has no name
           if (!imageNames[id] || imageNames[id].trim() === "") {
             acc[id] = generateRandomName(usedNames, gameMode, index);
           }
           return acc;
-        }, {} as Record<number, string>);
+        },
+        {} as Record<number, string>,
+      );
     },
-    [imageNames]
+    [imageNames], // Keeps the logic fresh whenever user types
   );
 
   const checkForDuplicateNames = useCallback((): boolean => {
     const names = Object.values(imageNames).filter(
-      (name) => name.trim() !== ""
+      (name) => name.trim() !== "",
     );
     return new Set(names).size !== names.length;
   }, [imageNames]);
@@ -151,16 +115,12 @@ export const usePlayerNameScreen = () => {
   // START GAME
   // ---------------------------
   const handleStartAdventure = useCallback(async () => {
+    if (checkForDuplicateNames()) return;
+
     dispatch(playSound("select"));
     setIsButtonDisabled(true);
 
     try {
-      if (checkForDuplicateNames()) {
-        setAlertMessage("Please make sure each superhero has a unique name.");
-        setModals((prev) => ({ ...prev, modalVisible: true }));
-        return;
-      }
-
       const updatedImageNames = {
         ...imageNames,
         ...getDefaultNames(selectedImages, gameModeStatus),
@@ -177,8 +137,6 @@ export const usePlayerNameScreen = () => {
       router.push("/chorpolicegame");
     } catch (error) {
       console.error("Failed to start adventure:", error);
-      setAlertMessage("Something went wrong. Please try again.");
-      setModals((prev) => ({ ...prev, modalVisible: true }));
     } finally {
       setIsButtonDisabled(false);
     }
@@ -193,73 +151,47 @@ export const usePlayerNameScreen = () => {
   ]);
 
   // ---------------------------
-  // MODAL HELPERS
+  // REMOVE PLAYER (Previously handleAlertConfirm)
   // ---------------------------
-  const showGameInfo = useCallback(() => {
-    dispatch(playSound("select"));
-    setModals((prev) => ({ ...prev, infoModalVisible: true }));
-  }, [dispatch]);
+  const removePlayer = useCallback(
+    (imageId: number) => {
+      dispatch(playSound("select"));
 
-  const closeAlertModal = useCallback(() => {
-    setModals((prev) => ({ ...prev, modalVisible: false }));
-  }, []);
-
-  const closeInfoAddMoreModal = useCallback(() => {
-    setModals((prev) => ({ ...prev, infoAddMoreVisible: false }));
-  }, []);
-
-  // ---------------------------
-  // CONFIRM REMOVE PLAYER
-  // ---------------------------
-  const handleAlertConfirm = useCallback(() => {
-    dispatch(playSound("select"));
-
-    if (currentImageId !== null) {
-      setSelectedImagesState((prev) =>
-        prev.filter((id) => id !== currentImageId)
-      );
-
-      setPlayerNamesState((prev) =>
-        prev.filter((player) => player.id !== currentImageId)
-      );
-
+      setSelectedImagesState((prev) => prev.filter((id) => id !== imageId));
+      setPlayerNamesState((prev) => prev.filter((p) => p.id !== imageId));
       setImageNamesState((prev) => {
-        const { [currentImageId]: _, ...rest } = prev;
+        const { [imageId]: _, ...rest } = prev;
         return rest;
       });
+    },
+    [dispatch],
+  );
 
-      setCurrentImageId(null);
-    }
+  const handleSelectedImageClick = useCallback(
+    (imageId: number) => {
+      // Instead of showing a modal, we just remove the player directly
+      if (selectedImages.includes(imageId)) {
+        dispatch(playSound("select"));
 
-    closeAlertModal();
-    setModals((prev) => ({ ...prev, confirmChangeVisible: false }));
-  }, [currentImageId, dispatch, closeAlertModal]);
+        setSelectedImagesState((prev) => prev.filter((id) => id !== imageId));
+        setPlayerNamesState((prev) => prev.filter((p) => p.id !== imageId));
+        setImageNamesState((prev) => {
+          const { [imageId]: _, ...rest } = prev;
+          return rest;
+        });
+      }
+    },
+    [selectedImages, dispatch],
+  );
 
   return {
     selectedImages,
     imageNames,
     handleImageSelect,
-    handleSelectedImageClick,
     handleNameChange,
     handleStartAdventure,
-    showGameInfo,
-    closeAlertModal,
-    closeInfoAddMoreModal,
-    handleAlertConfirm,
-    modalVisible: modals.modalVisible,
-    infoModalVisible: modals.infoModalVisible,
-    confirmChangeVisible: modals.confirmChangeVisible,
-    infoAddMoreVisible: modals.infoAddMoreVisible,
-    alertMessage,
-    setInfoModalVisible: (visible: boolean) =>
-      setModals((prev) => ({ ...prev, infoModalVisible: visible })),
-    setConfirmChangeVisible: (visible: boolean) =>
-      setModals((prev) => ({ ...prev, confirmChangeVisible: visible })),
-    setModalVisible: (visible: boolean) =>
-      setModals((prev) => ({ ...prev, modalVisible: visible })),
-    setInfoAddMoreVisible: (visible: boolean) =>
-      setModals((prev) => ({ ...prev, infoAddMoreVisible: visible })),
-    setAlertMessage,
+    removePlayer,
     isButtonDisabled,
+    handleSelectedImageClick,
   };
 };

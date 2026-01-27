@@ -16,7 +16,6 @@ import { styles } from "./styles";
 
 // Components
 import OverlayPopUp from "@/modal/overlaypop";
-import CustomModal from "@/modal/CustomModal";
 import ScoreTable from "@/modal/ShowTableModal";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { GamePlaySection } from "./GameplaySection";
@@ -27,6 +26,11 @@ import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer"
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+
+
+import { useBackHandler } from "@/utils/BackHandler";
+import { Alerts } from "@/utils/alert";
+import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
@@ -58,10 +62,31 @@ const RajaMantriGameScreen: React.FC = () => {
     playerData,
     isRoundStartPopupVisible,
     roundStartMessage,
-    exitModalVisible,
-    toggleExitModal,
     handleExitGame,
   } = useRajaMantriGame({ playerNames });
+
+
+
+
+  useBackHandler(() => {
+    // Check if a game is currently "in progress" to decide if we should warn
+    // If cards are already flipped or play button is disabled, show the alert
+    Dialog.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Leave Game?",
+      textBody: "If you exit now, your current round scores will be lost!",
+      button: "Exit",
+      onPressButton: () => {
+        Dialog.hide();
+        handleExitGame(); // This handles Redux reset and navigation
+      }
+    });
+
+    return true; // Stop the app from closing immediately
+  }, { 
+    enabled: true, 
+    priority: 1 
+  });
 
   const [popupTable, setPopupTable] = useState(false);
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
@@ -95,16 +120,7 @@ const RajaMantriGameScreen: React.FC = () => {
         popupTable={popupTable}
       />
 
-      <CustomModal
-        visible={exitModalVisible}
-        onClose={toggleExitModal}
-        title="Exit Game"
-        content="Do you want to exit the game?"
-        buttons={[
-          { text: "Yes", onPress: handleExitGame },
-          { text: "No", onPress: toggleExitModal },
-        ]}
-      />
+  
 
       {popupIndex && (
         <OverlayPopUp

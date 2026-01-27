@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { rf, hp } from "@/utils/responsive";
+import { rf, hp, wp } from "@/utils/responsive";
 
 type QuizOptionsProps = {
   playerName: string;
@@ -38,58 +38,84 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
   };
 
   return (
-    <View className="w-full px-4">
-      {/* 1. Original Question Header */}
-      <View className="mb-10 items-center">
-        <Text style={{ fontSize: rf(2.0) }} className="text-white text-center font-bold">
-          <Text className="text-indigo-400 font-black italic">{playerName}</Text>, Guess your Score?
+    <View className="w-full px-5">
+      {/* 🎯 Header */}
+      <View className="mb-8 items-center">
+        <Text
+          style={{ fontSize: rf(2.1) }}
+          className="text-white/90 text-center font-extrabold tracking-wide"
+        >
+          <Text className="text-indigo-400 font-black italic">
+            {playerName}
+          </Text>
+          , guess your score ✨
         </Text>
       </View>
 
-      {/* 2. Glossy Vertical Options */}
+      {/* 🎮 Options */}
       <View>
-        {options.map((score, index) => (
-          <TouchableOpacity
-            key={index}
-            activeOpacity={0.7}
-            onPress={() => handleOptionPress(score)}
-            disabled={optionsDisabled}
-            // Vertical Spacing: hp(2.5) provides the "space" you requested
-            style={{ 
-              marginBottom: hp(2.5), 
-              minHeight: hp(8.5),
-              shadowColor: optionsDisabled ? "transparent" : "#6366f1",
-              shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.2,
-              shadowRadius: 15,
-              elevation: optionsDisabled ? 0 : 5
-            }}
-            className={`
-              w-full rounded-[32px] items-center justify-center border-2
-              ${optionsDisabled 
-                ? 'bg-white/[0.02] border-white/5 opacity-40' 
-                : 'bg-white/[0.08] border-white/15'}
-            `}
-          >
-            {/* Specular Highlight (The Glass Shine) */}
-            {!optionsDisabled && (
-              <View className="absolute top-0 left-8 right-8 h-[1.5px] bg-white/20 rounded-full" />
-            )}
+        {options.map((score, index) => {
+          const disabledStyle = optionsDisabled;
 
-            <Text 
-              style={{ fontSize: rf(3.2) }} 
-              className={`font-black italic ${optionsDisabled ? 'text-white/20' : 'text-white'}`}
+          return (
+            <TouchableOpacity
+              key={index}
+              activeOpacity={0.85}
+              onPress={() => handleOptionPress(score)}
+              disabled={disabledStyle}
+              style={{
+                marginBottom: hp(2.4),
+                minHeight: hp(9),
+                shadowColor: disabledStyle ? "transparent" : "#6366F1",
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.25,
+                shadowRadius: 18,
+                elevation: disabledStyle ? 0 : 6,
+              }}
+              className={`
+                relative overflow-hidden
+                w-full rounded-[36px] items-center justify-center
+                border
+                ${
+                  disabledStyle
+                    ? "bg-white/[0.03] border-white/5 opacity-40"
+                    : "bg-white/[0.10] border-white/20"
+                }
+              `}
             >
-              {score}
-            </Text>
+              {/* ✨ Top Glass Shine */}
+              {!disabledStyle && (
+                <View className="absolute top-[6px] left-10 right-10 h-[2px] rounded-full bg-white/30" />
+              )}
 
-            {/* Subtle Bottom Bevel */}
-            <View className="absolute bottom-0 left-0 right-0 h-[2px] bg-black/10" />
-          </TouchableOpacity>
-        ))}
+              {/* 🌈 Inner Glow */}
+              {!disabledStyle && (
+                <View className="absolute inset-0 rounded-[36px] border border-indigo-400/10" />
+              )}
+
+              {/* 🔢 Score */}
+              <Text
+                style={{ fontSize: rf(3.4) }}
+                className={`
+                  font-black italic tracking-wider
+                  ${
+                    disabledStyle
+                      ? "text-white/25"
+                      : "text-white drop-shadow-lg"
+                  }
+                `}
+              >
+                {score}
+              </Text>
+
+              {/* 🪞 Bottom Bevel */}
+              <View className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/15" />
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
 };
 
-export default QuizOptions;
+export default memo(QuizOptions);

@@ -11,7 +11,6 @@ import HintSection from "../../components/thinkAndCountScreen/HintSection";
 import QuestionSection from "../../components/thinkAndCountScreen/QuestionSection";
 import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
-import CustomModal from "@/modal/CustomModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 const QuizScreen = () => {
@@ -35,11 +34,6 @@ const QuizScreen = () => {
     questionIndex,
     table,
     question,
-    isModalVisible,
-    modalTitle,
-    modalContent,
-    modalButtons,
-    closeModal,
     playerMessage,
   } = useQuizGameLogic();
 
@@ -146,13 +140,7 @@ const QuizScreen = () => {
         </ScrollView>
       </View>
 
-      <CustomModal
-        visible={isModalVisible}
-        onClose={closeModal}
-        title={modalTitle}
-        content={modalContent}
-        buttons={modalButtons}
-      />
+   
     </View>
   );
 };

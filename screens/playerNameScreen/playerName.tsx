@@ -8,7 +8,7 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from "react-native-reanimated";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -25,11 +25,12 @@ import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
 import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGrid";
 import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionButtons";
 import RoundSelector from "../RoundSelector";
+import { useBackHandler } from "@/utils/BackHandler";
 
 const PlayerNameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-
+  const router = useRouter();
   // Toggle for showing/hiding the round selection table
   const [showRoundTable, setShowRoundTable] = useState(false);
 
@@ -41,6 +42,14 @@ const PlayerNameScreen: React.FC = () => {
     transform: [{ translateY: translateY.value }],
     opacity: opacity.value,
   }));
+
+  useBackHandler(
+    () => {
+      router.replace("/modeselect");
+      return true;
+    },
+    { priority: 1 },
+  );
 
   useFocusEffect(
     useCallback(() => {

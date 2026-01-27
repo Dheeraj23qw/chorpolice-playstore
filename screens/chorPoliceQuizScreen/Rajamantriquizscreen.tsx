@@ -9,6 +9,14 @@ import useQuizLogic from "@/hooks/useQuizLogic";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import PlayerInfo from "@/components/chorPoliceQuiz/playerInfo";
 import QuizOptions from "@/components/chorPoliceQuiz/option";
+import { useBackHandler } from "@/utils/BackHandler";
+import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
+import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
+import { useSelector } from "react-redux";
+
+import {
+  selectPlayerNames,
+} from "@/redux/selectors/playerDataSelector";
 
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
@@ -27,6 +35,35 @@ const ChorPoliceQuiz: React.FC = () => {
     currentPlayerImageType,
     feedbackMessage,
   } = useQuizLogic(router);
+
+
+   const playerNames = useSelector(selectPlayerNames).map(
+      (player) => player.name,
+    );
+  
+    const {
+    
+      handleExitGame,
+    } = useRajaMantriGame({ playerNames });
+
+
+   useBackHandler(() => {
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Leave Game?",
+        textBody: "If you exit now, your current round scores will be lost!",
+        button: "Exit",
+        onPressButton: () => {
+          Dialog.hide();
+          handleExitGame(); // This handles Redux reset and navigation
+        }
+      });
+  
+      return true; // Stop the app from closing immediately
+    }, { 
+      enabled: true, 
+      priority: 1 
+    });
 
   return (
     <View className="flex-1 bg-[#020205]">

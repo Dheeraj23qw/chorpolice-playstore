@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { Animated } from "react-native";
-import { BackHandler } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { resetGame } from "./utils/resetGameUtils";
 import { flipCard } from "./utils/flipCardUtil";
-import { playSound } from "@/redux/reducers/soundReducer";
+import {
+  playSound,
+  stopQuizSound,
+  stopTimerSound,
+} from "@/redux/reducers/soundReducer";
 import { revealAllCards } from "./utils/revealAllCardsUtils";
 import { resetForNextRound } from "./utils/resetForNextRound";
 import { handlePlayHelper } from "./gameHelper/handleplay";
@@ -14,7 +17,8 @@ import { RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
 import { updatePlayerScores } from "@/redux/reducers/playerReducer";
 import { resetGamefromRedux } from "@/redux/reducers/playerReducer";
-
+import * as Haptics from "expo-haptics";
+import { resetDifficulty } from "@/redux/reducers/quiz";
 interface UseRajaMantriGameOptions {
   playerNames: string[];
 }
@@ -78,9 +82,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [isRoundStartPopupVisible, setIsRoundStartPopupVisible] =
     useState(false);
   const [roundStartMessage, setRoundStartMessage] = useState("");
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [isSearchScreenVisiable, setIsSearchScreenVisiable] = useState(false);
-  const [exitModalVisible, setExitModalVisible] = useState(false);
 
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images,
@@ -92,7 +93,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const playerNamesRedux = useSelector(
     (state: RootState) => state.player.playerNames,
   );
-  const playerInfo = useSelector((state: RootState) => state.player);
 
   const selectedRounds = useSelector(
     (state: RootState) => state.player.gameRound,
@@ -105,31 +105,26 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     handleResetgame();
   }, []);
 
-  const handleExitGame = () => {
-    dispatch(resetGamefromRedux());
-    handleResetgame();
-    router.replace("/modeselect");
-  };
+  const handleExitGame = async () => {
+    try {
+   
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-  const toggleExitModal = () => setExitModalVisible(!exitModalVisible);
+      dispatch(resetGamefromRedux());
+      dispatch(resetDifficulty());
+      handleResetgame();
 
-  const handleBackPress = () => {
-    if (exitModalVisible) {
-      toggleExitModal();
-      return true;
+      if (router.canGoBack()) {
+        router.dismissAll();
+      }
+
+      router.replace("/modeselect");
+    } catch (error) {
+      console.error("Exit failed:", error);
+      // Fallback navigation if something crashes
+      router.replace("/");
     }
-    toggleExitModal();
-    return true;
   };
-
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      handleBackPress,
-    );
-
-    return () => backHandler.remove();
-  }, [exitModalVisible]);
 
   const handleResetgame = () => {
     resetGame(
@@ -469,10 +464,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     handleResetgame,
     setPopupIndex,
     setIsDynamicPopUp,
-    isConnected,
-    isSearchScreenVisiable,
-    exitModalVisible,
-    toggleExitModal,
     handleExitGame,
   };
 };
