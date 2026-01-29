@@ -27,7 +27,6 @@ const ChorPoliceQuiz: React.FC = () => {
     options,
     handleOptionPress,
     isOptionDisabled,
-    currentPlayerIsBot,
     isPopUp,
     mediaType,
     mediaId,
@@ -135,7 +134,6 @@ const ChorPoliceQuiz: React.FC = () => {
                     options={options}
                     onOptionPress={handleOptionPress}
                     isOptionDisabled={isOptionDisabled}
-                    currentPlayerIsBot={currentPlayerIsBot}
                   />
                 </View>
               </View>

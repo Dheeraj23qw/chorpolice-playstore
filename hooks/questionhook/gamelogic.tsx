@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   playSound,
@@ -10,19 +10,40 @@ import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
 import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification"; // Added this
+import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
 
 interface PlayerMessage {
   message?: string | null;
 }
 
+/* ------------------ CONSTANTS ------------------ */
+
 const NUM_QUESTIONS = 7;
-const CORRECT_ANSWER_GIF = 7;
-const INCORRECT_ANSWER_GIF = 6;
-const TIMER_UP_GIF = 8;
+
+const MEDIA = {
+  CORRECT: 7,
+  WRONG: 6,
+  TIMEUP: 8,
+};
+
+const TIMER_BY_DIFFICULTY = {
+  easy: 60,
+  medium: 90,
+  hard: 150,
+} as const;
+
+const POPUP_DELAY = 3000;
+
+/* ------------------------------------------------ */
 
 export const useQuizGameLogic = () => {
   const { table, getRandomQuestion } = useGameTableAndScores();
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const difficulty = useSelector((state: RootState) => state.difficulty.level);
+
+  const timerRef = useRef<number | null>(null);
+  const lastQuestionRef = useRef<any>(null);
 
   const [countdown, setCountdown] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -30,212 +51,229 @@ export const useQuizGameLogic = () => {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
   const [mediaId, setMediaId] = useState<number>(1);
-  const [mediaType, setMediaType] = useState<"image" | "video" | "gif">("image");
-  const [playerMessage, setPlayerMessage] = useState<PlayerMessage>({ message: null });
+  const [mediaType] = useState<"image" | "video" | "gif">("gif");
+  const [playerMessage, setPlayerMessage] = useState<PlayerMessage>({});
   const [remainingOptions, setRemainingOptions] = useState<string[] | null>(null);
   const [isFiftyFiftyActive, setIsFiftyFiftyActive] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState(0);
   const [wrongAnswer, setWrongAnswer] = useState(0);
-  const [notanswer, setNotAnswer] = useState(0);
-  const [question, setQuestion] = useState(getRandomQuestion());
-  const [isOverlayRemoved, setIsOverlayRemoved] = useState(false);
-  const [isQuestionOverlayVisible, setIsQuestionOverlayVisible] = useState(false);
-  const [isTableOpen, setIsTableOpen] = useState<boolean>(false);
+  const [notAnswer, setNotAnswer] = useState(0);
+  const [isTableOpen, setIsTableOpen] = useState(false);
   const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
 
-  const router = useRouter();
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const difficulty = useSelector((state: RootState) => state.difficulty.level);
-  const dispatch = useDispatch();
+  const [question, setQuestion] = useState(() => getRandomQuestion());
 
-  const randomMessageWin = useRandomMessage("a", "winwithoutname");
-  const randomMessageLose = useRandomMessage("b", "loserwithoutname");
-  const randomMessageTimesUp = useRandomMessage("c", "timesup");
+  const randomWin = useRandomMessage("a", "winwithoutname");
+  const randomLose = useRandomMessage("b", "loserwithoutname");
+  const randomTimeUp = useRandomMessage("c", "timesup");
+
+  /* ---------------- TIMER ---------------- */
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const handleTimeUp = useCallback(() => {
+    clearTimer();
+    dispatch(stopTimerSound());
+    dispatch(playSound("timesup"));
+
+    setNotAnswer((p) => p + 1);
+    setMediaId(MEDIA.TIMEUP);
+    setPlayerMessage({ message: randomTimeUp });
+    setIsDynamicPopUp(true);
+
+    setTimeout(() => {
+      setIsDynamicPopUp(false);
+      setShowHint(true);
+    }, POPUP_DELAY);
+  }, [clearTimer]);
+
+ const startTimer = useCallback(() => {
+  clearTimer();
+
+  const safeDifficulty = difficulty ?? "easy";
+  const initial = TIMER_BY_DIFFICULTY[safeDifficulty];
+
+  setCountdown(initial);
+
+  timerRef.current = setInterval(() => {
+    setCountdown((prev) => {
+      if (prev <= 1) {
+        handleTimeUp();
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+}, [difficulty, handleTimeUp, clearTimer]);
+
 
   useEffect(() => {
-    setIsQuestionOverlayVisible(true);
-    const overlayTimeout = setTimeout(() => {
-      setIsQuestionOverlayVisible(false);
-      setIsOverlayRemoved(true);
-    }, 2500);
-
-    return () => clearTimeout(overlayTimeout);
-  }, [questionIndex]);
-
-  useEffect(() => {
-    if (!isOverlayRemoved) return;
     dispatch(stopQuizSound());
     dispatch(playSound("timer"));
+    startTimer();
 
-    let initialTime = 60;
-    if (difficulty === "medium") initialTime = 90;
-    else if (difficulty === "hard") initialTime = 150;
+    return clearTimer;
+  }, [questionIndex]);
 
-    setCountdown(initialTime);
+  /* ---------------- QUESTION ---------------- */
 
-    timerRef.current = setInterval(() => {
-      setCountdown((prevCountdown) => {
-        if (prevCountdown > 0) return prevCountdown - 1;
-        dispatch(stopTimerSound());
-        dispatch(playSound("timesup"));
-        clearInterval(timerRef.current!);
-        setIsDynamicPopUp(true);
-        setMediaType("gif");
-        setMediaId(TIMER_UP_GIF);
-        setPlayerMessage({ message: randomMessageTimesUp });
-        setNotAnswer((prev) => prev + 1);
-        
-        setTimeout(() => {
-          setIsDynamicPopUp(false);
-          setShowHint(true);
-        }, 4000);
+  const getNextQuestion = () => {
+    let next;
+    do {
+      next = getRandomQuestion();
+    } while (next === lastQuestionRef.current);
 
-        return 0;
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [difficulty, questionIndex, isOverlayRemoved]);
-
-  // ---------------------------
-  // LIFELINE LOGIC (Updated to Dialog)
-  // ---------------------------
-  const handleFiftyFifty = () => {
-    if (fiftyFiftyUsageCount >= 2) {
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: "Lifeline Used",
-        textBody: "You have used the 50-50 lifeline twice already.",
-        button: "OK",
-      });
-      return;
-    }
-
-    if (!question) return;
-
-    if (question.boolean || !question.options || question.options.length !== 4) {
-      Dialog.show({
-        type: ALERT_TYPE.INFO,
-        title: "Not Applicable",
-        textBody: "50-50 is only applicable for questions with four options.",
-        button: "OK",
-      });
-      return;
-    }
-
-    const incorrectOptions = question.options.filter(
-      (option) => option !== question.correctAnswer
-    );
-
-    if (incorrectOptions.length >= 2) {
-      const randomIncorrectOption = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
-      const optionsToKeep = [question.correctAnswer, randomIncorrectOption];
-
-      setRemainingOptions(optionsToKeep);
-      setIsFiftyFiftyActive(true);
-      setFiftyFiftyUsageCount((prev) => prev + 1);
-
-      const usageMessage = fiftyFiftyUsageCount === 0
-        ? "You have used the 50-50 lifeline once. You can use it one more time."
-        : "You have used the 50-50 lifeline twice. This is your last chance.";
-
-      Dialog.show({
-        type: ALERT_TYPE.SUCCESS,
-        title: "Lifeline Active",
-        textBody: usageMessage,
-        button: "Let's Go",
-      });
-    }
+    lastQuestionRef.current = next;
+    return next;
   };
 
-  // ---------------------------
-  // QUIT LOGIC (Updated to Dialog)
-  // ---------------------------
-  const handleQuit = () => {
-    Dialog.show({
-      type: ALERT_TYPE.DANGER,
-      title: "Quit Game",
-      textBody: "Are you sure you want to quit the game?",
-      button: "Quit",
-      onPressButton: () => {
-        Dialog.hide();
-        resetGame();
-        dispatch(resetDifficulty());
-        router.replace("/gamelevel");
-      }
-    });
-  };
+  /* ---------------- ANSWER ---------------- */
 
   const handleAnswerSelection = (answer: string) => {
+    clearTimer();
     dispatch(stopTimerSound());
+
     setSelectedAnswer(answer);
     setIsDynamicPopUp(true);
 
-    if (timerRef.current) clearInterval(timerRef.current);
+    const correct = answer === question?.correctAnswer;
+    setIsCorrect(correct);
 
-    if (answer === question?.correctAnswer) {
-      setCorrectAnswer((prev) => prev + 1);
-      setMediaType("gif");
-      setMediaId(CORRECT_ANSWER_GIF);
-      setIsCorrect(true);
-      setPlayerMessage({ message: randomMessageWin });
+    if (correct) {
+      setCorrectAnswer((p) => p + 1);
+      setMediaId(MEDIA.CORRECT);
+      setPlayerMessage({ message: randomWin });
       dispatch(playSound("win"));
     } else {
-      setWrongAnswer((prev) => prev + 1);
-      setIsCorrect(false);
-      setMediaType("gif");
-      setMediaId(INCORRECT_ANSWER_GIF);
-      setPlayerMessage({ message: randomMessageLose });
+      setWrongAnswer((p) => p + 1);
+      setMediaId(MEDIA.WRONG);
+      setPlayerMessage({ message: randomLose });
       dispatch(playSound("lose"));
     }
 
     setTimeout(() => {
       setIsDynamicPopUp(false);
       setShowHint(true);
-    }, 3000);
+    }, POPUP_DELAY);
   };
+
+  /* ---------------- 50-50 ---------------- */
+
+const handleFiftyFifty = () => {
+  // 🚫 Already exhausted
+  if (fiftyFiftyUsageCount >= 2) {
+    Dialog.show({
+      type: ALERT_TYPE.WARNING,
+      title: "No Lifelines Left",
+      textBody: "You’ve already used both 50-50 lifelines.",
+      button: "OK",
+    });
+    return;
+  }
+
+  if (!question?.options || question.options.length !== 4) {
+    Dialog.show({
+      type: ALERT_TYPE.INFO,
+      title: "Not Available",
+      textBody: "Sorry! 50-50 works only on questions with four options.",
+      button: "Got it",
+    });
+    return;
+  }
+
+  const incorrect = question.options.filter(
+    (opt) => opt !== question.correctAnswer
+  );
+
+  const shuffled = [...incorrect].sort(() => 0.5 - Math.random());
+  const toRemove = shuffled.slice(0, 2);
+
+  const filtered = question.options.filter(
+    (opt) => !toRemove.includes(opt)
+  );
+
+  // ✅ Apply lifeline
+  setRemainingOptions(filtered);
+  setIsFiftyFiftyActive(true);
+
+  const nextCount = fiftyFiftyUsageCount + 1;
+  setFiftyFiftyUsageCount(nextCount);
+
+  // ✅ Show feedback OUTSIDE state update
+  if (nextCount === 1) {
+    Dialog.show({
+      type: ALERT_TYPE.SUCCESS,
+      title: "50-50 Activated!",
+      textBody: "Nice! You used 1 lifeline. You still have 1 remaining.",
+      button: "Continue",
+    });
+  }
+
+  if (nextCount === 2) {
+    Dialog.show({
+      type: ALERT_TYPE.WARNING,
+      title: "All Lifelines Used",
+      textBody: "That was your final 50-50 lifeline. Use wisely!",
+      button: "Understood",
+    });
+  }
+};
+
+
+  /* ---------------- NEXT ---------------- */
 
   const handleNextQuestion = () => {
     dispatch(playSound("next"));
-    setIsOverlayRemoved(false);
+    setShowHint(false);
     setRemainingOptions(null);
     setIsFiftyFiftyActive(false);
-    setShowHint(false);
-    if (questionIndex + 1 === NUM_QUESTIONS) {
+
+    if (questionIndex + 1 >= NUM_QUESTIONS) {
       dispatch(setCorrectAnswers(correctAnswer));
       router.push("/quizresult");
-    } else {
-      setSelectedAnswer(null);
-      setIsCorrect(null);
-      setQuestion(getRandomQuestion());
-      setQuestionIndex((prevIndex) => prevIndex + 1);
+      return;
     }
-  };
 
-  const resetGame = () => {
-    setQuestionIndex(0);
     setSelectedAnswer(null);
     setIsCorrect(null);
-    setQuestion(getRandomQuestion());
-    setCountdown(0);
-    setIsDynamicPopUp(false);
-    setMediaId(1);
-    setMediaType("image");
-    setIsTableOpen(false);
-    setShowHint(false);
+    setQuestion(getNextQuestion());
+    setQuestionIndex((p) => p + 1);
+  };
+
+  /* ---------------- RESET / QUIT ---------------- */
+
+  const resetGame = () => {
+    dispatch(stopTimerSound());
+    clearTimer();
+    setQuestionIndex(0);
     setCorrectAnswer(0);
     setWrongAnswer(0);
     setNotAnswer(0);
-    setIsQuestionOverlayVisible(false);
-    setIsOverlayRemoved(false);
     setRemainingOptions(null);
     setIsFiftyFiftyActive(false);
     setFiftyFiftyUsageCount(0);
-    dispatch(stopTimerSound());
-    dispatch(playSound("quiz"));
+    setQuestion(getNextQuestion());
+  };
+
+  const handleQuit = () => {
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Quit Game",
+      textBody: "Are you sure you want to quit?",
+      button: "Quit",
+      onPressButton: () => {
+        Dialog.hide();
+        resetGame();
+        dispatch(resetDifficulty());
+        router.replace("/gamelevel");
+      },
+    });
   };
 
   return {
@@ -252,9 +290,7 @@ export const useQuizGameLogic = () => {
     showHint,
     correctAnswer,
     wrongAnswer,
-    notanswer,
-    isQuestionOverlayVisible,
-    isOverlayRemoved,
+    notAnswer,
     handleQuit,
     isTableOpen,
     setIsTableOpen,

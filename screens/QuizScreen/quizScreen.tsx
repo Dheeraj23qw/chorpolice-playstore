@@ -27,7 +27,6 @@ const QuizScreen = () => {
     handleFiftyFifty,
     handleNextQuestion,
     handleAnswerSelection,
-    isQuestionOverlayVisible,
     handleQuit,
     isTableOpen,
     setIsTableOpen,
@@ -76,7 +75,6 @@ const QuizScreen = () => {
         }}
       >
         {/* --- Floating Question Indicator --- */}
-        {isQuestionOverlayVisible && (
           <View
             style={{
               top: insets.top > 0 ? insets.top + hp(1) : hp(7), // Adjusts dynamically
@@ -89,7 +87,7 @@ const QuizScreen = () => {
               Question {questionIndex + 1}
             </Text>
           </View>
-        )}
+      
 
         {/* --- Timer Area (Pushed below Notch) --- */}
         <View style={{ marginTop: hp(8) }}>

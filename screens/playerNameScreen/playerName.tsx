@@ -55,12 +55,13 @@ const PlayerNameScreen: React.FC = () => {
     useCallback(() => {
       translateY.value = 40;
       opacity.value = 0;
+      
       translateY.value = withTiming(0, {
         duration: 700,
         easing: Easing.out(Easing.cubic),
       });
       opacity.value = withTiming(1, { duration: 600 });
-    }, []),
+    }, [translateY, opacity]),
   );
 
   const {
@@ -82,12 +83,8 @@ const PlayerNameScreen: React.FC = () => {
       <View className="absolute bottom-40 -right-20 w-72 h-72 rounded-full bg-blue-600/5 blur-3xl" />
 
       {/* 🔙 Fixed Back Button */}
-      <View
-        style={{ top: insets.top + 10, left: 16 }}
-        className="absolute z-50"
-      >
+    
         <SafeBackButton />
-      </View>
 
       {/* 📍 FIXED HEADER AREA */}
       <View

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { updatePlayerScores } from "@/redux/reducers/playerReducer";
-import { BackHandler } from "react-native";
 import { playSound } from "@/redux/reducers/soundReducer";
 import useRandomMessage from "@/hooks/useRandomMessage";
 
@@ -38,54 +37,12 @@ const useQuizLogic = (router: any) => {
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
   const winMessage = useRandomMessage(currentPlayerName, "win");
   const loseMessage = useRandomMessage(currentPlayerName, "lose");
-  const thinkingMessage = useRandomMessage(currentPlayerName, "thinking");
 
-  const [isBotThinking, setIsBotThinking] = useState(false);
-  useEffect(() => {
-    const backAction = () => {
-      return true;
-    };
 
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-
-    return () => backHandler.remove();
-  }, []);
-
+  // Generate options whenever the current player changes
   useEffect(() => {
     generateOptionsForPlayer();
   }, [currentPlayerIndex]);
-
-  useEffect(() => {
-    let timeoutToShow: NodeJS.Timeout | undefined;
-    let timeoutToHide: NodeJS.Timeout | undefined;
-    let timeoutToAnswer: NodeJS.Timeout | undefined;
-
-    if (currentPlayerIsBot && !isPopUp) {
-      timeoutToShow = setTimeout(() => {
-        setIsBotThinking(true);
-        timeoutToHide = setTimeout(() => {
-          setIsBotThinking(false);
-
-          timeoutToAnswer = setTimeout(() => {
-            simulateBotOptionSelection();
-          }, 3000);
-        }, 6000);
-      }, 4000);
-    } else {
-      setIsBotThinking(false);
-    }
-
-    return () => {
-      if (timeoutToShow) clearTimeout(timeoutToShow);
-      if (timeoutToHide) clearTimeout(timeoutToHide);
-      if (timeoutToAnswer) clearTimeout(timeoutToAnswer);
-    };
-  }, [currentPlayerIndex, isPopUp]);
-
-  const currentPlayerIsBot = playerNames[currentPlayerIndex]?.isBot;
 
   const generateOptionsForPlayer = () => {
     if (playerNames.length === 0) return;
@@ -134,39 +91,15 @@ const useQuizLogic = (router: any) => {
       setIsPopUp(true);
       setMediaId(2);
       setMediaType("gif");
-      setFeedback(winMessage, "win"); // Pass win message here
+      setFeedback(winMessage, "win");
     } else {
       updateScore(currentPlayerName, -2000);
       setIsPopUp(true);
       setMediaId(1);
       setMediaType("gif");
-      setFeedback(loseMessage, "lose"); // Pass lose message here
+      setFeedback(loseMessage, "lose");
     }
   };
-
-  const simulateBotOptionSelection = () => {
-    const minDelay = 1000; // Minimum delay of 1 second
-    const maxDelay = 2000; // Maximum delay of 2 seconds
-    const randomDelay =
-        Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay; // Random delay
-
-    setTimeout(() => {
-        const correctScore = playerScores.find(
-            (score) => score.playerName === currentPlayerName
-        )?.totalScore ?? 0;
-
-        // 50% chance to select the correct answer
-        if (Math.random() < 0.5) {
-            handleOptionPress(correctScore); // Select the correct answer
-        } else {
-            // Select a random incorrect answer
-            const incorrectOptions = options.filter(option => option !== correctScore);
-            const botChoice =
-                incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
-            handleOptionPress(botChoice);
-        }
-    }, randomDelay);
-};
 
   const updateScore = (playerName: string, points: number) => {
     dispatch(
@@ -207,9 +140,10 @@ const useQuizLogic = (router: any) => {
       if (nextIndex < playerNames.length) {
         return nextIndex;
       } else {
+        // Delay navigation slightly to allow UI cleanup
         setTimeout(() => {
           router.replace("/chorpoliceResult");
-        }, 1);
+        }, 10);
         return prevIndex;
       }
     });
@@ -233,7 +167,6 @@ const useQuizLogic = (router: any) => {
     handleOptionPress,
     moveToNextPlayer,
     isOptionDisabled,
-    currentPlayerIsBot,
     isPopUp,
     mediaType,
     mediaId,
@@ -242,8 +175,6 @@ const useQuizLogic = (router: any) => {
     currentPlayerImageType,
     playerNames,
     playerScores,
-    isBotThinking,
-    thinkingMessage,
   };
 };
 

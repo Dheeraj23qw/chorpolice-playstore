@@ -9,6 +9,7 @@ import { ChevronLeft } from "lucide-react-native";
 
 import { rulesGroups } from "@/constants/gameRules";
 import { RuleGroupCard } from "@/components/RuleScreen_components/RuleGroupCard";
+import { SafeBackButton } from "@/components/SafeBackButton";
 
 export default function RulesHome() {
   const insets = useSafeAreaInsets(); // 👈 dynamic notch spacing
@@ -25,21 +26,7 @@ export default function RulesHome() {
 
         <View className="flex-1">
           {/* 🔙 Back Button */}
-          <View
-            style={{
-              position: "absolute",
-              top: insets.top + 12,
-              left: insets.left + 16,
-              zIndex: 20,
-            }}
-          >
-            <Pressable
-              onPress={() => router.back()}
-              className="w-11 h-11 rounded-full bg-black/60 items-center justify-center active:scale-95"
-            >
-              <ChevronLeft size={26} color="grey" />
-            </Pressable>
-          </View>
+          <SafeBackButton />
 
           <View className="flex-1 px-6">
             {/* Header */}

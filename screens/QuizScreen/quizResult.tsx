@@ -13,6 +13,7 @@ import { addCoins } from "@/redux/reducers/coinsReducer";
 import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
 import { handleShare } from "@/utils/share";
+import { useBackHandler } from "@/utils/BackHandler";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -52,6 +53,15 @@ export default function QuizResult() {
     dispatch(playSound("quiz"));
     router.replace("/modeselect");
   };
+
+   useBackHandler(
+      () => {
+        router.replace("/modeselect");
+        dispatch(playSound("quiz"));
+        return true;
+      },
+      { priority: 1 },
+    );
 
   const toggleModal = () => setModalVisible((prev) => !prev);
 

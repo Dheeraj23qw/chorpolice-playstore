@@ -1,11 +1,27 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { createAudioPlayer } from "expo-audio";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createAudioPlayer, AudioPlayer } from "expo-audio";
 
-// Sound Names
-type SoundName =
-  | "win" | "lose" | "spin" | "next" | "quiz" | "level"
-  | "select" | "selected" | "king" | "timer" | "timesup"
-  | "police" | "winning" | "losing";
+/* ----------------------------- TYPES ----------------------------- */
+
+export type SoundName =
+  | "win"
+  | "lose"
+  | "spin"
+  | "next"
+  | "quiz"
+  | "level"
+  | "select"
+  | "selected"
+  | "king"
+  | "timer"
+  | "timesup"
+  | "police"
+  | "winning"
+  | "losing";
+
+type PlayerMap = Partial<Record<SoundName, AudioPlayer>>;
+
+/* --------------------------- ASSETS --------------------------- */
 
 const soundPaths: Record<SoundName, any> = {
   win: require("@/assets/audio/chorPolice/won.mp3"),
@@ -24,103 +40,139 @@ const soundPaths: Record<SoundName, any> = {
   losing: require("@/assets/audio/chorPolice/losing.mp3"),
 };
 
-// Global object to store players outside the state
-const players: Record<string, any> = {};
+/* ------------------------ INTERNAL ENGINE ------------------------ */
 
-/** * SAFETY CHECK: 
- * Ensures the player is loaded and not released before use
- */
-const isPlayerReady = (name: string) => {
-  const p = players[name];
-  // We check if the player exists and hasn't been destroyed
-  return p && typeof p.play === "function";
+const players: PlayerMap = {};
+const LOOPED_SOUNDS: SoundName[] = ["quiz", "timer"];
+
+/** Type Guard */
+const isReady = (p: AudioPlayer | undefined): p is AudioPlayer => {
+  return !!p && typeof p.play === "function";
 };
 
+/** Hard stop helper */
+const hardStop = (p?: AudioPlayer) => {
+  if (!isReady(p)) return;
+
+  try {
+    p.pause();
+    p.loop = false;
+    p.seekTo(0);
+  } catch {
+    // silent
+  }
+};
+
+/** Safe release helper */
+const safeRelease = (p?: AudioPlayer) => {
+  if (!isReady(p)) return;
+
+  try {
+    hardStop(p);
+    p.release();
+  } catch {
+    // silent
+  }
+};
+
+/* -------------------------- ASYNC LOAD -------------------------- */
+
 export const loadSounds = createAsyncThunk(
-  "sound/loadSounds",
+  "sound/load",
   async (_, { rejectWithValue }) => {
     try {
-      (Object.keys(soundPaths) as SoundName[]).forEach((key) => {
-        // Create player if it doesn't exist
-        if (!players[key]) {
-          players[key] = createAudioPlayer(soundPaths[key]);
+      (Object.keys(soundPaths) as SoundName[]).forEach((name) => {
+        if (!players[name]) {
+          players[name] = createAudioPlayer(soundPaths[name]);
         }
       });
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
     }
-  }
+  },
 );
+
+/* ---------------------------- SLICE ---------------------------- */
+
+interface SoundState {
+  isLoading: boolean;
+  error: string | null;
+  isMuted: boolean;
+}
+
+const initialState: SoundState = {
+  isLoading: false,
+  error: null,
+  isMuted: false,
+};
 
 const soundSlice = createSlice({
   name: "sound",
-  initialState: {
-    isLoading: false,
-    error: null as string | null,
-    isMuted: false,
-  },
+  initialState,
   reducers: {
-    playSound: (state, action) => {
-      const name: SoundName = action.payload;
-      
-      if (isPlayerReady(name)) {
-        const player = players[name];
+    /* ▶️ PLAY */
+    playSound: (state, action: PayloadAction<SoundName>) => {
+      if (state.isMuted) return;
 
-        // Handle simple loops
-        if (name === "quiz" || name === "timer") {
-          player.loop = true;
-        }
+      const name = action.payload;
+      const player = players[name];
 
-        // Only try to seek if the player is ready
-        try {
-          player.seekTo(0); 
-          player.play();
-        } catch (e) {
-          console.log(`Audio error for ${name}:`, e);
-        }
+      if (!isReady(player)) return;
+
+      try {
+        // HARD RESET BEFORE PLAY (prevents overlaps & lag)
+        hardStop(player);
+
+        // Loop control
+        player.loop = LOOPED_SOUNDS.includes(name);
+
+        player.play();
+      } catch (e) {
+        console.warn(`Audio play failed for ${name}`, e);
       }
     },
 
-    stopSound: (state, action) => {
-      const name: SoundName = action.payload;
-      if (isPlayerReady(name)) {
-        players[name].pause();
-        try { players[name].seekTo(0); } catch (e) {}
-      }
+    /* ⏹ STOP SINGLE */
+    stopSound: (_, action: PayloadAction<SoundName>) => {
+      hardStop(players[action.payload]);
     },
 
-    stopQuizSound: (state) => {
-      if (isPlayerReady("quiz")) {
-        players.quiz.pause();
-        try { players.quiz.seekTo(0); } catch (e) {}
-      }
-      state.isMuted = true;
+    /* ⛔ STOP QUIZ */
+    stopQuizSound: () => {
+      hardStop(players.quiz);
     },
 
+    /* ⏱ STOP TIMER */
     stopTimerSound: () => {
-      if (isPlayerReady("timer")) {
-        players.timer.pause();
-        try { players.timer.seekTo(0); } catch (e) {}
+      hardStop(players.timer);
+    },
+
+    /* 🔊 MUTE CONTROL */
+    setMuted: (state, action: PayloadAction<boolean>) => {
+      state.isMuted = action.payload;
+
+      if (action.payload) {
+        Object.values(players).forEach(hardStop);
       }
     },
 
+    /* 🧹 FULL CLEANUP */
     unloadSounds: () => {
-      Object.keys(players).forEach((key) => {
-        try {
-          players[key]?.pause();
-          // Important: check release before calling
-          players[key]?.release();
-        } catch (e) {
-          console.log("Error unloading sound:", key);
-        }
+      (Object.keys(players) as SoundName[]).forEach((key) => {
+        safeRelease(players[key]);
         delete players[key];
       });
     },
   },
+
   extraReducers: (builder) => {
     builder
-      .addCase(loadSounds.pending, (state) => { state.isLoading = true; })
-      .addCase(loadSounds.fulfilled, (state) => { state.isLoading = false; })
+      .addCase(loadSounds.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loadSounds.fulfilled, (state) => {
+        state.isLoading = false;
+      })
       .addCase(loadSounds.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
@@ -128,12 +180,15 @@ const soundSlice = createSlice({
   },
 });
 
+/* --------------------------- EXPORTS --------------------------- */
+
 export const {
   playSound,
+  stopSound,
   stopQuizSound,
   stopTimerSound,
   unloadSounds,
-  stopSound,
+  setMuted,
 } = soundSlice.actions;
 
 export default soundSlice.reducer;

@@ -14,7 +14,11 @@ import {
   responsiveFontSize,
 } from "react-native-responsive-dimensions";
 
-import { stopQuizSound, playSound } from "@/redux/reducers/soundReducer";
+import {
+  stopQuizSound,
+  playSound,
+  setMuted, // ✅ ADD THIS
+} from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
 import { handleShare } from "@/utils/share";
 import { FullScreenMenu } from "@/components/sidebar";
@@ -107,11 +111,14 @@ const OptionHeader = () => {
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={() =>
-          isMuted
-            ? dispatch(playSound("quiz"))
-            : dispatch(stopQuizSound())
-        }
+        onPress={() => {
+          if (isMuted) {
+            dispatch(setMuted(false)); // unmute
+            dispatch(playSound("quiz")); // start sound
+          } else {
+            dispatch(setMuted(true)); // mute
+          }
+        }}
       >
         <Ionicons
           name={isMuted ? "volume-mute" : "volume-high"}
@@ -121,15 +128,14 @@ const OptionHeader = () => {
       </AnimatedCircleBtn>
 
       {/* 🪙 Earn */}
-<AnimatedCircleBtn
-  btnDim={btnDim}
-  marginBetween={marginBetween}
-  backgroundColor={SLATE_TRANSPARENT}
-  onPress={() => router.push("./earn")}
->
-  <Ionicons name="flash" size={iconSize} color={ICON_COLOR} />
-</AnimatedCircleBtn>
-
+      <AnimatedCircleBtn
+        btnDim={btnDim}
+        marginBetween={marginBetween}
+        backgroundColor={SLATE_TRANSPARENT}
+        onPress={() => router.push("./earn")}
+      >
+        <Ionicons name="flash" size={iconSize} color={ICON_COLOR} />
+      </AnimatedCircleBtn>
 
       {/* 📤 Share */}
       <AnimatedCircleBtn
@@ -138,11 +144,7 @@ const OptionHeader = () => {
         backgroundColor={SLATE_TRANSPARENT}
         onPress={handleShare}
       >
-        <Ionicons
-          name="share-social"
-          size={iconSize}
-          color={ICON_COLOR}
-        />
+        <Ionicons name="share-social" size={iconSize} color={ICON_COLOR} />
       </AnimatedCircleBtn>
 
       {/* ⭐ Rating */}
@@ -154,8 +156,6 @@ const OptionHeader = () => {
       >
         <MaterialIcons name="star" size={iconSize} color={ICON_COLOR} />
       </AnimatedCircleBtn>
-
-
 
       {/* ⚙️ Menu */}
       <AnimatedCircleBtn
