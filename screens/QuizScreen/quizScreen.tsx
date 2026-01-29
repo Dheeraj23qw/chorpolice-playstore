@@ -15,7 +15,7 @@ import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets(); // 2. Hook to get Notch/Home bar sizes
-  
+
   const {
     countdown,
     isDynamicPopUp,
@@ -36,18 +36,30 @@ const QuizScreen = () => {
     playerMessage,
   } = useQuizGameLogic();
 
-  const onOptionPress = useCallback((value: string) => {
-    handleAnswerSelection(value);
-  }, [handleAnswerSelection]);
+  const onOptionPress = useCallback(
+    (value: string) => {
+      handleAnswerSelection(value);
+    },
+    [handleAnswerSelection],
+  );
 
   if (isTableOpen) {
-    return <GameTable isTableOpen={isTableOpen} setIsTableOpen={setIsTableOpen} table={table} />;
+    return (
+      <>
+        <View className="flex-1 bg-[#050505]">
+          <GameTable
+            isTableOpen={isTableOpen}
+            setIsTableOpen={setIsTableOpen}
+            table={table}
+          />
+        </View>
+      </>
+    );
   }
 
   if (isDynamicPopUp) {
     return (
       <View className="flex-1 bg-[#050505] items-center justify-center">
-        <StatusBar barStyle="light-content" />
         <DynamicOverlayPopUp
           isPopUp={isDynamicPopUp}
           mediaId={mediaId}
@@ -61,33 +73,36 @@ const QuizScreen = () => {
 
   return (
     <View className="flex-1 bg-[#09090b]">
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
       {/* Background Decor (Stretches behind Notch) */}
-      <View style={{ width: wp(120), height: wp(120), top: -hp(20), left: -wp(20) }} className="absolute bg-indigo-600/10 rounded-full blur-[100px]" />
+      <View
+        style={{ width: wp(120), height: wp(120), top: -hp(20), left: -wp(20) }}
+        className="absolute bg-indigo-600/10 rounded-full blur-[100px]"
+      />
 
       {/* --- Safe Content Container --- */}
-      <View 
-        style={{ 
-          flex: 1, 
+      <View
+        style={{
+          flex: 1,
           paddingTop: insets.top > 0 ? insets.top : hp(2), // Avoid Notch
-          paddingBottom: insets.bottom // Avoid Home Indicator
+          paddingBottom: insets.bottom, // Avoid Home Indicator
         }}
       >
         {/* --- Floating Question Indicator --- */}
-          <View
-            style={{
-              top: insets.top > 0 ? insets.top + hp(1) : hp(7), // Adjusts dynamically
-              paddingHorizontal: wp(5),
-              paddingVertical: hp(1),
-            }}
-            className="absolute self-center rounded-full bg-white/5 border border-white/10 z-50 backdrop-blur-md"
+        <View
+          style={{
+            top: insets.top > 0 ? insets.top + hp(1) : hp(7), // Adjusts dynamically
+            paddingHorizontal: wp(5),
+            paddingVertical: hp(1),
+          }}
+          className="absolute self-center rounded-full bg-white/5 border border-white/10 z-50 backdrop-blur-md"
+        >
+          <Text
+            style={{ fontSize: rf(1.4) }}
+            className="text-indigo-400 font-bold tracking-[3px] uppercase"
           >
-            <Text style={{ fontSize: rf(1.4) }} className="text-indigo-400 font-bold tracking-[3px] uppercase">
-              Question {questionIndex + 1}
-            </Text>
-          </View>
-      
+            Question {questionIndex + 1}
+          </Text>
+        </View>
 
         {/* --- Timer Area (Pushed below Notch) --- */}
         <View style={{ marginTop: hp(8) }}>
@@ -112,7 +127,9 @@ const QuizScreen = () => {
             ) : (
               <View className="animate-in fade-in zoom-in-95">
                 <OptionsSection
-                  options={isFiftyFiftyActive ? remainingOptions : question?.options}
+                  options={
+                    isFiftyFiftyActive ? remainingOptions : question?.options
+                  }
                   handleAnswerSelection={onOptionPress}
                 />
               </View>
@@ -129,16 +146,22 @@ const QuizScreen = () => {
             />
           </View>
 
-          <View style={{ marginTop: hp(4), marginBottom: hp(5) }} className="items-center">
+          <View
+            style={{ marginTop: hp(4), marginBottom: hp(5) }}
+            className="items-center"
+          >
             <View className="h-[1px] w-20 bg-white/10 mb-4" />
-            <Text style={{ fontSize: rf(1.4) }} className="text-white/30 text-center tracking-widest uppercase">
-              {showHint ? "Prepare for the next challenge" : "Consult the table to solve"}
+            <Text
+              style={{ fontSize: rf(1.4) }}
+              className="text-white/30 text-center tracking-widest uppercase"
+            >
+              {showHint
+                ? "Prepare for the next challenge"
+                : "Consult the table to solve"}
             </Text>
           </View>
         </ScrollView>
       </View>
-
-   
     </View>
   );
 };

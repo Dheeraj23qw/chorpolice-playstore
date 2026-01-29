@@ -10,7 +10,7 @@ import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
 import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
+import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
 
 interface PlayerMessage {
   message?: string | null;
@@ -168,23 +168,24 @@ export const useQuizGameLogic = () => {
 const handleFiftyFifty = () => {
   // 🚫 Already exhausted
   if (fiftyFiftyUsageCount >= 2) {
-    Dialog.show({
-      type: ALERT_TYPE.WARNING,
-      title: "No Lifelines Left",
-      textBody: "You’ve already used both 50-50 lifelines.",
-      button: "OK",
+    Toast.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Empty!",
+      textBody: "You've used all 50-50 lifelines for this game.",
+      autoClose: 2000,
     });
-    return;
+    return; // ✅ IMPORTANT
   }
 
+  // 🚫 Invalid question
   if (!question?.options || question.options.length !== 4) {
-    Dialog.show({
+    Toast.show({
       type: ALERT_TYPE.INFO,
-      title: "Not Available",
-      textBody: "Sorry! 50-50 works only on questions with four options.",
-      button: "Got it",
+      title: "Unavailable",
+      textBody: "50-50 is only for 4-option questions.",
+      autoClose: 2000,
     });
-    return;
+    return; // ✅ IMPORTANT
   }
 
   const incorrect = question.options.filter(
@@ -205,25 +206,26 @@ const handleFiftyFifty = () => {
   const nextCount = fiftyFiftyUsageCount + 1;
   setFiftyFiftyUsageCount(nextCount);
 
-  // ✅ Show feedback OUTSIDE state update
+  // ✅ Feedback
   if (nextCount === 1) {
-    Dialog.show({
+    Toast.show({
       type: ALERT_TYPE.SUCCESS,
       title: "50-50 Activated!",
-      textBody: "Nice! You used 1 lifeline. You still have 1 remaining.",
-      button: "Continue",
+      textBody: "1 lifeline used. 1 remaining.",
+      autoClose: 2000,
     });
   }
 
   if (nextCount === 2) {
-    Dialog.show({
+    Toast.show({
       type: ALERT_TYPE.WARNING,
-      title: "All Lifelines Used",
-      textBody: "That was your final 50-50 lifeline. Use wisely!",
-      button: "Understood",
+      title: "Final Lifeline!",
+      textBody: "No 50-50 lifelines left. Use it wisely!",
+      autoClose: 3000,
     });
   }
 };
+
 
 
   /* ---------------- NEXT ---------------- */

@@ -72,7 +72,7 @@ export default function RootLayout() {
 return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <AlertNotificationRoot theme="light">
+        <AlertNotificationRoot theme="dark">
           <StatusBar hidden translucent backgroundColor="transparent"/>
           <AppLayout />
         </AlertNotificationRoot> 

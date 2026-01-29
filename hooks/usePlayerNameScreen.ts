@@ -10,6 +10,7 @@ import { playSound } from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
 import { GameMode } from "@/types/redux/reducers";
 import { generateRandomName } from "@/utils/generateRandomnames";
+import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
 
 const MAX_SELECTED_IMAGES = 4;
 const MAX_NAME_LENGTH = 8;
@@ -75,7 +76,16 @@ export const usePlayerNameScreen = () => {
   // NAME CHANGE
   // ---------------------------
   const handleNameChange = useCallback((imageId: number, name: string) => {
-    if (name.length > MAX_NAME_LENGTH) return;
+    if (name.length > MAX_NAME_LENGTH) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Limit Reached",
+        textBody: `Names cannot exceed ${MAX_NAME_LENGTH} characters.`,
+        autoClose: 1500, // Disappears quickly so it doesn't stay in the way
+      });
+      return;
+    }
+
     setImageNamesState((prev) => ({ ...prev, [imageId]: name }));
   }, []);
 
@@ -101,21 +111,48 @@ export const usePlayerNameScreen = () => {
         {} as Record<number, string>,
       );
     },
-    [imageNames], // Keeps the logic fresh whenever user types
+    [imageNames],
   );
 
   const checkForDuplicateNames = useCallback((): boolean => {
-    const names = Object.values(imageNames).filter(
-      (name) => name.trim() !== "",
-    );
-    return new Set(names).size !== names.length;
+    const names = Object.values(imageNames)
+      .map((name) => name.trim())
+      .filter((name) => name !== "");
+
+    const hasDuplicates = new Set(names).size !== names.length;
+
+    if (hasDuplicates) {
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Duplicate Names",
+        textBody:
+          "Multiple players have the same name. Please give everyone a unique name!",
+        button: "Fix It",
+      });
+      return true;
+    }
+
+    return false; // No duplicates (Proceed)
   }, [imageNames]);
 
-  // ---------------------------
-  // START GAME
-  // ---------------------------
   const handleStartAdventure = useCallback(async () => {
     if (checkForDuplicateNames()) return;
+
+    const hasEmptyNames = selectedImages.some(
+      (id) => !imageNames[id] || imageNames[id].trim() === "",
+    );
+
+    if (hasEmptyNames) {
+      Dialog.show({
+        type: ALERT_TYPE.INFO,
+        title: "Auto-Naming",
+        textBody: "Empty names will be filled with default player names.",
+        button: "Fix It",
+
+        autoClose: 4000,
+      });
+      return true;
+    }
 
     dispatch(playSound("select"));
     setIsButtonDisabled(true);
@@ -137,6 +174,15 @@ export const usePlayerNameScreen = () => {
       router.push("/chorpolicegame");
     } catch (error) {
       console.error("Failed to start adventure:", error);
+
+      // 3. Error Notification
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Launch Failed",
+        textBody:
+          "Something went wrong while setting up the game. Please try again.",
+        button: "Close",
+      });
     } finally {
       setIsButtonDisabled(false);
     }
@@ -150,9 +196,6 @@ export const usePlayerNameScreen = () => {
     gameModeStatus,
   ]);
 
-  // ---------------------------
-  // REMOVE PLAYER (Previously handleAlertConfirm)
-  // ---------------------------
   const removePlayer = useCallback(
     (imageId: number) => {
       dispatch(playSound("select"));
@@ -169,8 +212,8 @@ export const usePlayerNameScreen = () => {
 
   const handleSelectedImageClick = useCallback(
     (imageId: number) => {
-      // Instead of showing a modal, we just remove the player directly
       if (selectedImages.includes(imageId)) {
+        // 1. Effects and State Updates
         dispatch(playSound("select"));
 
         setSelectedImagesState((prev) => prev.filter((id) => id !== imageId));
@@ -178,6 +221,14 @@ export const usePlayerNameScreen = () => {
         setImageNamesState((prev) => {
           const { [imageId]: _, ...rest } = prev;
           return rest;
+        });
+
+        // 2. Show the Notification
+        Toast.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: "Player Removed",
+          textBody: "The selected player has been removed.",
+          autoClose: 2000, // Closes after 2 seconds
         });
       }
     },
