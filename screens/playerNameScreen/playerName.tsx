@@ -46,7 +46,7 @@ const PlayerNameScreen: React.FC = () => {
     useCallback(() => {
       translateY.value = 40;
       opacity.value = 0;
-      
+
       translateY.value = withTiming(0, {
         duration: 700,
         easing: Easing.out(Easing.cubic),
@@ -74,8 +74,8 @@ const PlayerNameScreen: React.FC = () => {
       <View className="absolute bottom-40 -right-20 w-72 h-72 rounded-full bg-blue-600/5 blur-3xl" />
 
       {/* 🔙 Fixed Back Button */}
-    
-        <SafeBackButton />
+
+      <SafeBackButton />
 
       {/* 📍 FIXED HEADER AREA */}
       <View
@@ -89,6 +89,7 @@ const PlayerNameScreen: React.FC = () => {
       </View>
 
       <LoadingIndicator loading={pickerLoading} message="Processing Image..." />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
@@ -104,6 +105,19 @@ const PlayerNameScreen: React.FC = () => {
                 pickImage={pickImage}
                 options={[{ label: "Upload from Gallery", value: "gallery" }]}
               />
+            </View>
+
+            <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-4 px-5 mb-6">
+              <Text className="text-indigo-200 font-bold text-xs uppercase tracking-widest mb-2">
+                Best Experience
+              </Text>
+
+              <Text className="text-white/80 text-sm leading-5">
+                For the most fun experience, play with 4 real players 👑
+                {"\n\n"}
+                Upload your own images and use your real names to make the game
+                more exciting and personal!
+              </Text>
             </View>
             <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-3 px-4 mb-4 items-center">
               <Text className="text-indigo-200 font-bold uppercase tracking-wider text-xs">
@@ -167,6 +181,8 @@ const PlayerNameScreen: React.FC = () => {
         {/* --- 4. FINAL START ACTION --- */}
         {selectedImages.length === 4 && !showRoundTable && (
           <Animated.View entering={FadeIn} className="mt-4">
+
+            
             <PlayernameActionButtons
               handleStartAdventure={handleStartAdventure}
               disabled={isButtonDisabled}
