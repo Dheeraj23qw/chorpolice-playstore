@@ -12,8 +12,7 @@ import { ActionButtons } from "@/components/leaderBoardScreen/ActionButtons";
 import { useSelector } from "react-redux";
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
-import { useBackHandler } from "@/utils/BackHandler";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
+
 
 const REWARD_POINTS = 1000;
 const POPUP_TIMEOUT = 5000;
@@ -46,16 +45,7 @@ const ChorPoliceResult = () => {
 
   const { handleExitGame } = useRajaMantriGame({ playerNames : playerNamess });
 
-  useBackHandler(
-    () => {
-      handleExitGame();
-      return true;
-    },
-    {
-      enabled: true,
-      priority: 1,
-    },
-  );
+
 
   return (
     <View className="flex-1 bg-[#09090b]">

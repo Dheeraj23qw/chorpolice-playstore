@@ -25,7 +25,6 @@ import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
 import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGrid";
 import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionButtons";
 import RoundSelector from "../RoundSelector";
-import { useBackHandler } from "@/utils/BackHandler";
 
 const PlayerNameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -42,14 +41,6 @@ const PlayerNameScreen: React.FC = () => {
     transform: [{ translateY: translateY.value }],
     opacity: opacity.value,
   }));
-
-  useBackHandler(
-    () => {
-      router.replace("/modeselect");
-      return true;
-    },
-    { priority: 1 },
-  );
 
   useFocusEffect(
     useCallback(() => {

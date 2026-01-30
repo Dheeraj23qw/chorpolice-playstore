@@ -21,9 +21,7 @@ function AppLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
       </Stack>
-
       <RouteLoader />
-
       <GlobalLoader visible={loader.visible} message={loader.message} />
     </>
   );

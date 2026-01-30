@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, StatusBar } from "react-native";
+import { View, StatusBar, BackHandler } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 
@@ -13,15 +13,17 @@ import { addCoins } from "@/redux/reducers/coinsReducer";
 import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
 import { handleShare } from "@/utils/share";
-import { useBackHandler } from "@/utils/BackHandler";
+import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
+import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
   const [coinsAwarded, setCoinsAwarded] = useState<string>("");
-  const [coinsAwardedOnce, setCoinsAwardedOnce] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
+
+  const {handleQuit} = useQuizGameLogic();
 
   const {
     correctQuestions: Correct,
@@ -32,36 +34,54 @@ export default function QuizResult() {
 
   const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
 
-  useEffect(() => {
-    if (!coinsAwardedOnce && level != null) {
-      const coinValues = {
-        easy: isWinner ? 100 : 10,
-        medium: isWinner ? 500 : 25,
-        hard: isWinner ? 2000 : 50,
-      };
-      const levelMessage = isWinner
-        ? `You won ${coinValues[level]} coins!`
-        : `Participation Reward: ${coinValues[level]} coins`;
+useEffect(() => {
+  if (level != null) {
+    const coinValues = {
+      easy: isWinner ? 250 : 40,
+      medium: isWinner ? 800 : 100,
+      hard: isWinner ? 2000 : 200,
+    };
 
-      dispatch(addCoins(coinValues[level]));
-      setCoinsAwarded(levelMessage);
-      setCoinsAwardedOnce(true);
-    }
-  }, [level, isWinner]);
+    const levelMessage = isWinner
+      ? `You won ${coinValues[level]} coins!`
+      : `Participation Reward: ${coinValues[level]} coins`;
+
+    dispatch(addCoins(coinValues[level]));
+    setCoinsAwarded(levelMessage);
+  }
+}, []);
+
+  useEffect(() => {
+    const backAction = () => {
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Hold on!",
+        textBody: "Are you sure you want to Exit?",
+        button: "YES",
+        autoClose: false,
+        onPressButton: () => {
+          Dialog.hide();
+          handleQuit();
+        },
+      });
+  
+      return true; 
+    };
+  
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+  
+    return () => subscription.remove();
+  }, []);
 
   const handleHome = () => {
-    dispatch(playSound("quiz"));
+    handleQuit();
     router.replace("/modeselect");
   };
 
-   useBackHandler(
-      () => {
-        router.replace("/modeselect");
-        dispatch(playSound("quiz"));
-        return true;
-      },
-      { priority: 1 },
-    );
+ 
 
   const toggleModal = () => setModalVisible((prev) => !prev);
 

@@ -10,7 +10,7 @@ type BugsScreenProps = {
 
 const BugsScreen: React.FC<BugsScreenProps> = ({ navigation }) => {
   return (
-    <ScreenWrapper title="Report a Bug" navigation={navigation}>
+    <ScreenWrapper title="Report a Bug" >
       
       <View className="rounded-3xl bg-white p-6 shadow-sm">
 
@@ -40,9 +40,7 @@ const BugsScreen: React.FC<BugsScreenProps> = ({ navigation }) => {
         <TouchableOpacity
           activeOpacity={0.9}
           className="items-center rounded-2xl bg-indigo-500 p-4 shadow-md active:scale-95"
-          onPress={() => {
-            console.log("Bug submitted");
-          }}
+        
         >
           <Text className="text-lg font-bold text-white">
             Submit Report

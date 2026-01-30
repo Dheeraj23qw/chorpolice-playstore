@@ -61,7 +61,6 @@ function LoggedOutView() {
       {/* Google Login */}
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => console.log("Login with Google")}
         className="mt-8 w-full flex-row items-center justify-center gap-x-3 rounded-2xl bg-indigo-600 py-4 shadow-lg"
       >
         <Mail size={20} color="white" />

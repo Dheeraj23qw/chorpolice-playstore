@@ -1,5 +1,5 @@
-import React, { memo, useCallback, useState } from "react";
-import { View, ScrollView, Text, TouchableOpacity } from "react-native";
+import React, { memo, useCallback, useEffect, useState } from "react";
+import { View, ScrollView, Text, TouchableOpacity, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
 
@@ -13,6 +13,9 @@ import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection"
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
+import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
+import { BackHandler } from "react-native";
+
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -40,6 +43,34 @@ const QuizScreen = () => {
     isHintButtonVisible,
     setIsHintButtonVisible
   } = useQuizGameLogic();
+  
+
+
+useEffect(() => {
+  const backAction = () => {
+    Dialog.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Hold on!",
+      textBody: "Are you sure you want to go back?",
+      button: "YES",
+      autoClose: false,
+      onPressButton: () => {
+        Dialog.hide();
+        handleQuit();
+      },
+    });
+
+    return true; 
+  };
+
+  const subscription = BackHandler.addEventListener(
+    "hardwareBackPress",
+    backAction
+  );
+
+  return () => subscription.remove();
+}, []);
+
 
   const onOptionPress = useCallback(
     (value: string) => {

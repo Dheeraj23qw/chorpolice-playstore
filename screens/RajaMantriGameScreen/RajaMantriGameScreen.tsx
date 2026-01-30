@@ -28,8 +28,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 
-import { useBackHandler } from "@/utils/BackHandler";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
@@ -67,24 +65,7 @@ const RajaMantriGameScreen: React.FC = () => {
 
 
 
-  useBackHandler(() => {
-
-    Dialog.show({
-      type: ALERT_TYPE.WARNING,
-      title: "Leave Game?",
-      textBody: "If you exit now, your current round scores will be lost!",
-      button: "Exit",
-      onPressButton: () => {
-        Dialog.hide();
-        handleExitGame(); 
-      }
-    });
-
-    return true; 
-  }, { 
-    enabled: true, 
-    priority: 1 
-  });
+ 
 
   const [popupTable, setPopupTable] = useState(false);
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));

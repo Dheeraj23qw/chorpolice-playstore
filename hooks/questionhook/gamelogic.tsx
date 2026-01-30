@@ -53,7 +53,9 @@ export const useQuizGameLogic = () => {
   const [mediaId, setMediaId] = useState<number>(1);
   const [mediaType] = useState<"image" | "video" | "gif">("gif");
   const [playerMessage, setPlayerMessage] = useState<PlayerMessage>({});
-  const [remainingOptions, setRemainingOptions] = useState<string[] | null>(null);
+  const [remainingOptions, setRemainingOptions] = useState<string[] | null>(
+    null,
+  );
   const [isFiftyFiftyActive, setIsFiftyFiftyActive] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState(0);
@@ -62,12 +64,14 @@ export const useQuizGameLogic = () => {
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
   const [isHintButtonVisible, setIsHintButtonVisible] = useState(false);
- 
+
   const [question, setQuestion] = useState(() => getRandomQuestion());
 
   const randomWin = useRandomMessage("a", "winwithoutname");
   const randomLose = useRandomMessage("b", "loserwithoutname");
   const randomTimeUp = useRandomMessage("c", "timesup");
+
+
 
   /* ---------------- TIMER ---------------- */
 
@@ -94,25 +98,24 @@ export const useQuizGameLogic = () => {
     }, POPUP_DELAY);
   }, [clearTimer]);
 
- const startTimer = useCallback(() => {
-  clearTimer();
+  const startTimer = useCallback(() => {
+    clearTimer();
 
-  const safeDifficulty = difficulty ?? "easy";
-  const initial = TIMER_BY_DIFFICULTY[safeDifficulty];
+    const safeDifficulty = difficulty ?? "easy";
+    const initial = TIMER_BY_DIFFICULTY[safeDifficulty];
 
-  setCountdown(initial);
+    setCountdown(initial);
 
-  timerRef.current = setInterval(() => {
-    setCountdown((prev) => {
-      if (prev <= 1) {
-        handleTimeUp();
-        return 0;
-      }
-      return prev - 1;
-    });
-  }, 1000);
-}, [difficulty, handleTimeUp, clearTimer]);
-
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          handleTimeUp();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [difficulty, handleTimeUp, clearTimer]);
 
   useEffect(() => {
     dispatch(stopQuizSound());
@@ -166,70 +169,64 @@ export const useQuizGameLogic = () => {
 
   /* ---------------- 50-50 ---------------- */
 
-const handleFiftyFifty = () => {
-  // 🚫 Already exhausted
-  if (fiftyFiftyUsageCount >= 2) {
-    Toast.show({
-      type: ALERT_TYPE.DANGER,
-      title: "Empty!",
-      textBody: "You've used all 50-50 lifelines for this game.",
-      autoClose: 2000,
-    });
-    return; // ✅ IMPORTANT
-  }
+  const handleFiftyFifty = () => {
+    // 🚫 Already exhausted
+    if (fiftyFiftyUsageCount >= 2) {
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Empty!",
+        textBody: "You've used all 50-50 lifelines for this game.",
+        autoClose: 2000,
+      });
+      return; // ✅ IMPORTANT
+    }
 
-  // 🚫 Invalid question
-  if (!question?.options || question.options.length !== 4) {
-    Toast.show({
-      type: ALERT_TYPE.INFO,
-      title: "Unavailable",
-      textBody: "50-50 is only for 4-option questions.",
-      autoClose: 2000,
-    });
-    return; // ✅ IMPORTANT
-  }
+    // 🚫 Invalid question
+    if (!question?.options || question.options.length !== 4) {
+      Toast.show({
+        type: ALERT_TYPE.INFO,
+        title: "Unavailable",
+        textBody: "50-50 is only for 4-option questions.",
+        autoClose: 2000,
+      });
+      return; // ✅ IMPORTANT
+    }
 
-  const incorrect = question.options.filter(
-    (opt) => opt !== question.correctAnswer
-  );
+    const incorrect = question.options.filter(
+      (opt) => opt !== question.correctAnswer,
+    );
 
-  const shuffled = [...incorrect].sort(() => 0.5 - Math.random());
-  const toRemove = shuffled.slice(0, 2);
+    const shuffled = [...incorrect].sort(() => 0.5 - Math.random());
+    const toRemove = shuffled.slice(0, 2);
 
-  const filtered = question.options.filter(
-    (opt) => !toRemove.includes(opt)
-  );
+    const filtered = question.options.filter((opt) => !toRemove.includes(opt));
 
-  // ✅ Apply lifeline
-  setRemainingOptions(filtered);
-  setIsFiftyFiftyActive(true);
+    // ✅ Apply lifeline
+    setRemainingOptions(filtered);
+    setIsFiftyFiftyActive(true);
 
-  const nextCount = fiftyFiftyUsageCount + 1;
-  setFiftyFiftyUsageCount(nextCount);
+    const nextCount = fiftyFiftyUsageCount + 1;
+    setFiftyFiftyUsageCount(nextCount);
 
-  // ✅ Feedback
-  if (nextCount === 1) {
-    Toast.show({
-      type: ALERT_TYPE.SUCCESS,
-      title: "50-50 Activated!",
-      textBody: "1 lifeline used. 1 remaining.",
-      autoClose: 2000,
-    });
-  }
+    // ✅ Feedback
+    if (nextCount === 1) {
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "50-50 Activated!",
+        textBody: "1 lifeline used. 1 remaining.",
+        autoClose: 2000,
+      });
+    }
 
-  if (nextCount === 2) {
-    Toast.show({
-      type: ALERT_TYPE.WARNING,
-      title: "Final Lifeline!",
-      textBody: "No 50-50 lifelines left. Use it wisely!",
-      autoClose: 3000,
-    });
-  }
-};
-
-
-
-
+    if (nextCount === 2) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Final Lifeline!",
+        textBody: "No 50-50 lifelines left. Use it wisely!",
+        autoClose: 3000,
+      });
+    }
+  };
 
   /* ---------------- NEXT ---------------- */
 
@@ -241,6 +238,7 @@ const handleFiftyFifty = () => {
 
     if (questionIndex + 1 >= NUM_QUESTIONS) {
       dispatch(setCorrectAnswers(correctAnswer));
+      dispatch(stopTimerSound());
       router.push("/quizresult");
       return;
     }
@@ -267,19 +265,15 @@ const handleFiftyFifty = () => {
   };
 
   const handleQuit = () => {
-    Dialog.show({
-      type: ALERT_TYPE.DANGER,
-      title: "Quit Game",
-      textBody: "Are you sure you want to quit?",
-      button: "Quit",
-      onPressButton: () => {
-        Dialog.hide();
-        resetGame();
-        dispatch(resetDifficulty());
-        router.replace("/gamelevel");
-      },
-    });
+    resetGame();
+    dispatch(resetDifficulty());
+    router.replace("/modeselect");
   };
+
+
+
+
+
 
   return {
     question,
@@ -308,6 +302,6 @@ const handleFiftyFifty = () => {
     playerMessage,
     setShowHint,
     isHintButtonVisible,
-    setIsHintButtonVisible 
+    setIsHintButtonVisible,
   };
 };
