@@ -29,7 +29,6 @@ import { StatusBar } from "expo-status-bar";
 
 
 import { useBackHandler } from "@/utils/BackHandler";
-import { Alerts } from "@/utils/alert";
 import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
 
 const RajaMantriGameScreen: React.FC = () => {
@@ -69,8 +68,7 @@ const RajaMantriGameScreen: React.FC = () => {
 
 
   useBackHandler(() => {
-    // Check if a game is currently "in progress" to decide if we should warn
-    // If cards are already flipped or play button is disabled, show the alert
+
     Dialog.show({
       type: ALERT_TYPE.WARNING,
       title: "Leave Game?",
@@ -78,11 +76,11 @@ const RajaMantriGameScreen: React.FC = () => {
       button: "Exit",
       onPressButton: () => {
         Dialog.hide();
-        handleExitGame(); // This handles Redux reset and navigation
+        handleExitGame(); 
       }
     });
 
-    return true; // Stop the app from closing immediately
+    return true; 
   }, { 
     enabled: true, 
     priority: 1 

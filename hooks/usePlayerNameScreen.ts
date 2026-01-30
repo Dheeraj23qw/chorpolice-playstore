@@ -138,22 +138,6 @@ export const usePlayerNameScreen = () => {
   const handleStartAdventure = useCallback(async () => {
     if (checkForDuplicateNames()) return;
 
-    const hasEmptyNames = selectedImages.some(
-      (id) => !imageNames[id] || imageNames[id].trim() === "",
-    );
-
-    if (hasEmptyNames) {
-      Dialog.show({
-        type: ALERT_TYPE.INFO,
-        title: "Auto-Naming",
-        textBody: "Empty names will be filled with default player names.",
-        button: "Fix It",
-
-        autoClose: 4000,
-      });
-      return true;
-    }
-
     dispatch(playSound("select"));
     setIsButtonDisabled(true);
 

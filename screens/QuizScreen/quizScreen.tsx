@@ -1,6 +1,6 @@
-import React, { memo, useCallback } from "react";
-import { View, StatusBar, ScrollView, Text } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context"; // 1. Import this
+import React, { memo, useCallback, useState } from "react";
+import { View, ScrollView, Text, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
 
 // Components
@@ -12,9 +12,11 @@ import QuestionSection from "../../components/thinkAndCountScreen/QuestionSectio
 import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
+import { Lightbulb } from "lucide-react-native";
 
 const QuizScreen = () => {
-  const insets = useSafeAreaInsets(); // 2. Hook to get Notch/Home bar sizes
+  const insets = useSafeAreaInsets();
+
 
   const {
     countdown,
@@ -34,6 +36,9 @@ const QuizScreen = () => {
     table,
     question,
     playerMessage,
+    setShowHint,
+    isHintButtonVisible,
+    setIsHintButtonVisible
   } = useQuizGameLogic();
 
   const onOptionPress = useCallback(
@@ -43,17 +48,17 @@ const QuizScreen = () => {
     [handleAnswerSelection],
   );
 
+
+
   if (isTableOpen) {
     return (
-      <>
-        <View className="flex-1 bg-[#050505]">
-          <GameTable
-            isTableOpen={isTableOpen}
-            setIsTableOpen={setIsTableOpen}
-            table={table}
-          />
-        </View>
-      </>
+      <View className="flex-1 bg-[#050505]">
+        <GameTable
+          isTableOpen={isTableOpen}
+          setIsTableOpen={setIsTableOpen}
+          table={table}
+        />
+      </View>
     );
   }
 
@@ -73,24 +78,37 @@ const QuizScreen = () => {
 
   return (
     <View className="flex-1 bg-[#09090b]">
-      {/* Background Decor (Stretches behind Notch) */}
+      {/* Hint Modal */}
+      <HintSection
+        isVisible={showHint}
+        hint={question?.hint}
+        onClose={() => {
+          setShowHint(false);
+          setIsHintButtonVisible(true);
+        }}
+        onNext={() => {
+          setIsHintButtonVisible(false); 
+          handleNextQuestion();
+        }}
+      />
+
+      {/* Background Decor */}
       <View
         style={{ width: wp(120), height: wp(120), top: -hp(20), left: -wp(20) }}
         className="absolute bg-indigo-600/10 rounded-full blur-[100px]"
       />
 
-      {/* --- Safe Content Container --- */}
       <View
         style={{
           flex: 1,
-          paddingTop: insets.top > 0 ? insets.top : hp(2), // Avoid Notch
-          paddingBottom: insets.bottom, // Avoid Home Indicator
+          paddingTop: insets.top > 0 ? insets.top : hp(2),
+          paddingBottom: insets.bottom,
         }}
       >
-        {/* --- Floating Question Indicator --- */}
+        {/* Floating Question Indicator */}
         <View
           style={{
-            top: insets.top > 0 ? insets.top + hp(1) : hp(7), // Adjusts dynamically
+            top: insets.top > 0 ? insets.top + hp(1) : hp(7),
             paddingHorizontal: wp(5),
             paddingVertical: hp(1),
           }}
@@ -104,7 +122,7 @@ const QuizScreen = () => {
           </Text>
         </View>
 
-        {/* --- Timer Area (Pushed below Notch) --- */}
+        {/* Timer */}
         <View style={{ marginTop: hp(8) }}>
           <Timer countdown={countdown} />
         </View>
@@ -114,40 +132,14 @@ const QuizScreen = () => {
           contentContainerStyle={{
             paddingHorizontal: wp(6),
             paddingTop: hp(2),
-            paddingBottom: hp(10), // Reduced because insets.bottom handles the rest
+            paddingBottom: hp(10),
           }}
         >
           <QuestionSection question={question?.question} />
 
-          <View style={{ marginTop: hp(4) }}>
-            {showHint ? (
-              <View className="animate-in fade-in slide-in-from-bottom-4">
-                <HintSection hint={question?.hint} />
-              </View>
-            ) : (
-              <View className="animate-in fade-in zoom-in-95">
-                <OptionsSection
-                  options={
-                    isFiftyFiftyActive ? remainingOptions : question?.options
-                  }
-                  handleAnswerSelection={onOptionPress}
-                />
-              </View>
-            )}
-          </View>
-
-          <View style={{ marginTop: hp(6) }}>
-            <QuizButton
-              showHint={showHint}
-              setIsTableOpen={setIsTableOpen}
-              handleNextQuestion={handleNextQuestion}
-              handleFiftyFifty={handleFiftyFifty}
-              handleQuit={handleQuit}
-            />
-          </View>
-
+          {/* Divider */}
           <View
-            style={{ marginTop: hp(4), marginBottom: hp(5) }}
+            style={{ marginTop: hp(1), marginBottom: hp(1) }}
             className="items-center"
           >
             <View className="h-[1px] w-20 bg-white/10 mb-4" />
@@ -155,10 +147,45 @@ const QuizScreen = () => {
               style={{ fontSize: rf(1.4) }}
               className="text-white/30 text-center tracking-widest uppercase"
             >
-              {showHint
-                ? "Prepare for the next challenge"
-                : "Consult the table to solve"}
+              Consult the Quiz table to solve
             </Text>
+          </View>
+
+
+          {!isHintButtonVisible && (
+            <View style={{ marginTop: hp(4) }}>
+              <OptionsSection
+                options={
+                  isFiftyFiftyActive ? remainingOptions : question?.options
+                }
+                handleAnswerSelection={onOptionPress}
+              />
+            </View>
+          )}
+
+        
+
+          {isHintButtonVisible && (
+            <TouchableOpacity
+              onPress={() => setShowHint(true)} // open modal
+              activeOpacity={0.8}
+              className="mt-8 flex-row items-center justify-center bg-indigo-500/10 border border-indigo-500/30 py-4 rounded-2xl"
+            >
+              <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
+              <Text className="ml-3 text-indigo-400 font-bold uppercase tracking-[2px] text-[12px]">
+                View Solution Hint
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Lifelines */}
+          <View style={{ marginTop: hp(1) }}>
+            <QuizButton
+              showHint={isHintButtonVisible}
+              setIsTableOpen={setIsTableOpen}
+              handleNextQuestion={handleNextQuestion}
+              handleFiftyFifty={handleFiftyFifty}
+            />
           </View>
         </ScrollView>
       </View>

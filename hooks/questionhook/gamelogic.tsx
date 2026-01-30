@@ -61,7 +61,8 @@ export const useQuizGameLogic = () => {
   const [notAnswer, setNotAnswer] = useState(0);
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
-
+  const [isHintButtonVisible, setIsHintButtonVisible] = useState(false);
+ 
   const [question, setQuestion] = useState(() => getRandomQuestion());
 
   const randomWin = useRandomMessage("a", "winwithoutname");
@@ -228,6 +229,8 @@ const handleFiftyFifty = () => {
 
 
 
+
+
   /* ---------------- NEXT ---------------- */
 
   const handleNextQuestion = () => {
@@ -241,7 +244,7 @@ const handleFiftyFifty = () => {
       router.push("/quizresult");
       return;
     }
-
+    setIsHintButtonVisible(false);
     setSelectedAnswer(null);
     setIsCorrect(null);
     setQuestion(getNextQuestion());
@@ -303,5 +306,8 @@ const handleFiftyFifty = () => {
     questionIndex,
     table,
     playerMessage,
+    setShowHint,
+    isHintButtonVisible,
+    setIsHintButtonVisible 
   };
 };

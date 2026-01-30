@@ -115,7 +115,7 @@ const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, tabl
               style={{ fontSize: rf(1.8) }} 
               className="text-white font-black uppercase tracking-widest"
             >
-              Back to Quest
+              Back to Question
             </Text>
           </Pressable>
           
