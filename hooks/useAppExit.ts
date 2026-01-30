@@ -1,21 +1,29 @@
 import { useEffect } from "react";
-import { BackHandler, Platform } from "react-native";
-import { Dialog, ALERT_TYPE } from "react-native-alert-notification";
+import { BackHandler, Platform, Alert } from "react-native";
 
 export const useAppExit = () => {
   useEffect(() => {
     if (Platform.OS !== "android") return;
 
     const onBackPress = () => {
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: "Exit App",
-        textBody: "Are you sure you want to exit?",
-        button: "Exit",
-        onPressButton: () => BackHandler.exitApp(),
-      });
+      Alert.alert(
+        "Exit App",
+        "Are you sure you want to exit?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Exit",
+            style: "destructive",
+            onPress: () => BackHandler.exitApp(),
+          },
+        ],
+        { cancelable: true }
+      );
 
-      return true;
+      return true; // Prevent default behavior
     };
 
     const subscription = BackHandler.addEventListener(

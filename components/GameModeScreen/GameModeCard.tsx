@@ -66,7 +66,6 @@ export const GameModeCard = ({ item, index }: Props) => {
             <ImageBackground
               source={item.image}
               className="flex-1"
-              imageStyle={{ opacity: 0.2 }}
             >
               <View className="absolute inset-0 bg-black/70" />
 
