@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text,ScrollView } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text,ScrollView, Alert, BackHandler } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { wp, hp, rf } from "@/utils/responsive";
@@ -43,7 +43,34 @@ const ChorPoliceQuiz: React.FC = () => {
     } = useRajaMantriGame({ playerNames });
 
 
+ useEffect(() => {
+   const backAction = () => {
+     Alert.alert(
+       "Hold on!",
+       "Are you sure you want to go back?",
+       [
+         {
+           text: "Cancel",
+           style: "cancel",
+         },
+         {
+           text: "YES",
+           onPress: () => handleExitGame(),
+         },
+       ],
+       { cancelable: true }
+     );
  
+     return true; // prevent default back behavior
+   };
+ 
+   const subscription = BackHandler.addEventListener(
+     "hardwareBackPress",
+     backAction
+   );
+ 
+   return () => subscription.remove();
+ }, []);
 
   return (
     <View className="flex-1 bg-[#020205]">

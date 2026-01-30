@@ -48,19 +48,24 @@ const QuizScreen = () => {
 
 useEffect(() => {
   const backAction = () => {
-    Dialog.show({
-      type: ALERT_TYPE.WARNING,
-      title: "Hold on!",
-      textBody: "Are you sure you want to go back?",
-      button: "YES",
-      autoClose: false,
-      onPressButton: () => {
-        Dialog.hide();
-        handleQuit();
-      },
-    });
+    Alert.alert(
+      "Hold on!",
+      "Are you sure you want to go back?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => {}, // just close
+        },
+        {
+          text: "YES",
+          onPress: () => handleQuit(),
+        },
+      ],
+      { cancelable: true }
+    );
 
-    return true; 
+    return true; // prevent default back action
   };
 
   const subscription = BackHandler.addEventListener(

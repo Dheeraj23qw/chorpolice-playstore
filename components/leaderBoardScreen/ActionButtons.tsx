@@ -1,85 +1,105 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { rf, hp } from '@/utils/responsive';
+import React, { useRef } from 'react';
+import { View, Text, Pressable, Animated } from 'react-native';
+import { rf } from '@/utils/responsive';
+import { Share2, RefreshCw } from 'lucide-react-native';
 
 interface ActionButtonsProps {
   handlePlayAgain: () => void;
-  handleBack: () => void;
   handleShare: () => void;
   isButtonDisabled: boolean;
 }
 
-export const ActionButtons: React.FC<ActionButtonsProps> = ({ 
-  handlePlayAgain, 
-  handleBack, 
-  handleShare, 
-  isButtonDisabled 
+export const ActionButtons: React.FC<ActionButtonsProps> = ({
+  handlePlayAgain,
+  handleShare,
+  isButtonDisabled,
 }) => {
-  
-  const ButtonWrapper = ({ onPress, label, isPrimary = false, isDanger = false }: any) => (
-    <View className="flex-1 mx-2"> 
-      <Pressable
-        onPress={onPress}
-        disabled={isButtonDisabled}
-        style={({ pressed }) => [
-          {
-            // Large vertical padding ensures the text has plenty of space
-            paddingVertical: hp(2.5), 
-            transform: [{ scale: pressed ? 0.94 : 1 }],
-            opacity: isButtonDisabled ? 0.4 : 1,
-          }
-        ]}
-        // Metamorphism Styling: Thicker borders and stronger glass effect
-        className={`
-          rounded-[24px] items-center justify-center overflow-hidden border-2
-          ${isPrimary ? 'bg-indigo-600/40 border-indigo-400/60' : 'bg-white/10 border-white/20'}
-          ${isDanger ? 'border-red-500/50 bg-red-500/10' : ''}
-        `}
-      >
-        {/* Top Shine Layer */}
-        <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/20" />
 
-        <Text 
-          style={{ fontSize: rf(1.6) }} // Bigger font for better legibility
-          className={`font-black uppercase tracking-widest ${isPrimary ? 'text-white' : 'text-white/80'}`}
-        >
-          {label}
-        </Text>
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-        {/* Internal Glow for tactile feel */}
-        {!isButtonDisabled && (
-          <View className="absolute inset-0 bg-white/5" />
-        )}
-      </Pressable>
-    </View>
-  );
+  const animateTo = (value: number) => {
+    Animated.spring(scaleAnim, {
+      toValue: value,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 6,
+    }).start();
+  };
 
   return (
-    <View className="w-full px-4 py-6">
-      {/* Visual divider to separate from content above */}
-      <View className="h-[1px] w-full bg-white/5 mb-6" />
+    <View className="w-full px-6 pt-6 pb-12 items-center">
 
-      <View className="flex-row justify-between items-center">
-        {/* Home Button */}
-        <ButtonWrapper 
-          label="Home" 
-          onPress={handleBack} 
-          isDanger={true}
-        />
-        
-        {/* Share Button */}
-        <ButtonWrapper 
-          label="Share" 
-          onPress={handleShare} 
-        />
-        
-        {/* Retry Button */}
-        <ButtonWrapper 
-          label="Retry" 
-          onPress={handlePlayAgain} 
-          isPrimary={true}
-        />
+      {/* 🔥 PRIMARY BUTTON */}
+      <Animated.View
+        style={{ transform: [{ scale: scaleAnim }], width: '100%' }}
+      >
+        <Pressable
+          disabled={isButtonDisabled}
+          onPressIn={() => animateTo(0.97)}
+          onPressOut={() => animateTo(1)}
+          onPress={handlePlayAgain}
+          className={`
+            rounded-3xl h-[64px] flex-row items-center justify-center
+            ${isButtonDisabled
+              ? 'bg-indigo-400/40'
+              : 'bg-indigo-500'}
+          `}
+          style={{
+            shadowColor: '#6366f1',
+            shadowOpacity: 0.35,
+            shadowRadius: 20,
+            elevation: 8,
+          }}
+        >
+          <RefreshCw color="white" size={rf(2)} strokeWidth={2.5} />
+
+          <Text
+            style={{ fontSize: rf(1.8) }}
+            className="text-white font-extrabold uppercase tracking-[3px] ml-3"
+          >
+            Play Again
+          </Text>
+        </Pressable>
+      </Animated.View>
+
+      {/* Divider */}
+      <View className="flex-row items-center my-8 w-full px-6">
+        <View className="h-[1px] flex-1 bg-white/10" />
+        <Text
+          style={{ fontSize: rf(1) }}
+          className="mx-4 text-white/30 font-semibold tracking-widest uppercase"
+        >
+          or
+        </Text>
+        <View className="h-[1px] flex-1 bg-white/10" />
       </View>
+
+      {/* 🔥 SECONDARY BUTTON */}
+      <Pressable
+        disabled={isButtonDisabled}
+        onPress={handleShare}
+        style={({ pressed }) => ({
+          opacity: isButtonDisabled ? 0.3 : pressed ? 0.7 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        })}
+        className="
+          w-full h-[56px] rounded-2xl
+          flex-row items-center justify-center
+          bg-white/5 border border-white/10
+        "
+      >
+        <Share2 color="#c7d2fe" size={rf(1.6)} />
+
+        <Text
+          style={{ fontSize: rf(1.3) }}
+          className="text-indigo-200 font-medium ml-2 tracking-widest uppercase"
+        >
+          Share Result
+        </Text>
+      </Pressable>
+
+      {/* Subtle Ambient Glow */}
+      <View className="absolute -bottom-16 w-[70%] h-24 bg-indigo-600/15 blur-3xl rounded-full" />
     </View>
   );
 };

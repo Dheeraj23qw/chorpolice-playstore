@@ -1,5 +1,5 @@
-import React, { memo, useCallback, useState } from "react";
-import { ScrollView, StatusBar, View, Text } from "react-native";
+import React, { memo, useCallback, useEffect, useState } from "react";
+import { ScrollView, StatusBar, View, Text, BackHandler, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSortedScores } from "@/hooks/useSortedScores";
 import { rf, hp, wp } from "@/utils/responsive";
@@ -24,7 +24,6 @@ const ChorPoliceResult = () => {
     playerNames,
     selectedImages,
     handlePlayAgain,
-    handleBack,
     handleShare,
     isButtonDisabled,
     winnerName,
@@ -35,8 +34,6 @@ const ChorPoliceResult = () => {
 
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
 
-  const onPlayAgain = useCallback(handlePlayAgain, [handlePlayAgain]);
-  const onBack = useCallback(handleBack, [handleBack]);
   const onShare = useCallback(handleShare, [handleShare]);
 
   const playerNamess = useSelector(selectPlayerNames).map(
@@ -45,7 +42,34 @@ const ChorPoliceResult = () => {
 
   const { handleExitGame } = useRajaMantriGame({ playerNames : playerNamess });
 
-
+ useEffect(() => {
+   const backAction = () => {
+     Alert.alert(
+       "Hold on!",
+       "Are you sure you want to go back?",
+       [
+         {
+           text: "Cancel",
+           style: "cancel",
+         },
+         {
+           text: "YES",
+           onPress: () => handleExitGame(),
+         },
+       ],
+       { cancelable: true }
+     );
+ 
+     return true; // prevent default back behavior
+   };
+ 
+   const subscription = BackHandler.addEventListener(
+     "hardwareBackPress",
+     backAction
+   );
+ 
+   return () => subscription.remove();
+ }, []);
 
   return (
     <View className="flex-1 bg-[#09090b]">
@@ -154,8 +178,7 @@ const ChorPoliceResult = () => {
             {/* 3. Action Terminal */}
             <View className="px-6">
               <MemoizedActionButtons
-                handlePlayAgain={onPlayAgain}
-                handleBack={onBack}
+                handlePlayAgain={handlePlayAgain}
                 handleShare={onShare}
                 isButtonDisabled={isButtonDisabled}
               />

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, ImageBackground, Animated } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, ImageBackground, Animated, BackHandler, Alert } from "react-native";
 
 // Redux
 import { useSelector } from "react-redux";
@@ -26,6 +26,7 @@ import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer"
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
 
 
 
@@ -64,6 +65,34 @@ const RajaMantriGameScreen: React.FC = () => {
 
 
 
+useEffect(() => {
+  const backAction = () => {
+    Alert.alert(
+      "Hold on!",
+      "Are you sure you want to go back?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "YES",
+          onPress: () => handleExitGame(),
+        },
+      ],
+      { cancelable: true }
+    );
+
+    return true; // prevent default back behavior
+  };
+
+  const subscription = BackHandler.addEventListener(
+    "hardwareBackPress",
+    backAction
+  );
+
+  return () => subscription.remove();
+}, []);
 
  
 

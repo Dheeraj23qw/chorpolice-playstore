@@ -11,11 +11,14 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { styles } from "./_CSS/horizontalBoxslider";
 
+import { ImageSourcePropType } from "react-native";
+
 interface ButtonOption {
   label: string;
   value: string;
-  backgroundImage: string | ReturnType<typeof require>;
+  backgroundImage: ImageSourcePropType;
 }
+
 
 interface AvatarWithBackgroundProps {
   selectedOption: string | null;

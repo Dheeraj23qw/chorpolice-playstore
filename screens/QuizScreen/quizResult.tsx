@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, StatusBar, BackHandler } from "react-native";
+import { View, StatusBar, BackHandler, Alert } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 
@@ -51,30 +51,35 @@ useEffect(() => {
   }
 }, []);
 
-  useEffect(() => {
-    const backAction = () => {
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: "Hold on!",
-        textBody: "Are you sure you want to Exit?",
-        button: "YES",
-        autoClose: false,
-        onPressButton: () => {
-          Dialog.hide();
-          handleQuit();
-        },
-      });
-  
-      return true; 
-    };
-  
-    const subscription = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction
-    );
-  
-    return () => subscription.remove();
-  }, []);
+ useEffect(() => {
+   const backAction = () => {
+     Alert.alert(
+       "Hold on!",
+       "Are you sure you want to go back?",
+       [
+         {
+           text: "Cancel",
+           style: "cancel",
+           onPress: () => {}, // just close
+         },
+         {
+           text: "YES",
+           onPress: () => handleQuit(),
+         },
+       ],
+       { cancelable: true }
+     );
+ 
+     return true; 
+   };
+ 
+   const subscription = BackHandler.addEventListener(
+     "hardwareBackPress",
+     backAction
+   );
+ 
+   return () => subscription.remove();
+ }, []);
 
   const handleHome = () => {
     handleQuit();

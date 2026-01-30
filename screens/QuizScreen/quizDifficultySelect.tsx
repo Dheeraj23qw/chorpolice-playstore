@@ -161,7 +161,7 @@ const QuizDifficultyScreen = () => {
     if (!selected || !isReady || isNavigating) return;
 
     setIsNavigating(true);
-    dispatch(playSound("start")); 
+    dispatch(playSound("quiz")); 
 
     setTimeout(() => {
       router.replace("/quiz");
