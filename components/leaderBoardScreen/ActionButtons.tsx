@@ -29,7 +29,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <View className="w-full px-6 pt-6 pb-12 items-center">
 
-      {/* 🔥 PRIMARY BUTTON */}
       <Animated.View
         style={{ transform: [{ scale: scaleAnim }], width: '100%' }}
       >
@@ -74,7 +73,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         <View className="h-[1px] flex-1 bg-white/10" />
       </View>
 
-      {/* 🔥 SECONDARY BUTTON */}
       <Pressable
         disabled={isButtonDisabled}
         onPress={handleShare}
@@ -98,7 +96,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         </Text>
       </Pressable>
 
-      {/* Subtle Ambient Glow */}
       <View className="absolute -bottom-16 w-[70%] h-24 bg-indigo-600/15 blur-3xl rounded-full" />
     </View>
   );

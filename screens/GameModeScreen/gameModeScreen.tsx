@@ -1,71 +1,60 @@
-import React, { useState } from "react";
-import { ImageBackground } from "react-native";
-import { globalstyles } from "@/styles/global";
-import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
-import GameModeScrollView from "@/components/GameModeScrollView";
+import React, { useCallback } from "react";
+import { View } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
 } from "react-native-reanimated";
-import { useFocusEffect } from "@react-navigation/native"; // Import useFocusEffect
-import { StatusBar } from "react-native";
-import { optionsGameMode } from "@/constants/gamemode";
-import RulesButton from "@/components/rules/rulesButton";
-import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import OptionHeader from "@/components/optionHeader";
+import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import BackgroundOrbs from "@/components/GameModeScreen/BackgroundOrbs";
+import HeaderSection from "@/components/GameModeScreen/HeaderSection";
+import GameModeList from "@/components/GameModeScreen/GameModeList";
+
+
 
 const GameModeScreen: React.FC = () => {
-  const animationValue = useSharedValue(0);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: animationValue.value * 50 }, // Slide from 50px above
-    ],
-    opacity: animationValue.value, // Fade in
-  }));
+  const insets = useSafeAreaInsets();
+  const opacity = useSharedValue(0);
+  const pulse = useSharedValue(1);
 
   useFocusEffect(
-    React.useCallback(() => {
-      animationValue.value = 0; // Reset animation value
-      animationValue.value = withTiming(1, { duration: 800 }); // Start animation
+    useCallback(() => {
+      opacity.value = withTiming(1, { duration: 800 });
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 3000 }),
+          withTiming(1, { duration: 3000 })
+        ),
+        -1,
+        true
+      );
+
+      return () => {
+        opacity.value = 0;
+      };
     }, [])
   );
 
+  const animatedContainer = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
 
   return (
-    <SafeAreaView style={[globalstyles.container]}>
-      <StatusBar backgroundColor={"transparent"} />
+    <View className="flex-1 bg-[#050508]">
+      <BackgroundOrbs />
 
-      {/* Main Content Container */}
-      <ImageBackground
-        source={require("../../assets/images/bg/quiz.png")}
-        style={[
-          chorPoliceQuizstyles.overlay,
-          chorPoliceQuizstyles.imageBackground,
-        ]}
-        resizeMode="cover"
+      <Animated.View
+        style={[animatedContainer, { paddingTop: insets.top }]}
+        className="flex-1"
       >
-        <Animated.View style={[{ marginTop: 32 }, animatedStyle]}>
-          <OptionHeader />
-        </Animated.View>
-        <Animated.View style={[{ margin: 5 }, animatedStyle]}>
-          <RulesButton onPress={() =>  router.push("/rulehome")} />
-        </Animated.View>
-
-        {/* Scroll View for Content */}
-        <Animated.ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-          style={animatedStyle} // Apply animation
-        >
-          <GameModeScrollView options={optionsGameMode} />
-        </Animated.ScrollView>
-      </ImageBackground>
-    </SafeAreaView>
+        <HeaderSection />
+        <GameModeList />
+      </Animated.View>
+    </View>
   );
 };
 
-// Exporting Component with React Memo for Optimization
 export default React.memo(GameModeScreen);

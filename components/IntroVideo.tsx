@@ -2,7 +2,6 @@ import React, { memo, useEffect } from "react";
 import { View, StyleSheet, StatusBar } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Asset } from "expo-asset";
-import { styles as globalStyles } from "@/screens/RajaMantriGameScreen/styles";
 
 interface VideoPlayerComponentProps {
   videoIndex: number;
@@ -10,7 +9,7 @@ interface VideoPlayerComponentProps {
 }
 
 const VIDEO_SOURCES: Record<number, any> = {
-  1: require("../../assets/gif/chorPolicescreen/chorpolice.mp4"),
+  1: require("@/assets/gif/chorPolicescreen/chorpolice.mp4"),
 };
 
 const preloadVideos = () => {
@@ -40,13 +39,12 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
     }, [player, onVideoEnd]);
 
     return (
-      <View style={styles.fullScreenContainer}>
-        {/* Added translucent for a better full-screen splash effect */}
-        <StatusBar backgroundColor={"transparent"} translucent />
+      <View className="flex-1 bg-white">
+     
 
         <VideoView
           player={player}
-          style={styles.fullScreenVideo}
+          style={{ flex: 1 }}
           contentFit="contain"
           nativeControls={false}
           surfaceType="textureView" // ✅ Add this workaround
@@ -58,9 +56,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
   }
 );
 
-const styles = StyleSheet.create({
-  fullScreenContainer: globalStyles.fullScreenContainer,
-  fullScreenVideo: globalStyles.fullScreenVideo,
-});
+
 
 export default VideoPlayerComponent;

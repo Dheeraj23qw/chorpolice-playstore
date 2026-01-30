@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, ImageBackground, Animated, BackHandler, Alert } from "react-native";
+import {
+  View,
+  ImageBackground,
+  Animated,
+  BackHandler,
+  Alert,
+} from "react-native";
 
 // Redux
 import { useSelector } from "react-redux";
@@ -11,8 +17,7 @@ import {
 // Hooks
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 
-// Styles
-import { styles } from "./styles";
+
 
 // Components
 import OverlayPopUp from "@/modal/overlaypop";
@@ -22,13 +27,10 @@ import { GamePlaySection } from "./GameplaySection";
 
 // Animation imports
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
-import VideoPlayerComponent from "@/components/RajamantriGameScreen/videoPlayer";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
-
-
+import VideoPlayerComponent from "@/components/IntroVideo";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
@@ -63,38 +65,34 @@ const RajaMantriGameScreen: React.FC = () => {
     handleExitGame,
   } = useRajaMantriGame({ playerNames });
 
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert(
+        "Hold on!",
+        "Are you sure you want to go back?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "YES",
+            onPress: () => handleExitGame(),
+          },
+        ],
+        { cancelable: true },
+      );
 
+      return true; // prevent default back behavior
+    };
 
-useEffect(() => {
-  const backAction = () => {
-    Alert.alert(
-      "Hold on!",
-      "Are you sure you want to go back?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "YES",
-          onPress: () => handleExitGame(),
-        },
-      ],
-      { cancelable: true }
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction,
     );
 
-    return true; // prevent default back behavior
-  };
-
-  const subscription = BackHandler.addEventListener(
-    "hardwareBackPress",
-    backAction
-  );
-
-  return () => subscription.remove();
-}, []);
-
- 
+    return () => subscription.remove();
+  }, []);
 
   const [popupTable, setPopupTable] = useState(false);
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
@@ -114,7 +112,7 @@ useEffect(() => {
 
   return (
     <View
-      className="flex-1 bg-[#020205] "
+      className={`flex-1 ${isPlaying ? "bg-white" : "bg-[#020205]"}`}
       style={{
         paddingTop: insets.top,
         paddingBottom: insets.bottom,
@@ -127,8 +125,6 @@ useEffect(() => {
         playerScores={playerScores}
         popupTable={popupTable}
       />
-
-  
 
       {popupIndex && (
         <OverlayPopUp
@@ -171,7 +167,7 @@ useEffect(() => {
       )}
 
       {!isDynamicPopUp && (
-        <View style={[styles.container]}>
+        <View className="flex-1">
           {isPlaying ? (
             <VideoPlayerComponent
               videoIndex={videoIndex}

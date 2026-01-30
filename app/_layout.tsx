@@ -4,28 +4,34 @@ import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import store, { RootState } from "@/redux/store";
-import { Appearance, Text, TextInput } from "react-native";
-import * as NavigationBar from "expo-navigation-bar";
 import GlobalLoader from "@/components/globalLoader";
 import RouteLoader from "@/components/RouteLoader";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { Platform } from "react-native";
-import { AlertNotificationRoot } from 'react-native-alert-notification'; 
-function AppLayout() {
+import { AlertNotificationRoot } from "react-native-alert-notification";
+import { useAppExit } from "@/hooks/useAppExit";
+import { useSystemUI } from "@/hooks/useSystemUI";
 
+/* ---------------- App Layout ---------------- */
+
+function AppLayout() {
   const loader = useSelector((state: RootState) => state.loader);
+
+  useAppExit(); 
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false , contentStyle: { backgroundColor: "#0B0B0F" } }}>
         <Stack.Screen name="index" />
       </Stack>
+
       <RouteLoader />
       <GlobalLoader visible={loader.visible} message={loader.message} />
     </>
   );
 }
+
+/* ---------------- Root Layout ---------------- */
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -36,44 +42,23 @@ export default function RootLayout() {
     myfont: require("../assets/fonts/YanoneKaffeesatz-Medium.ttf"),
   });
 
+  useSystemUI(); 
+
   useEffect(() => {
-    async function setupSystemUI() {
-      if (Platform.OS === "android") {
-        await NavigationBar.setVisibilityAsync("hidden");
-        Appearance.setColorScheme("light"); 
-      }
-
-      // ✅ Safe font patch
-      (Text as any).defaultProps = {
-        ...(Text as any).defaultProps,
-        allowFontScaling: true,
-        maxFontSizeMultiplier: 1.1,
-        style: { fontFamily: "outfit" },
-      };
-
-      (TextInput as any).defaultProps = {
-        ...(TextInput as any).defaultProps,
-        allowFontScaling: true,
-        maxFontSizeMultiplier: 1.1,
-        style: { fontFamily: "outfit" },
-      };
-    }
-
     if (fontsLoaded) {
-      setupSystemUI();
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
 
   if (!fontsLoaded) return null;
 
-return (
+  return (
     <Provider store={store}>
       <SafeAreaProvider>
         <AlertNotificationRoot theme="dark">
-          <StatusBar hidden translucent backgroundColor="transparent"/>
+          <StatusBar hidden translucent backgroundColor="transparent" />
           <AppLayout />
-        </AlertNotificationRoot> 
+        </AlertNotificationRoot>
       </SafeAreaProvider>
     </Provider>
   );
