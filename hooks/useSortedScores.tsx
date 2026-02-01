@@ -1,6 +1,6 @@
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { useSelector, useDispatch, shallowEqual } from "react-redux";
-import type { ImageSourcePropType } from "react-native";
+import { InteractionManager, type ImageSourcePropType } from "react-native";
 import { useRouter } from "expo-router";
 import { captureScreen } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
@@ -8,7 +8,6 @@ import * as Sharing from "expo-sharing";
 import type { RootState, AppDispatch } from "@/redux/store";
 import { resetGamefromRedux, playAgain } from "@/redux/reducers/playerReducer";
 import { PlayerName, PlayerScore } from "@/types/redux/reducers";
-import { useIsRouterReady } from "@/utils/useIsNavigationReady";
 
 /* -------------------------------- Types -------------------------------- */
 
@@ -22,8 +21,6 @@ type Winner = {
   totalScore: number;
 };
 
-type WinnerImageType = NonNullable<PlayerImage["type"]>;
-
 /* ------------------------------ Constants ------------------------------ */
 
 const FALLBACK_IMAGE: ImageSourcePropType = require("@/assets/images/bg/gamemode/2.png");
@@ -33,11 +30,22 @@ const FALLBACK_IMAGE: ImageSourcePropType = require("@/assets/images/bg/gamemode
 export const useSortedScores = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  
-  // ✅ FIX 1: Move the readiness check INSIDE the hook
-  const isReady = useIsRouterReady();
 
+  // ✅ MOVE STATE INSIDE HOOK
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+
+  const navigationLock = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* ------------------------------ Cleanup ------------------------------ */
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   /* ----------------------------- Selectors ----------------------------- */
 
@@ -55,8 +63,10 @@ export const useSortedScores = () => {
   /* -------------------------- Derived Values --------------------------- */
 
   const sortedScores = useMemo<PlayerScore[]>(() => {
-    if (!playerScores.length) return [];
-    return [...playerScores].sort((a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0));
+    if (!playerScores?.length) return [];
+    return [...playerScores].sort(
+      (a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0)
+    );
   }, [playerScores]);
 
   const winner = useMemo<Winner>(() => {
@@ -72,43 +82,70 @@ export const useSortedScores = () => {
     return playerNames.findIndex((p) => p.name === winner.playerName);
   }, [winner.playerName, playerNames]);
 
-  const winnerName = useMemo<string>(() => winner.playerName || "Unknown Player", [winner.playerName]);
+  const winnerName = useMemo<string>(
+    () => winner.playerName || "Unknown Player",
+    [winner.playerName]
+  );
 
   const winnerImage = useMemo<ImageSourcePropType>(() => {
     if (winnerIndex < 0) return FALLBACK_IMAGE;
     const imageId = selectedImages[winnerIndex];
-    return playerImages[imageId]?.src ?? FALLBACK_IMAGE;
+    return playerImages?.[imageId]?.src ?? FALLBACK_IMAGE;
   }, [winnerIndex, selectedImages, playerImages]);
 
-  const winnerPlayerImageType = useMemo<WinnerImageType>(() => {
-    if (winnerIndex < 0) return "default";
-    const imageId = selectedImages[winnerIndex];
-    return playerImages[imageId]?.type ?? "default";
-  }, [winnerIndex, selectedImages, playerImages]);
+  /* ------------------------------ Safe Navigate ------------------------------ */
+
+const safeNavigate = useCallback(
+  (route: string) => {
+    if (!router || navigationLock.current) return;
+
+    navigationLock.current = true;
+
+    requestAnimationFrame(() => {
+      Promise.resolve().then(() => {
+        try {
+          router.replace(route as any);
+        } catch (err) {
+          console.warn("Navigation failed:", err);
+        } finally {
+          navigationLock.current = false;
+        }
+      });
+    });
+  },
+  [router]
+);
+
+
 
   /* ------------------------------ Actions ------------------------------ */
 
-  const handlePlayAgain =() => {
-  
+ const handlePlayAgain = useCallback(() => {
+  try {
     dispatch(playAgain());
-
-    setTimeout(() => {
-      router.replace("/chorpolicegame");
-    }, 1500); 
+    safeNavigate("/chorpolicegame");
+  } catch (error) {
+    console.error("handlePlayAgain error:", error);
   }
+}, [dispatch, safeNavigate]);
 
-  const handleBack = () => {
-
+const handleBack = useCallback(() => {
+  try {
     dispatch(resetGamefromRedux());
-
-    setTimeout(() => {
-      router.replace("/modeselect");
-    }, 1500);
+    safeNavigate("/modeselect");
+  } catch (error) {
+    console.error("handleBack error:", error);
   }
+}, [dispatch, safeNavigate]);
+
 
   const handleShare = useCallback(async () => {
     try {
-      const uri = await captureScreen({ format: "png", quality: 0.9 });
+      const uri = await captureScreen({
+        format: "png",
+        quality: 0.9,
+      });
+
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) return;
 
@@ -121,17 +158,18 @@ export const useSortedScores = () => {
     }
   }, []);
 
+  /* ------------------------------ Return ------------------------------ */
+
   return {
     sortedScores,
     playerNames,
     selectedImages,
-    isButtonDisabled,
     winner,
     winnerName,
     winnerImage,
-    winnerPlayerImageType,
     handlePlayAgain,
     handleBack,
     handleShare,
+    isButtonDisabled,
   };
 };

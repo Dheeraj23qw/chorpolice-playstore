@@ -4,11 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { resetGame } from "./utils/resetGameUtils";
 import { flipCard } from "./utils/flipCardUtil";
-import {
-  playSound,
-  stopQuizSound,
-  stopTimerSound,
-} from "@/redux/reducers/soundReducer";
 import { revealAllCards } from "./utils/revealAllCardsUtils";
 import { resetForNextRound } from "./utils/resetForNextRound";
 import { handlePlayHelper } from "./gameHelper/handleplay";
@@ -19,6 +14,7 @@ import { updatePlayerScores } from "@/redux/reducers/playerReducer";
 import { resetGamefromRedux } from "@/redux/reducers/playerReducer";
 import * as Haptics from "expo-haptics";
 import { resetDifficulty } from "@/redux/reducers/quiz";
+import { AudioEngine } from "@/audio/audioEngine";
 interface UseRajaMantriGameOptions {
   playerNames: string[];
 }
@@ -183,7 +179,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const handlePlay = () => {
     handlesetRoundStartMessage();
     const timer = setTimeout(() => {
-      dispatch(playSound("select"));
+        AudioEngine.play("select", "ui");
+
       handlePlayHelper(
         dispatch,
         playerNames,
@@ -221,7 +218,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const handleCardClick = (index: number) => {
-    dispatch(playSound("select"));
+      AudioEngine.play("select", "ui");
+
     if (
       !areCardsClickable ||
       !isPlayButtonDisabled ||
@@ -258,7 +256,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         handleRevealAllCards();
 
         winTimeoutId = setTimeout(() => {
-          dispatch(playSound("win"));
+          AudioEngine.play("win", "gameplay");
         }, 2000);
 
         gifTimeoutId = setTimeout(() => {
@@ -282,7 +280,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         handleRevealAllCards();
 
         loseTimeoutId = setTimeout(() => {
-          dispatch(playSound("lose"));
+         AudioEngine.play("lose", "gameplay");
+
         }, 2000);
 
         gifTimeoutId = setTimeout(() => {

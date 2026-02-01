@@ -13,7 +13,6 @@ import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection"
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
 import { BackHandler } from "react-native";
 
 

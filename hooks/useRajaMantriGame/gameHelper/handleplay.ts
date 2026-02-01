@@ -1,7 +1,7 @@
-import { playSound } from "@/redux/reducers/soundReducer";
 import { AppDispatch } from "@/redux/store";
 import { shuffleArray } from "../utils/suffleArrayUtils";
 import { Dispatch, SetStateAction } from "react";
+import { AudioEngine } from "@/audio/audioEngine";
 
 export const handlePlayHelper = (
   dispatch: AppDispatch,
@@ -28,7 +28,8 @@ export const handlePlayHelper = (
   try {
   
 
-    dispatch(playSound("level"));
+   AudioEngine.play("level", "gameplay");
+
 
     if (playerNames.length > 0) {
       const randomIndex = Math.floor(Math.random() * playerNames.length);
@@ -64,10 +65,12 @@ export const handlePlayHelper = (
 
           await delay(4500);
           setPopupIndex(2);
-          dispatch(playSound("police"));
+          AudioEngine.play("police", "gameplay");
+
           await delay(4000);
           setPopupIndex(1);
-          dispatch(playSound("king"));
+          AudioEngine.play("king", "gameplay");
+
 
      
           setAreCardsClickable(true);

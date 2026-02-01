@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { updatePlayerScores } from "@/redux/reducers/playerReducer";
-import { playSound } from "@/redux/reducers/soundReducer";
 import useRandomMessage from "@/hooks/useRandomMessage";
+import { AudioEngine } from "@/audio/audioEngine";
 
 const useQuizLogic = (router: any) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -118,7 +118,8 @@ const useQuizLogic = (router: any) => {
 
   const setFeedback = (message: string, soundName: "win" | "lose") => {
     setFeedbackMessage(message);
-    dispatch(playSound(soundName));
+      AudioEngine.play(soundName, "gameplay");
+
     setIsContentVisible(false);
     setTimeout(() => {
       moveToNextPlayer();

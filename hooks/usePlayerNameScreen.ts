@@ -6,11 +6,11 @@ import {
   setSelectedImages,
   setGameMode,
 } from "@/redux/reducers/playerReducer";
-import { playSound } from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
 import { GameMode } from "@/types/redux/reducers";
 import { generateRandomName } from "@/utils/generateRandomnames";
 import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
+import { AudioEngine } from "@/audio/audioEngine";
 
 const MAX_SELECTED_IMAGES = 4;
 const MAX_NAME_LENGTH = 8;
@@ -33,6 +33,8 @@ export const usePlayerNameScreen = () => {
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images,
   );
+
+
 
   useEffect(() => {
     if (gameModeStatus !== null) {
@@ -57,7 +59,8 @@ export const usePlayerNameScreen = () => {
         return;
       }
 
-      dispatch(playSound("level"));
+      AudioEngine.play("level", "gameplay");
+
 
       setSelectedImagesState((prev) => [...prev, imageId]);
 
@@ -138,7 +141,8 @@ export const usePlayerNameScreen = () => {
   const handleStartAdventure = useCallback(async () => {
     if (checkForDuplicateNames()) return;
 
-    dispatch(playSound("select"));
+    AudioEngine.play("select", "ui");
+
     setIsButtonDisabled(true);
 
     try {
@@ -182,7 +186,8 @@ export const usePlayerNameScreen = () => {
 
   const removePlayer = useCallback(
     (imageId: number) => {
-      dispatch(playSound("select"));
+      AudioEngine.play("select", "ui");
+
 
       setSelectedImagesState((prev) => prev.filter((id) => id !== imageId));
       setPlayerNamesState((prev) => prev.filter((p) => p.id !== imageId));
@@ -198,7 +203,8 @@ export const usePlayerNameScreen = () => {
     (imageId: number) => {
       if (selectedImages.includes(imageId)) {
         // 1. Effects and State Updates
-        dispatch(playSound("select"));
+        AudioEngine.play("select", "ui");
+
 
         setSelectedImagesState((prev) => prev.filter((id) => id !== imageId));
         setPlayerNamesState((prev) => prev.filter((p) => p.id !== imageId));

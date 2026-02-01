@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  playSound,
-  stopQuizSound,
-  stopTimerSound,
-} from "@/redux/reducers/soundReducer";
+import { AudioEngine } from "@/audio/audioEngine";
+
 import { RootState } from "@/redux/store";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
@@ -71,8 +68,6 @@ export const useQuizGameLogic = () => {
   const randomLose = useRandomMessage("b", "loserwithoutname");
   const randomTimeUp = useRandomMessage("c", "timesup");
 
-
-
   /* ---------------- TIMER ---------------- */
 
   const clearTimer = useCallback(() => {
@@ -84,8 +79,8 @@ export const useQuizGameLogic = () => {
 
   const handleTimeUp = useCallback(() => {
     clearTimer();
-    dispatch(stopTimerSound());
-    dispatch(playSound("timesup"));
+    AudioEngine.stop("timer");
+    AudioEngine.play("timesup", "gameplay");
 
     setNotAnswer((p) => p + 1);
     setMediaId(MEDIA.TIMEUP);
@@ -118,8 +113,9 @@ export const useQuizGameLogic = () => {
   }, [difficulty, handleTimeUp, clearTimer]);
 
   useEffect(() => {
-    dispatch(stopQuizSound());
-    dispatch(playSound("timer"));
+    AudioEngine.stop("quiz");
+    AudioEngine.play("timer", "gameplay");
+
     startTimer();
 
     return clearTimer;
@@ -141,7 +137,7 @@ export const useQuizGameLogic = () => {
 
   const handleAnswerSelection = (answer: string) => {
     clearTimer();
-    dispatch(stopTimerSound());
+    AudioEngine.stop("timer");
 
     setSelectedAnswer(answer);
     setIsDynamicPopUp(true);
@@ -153,12 +149,12 @@ export const useQuizGameLogic = () => {
       setCorrectAnswer((p) => p + 1);
       setMediaId(MEDIA.CORRECT);
       setPlayerMessage({ message: randomWin });
-      dispatch(playSound("win"));
+      AudioEngine.play("win", "gameplay");
     } else {
       setWrongAnswer((p) => p + 1);
       setMediaId(MEDIA.WRONG);
       setPlayerMessage({ message: randomLose });
-      dispatch(playSound("lose"));
+      AudioEngine.play("lose", "gameplay");
     }
 
     setTimeout(() => {
@@ -231,14 +227,16 @@ export const useQuizGameLogic = () => {
   /* ---------------- NEXT ---------------- */
 
   const handleNextQuestion = () => {
-    dispatch(playSound("next"));
+    AudioEngine.play("next", "ui");
+
     setShowHint(false);
     setRemainingOptions(null);
     setIsFiftyFiftyActive(false);
 
     if (questionIndex + 1 >= NUM_QUESTIONS) {
       dispatch(setCorrectAnswers(correctAnswer));
-      dispatch(stopTimerSound());
+      AudioEngine.stop("timer");
+
       router.push("/quizresult");
       return;
     }
@@ -252,7 +250,7 @@ export const useQuizGameLogic = () => {
   /* ---------------- RESET / QUIT ---------------- */
 
   const resetGame = () => {
-    dispatch(stopTimerSound());
+    AudioEngine.stop("timer");
     clearTimer();
     setQuestionIndex(0);
     setCorrectAnswer(0);
@@ -269,11 +267,6 @@ export const useQuizGameLogic = () => {
     dispatch(resetDifficulty());
     router.replace("/modeselect");
   };
-
-
-
-
-
 
   return {
     question,

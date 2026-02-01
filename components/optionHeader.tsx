@@ -14,15 +14,12 @@ import {
   responsiveFontSize,
 } from "react-native-responsive-dimensions";
 
-import {
-  stopQuizSound,
-  playSound,
-  setMuted, // ✅ ADD THIS
-} from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
 import { handleShare } from "@/utils/share";
 import { FullScreenMenu } from "@/components/sidebar";
 import CustomRatingModal from "@/modal/RatingModal";
+import { AudioEngine } from "@/audio/audioEngine";
+import { setMuted } from "@/redux/reducers/soundReducer";
 
 /* ---------------------------------------------------
    ✅ Animated Button Component (MUST be outside)
@@ -98,6 +95,20 @@ const OptionHeader = () => {
   const iconSize = responsiveFontSize(2.8);
   const marginBetween = responsiveWidth(3);
 
+  const handleSoundToggle = () => {
+    const newMutedState = !isMuted;
+
+    dispatch(setMuted(newMutedState));
+
+    if (!newMutedState) {
+      // Restart background sound when unmuted
+      AudioEngine.play("quiz", "background");
+    } else {
+      // Stop all sounds when muted
+      AudioEngine.stopAll();
+    }
+  };
+
   return (
     <View
       style={{
@@ -111,14 +122,7 @@ const OptionHeader = () => {
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={() => {
-          if (isMuted) {
-            dispatch(setMuted(false)); // unmute
-            dispatch(playSound("quiz")); // start sound
-          } else {
-            dispatch(setMuted(true)); // mute
-          }
-        }}
+        onPress={handleSoundToggle}
       >
         <Ionicons
           name={isMuted ? "volume-mute" : "volume-high"}

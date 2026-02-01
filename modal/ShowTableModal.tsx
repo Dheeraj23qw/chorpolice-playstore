@@ -10,9 +10,8 @@ import {
 } from "react-native";
 import { styles } from "@/modal/_styles/showTableCSS";
 import { useDispatch, useSelector } from "react-redux";
-import { playSound } from "@/redux/reducers/soundReducer";
 import { RootState } from "@/redux/store";
-import { Ionicons } from "@expo/vector-icons"; // Import Expo vector icons
+import { AudioEngine } from "@/audio/audioEngine";
 
 // Define types as previously defined...
 type PlayerScore = {
@@ -40,12 +39,15 @@ const ScoreTable: React.FC<ScoreTableProps> = ({
   );
   const [isModalVisible, setIsModalVisible] = useState(popupTable);
   const maxRounds = selectedRounds;
-  const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(playSound("select"));
-    setIsModalVisible(popupTable);
-  }, [popupTable, dispatch]);
+useEffect(() => {
+  if (popupTable) {
+    AudioEngine.play("select", "ui");
+  }
+
+  setIsModalVisible(popupTable);
+}, [popupTable]);
+
 
   const handleModalClose = () => {
     setIsModalVisible(false);

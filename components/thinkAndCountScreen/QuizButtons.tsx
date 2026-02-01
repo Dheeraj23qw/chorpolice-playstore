@@ -1,8 +1,8 @@
 import React, { memo } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useDispatch } from "react-redux";
-import { playSound } from "@/redux/reducers/soundReducer";
 import { Table, FastForward, Split, Zap } from "lucide-react-native";
+import { AudioEngine } from "@/audio/audioEngine";
 
 interface ButtonProps {
   showHint: boolean;
@@ -23,10 +23,8 @@ const ActionButton = memo(
     variant?: "primary" | "secondary" | "accent";
     icon?: any;
   }) => {
-    const dispatch = useDispatch();
-
     const handlePress = () => {
-      dispatch(playSound("select"));
+      AudioEngine.play("select", "ui");
       onPress();
     };
 
@@ -66,21 +64,18 @@ const ActionButton = memo(
         className={`flex-1 flex-row items-center justify-center h-14 rounded-2xl border ${current.bg} ${current.border}`}
       >
         {Icon && <Icon size={18} color={current.icon} strokeWidth={2.5} />}
-        <Text className={`ml-2 text-[11px] font-black uppercase tracking-[2px] ${current.text}`}>
+        <Text
+          className={`ml-2 text-[11px] font-black uppercase tracking-[2px] ${current.text}`}
+        >
           {label}
         </Text>
       </Pressable>
     );
-  }
+  },
 );
 
 export const QuizButton: React.FC<ButtonProps> = memo(
-  ({
-    showHint,
-    setIsTableOpen,
-    handleNextQuestion,
-    handleFiftyFifty,
-  }) => {
+  ({ showHint, setIsTableOpen, handleNextQuestion, handleFiftyFifty }) => {
     return (
       <View className="mt-4 px-4 py-6 rounded-[32px] bg-white/[0.03] border border-white/[0.05] backdrop-blur-xl">
         {/* Label for the action section */}
@@ -122,5 +117,5 @@ export const QuizButton: React.FC<ButtonProps> = memo(
         </View>
       </View>
     );
-  }
+  },
 );

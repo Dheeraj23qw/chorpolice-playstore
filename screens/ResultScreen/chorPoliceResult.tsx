@@ -1,84 +1,69 @@
-import React, { memo, useCallback, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StatusBar, View, Text, BackHandler, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSortedScores } from "@/hooks/useSortedScores";
 import { rf, hp, wp } from "@/utils/responsive";
-import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 
 // Redesigned Components (Ensure these use Tailwind/Glass styles)
 import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
 import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
 import { ActionButtons } from "@/components/leaderBoardScreen/ActionButtons";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 
 
-const REWARD_POINTS = 1000;
-const POPUP_TIMEOUT = 5000;
-
 const ChorPoliceResult = () => {
   const insets = useSafeAreaInsets();
+
   const {
     sortedScores,
     playerNames,
     selectedImages,
-    handlePlayAgain,
     handleShare,
     isButtonDisabled,
     winnerName,
     winnerImage,
-    winnerPlayerImageType,
     winner,
+    handlePlayAgain,
   } = useSortedScores();
 
-  const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
+  const playerNamess = useSelector(selectPlayerNames);
 
-  const onShare = useCallback(handleShare, [handleShare]);
-
-  const playerNamess = useSelector(selectPlayerNames).map(
-    (player) => player.name,
+  const playerNamesList = useMemo(
+    () => playerNamess.map((player) => player.name),
+    [playerNamess]
   );
 
-  const { handleExitGame } = useRajaMantriGame({ playerNames : playerNamess });
+  const { handleExitGame } = useRajaMantriGame({
+    playerNames: playerNamesList,
+  });
 
- useEffect(() => {
-   const backAction = () => {
-     Alert.alert(
-       "Hold on!",
-       "Are you sure you want to go back?",
-       [
-         {
-           text: "Cancel",
-           style: "cancel",
-         },
-         {
-           text: "YES",
-           onPress: () => handleExitGame(),
-         },
-       ],
-       { cancelable: true }
-     );
- 
-     return true; // prevent default back behavior
-   };
- 
-   const subscription = BackHandler.addEventListener(
-     "hardwareBackPress",
-     backAction
-   );
- 
-   return () => subscription.remove();
- }, []);
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert(
+        "Hold on!",
+        "Are you sure you want to go back?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "YES", onPress: handleExitGame },
+        ],
+        { cancelable: true }
+      );
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => subscription.remove();
+  }, [handleExitGame]);
 
   return (
     <View className="flex-1 bg-[#09090b]">
-      {/* Notch Safety: Translucent status bar + Manual Insets */}
-      <StatusBar
-        barStyle="light-content"
-        translucent
-        backgroundColor="transparent"
-      />
+   
 
       {/* Background Metamorphism Glows */}
       <View
@@ -100,23 +85,7 @@ const ChorPoliceResult = () => {
         className="absolute bg-purple-600/10 rounded-full blur-[100px]"
       />
 
-      {isDynamicPopUp && winnerImage && winnerPlayerImageType ? (
-        /* Reward Overlay State */
-        <View className="flex-1">
-          <DynamicOverlayPopUp
-            isPopUp={isDynamicPopUp}
-            mediaId={12}
-            mediaType="gif"
-            closeVisibleDelay={POPUP_TIMEOUT}
-            playerData={{
-              image: winnerImage,
-              message: `${winnerName}, you won ${REWARD_POINTS} coins!`,
-              imageType: winnerPlayerImageType,
-            }}
-          />
-        </View>
-      ) : (
-        /* Main Result Screen */
+   
         <View
           style={{
             flex: 1,
@@ -179,13 +148,12 @@ const ChorPoliceResult = () => {
             <View className="px-6">
               <MemoizedActionButtons
                 handlePlayAgain={handlePlayAgain}
-                handleShare={onShare}
+                handleShare={handleShare}
                 isButtonDisabled={isButtonDisabled}
               />
             </View>
           </ScrollView>
         </View>
-      )}
     </View>
   );
 };

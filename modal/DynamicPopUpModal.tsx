@@ -10,13 +10,15 @@ import {
   StatusBar,
 } from "react-native";
 // Import from expo-video
-import { VideoView, useVideoPlayer } from "expo-video"; 
+import { VideoView, useVideoPlayer } from "expo-video";
 import { videoData, gifData, imageData } from "@/constants/DynamicPopUpData";
 import { styles } from "@/modal/_styles/DynamicOverlayPopCSS";
-import { OverlayPopUpProps, PlayerData } from "@/types/models/DynamicpopUpModal";
-import { playSound } from "@/redux/reducers/soundReducer";
-import { useDispatch } from "react-redux";
+import {
+  OverlayPopUpProps,
+  PlayerData,
+} from "@/types/models/DynamicpopUpModal";
 import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/qiuzStyle";
+import { AudioEngine } from "@/audio/audioEngine";
 
 const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   isPopUp,
@@ -27,7 +29,6 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
 }) => {
   const [modalVisible, setModalVisible] = useState(isPopUp);
   const [showCloseText, setShowCloseText] = useState(false);
-  const dispatch = useDispatch();
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -50,10 +51,13 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
   // Setup expo-video player
   // useVideoPlayer handles the source and playback logic
-  const player = useVideoPlayer(mediaType === 'video' ? mediaData.url : null, (player) => {
-    player.loop = true;
-    player.play();
-  });
+  const player = useVideoPlayer(
+    mediaType === "video" ? mediaData.url : null,
+    (player) => {
+      player.loop = true;
+      player.play();
+    },
+  );
 
   const closeModal = () => {
     setModalVisible(false);
@@ -61,10 +65,21 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
   // Sound Logic
   useEffect(() => {
-    if (modalVisible && mediaType === "gif") {
-      if ([2, 4, 7].includes(mediaId)) dispatch(playSound("winning"));
-      else if ([1, 3, 6].includes(mediaId)) dispatch(playSound("losing"));
+    if (!modalVisible) return;
+
+    if (mediaType === "gif") {
+      if ([2, 4, 7].includes(mediaId)) {
+        AudioEngine.play("winning", "gameplay");
+      } else if ([1, 3, 6].includes(mediaId)) {
+        AudioEngine.play("losing", "gameplay");
+      }
     }
+
+    return () => {
+      // stop only gameplay sounds when modal closes
+      AudioEngine.stop("winning");
+      AudioEngine.stop("losing");
+    };
   }, [modalVisible, mediaType, mediaId]);
 
   // Animation Logic
@@ -72,15 +87,31 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
     if (modalVisible) {
       const mainAnimation =
         mediaType === "image"
-          ? Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true })
+          ? Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            })
           : mediaType === "video"
-          ? Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true })
-          : Animated.spring(scaleAnim, { toValue: 1, friction: 5, useNativeDriver: true });
+            ? Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true })
+            : Animated.spring(scaleAnim, {
+                toValue: 1,
+                friction: 5,
+                useNativeDriver: true,
+              });
 
       Animated.parallel([
         mainAnimation,
-        Animated.timing(playerDataAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.spring(closeTextAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
+        Animated.timing(playerDataAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.spring(closeTextAnim, {
+          toValue: 1,
+          friction: 3,
+          useNativeDriver: true,
+        }),
         Animated.spring(descriptionAnim, { toValue: 0, useNativeDriver: true }),
       ]).start();
 
@@ -95,27 +126,47 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
       <TouchableWithoutFeedback onPress={() => {}}>
         <View style={styles.overlay}>
           {/* Player Info */}
-          <Animated.View style={[chorPoliceQuizstyles.playerInfo, { opacity: playerDataAnim }]}>
+          <Animated.View
+            style={[
+              chorPoliceQuizstyles.playerInfo,
+              { opacity: playerDataAnim },
+            ]}
+          >
             {playerData.image && (
-              <Image 
-                source={typeof playerData.image === 'string' ? { uri: playerData.image } : playerData.image} 
-                style={chorPoliceQuizstyles.playerImage} 
+              <Image
+                source={
+                  typeof playerData.image === "string"
+                    ? { uri: playerData.image }
+                    : playerData.image
+                }
+                style={chorPoliceQuizstyles.playerImage}
               />
             )}
-            <Text style={styles.playerNameStyle}>{playerData.name || playerData.message}</Text>
+            <Text style={styles.playerNameStyle}>
+              {playerData.name || playerData.message}
+            </Text>
           </Animated.View>
 
           {/* Media Container */}
           <Animated.View
             style={[
               styles.container,
-              mediaType === "video" ? styles.videoContainer : styles.defaultContainer,
+              mediaType === "video"
+                ? styles.videoContainer
+                : styles.defaultContainer,
               mediaType === "image" && { opacity: fadeAnim },
-              mediaType === "video" && { transform: [{ translateY: slideAnim }] },
+              mediaType === "video" && {
+                transform: [{ translateY: slideAnim }],
+              },
               mediaType === "gif" && { transform: [{ scale: scaleAnim }] },
             ]}
           >
-            <Animated.Text style={[styles.description, { transform: [{ translateY: descriptionAnim }] }]}>
+            <Animated.Text
+              style={[
+                styles.description,
+                { transform: [{ translateY: descriptionAnim }] },
+              ]}
+            >
               {mediaData.description}
             </Animated.Text>
 
@@ -131,7 +182,11 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
               />
             ) : (
               <Image
-                source={typeof mediaData.url === 'string' ? { uri: mediaData.url } : mediaData.url}
+                source={
+                  typeof mediaData.url === "string"
+                    ? { uri: mediaData.url }
+                    : mediaData.url
+                }
                 style={styles.media}
                 resizeMode="contain"
               />
@@ -139,7 +194,12 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
 
             {showCloseText && (
               <Pressable onPress={closeModal}>
-                <Animated.Text style={[styles.closeText, { transform: [{ scale: closeTextAnim }] }]}>
+                <Animated.Text
+                  style={[
+                    styles.closeText,
+                    { transform: [{ scale: closeTextAnim }] },
+                  ]}
+                >
                   Tap to Close
                 </Animated.Text>
               </Pressable>

@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
-import { playSound } from '@/redux/slices/soundSlice';
 import { playerImages as playerImagesData } from '@/constants/playerData';
+import { AudioEngine } from "@/audio/audioEngine";
 
 const MAX_SELECTED_IMAGES = 4;
 
-export const useImageSelection = (setModalVisible: (modal: string, visible: boolean) => void) => {
+export const useImageSelection = (
+  setModalVisible: (modal: string, visible: boolean) => void
+) => {
   const [selectedImages, setSelectedImages] = useState<number[]>([]);
-  const dispatch = useDispatch();
 
   const handleImageSelect = useCallback(
     (imageId: number) => {
@@ -22,8 +22,9 @@ export const useImageSelection = (setModalVisible: (modal: string, visible: bool
       }
 
       if (selectedImages.length < MAX_SELECTED_IMAGES) {
-        dispatch(playSound("level"));
+        AudioEngine.play("level", "gameplay"); // ✅ correct architecture
         setSelectedImages(prev => [...prev, imageId]);
+
         if (selectedImages.length === 0) {
           setModalVisible('infoAddMoreVisible', true);
         }
@@ -31,7 +32,7 @@ export const useImageSelection = (setModalVisible: (modal: string, visible: bool
         setModalVisible('modalVisible', true);
       }
     },
-    [selectedImages, dispatch, setModalVisible]
+    [selectedImages, setModalVisible]
   );
 
   return {

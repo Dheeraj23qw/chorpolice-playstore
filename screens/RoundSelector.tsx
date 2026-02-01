@@ -5,6 +5,7 @@ import { RootState } from "@/redux/store";
 import { setGameRound } from "@/redux/reducers/playerReducer";
 import { rf } from "@/utils/responsive";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { AudioEngine } from "@/audio/audioEngine";
 
 const RoundSelector: React.FC = () => {
   const dispatch = useDispatch();
@@ -15,6 +16,7 @@ const RoundSelector: React.FC = () => {
   const roundOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
   const handleRoundSelect = useCallback((round: number) => {
+    AudioEngine.play("select", "ui");
     dispatch(setGameRound(round));
 
     // Simple, non-intrusive feedback

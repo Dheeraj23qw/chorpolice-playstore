@@ -1,8 +1,7 @@
 import { Animated } from "react-native";
 import { AppDispatch } from "@/redux/store";
-import { playSound } from "@/redux/reducers/soundReducer";
 import { Router } from "expo-router";
-import { setIsThinking } from "@/redux/reducers/botReducer";
+import { AudioEngine } from "@/audio/audioEngine";
 
 export const resetForNextRound = (
   round: number,
@@ -25,13 +24,15 @@ export const resetForNextRound = (
   router: Router,
   setFirstCardClicked: React.Dispatch<React.SetStateAction<boolean>>,
   setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>,
-  setIsDynamicPopUp:React.Dispatch<React.SetStateAction<boolean>>,
-  setMediaId:React.Dispatch<React.SetStateAction<number | null>>,
-  setMediaType:React.Dispatch<React.SetStateAction<"image" | "video" | "gif"| null>>,
-  selectedRounds:number
+  setIsDynamicPopUp: React.Dispatch<React.SetStateAction<boolean>>,
+  setMediaId: React.Dispatch<React.SetStateAction<number | null>>,
+  setMediaType: React.Dispatch<
+    React.SetStateAction<"image" | "video" | "gif" | null>
+  >,
+  selectedRounds: number,
 ) => {
   if (round == selectedRounds) {
-    dispatch(playSound("next"));
+    AudioEngine.play("next", "ui");
     calculateTotalScores();
     setTimeout(() => {
       router.push("/chorPoliceQuiz");
@@ -55,6 +56,6 @@ export const resetForNextRound = (
     setIsDynamicPopUp(false);
     setMediaId(null);
     setMediaType(null);
-    dispatch(playSound("next"));
+     AudioEngine.play("next", "ui");
   }
 };

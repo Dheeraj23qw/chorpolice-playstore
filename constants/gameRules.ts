@@ -13,7 +13,7 @@ export const rulesGroups = [
       {
         id: "2",
         title: "Game Rounds",
-        desc: "The game plays 4 rounds by default. You can change rounds in settings.",
+        desc: "The game plays 1 rounds by default. You can change rounds on clicking on round select button.",
       },
       {
         id: "3",

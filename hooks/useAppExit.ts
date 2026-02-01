@@ -1,19 +1,24 @@
 import { useEffect } from "react";
 import { BackHandler, Platform, Alert } from "react-native";
+import { useRouter } from "expo-router";
 
 export const useAppExit = () => {
+  const router = useRouter();
+
   useEffect(() => {
     if (Platform.OS !== "android") return;
 
     const onBackPress = () => {
+      if (router.canGoBack()) {
+        router.back(); // normal back
+        return true;
+      }
+
       Alert.alert(
         "Exit App",
         "Are you sure you want to exit?",
         [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
+          { text: "Cancel", style: "cancel" },
           {
             text: "Exit",
             style: "destructive",
@@ -23,7 +28,7 @@ export const useAppExit = () => {
         { cancelable: true }
       );
 
-      return true; // Prevent default behavior
+      return true;
     };
 
     const subscription = BackHandler.addEventListener(
@@ -32,5 +37,5 @@ export const useAppExit = () => {
     );
 
     return () => subscription.remove();
-  }, []);
+  }, [router]);
 };

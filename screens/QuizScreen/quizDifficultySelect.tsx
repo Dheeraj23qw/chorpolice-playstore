@@ -8,10 +8,10 @@ import { useDispatch } from "react-redux";
 import { hp, wp, rf } from "@/utils/responsive";
 
 import { setDifficulty } from "@/redux/reducers/quiz";
-import { playSound } from "@/redux/reducers/soundReducer";
 import { SafeBackButton } from "@/components/SafeBackButton";
 
 import { useIsRouterReady } from "@/utils/useIsNavigationReady";
+import { AudioEngine } from "@/audio/audioEngine";
 
 type DifficultyOption = "easy" | "medium" | "hard";
 const OPTIONS: DifficultyOption[] = ["easy", "medium", "hard"];
@@ -149,24 +149,28 @@ const QuizDifficultyScreen = () => {
   const isReady = useIsRouterReady();
   const handleSelect = useCallback(
     (option: DifficultyOption) => {
-      dispatch(playSound("select"));
+       AudioEngine.play("select", "ui");
       dispatch(setDifficulty(option));
       setSelected(option);
     },
     [dispatch],
   );
 
-  // ✅ Optimized Navigation Handler
-  const handleBegin = useCallback(() => {
-    if (!selected || !isReady || isNavigating) return;
+ const handleBegin = useCallback(() => {
+  if (!selected || !isReady || isNavigating) return;
 
-    setIsNavigating(true);
-    dispatch(playSound("quiz")); 
+  setIsNavigating(true);
 
-    setTimeout(() => {
-      router.replace("/quiz");
-    }, 100);
-  }, [selected, isReady, isNavigating, router, dispatch]);
+  // 🔊 Play sound
+  AudioEngine.play("quiz", "ui");
+
+  // Small delay so sound starts before navigation
+  setTimeout(() => {
+    router.replace("/quiz");
+  }, 120);
+
+}, [selected, isReady, isNavigating, router]);
+
 
   return (
     <View className="flex-1 bg-[#09090b]">

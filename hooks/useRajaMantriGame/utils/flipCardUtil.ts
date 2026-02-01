@@ -1,8 +1,8 @@
 // flipCardUtil.ts
 import { Animated } from "react-native";
 import { Dispatch, SetStateAction } from "react";
-import { playSound } from "@/redux/reducers/soundReducer";
 import { AppDispatch } from "@/redux/store";
+import { AudioEngine } from "@/audio/audioEngine";
 export const flipCard = (
   index: number,
   toValue: number,
@@ -18,7 +18,8 @@ export const flipCard = (
   
 ) => {
 
-  dispatch(playSound("spin"));
+ AudioEngine.play("spin", "gameplay");
+
 
   Animated.timing(flipAnims[index], {
     toValue,

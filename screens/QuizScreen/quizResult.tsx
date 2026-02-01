@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, StatusBar, BackHandler, Alert } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
@@ -7,23 +7,20 @@ import { hp, wp } from "@/utils/responsive";
 import useRandomMessage from "@/hooks/useRandomMessage";
 import CustomRatingModal from "@/modal/RatingModal";
 import { RootState } from "@/redux/store";
-import { playSound } from "@/redux/reducers/soundReducer";
 import { addCoins } from "@/redux/reducers/coinsReducer";
+import { resetDifficulty } from "@/redux/reducers/quiz";
 
 import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
 import { handleShare } from "@/utils/share";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
-import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
+import { AudioEngine } from "@/audio/audioEngine";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [coinsAwarded, setCoinsAwarded] = useState<string>("");
+  const [coinsAwarded, setCoinsAwarded] = useState("");
 
   const dispatch = useDispatch();
   const router = useRouter();
-
-  const {handleQuit} = useQuizGameLogic();
 
   const {
     correctQuestions: Correct,
@@ -34,82 +31,104 @@ export default function QuizResult() {
 
   const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
 
-useEffect(() => {
-  if (level != null) {
+  /* ------------------ COIN REWARD ------------------ */
+
+  useEffect(() => {
+    if (!level) return;
+
     const coinValues = {
       easy: isWinner ? 250 : 40,
       medium: isWinner ? 800 : 100,
       hard: isWinner ? 2000 : 200,
+    } as const;
+
+    const reward = coinValues[level];
+
+    dispatch(addCoins(reward));
+
+    setCoinsAwarded(
+      isWinner
+        ? `You won ${reward} coins!`
+        : `Participation Reward: ${reward} coins`
+    );
+  }, [level, isWinner, dispatch]);
+
+  /* ------------------ QUIT HANDLER ------------------ */
+
+  const handleQuit = useCallback(() => {
+    AudioEngine.stop("timer");
+    dispatch(resetDifficulty());
+    router.replace("/modeselect");
+  }, [dispatch, router]);
+
+  /* ------------------ BACK HANDLER ------------------ */
+
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert(
+        "Hold on!",
+        "Are you sure you want to go back?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "YES", onPress: handleQuit },
+        ],
+        { cancelable: true }
+      );
+
+      return true;
     };
 
-    const levelMessage = isWinner
-      ? `You won ${coinValues[level]} coins!`
-      : `Participation Reward: ${coinValues[level]} coins`;
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
 
-    dispatch(addCoins(coinValues[level]));
-    setCoinsAwarded(levelMessage);
-  }
-}, []);
+    return () => subscription.remove();
+  }, [handleQuit]);
+
+  /* ------------------ BUTTON HANDLERS ------------------ */
+
+  const handleHome = useCallback(() => {
+    handleQuit();
+  }, [handleQuit]);
+
+  const toggleModal = useCallback(() => {
+    setModalVisible((prev) => !prev);
+  }, []);
+
+  /* ------------------ RENDER ------------------ */
 
  useEffect(() => {
-   const backAction = () => {
-     Alert.alert(
-       "Hold on!",
-       "Are you sure you want to go back?",
-       [
-         {
-           text: "Cancel",
-           style: "cancel",
-           onPress: () => {}, // just close
-         },
-         {
-           text: "YES",
-           onPress: () => handleQuit(),
-         },
-       ],
-       { cancelable: true }
-     );
- 
-     return true; 
-   };
- 
-   const subscription = BackHandler.addEventListener(
-     "hardwareBackPress",
-     backAction
-   );
- 
-   return () => subscription.remove();
- }, []);
+  AudioEngine.stop("timer");
 
-  const handleHome = () => {
-    handleQuit();
-    router.replace("/modeselect");
+  return () => {
+    AudioEngine.stop("timer");
   };
-
- 
-
-  const toggleModal = () => setModalVisible((prev) => !prev);
+}, []);
 
   return (
     <View className="flex-1 bg-[#09090b]">
-      {/* 1. System UI Setup */}
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* 2. Responsive Background Glows (Fixed) */}
-      <View 
-        style={{ width: wp(120), height: wp(120), top: -hp(15), left: -wp(30) }} 
-        className={`absolute rounded-full opacity-20 blur-[100px] ${isWinner ? "bg-emerald-500" : "bg-indigo-600"}`} 
-      />
-      
-      <View 
-        style={{ width: wp(100), height: wp(100), bottom: -hp(10), right: -wp(20) }} 
-        className={`absolute rounded-full opacity-10 blur-[100px] ${isWinner ? "bg-emerald-600" : "bg-purple-600"}`} 
+      {/* Background Glows */}
+      <View
+        style={{ width: wp(120), height: wp(120), top: -hp(15), left: -wp(30) }}
+        className={`absolute rounded-full opacity-20 blur-[100px] ${
+          isWinner ? "bg-emerald-500" : "bg-indigo-600"
+        }`}
       />
 
-      {/* 3. Main Content Container (No ScrollView for cleaner centering) */}
-      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: wp(4) }}>
-        
-        {/* Result Information Section */}
+      <View
+        style={{ width: wp(100), height: wp(100), bottom: -hp(10), right: -wp(20) }}
+        className={`absolute rounded-full opacity-10 blur-[100px] ${
+          isWinner ? "bg-emerald-600" : "bg-purple-600"
+        }`}
+      />
+
+      {/* Main Content */}
+      <View
+        style={{ flex: 1, justifyContent: "center", paddingHorizontal: wp(4) }}
+      >
         <View style={{ marginBottom: hp(2) }}>
           <ResultInfo
             Correct={Correct}
@@ -120,7 +139,6 @@ useEffect(() => {
           />
         </View>
 
-        {/* Action Buttons Section */}
         <RenderButtons
           handleShare={handleShare}
           handleHome={handleHome}
@@ -128,7 +146,6 @@ useEffect(() => {
         />
       </View>
 
-      {/* 4. Overlay Modals */}
       <CustomRatingModal
         visible={modalVisible}
         onClose={toggleModal}
