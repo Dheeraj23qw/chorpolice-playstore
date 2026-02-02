@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Image } from "react-native";
+import { View } from "react-native"; // Standard View for the wrapper
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,13 +19,13 @@ export default function AnimatedLogoLoader() {
     );
 
     scale.value = withRepeat(
-      withTiming(1.2, { duration: 800 }),
+      withTiming(1.1, { duration: 1000 }),
       -1,
       true
     );
   }, []);
 
-  const style = useAnimatedStyle(() => ({
+  const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { rotate: `${rotate.value}deg` },
       { scale: scale.value },
@@ -33,12 +33,18 @@ export default function AnimatedLogoLoader() {
   }));
 
   return (
-    <Animated.View style={style}>
-      <Image
-        source={require("@/assets/images/adaptive-icon.png")}
-        className="w-20 h-20"
-        resizeMode="contain"
-      />
-    </Animated.View>
+    <View className="flex-1 items-center justify-center">
+   
+      <Animated.View 
+        style={animatedStyle}
+        className="w-24 h-24 rounded-full overflow-hidden bg-indigo-500 items-center justify-center border-4 border-indigo-200 shadow-xl"
+      >
+        <Animated.Image
+          source={require("@/assets/images/adaptive-icon.png")}
+          className="w-full h-full rounded-full"
+          resizeMode="cover"
+        />
+      </Animated.View>
+    </View>
   );
 }
