@@ -97,13 +97,29 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const router = useRouter();
   const dispatch = useDispatch();
 
+  const isGameReset = useSelector(
+    (state: RootState) => state.player.isGameReset,
+  );
+
+  useEffect(() => {
+    if (isGameReset) {
+      router.replace("/modeselect");
+    }
+  }, [isGameReset]);
+
   useEffect(() => {
     handleResetgame();
   }, []);
 
   const handleExitGame = async () => {
     try {
-   
+      // 🔥 1. Prevent any new sound from playing
+      AudioEngine.setExitLock(true);
+
+      // 🔥 2. Immediately stop all except quiz BGM
+      AudioEngine.stopAllExceptQuiz();
+
+      // Your existing logic
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
       dispatch(resetGamefromRedux());
@@ -115,9 +131,11 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       }
 
       router.replace("/modeselect");
+
+      // 🔥 3. Unlock after small delay (optional safety)
+      AudioEngine.setExitLock(false);
     } catch (error) {
       console.error("Exit failed:", error);
-      // Fallback navigation if something crashes
       router.replace("/");
     }
   };
@@ -171,15 +189,21 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     setRoundStartMessage("Round " + round + " starts!");
     setIsRoundStartPopupVisible(true);
     const timer = setTimeout(() => {
+      if (isGameReset) return;
+
       setIsRoundStartPopupVisible(false);
     }, 3000);
     return () => clearTimeout(timer);
   };
 
   const handlePlay = () => {
+    if (isGameReset) return;
+
     handlesetRoundStartMessage();
     const timer = setTimeout(() => {
-        AudioEngine.play("select", "ui");
+      if (isGameReset) return;
+
+      AudioEngine.play("select", "ui");
 
       handlePlayHelper(
         dispatch,
@@ -218,7 +242,9 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const handleCardClick = (index: number) => {
-      AudioEngine.play("select", "ui");
+    if (isGameReset) return;
+
+    AudioEngine.play("select", "ui");
 
     if (
       !areCardsClickable ||
@@ -256,10 +282,14 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         handleRevealAllCards();
 
         winTimeoutId = setTimeout(() => {
+          if (isGameReset) return;
+
           AudioEngine.play("win", "gameplay");
         }, 2000);
 
         gifTimeoutId = setTimeout(() => {
+          if (isGameReset) return;
+
           setMediaType("gif");
           setIsDynamicPopUp(true);
           setMediaId(4);
@@ -277,14 +307,19 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         updateScore(kingIndex, 1000, round - 1);
         resetTimeoutId = setTimeout(() => resetForNextRoundHandler(), 8000);
       } else {
+        if (isGameReset) return;
+
         handleRevealAllCards();
 
         loseTimeoutId = setTimeout(() => {
-         AudioEngine.play("lose", "gameplay");
+          if (isGameReset) return;
 
+          AudioEngine.play("lose", "gameplay");
         }, 2000);
 
         gifTimeoutId = setTimeout(() => {
+          if (isGameReset) return;
+
           setMediaType("gif");
           setIsDynamicPopUp(true);
           setMediaId(3);
@@ -326,6 +361,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
           return newClickedCards;
         });
       } else if (flippedStates[index] && roles[index] !== "Police") {
+        if (isGameReset) return;
+
         flipCard(
           index,
           0,
@@ -355,6 +392,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const handleRevealAllCards = () => {
+    if (isGameReset) return;
+
     revealAllCards(
       roles,
       flippedStates,
@@ -368,6 +407,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const calculateTotalScores = () => {
+    if (isGameReset) return;
+
     let updateTimeoutId: number | null = null;
 
     setPlayerScores((prevScores) => {
@@ -387,6 +428,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       if (updateTimeoutId) clearTimeout(updateTimeoutId);
 
       updateTimeoutId = setTimeout(() => {
+        if (isGameReset) return;
+
         dispatch(updatePlayerScores(totalScoresArray));
       }, 500);
 
@@ -399,6 +442,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const resetForNextRoundHandler = () => {
+    if (isGameReset) return;
+
     resetForNextRound(
       round,
       initialFlipAnims,

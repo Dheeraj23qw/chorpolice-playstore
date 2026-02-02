@@ -47,12 +47,11 @@ export default function Index() {
     checkFirstLaunch();
   }, []);
 
-  /* ---------------- PLAY QUIZ BGM AFTER INTRO ---------------- */
+  /* ---------------- INTRO END HANDLER ---------------- */
   const handleIntroEnd = () => {
     setIsLoading(false);
 
-    // Start quiz background loop safely
-    AudioEngine.play("quiz", "background");
+      AudioEngine.play("quiz", "background");
   };
 
   /* ---------------- UI ---------------- */

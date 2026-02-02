@@ -14,10 +14,13 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
 import { BackHandler } from "react-native";
-
+import { AudioEngine } from "@/audio/audioEngine";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
+
+
+
 
 
   const {
@@ -40,41 +43,38 @@ const QuizScreen = () => {
     playerMessage,
     setShowHint,
     isHintButtonVisible,
-    setIsHintButtonVisible
+    setIsHintButtonVisible,
   } = useQuizGameLogic();
-  
 
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert(
+        "Hold on!",
+        "Are you sure you want to go back?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {}, // just close
+          },
+          {
+            text: "YES",
+            onPress: () => handleQuit(),
+          },
+        ],
+        { cancelable: true },
+      );
 
-useEffect(() => {
-  const backAction = () => {
-    Alert.alert(
-      "Hold on!",
-      "Are you sure you want to go back?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () => {}, // just close
-        },
-        {
-          text: "YES",
-          onPress: () => handleQuit(),
-        },
-      ],
-      { cancelable: true }
+      return true; // prevent default back action
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction,
     );
 
-    return true; // prevent default back action
-  };
-
-  const subscription = BackHandler.addEventListener(
-    "hardwareBackPress",
-    backAction
-  );
-
-  return () => subscription.remove();
-}, []);
-
+    return () => subscription.remove();
+  }, []);
 
   const onOptionPress = useCallback(
     (value: string) => {
@@ -82,8 +82,6 @@ useEffect(() => {
     },
     [handleAnswerSelection],
   );
-
-
 
   if (isTableOpen) {
     return (
@@ -122,7 +120,7 @@ useEffect(() => {
           setIsHintButtonVisible(true);
         }}
         onNext={() => {
-          setIsHintButtonVisible(false); 
+          setIsHintButtonVisible(false);
           handleNextQuestion();
         }}
       />
@@ -186,7 +184,6 @@ useEffect(() => {
             </Text>
           </View>
 
-
           {!isHintButtonVisible && (
             <View style={{ marginTop: hp(4) }}>
               <OptionsSection
@@ -197,8 +194,6 @@ useEffect(() => {
               />
             </View>
           )}
-
-        
 
           {isHintButtonVisible && (
             <TouchableOpacity

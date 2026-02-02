@@ -24,7 +24,7 @@ interface PlayerCardProps {
 }
 
 const roleImages: Record<string, any> = {
-  King: require("../../assets/images/adaptive-icon.png"),
+  King: require("../../assets/images/chorsipahi/king.png"),
   Advisor: require("../../assets/images/chorsipahi/advisor.png"),
   Thief: require("../../assets/images/chorsipahi/thief.png"),
   Police: require("../../assets/images/chorsipahi/police.png"),

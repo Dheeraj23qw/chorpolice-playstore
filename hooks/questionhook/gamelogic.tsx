@@ -80,8 +80,6 @@ export const useQuizGameLogic = () => {
   const handleTimeUp = useCallback(() => {
     clearTimer();
     AudioEngine.stop("timer");
-    AudioEngine.play("timesup", "gameplay");
-
     setNotAnswer((p) => p + 1);
     setMediaId(MEDIA.TIMEUP);
     setPlayerMessage({ message: randomTimeUp });
@@ -113,12 +111,14 @@ export const useQuizGameLogic = () => {
   }, [difficulty, handleTimeUp, clearTimer]);
 
   useEffect(() => {
-    AudioEngine.stop("quiz");
     AudioEngine.play("timer", "gameplay");
 
     startTimer();
 
-    return clearTimer;
+    return () => {
+      clearTimer();
+      AudioEngine.stop("timer");
+    };
   }, [questionIndex]);
 
   /* ---------------- QUESTION ---------------- */
@@ -236,7 +236,6 @@ export const useQuizGameLogic = () => {
     if (questionIndex + 1 >= NUM_QUESTIONS) {
       dispatch(setCorrectAnswers(correctAnswer));
       AudioEngine.stop("timer");
-
       router.push("/quizresult");
       return;
     }
@@ -250,7 +249,6 @@ export const useQuizGameLogic = () => {
   /* ---------------- RESET / QUIT ---------------- */
 
   const resetGame = () => {
-    AudioEngine.stop("timer");
     clearTimer();
     setQuestionIndex(0);
     setCorrectAnswer(0);

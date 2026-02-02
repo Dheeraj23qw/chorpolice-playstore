@@ -11,17 +11,44 @@ import { StatusBar } from "expo-status-bar";
 import { AlertNotificationRoot } from "react-native-alert-notification";
 import { useAppExit } from "@/hooks/useAppExit";
 import { useSystemUI } from "@/hooks/useSystemUI";
+import { AudioEngine } from "@/audio/audioEngine";
+import { AppState } from "react-native";
 
 /* ---------------- App Layout ---------------- */
 
 function AppLayout() {
+  useEffect(() => {
+    // Always ensure quiz BGM when app becomes active
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        if (!AudioEngine.isMuted()) {
+          AudioEngine.ensureQuizGlobal();
+        }
+      }
+    });
+
+    // Also check immediately on mount
+    if (!AudioEngine.isMuted()) {
+      AudioEngine.ensureQuizGlobal();
+    }
+
+    return () => {
+      sub.remove();
+    };
+  }, []);
+
   const loader = useSelector((state: RootState) => state.loader);
 
-  useAppExit(); 
+  useAppExit();
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false , contentStyle: { backgroundColor: "#0B0B0F" } }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "#0B0B0F" },
+        }}
+      >
         <Stack.Screen name="index" />
       </Stack>
 
@@ -42,7 +69,7 @@ export default function RootLayout() {
     myfont: require("../assets/fonts/YanoneKaffeesatz-Medium.ttf"),
   });
 
-  useSystemUI(); 
+  useSystemUI();
 
   useEffect(() => {
     if (fontsLoaded) {

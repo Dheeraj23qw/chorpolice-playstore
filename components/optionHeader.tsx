@@ -105,7 +105,7 @@ const OptionHeader = () => {
       AudioEngine.play("quiz", "background");
     } else {
       // Stop all sounds when muted
-      AudioEngine.stopAll();
+      AudioEngine.forceStopAll();
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BackgroundOrbs from "@/components/GameModeScreen/BackgroundOrbs";
 import HeaderSection from "@/components/GameModeScreen/HeaderSection";
 import GameModeList from "@/components/GameModeScreen/GameModeList";
+import { AudioEngine } from "@/audio/audioEngine";
 
 const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -25,6 +26,11 @@ const GameModeScreen: React.FC = () => {
 
   // Subtle breathing animation
   const scale = useSharedValue(1);
+
+  useEffect(() => {
+  AudioEngine.setExitLock(false);
+}, []);
+
 
   useFocusEffect(
     useCallback(() => {

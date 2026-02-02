@@ -49,14 +49,17 @@ export default function QuizResult() {
     setCoinsAwarded(
       isWinner
         ? `You won ${reward} coins!`
-        : `Participation Reward: ${reward} coins`
+        : `Participation Reward: ${reward} coins`,
     );
   }, [level, isWinner, dispatch]);
+
+  useEffect(() => {
+    AudioEngine.stop("timer");
+  }, []);
 
   /* ------------------ QUIT HANDLER ------------------ */
 
   const handleQuit = useCallback(() => {
-    AudioEngine.stop("timer");
     dispatch(resetDifficulty());
     router.replace("/modeselect");
   }, [dispatch, router]);
@@ -72,7 +75,7 @@ export default function QuizResult() {
           { text: "Cancel", style: "cancel" },
           { text: "YES", onPress: handleQuit },
         ],
-        { cancelable: true }
+        { cancelable: true },
       );
 
       return true;
@@ -80,7 +83,7 @@ export default function QuizResult() {
 
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
-      backAction
+      backAction,
     );
 
     return () => subscription.remove();
@@ -98,17 +101,14 @@ export default function QuizResult() {
 
   /* ------------------ RENDER ------------------ */
 
- useEffect(() => {
-  AudioEngine.stop("timer");
-
-  return () => {
-    AudioEngine.stop("timer");
-  };
-}, []);
 
   return (
     <View className="flex-1 bg-[#09090b]">
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
 
       {/* Background Glows */}
       <View
@@ -119,7 +119,12 @@ export default function QuizResult() {
       />
 
       <View
-        style={{ width: wp(100), height: wp(100), bottom: -hp(10), right: -wp(20) }}
+        style={{
+          width: wp(100),
+          height: wp(100),
+          bottom: -hp(10),
+          right: -wp(20),
+        }}
         className={`absolute rounded-full opacity-10 blur-[100px] ${
           isWinner ? "bg-emerald-600" : "bg-purple-600"
         }`}

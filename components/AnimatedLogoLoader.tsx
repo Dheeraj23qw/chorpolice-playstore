@@ -40,7 +40,7 @@ export default function AnimatedLogoLoader() {
         className="w-24 h-24 rounded-full overflow-hidden bg-indigo-500 items-center justify-center border-4 border-indigo-200 shadow-xl"
       >
         <Animated.Image
-          source={require("@/assets/images/adaptive-icon.png")}
+          source={require("@/assets/images/chorsipahi/king.png")}
           className="w-full h-full rounded-full"
           resizeMode="cover"
         />

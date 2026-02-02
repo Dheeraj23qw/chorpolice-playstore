@@ -9,16 +9,20 @@ const useQuizLogic = (router: any) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const selectedImages = useSelector(
-    (state: RootState) => state.player.selectedImages
+    (state: RootState) => state.player.selectedImages,
   );
   const playerNames = useSelector(
-    (state: RootState) => state.player.playerNames
+    (state: RootState) => state.player.playerNames,
   );
   const playerScores = useSelector(
-    (state: RootState) => state.player.playerScores
+    (state: RootState) => state.player.playerScores,
   );
   const playerImages = useSelector(
-    (state: RootState) => state.playerImages.images
+    (state: RootState) => state.playerImages.images,
+  );
+
+  const isGameReset = useSelector(
+    (state: RootState) => state.player.isGameReset,
   );
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -31,18 +35,23 @@ const useQuizLogic = (router: any) => {
   const [isPopUp, setIsPopUp] = useState(false);
   const [mediaId, setMediaId] = useState<number>(1);
   const [mediaType, setMediaType] = useState<"image" | "video" | "gif">(
-    "image"
+    "image",
   );
 
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
   const winMessage = useRandomMessage(currentPlayerName, "win");
   const loseMessage = useRandomMessage(currentPlayerName, "lose");
 
-
   // Generate options whenever the current player changes
   useEffect(() => {
     generateOptionsForPlayer();
   }, [currentPlayerIndex]);
+
+  useEffect(() => {
+    if (isGameReset) {
+      router.replace("/modeselect");
+    }
+  }, [isGameReset]);
 
   const generateOptionsForPlayer = () => {
     if (playerNames.length === 0) return;
@@ -58,7 +67,7 @@ const useQuizLogic = (router: any) => {
         variations[Math.floor(Math.random() * variations.length)];
       return Math.max(
         0,
-        baseScore + (Math.random() < 0.5 ? -variation : variation)
+        baseScore + (Math.random() < 0.5 ? -variation : variation),
       );
     };
 
@@ -76,7 +85,7 @@ const useQuizLogic = (router: any) => {
   };
 
   const handleOptionPress = (score: number) => {
-    if (isOptionDisabled) return;
+    if (isGameReset || isOptionDisabled) return;
 
     setIsOptionDisabled(true);
 
@@ -102,6 +111,8 @@ const useQuizLogic = (router: any) => {
   };
 
   const updateScore = (playerName: string, points: number) => {
+    if (isGameReset) return;
+
     dispatch(
       updatePlayerScores(
         playerScores.map((playerScore) =>
@@ -110,15 +121,17 @@ const useQuizLogic = (router: any) => {
                 ...playerScore,
                 totalScore: (playerScore.totalScore ?? 0) + points,
               }
-            : playerScore
-        )
-      )
+            : playerScore,
+        ),
+      ),
     );
   };
 
   const setFeedback = (message: string, soundName: "win" | "lose") => {
+    if (isGameReset) return;
+
     setFeedbackMessage(message);
-      AudioEngine.play(soundName, "gameplay");
+    AudioEngine.play(soundName, "gameplay");
 
     setIsContentVisible(false);
     setTimeout(() => {
@@ -127,6 +140,8 @@ const useQuizLogic = (router: any) => {
   };
 
   const moveToNextPlayer = () => {
+    if (isGameReset) return;
+
     setSelectedOption(null);
     setIsCorrect(false);
     setFeedbackMessage("");
@@ -141,9 +156,10 @@ const useQuizLogic = (router: any) => {
       if (nextIndex < playerNames.length) {
         return nextIndex;
       } else {
-        // Delay navigation slightly to allow UI cleanup
         setTimeout(() => {
-          router.replace("/chorpoliceResult");
+          if (!isGameReset) {
+            router.replace("/chorpoliceResult");
+          }
         }, 10);
         return prevIndex;
       }
