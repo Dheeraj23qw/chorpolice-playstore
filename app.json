@@ -5,7 +5,7 @@
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/adaptive-icon.png",
-    "scheme": "myapp",
+    "scheme": "chorpolice",
     "userInterfaceStyle": "light",
     "runtimeVersion": "1.0.2",
     "assetBundlePatterns": [
