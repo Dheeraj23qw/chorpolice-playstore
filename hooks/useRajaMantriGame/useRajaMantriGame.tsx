@@ -197,6 +197,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const handlePlay = () => {
     if (isLocked) return;
     handlesetRoundStartMessage();
+
     safeSetTimeout(() => {
       AudioEngine.play("select", "ui");
 
@@ -253,7 +254,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       return;
     }
 
-    setFirstCardClicked(true); 
+    setFirstCardClicked(true);
     if (
       isPlayButtonDisabled &&
       thiefIndex !== null &&
@@ -395,15 +396,12 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
         totalScore: player.totalScore,
       }));
 
-
-       safeSetTimeout(() => {
+      safeSetTimeout(() => {
         dispatch(updatePlayerScores(totalScoresArray));
       }, 500);
 
       return updatedScores;
     });
-
-   
   };
 
   const resetForNextRoundHandler = () => {

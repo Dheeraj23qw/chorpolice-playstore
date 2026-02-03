@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import { router } from "expo-router";
 import { AudioEngine } from "@/audio/audioEngine";
+import RoundStartLoader from "@/components/RoundStartLoader";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
@@ -57,7 +58,6 @@ const RajaMantriGameScreen: React.FC = () => {
     mediaType,
     playerData,
     isRoundStartPopupVisible,
-    roundStartMessage,
     handleExitGame,
     isGameReset,
     handleResetgame,
@@ -142,19 +142,8 @@ const RajaMantriGameScreen: React.FC = () => {
           displayDuration={3000}
         />
       )}
-
-      {isRoundStartPopupVisible && (
-        <OverlayPopUp
-          index={1}
-          policeIndex={policeIndex}
-          kingIndex={kingIndex}
-          advisorIndex={advisorIndex}
-          thiefIndex={thiefIndex}
-          displayDuration={3000}
-          contentType="textOnly"
-          customMessage={roundStartMessage}
-        />
-      )}
+      
+      {isRoundStartPopupVisible && <RoundStartLoader />}
 
       {isDynamicPopUp && mediaId != null && mediaType != null && (
         <ImageBackground
