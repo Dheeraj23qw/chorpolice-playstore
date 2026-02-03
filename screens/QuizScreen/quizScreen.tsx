@@ -19,10 +19,6 @@ import { AudioEngine } from "@/audio/audioEngine";
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
 
-
-
-
-
   const {
     countdown,
     isDynamicPopUp,

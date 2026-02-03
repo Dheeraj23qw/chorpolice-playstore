@@ -8,18 +8,21 @@
     "scheme": "chorpolice",
     "userInterfaceStyle": "light",
     "runtimeVersion": "1.0.2",
-    "backgroundColor": "#FFFFFF",
+
+    "backgroundColor": "#050508",
 
     "assetBundlePatterns": ["**/*"],
+
     "android": {
       "package": "com.dheeraj.chorpolice",
       "userInterfaceStyle": "light",
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#050508"
       }
     },
+
     "plugins": [
       "expo-router",
       "expo-asset",
@@ -46,20 +49,22 @@
         }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true
     },
+
     "extra": {
-      "router": {
-        "origin": false
-      },
+      "router": { "origin": false },
       "eas": {
         "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
     },
+
     "updates": {
       "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241"
     },
+
     "web": {
       "bundler": "metro",
       "output": "static"

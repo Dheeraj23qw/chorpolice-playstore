@@ -1,5 +1,5 @@
 import "../global.css";
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
@@ -13,55 +13,69 @@ import { useAppExit } from "@/hooks/useAppExit";
 import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, StyleSheet, View } from "react-native";
+import ScreenWrapper from "@/Animations/ScreenWrapper";
 
-/* ---------------- App Layout ---------------- */
+// Keep splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* focus error or ignore if already hidden */
+});
 
 function AppLayout() {
-  useEffect(() => {
-    // Always ensure quiz BGM when app becomes active
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        if (!AudioEngine.isMuted()) {
-          AudioEngine.ensureQuizGlobal();
-        }
-      }
-    });
-
-    // Also check immediately on mount
-    if (!AudioEngine.isMuted()) {
-      AudioEngine.ensureQuizGlobal();
-    }
-
-    return () => {
-      sub.remove();
-    };
-  }, []);
-
-  const loader = useSelector((state: RootState) => state.loader);
+  const loaderVisible = useSelector((state: RootState) => state.loader.visible);
+  const loaderMessage = useSelector((state: RootState) => state.loader.message);
 
   useAppExit();
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      // Production Check: Ensure AudioEngine exists and is initialized
+      if (nextAppState === "active" && AudioEngine && !AudioEngine.isMuted()) {
+        AudioEngine.ensureQuizGlobal?.();
+      }
+    };
+
+    const sub = AppState.addEventListener("change", handleAppStateChange);
+
+    // Initial check
+    if (AudioEngine && !AudioEngine.isMuted()) {
+      AudioEngine.ensureQuizGlobal?.();
+    }
+
+    return () => sub.remove();
+  }, []);
+
+  // Memoize screen layout to prevent ScreenWrapper from re-mounting 
+  // every time AppLayout re-renders
+  const renderScreenLayout = useCallback(
+    ({ children }: { children: React.ReactNode }) => (
+      <ScreenWrapper variant="default" breathing={true}>
+        {children}
+      </ScreenWrapper>
+    ),
+    []
+  );
 
   return (
     <View style={styles.container}>
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "#FFFFFF" }, // ✅ WHITE
+          animation: "none",
+          contentStyle: { backgroundColor: "#050508" },
         }}
+        screenLayout={renderScreenLayout}
       >
         <Stack.Screen name="index" />
       </Stack>
 
       <RouteLoader />
-      <GlobalLoader visible={loader.visible} message={loader.message} />
+      <GlobalLoader visible={loaderVisible} message={loaderMessage} />
     </View>
   );
 }
 
-/* ---------------- Root Layout ---------------- */
-
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     "outfit-bold": require("../assets/fonts/Outfit-Bold.ttf"),
     "outfit-medium": require("../assets/fonts/Outfit-Medium.ttf"),
     outfit: require("../assets/fonts/Outfit-Regular.ttf"),
@@ -71,19 +85,24 @@ export default function RootLayout() {
 
   useSystemUI();
 
+  // Handle Font Loading & Splash Screen
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
+      // Even if fonts fail (fontError), we hide splash to show 
+      // the app with fallback fonts rather than a stuck splash screen
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) return null;
+  // Production Guard: If fonts aren't ready, we return null so the 
+  // Splash Screen stays up. If they fail, we proceed anyway.
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <Provider store={store}>
       <SafeAreaProvider>
         <AlertNotificationRoot theme="dark">
-          <StatusBar hidden translucent backgroundColor="transparent" />
+          <StatusBar hidden translucent style="light" />
           <AppLayout />
         </AlertNotificationRoot>
       </SafeAreaProvider>
@@ -94,6 +113,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF", // ✅ GLOBAL WHITE
+    backgroundColor: "#050508",
   },
 });
