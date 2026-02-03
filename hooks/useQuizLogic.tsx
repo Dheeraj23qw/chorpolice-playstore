@@ -49,6 +49,7 @@ const useQuizLogic = (router: any) => {
 
   useEffect(() => {
     if (isGameReset) {
+      AudioEngine.stopAllExceptQuiz();
       router.replace("/modeselect");
     }
   }, [isGameReset]);

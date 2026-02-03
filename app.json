@@ -8,9 +8,9 @@
     "scheme": "chorpolice",
     "userInterfaceStyle": "light",
     "runtimeVersion": "1.0.2",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "backgroundColor": "#FFFFFF",
+
+    "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.dheeraj.chorpolice",
       "userInterfaceStyle": "light",

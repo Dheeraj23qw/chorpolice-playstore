@@ -9,15 +9,10 @@ import {
 
 // Redux
 import { useSelector } from "react-redux";
-import {
-  selectPlayerNames,
-  selectSelectedImages,
-} from "@/redux/selectors/playerDataSelector";
+import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 
 // Hooks
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
-
-
 
 // Components
 import OverlayPopUp from "@/modal/overlaypop";
@@ -29,8 +24,9 @@ import { GamePlaySection } from "./GameplaySection";
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 import VideoPlayerComponent from "@/components/IntroVideo";
+import { router } from "expo-router";
+import { AudioEngine } from "@/audio/audioEngine";
 
 const RajaMantriGameScreen: React.FC = () => {
   const playerNames = useSelector(selectPlayerNames).map(
@@ -63,7 +59,19 @@ const RajaMantriGameScreen: React.FC = () => {
     isRoundStartPopupVisible,
     roundStartMessage,
     handleExitGame,
+    isGameReset,
+    handleResetgame,
   } = useRajaMantriGame({ playerNames });
+
+  useEffect(() => {
+    if (!isGameReset) return;
+
+    AudioEngine.stopAllExceptQuiz();
+
+    handleResetgame();
+
+    router.replace("/modeselect");
+  }, [isGameReset]);
 
   useEffect(() => {
     const backAction = () => {
@@ -118,8 +126,6 @@ const RajaMantriGameScreen: React.FC = () => {
         paddingBottom: insets.bottom,
       }}
     >
-      <StatusBar hidden translucent />
-
       <ScoreTable
         playerNames={playerNames}
         playerScores={playerScores}

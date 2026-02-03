@@ -7,9 +7,7 @@ import {
   Pressable,
   Animated,
   TouchableWithoutFeedback,
-  StatusBar,
 } from "react-native";
-// Import from expo-video
 import { VideoView, useVideoPlayer } from "expo-video";
 import { videoData, gifData, imageData } from "@/constants/DynamicPopUpData";
 import { styles } from "@/modal/_styles/DynamicOverlayPopCSS";
@@ -18,7 +16,8 @@ import {
   PlayerData,
 } from "@/types/models/DynamicpopUpModal";
 import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/qiuzStyle";
-import { AudioEngine } from "@/audio/audioEngine";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   isPopUp,
@@ -27,10 +26,17 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   playerData = {} as PlayerData,
   closeVisibleDelay,
 }) => {
-  const [modalVisible, setModalVisible] = useState(isPopUp);
+  const isGameReset = useSelector(
+    (state: RootState) => state.player.isGameReset
+  );
+
+  /* ---------------- STATE ---------------- */
+
+  const [modalVisible, setModalVisible] = useState(false);
   const [showCloseText, setShowCloseText] = useState(false);
 
-  // Animations
+  /* ---------------- ANIMATIONS ---------------- */
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(300)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
@@ -38,92 +44,103 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   const closeTextAnim = useRef(new Animated.Value(0)).current;
   const descriptionAnim = useRef(new Animated.Value(-50)).current;
 
-  // Data Fetching
-  const getMediaData = (id: number, type: "image" | "video" | "gif" | null) => {
+  /* ---------------- SYNC VISIBILITY ---------------- */
+
+  useEffect(() => {
+    if (isGameReset) {
+      setModalVisible(false);
+      setShowCloseText(false);
+      return;
+    }
+
+    setModalVisible(isPopUp);
+  }, [isPopUp, isGameReset]);
+
+  /* ---------------- MEDIA FETCH ---------------- */
+
+  const getMediaData = (
+    id: number,
+    type: "image" | "video" | "gif" | null
+  ) => {
     const dataMap = { video: videoData, gif: gifData, image: imageData };
-    const data = type ? dataMap[type]?.find((item) => item.id === id) : null;
-    if (!data && type) console.warn(`No media data found for ID: ${id}`);
-    return data;
+    return type ? dataMap[type]?.find((item) => item.id === id) : null;
   };
 
   const mediaData = getMediaData(mediaId, mediaType);
-  if (!mediaData) return null;
 
-  // Setup expo-video player
-  // useVideoPlayer handles the source and playback logic
+  /* ---------------- VIDEO PLAYER ---------------- */
+
   const player = useVideoPlayer(
-    mediaType === "video" ? mediaData.url : null,
+    !isGameReset && mediaType === "video" && mediaData
+      ? mediaData.url
+      : null,
     (player) => {
+      if (isGameReset) return;
       player.loop = true;
       player.play();
-    },
+    }
   );
 
-  const closeModal = () => {
-    setModalVisible(false);
-  };
+  /* ---------------- ANIMATION EFFECT ---------------- */
 
-  // Sound Logic
   useEffect(() => {
+    if (isGameReset) return;
     if (!modalVisible) return;
+    if (!mediaData) return;
 
-    if (mediaType === "gif") {
-      if ([2, 4, 7].includes(mediaId)) {
-        AudioEngine.play("winning", "gameplay");
-      } else if ([1, 3, 6].includes(mediaId)) {
-        AudioEngine.play("losing", "gameplay");
-      }
-    }
+    const mainAnimation =
+      mediaType === "image"
+        ? Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        : mediaType === "video"
+        ? Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+          })
+        : Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 5,
+            useNativeDriver: true,
+          });
 
-    return () => {
-      // stop only gameplay sounds when modal closes
-      AudioEngine.stop("winning");
-      AudioEngine.stop("losing");
-    };
-  }, [modalVisible, mediaType, mediaId]);
+    Animated.parallel([
+      mainAnimation,
+      Animated.timing(playerDataAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(closeTextAnim, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.spring(descriptionAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-  // Animation Logic
-  useEffect(() => {
-    if (modalVisible) {
-      const mainAnimation =
-        mediaType === "image"
-          ? Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true,
-            })
-          : mediaType === "video"
-            ? Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true })
-            : Animated.spring(scaleAnim, {
-                toValue: 1,
-                friction: 5,
-                useNativeDriver: true,
-              });
+    const timer = setTimeout(
+      () => setShowCloseText(true),
+      closeVisibleDelay
+    );
 
-      Animated.parallel([
-        mainAnimation,
-        Animated.timing(playerDataAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.spring(closeTextAnim, {
-          toValue: 1,
-          friction: 3,
-          useNativeDriver: true,
-        }),
-        Animated.spring(descriptionAnim, { toValue: 0, useNativeDriver: true }),
-      ]).start();
+    return () => clearTimeout(timer);
+  }, [modalVisible, mediaType, isGameReset, mediaData]);
 
-      const timer = setTimeout(() => setShowCloseText(true), closeVisibleDelay);
-      return () => clearTimeout(timer);
-    }
-  }, [modalVisible, mediaType]);
+  /* ---------------- SAFETY RETURN ---------------- */
+
+  if (isGameReset || !modalVisible || !mediaData) return null;
+
+  /* ---------------- UI ---------------- */
 
   return (
-    <Modal visible={modalVisible} animationType="fade" transparent>
-      <StatusBar backgroundColor={"#000000CC"} />
-      <TouchableWithoutFeedback onPress={() => {}}>
+    <Modal visible animationType="fade" transparent>
+      <TouchableWithoutFeedback>
         <View style={styles.overlay}>
           {/* Player Info */}
           <Animated.View
@@ -158,7 +175,9 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
               mediaType === "video" && {
                 transform: [{ translateY: slideAnim }],
               },
-              mediaType === "gif" && { transform: [{ scale: scaleAnim }] },
+              mediaType === "gif" && {
+                transform: [{ scale: scaleAnim }],
+              },
             ]}
           >
             <Animated.Text
@@ -176,7 +195,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
                 style={styles.fullMedia}
                 contentFit="contain"
                 nativeControls={false}
-                surfaceType="textureView" // ✅ Add this workaround
+                surfaceType="textureView"
                 fullscreenOptions={{ allowsFullscreen: false } as any}
                 allowsPictureInPicture={false}
               />
@@ -193,7 +212,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
             )}
 
             {showCloseText && (
-              <Pressable onPress={closeModal}>
+              <Pressable onPress={() => setModalVisible(false)}>
                 <Animated.Text
                   style={[
                     styles.closeText,

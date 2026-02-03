@@ -12,7 +12,7 @@ import { AlertNotificationRoot } from "react-native-alert-notification";
 import { useAppExit } from "@/hooks/useAppExit";
 import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
-import { AppState } from "react-native";
+import { AppState, StyleSheet, View } from "react-native";
 
 /* ---------------- App Layout ---------------- */
 
@@ -42,11 +42,11 @@ function AppLayout() {
   useAppExit();
 
   return (
-    <>
+    <View style={styles.container}>
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "#0B0B0F" },
+          contentStyle: { backgroundColor: "#FFFFFF" }, // ✅ WHITE
         }}
       >
         <Stack.Screen name="index" />
@@ -54,7 +54,7 @@ function AppLayout() {
 
       <RouteLoader />
       <GlobalLoader visible={loader.visible} message={loader.message} />
-    </>
+    </View>
   );
 }
 
@@ -90,3 +90,10 @@ export default function RootLayout() {
     </Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF", // ✅ GLOBAL WHITE
+  },
+});

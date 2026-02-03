@@ -8,6 +8,7 @@ import { AppDispatch } from "@/redux/store";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import { AudioEngine } from "@/audio/audioEngine";
 import { loadSounds } from "@/redux/reducers/soundReducer";
+import { View } from "react-native";
 
 export default function Index() {
   const navigation = useNavigation();
@@ -51,16 +52,15 @@ export default function Index() {
   const handleIntroEnd = () => {
     setIsLoading(false);
 
-      AudioEngine.play("quiz", "background");
+    AudioEngine.play("quiz", "background");
   };
 
   /* ---------------- UI ---------------- */
   if (isLoading) {
     return (
-      <VideoPlayerComponent
-        videoIndex={1}
-        onVideoEnd={handleIntroEnd}
-      />
+      <View className="flex-1 bg-white">
+        <VideoPlayerComponent videoIndex={1} onVideoEnd={handleIntroEnd} />
+      </View>
     );
   }
 

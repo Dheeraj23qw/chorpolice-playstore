@@ -16,6 +16,9 @@ import BackgroundOrbs from "@/components/GameModeScreen/BackgroundOrbs";
 import HeaderSection from "@/components/GameModeScreen/HeaderSection";
 import GameModeList from "@/components/GameModeScreen/GameModeList";
 import { AudioEngine } from "@/audio/audioEngine";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/redux/store";
+import { setIsGameReset } from "@/redux/reducers/playerReducer";
 
 const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -27,42 +30,50 @@ const GameModeScreen: React.FC = () => {
   // Subtle breathing animation
   const scale = useSharedValue(1);
 
-  useEffect(() => {
-  AudioEngine.setExitLock(false);
-}, []);
+  const dispatch = useDispatch<AppDispatch>();
 
-
-  useFocusEffect(
-    useCallback(() => {
-      opacity.value = withTiming(1, { duration: 700 });
-      translateY.value = withSpring(0, {
-        damping: 14,
-        stiffness: 90,
-      });
-
-      // Subtle floating scale
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1.02, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 4000, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1,
-        true
-      );
-
-      return () => {
-        opacity.value = 0;
-        translateY.value = 40;
-      };
-    }, [])
+  const isGameReset = useSelector(
+    (state: RootState) => state.player.isGameReset,
   );
+
+useEffect(() => {
+  try {
+    AudioEngine.stopAllExceptQuiz();
+    const timer = setTimeout(() => {
+      dispatch(setIsGameReset(false));
+    }, 500);
+    return () => clearTimeout(timer);
+  } catch (err) {
+    console.error("Error in GameModeScreen effect:", err);
+  }
+}, [dispatch,isGameReset]);
+
+
+useFocusEffect(
+  useCallback(() => {
+    opacity.value = withTiming(1, { duration: 700 });
+    translateY.value = withSpring(0, { damping: 14, stiffness: 90 });
+
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.02, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 4000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+
+    return () => {
+      opacity.value = withTiming(0, { duration: 500 });
+      translateY.value = withTiming(40, { duration: 500 });
+    };
+  }, [])
+);
+
 
   const animatedContainer = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
   }));
 
   return (
