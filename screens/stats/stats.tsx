@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import {
   Trophy,
   Flame,
@@ -9,57 +9,48 @@ import {
   TrendingUp,
 } from "lucide-react-native";
 import ScreenWrapper from "@/components/screenwrapper";
+import { Text } from "@/components/Text";
 
 const USER_STATS = {
   username: "PlayerOne",
   level: 12,
   xp: 3480,
   nextLevelXp: 4000,
-
   matches: 284,
   quizzes: 96,
   chorPolice: 188,
-
   wins: 172,
   losses: 112,
-
   currentStreak: 6,
   highestStreak: 21,
 };
 
 export default function StatsScreen() {
-  const winRate = Math.round(
-    (USER_STATS.wins / USER_STATS.matches) * 100
-  );
-
-  const levelProgress =
-    (USER_STATS.xp / USER_STATS.nextLevelXp) * 100;
+  const winRate = Math.round((USER_STATS.wins / USER_STATS.matches) * 100);
+  const levelProgress = (USER_STATS.xp / USER_STATS.nextLevelXp) * 100;
 
   return (
-    <ScreenWrapper
-      title="Your Stats"
-      subtitle="Track Your Performance"
-    >
+    <ScreenWrapper title="Your Stats" subtitle="Track Your Performance">
       {/* 🧑 Player Card */}
       <View className="mb-6 rounded-3xl bg-indigo-600 p-6 shadow-xl">
-        <Text className="text-xs uppercase tracking-widest text-indigo-200">
+        <Text className="text-xs uppercase tracking-widest text-indigo-200 font-main-bold">
           Player
         </Text>
 
-        <Text className="mt-1 text-2xl font-black text-white">
+        <Text className="mt-1 text-2xl font-main-bold text-white">
           {USER_STATS.username}
         </Text>
 
         {/* Level Progress */}
         <View className="mt-4">
-          <View className="mb-1 flex-row justify-between">
-            <Text className="text-xs text-indigo-200">
+          <div className="mb-1 flex-row justify-between">
+            <Text className="text-xs text-indigo-200 font-main-md">
               Level {USER_STATS.level}
             </Text>
-            <Text className="text-xs text-indigo-200">
+            <Text className="text-xs text-indigo-200 font-main-md">
               {USER_STATS.xp}/{USER_STATS.nextLevelXp} XP
             </Text>
-          </View>
+          </div>
 
           <View className="h-2 overflow-hidden rounded-full bg-white/20">
             <View
@@ -96,8 +87,16 @@ export default function StatsScreen() {
 
       {/* 🔥 Streaks */}
       <Section title="Streaks">
-        <Row label="Current Streak" value={`${USER_STATS.currentStreak} wins`} icon={<Flame size={18} color="#f97316" />} />
-        <Row label="Highest Streak" value={`${USER_STATS.highestStreak} wins`} icon={<Star size={18} color="#facc15" />} />
+        <Row
+          label="Current Streak"
+          value={`${USER_STATS.currentStreak} wins`}
+          icon={<Flame size={18} color="#f97316" />}
+        />
+        <Row
+          label="Highest Streak"
+          value={`${USER_STATS.highestStreak} wins`}
+          icon={<Star size={18} color="#facc15" />}
+        />
       </Section>
 
       {/* 🎯 Game Activity */}
@@ -108,10 +107,8 @@ export default function StatsScreen() {
 
       {/* 🚀 Motivation */}
       <View className="mt-6 rounded-2xl bg-emerald-50 p-5 border border-emerald-200">
-        <Text className="font-bold text-emerald-800">
-          🎯 Keep Playing!
-        </Text>
-        <Text className="mt-1 text-sm text-emerald-700">
+        <Text className="font-main-bold text-emerald-800">🎯 Keep Playing!</Text>
+        <Text className="mt-1 text-sm text-emerald-700 font-main-md">
           Win 4 more matches to beat your highest streak record!
         </Text>
       </View>
@@ -121,69 +118,37 @@ export default function StatsScreen() {
   );
 }
 
-/* ---------- Components ---------- */
+/* ---------- Sub-Components ---------- */
 
-function StatCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-}) {
+function StatCard({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
   return (
     <View className="w-[48%] rounded-2xl bg-white p-4 shadow-md border border-slate-100">
-      <View className="mb-2 flex-row items-center justify-between">
-        {icon}
-      </View>
-      <Text className="text-xl font-black text-slate-900">
-        {value}
-      </Text>
-      <Text className="mt-1 text-xs text-slate-400">
+      <View className="mb-2 flex-row items-center justify-between">{icon}</View>
+      <Text className="text-xl font-main-bold text-slate-900">{value}</Text>
+      <Text className="mt-1 text-xs text-slate-400 font-main-md uppercase tracking-wider">
         {label}
       </Text>
     </View>
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="mb-6">
-      <Text className="mb-3 text-lg font-black text-slate-900">
-        {title}
-      </Text>
+      <Text className="mb-3 text-lg font-main-bold text-slate-900">{title}</Text>
       <View className="gap-y-3">{children}</View>
     </View>
   );
 }
 
-function Row({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string | number;
-  icon?: React.ReactNode;
-}) {
+function Row({ label, value, icon }: { label: string; value: string | number; icon?: React.ReactNode }) {
   return (
     <View className="flex-row items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm border border-slate-100">
       <View className="flex-row items-center gap-x-2">
         {icon}
-        <Text className="font-medium text-slate-700">
-          {label}
-        </Text>
+        <Text className="font-main-md text-slate-700">{label}</Text>
       </View>
-      <Text className="font-bold text-slate-900">
-        {value}
-      </Text>
+      <Text className="font-main-bold text-slate-900">{value}</Text>
     </View>
   );
 }

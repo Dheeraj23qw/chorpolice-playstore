@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { hp, wp, rf } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface QuestionSectionProps {
   question: string;
@@ -35,7 +36,11 @@ const QuestionSection: React.FC<QuestionSectionProps> = ({ question }) => {
              style={{ marginBottom: hp(2), paddingHorizontal: wp(3), paddingVertical: hp(0.5) }}
              className="bg-indigo-500/20 rounded-full border border-indigo-500/30"
           >
-            <Text style={{ fontSize: rf(1.2) }} className="text-indigo-300 font-bold tracking-[2px] uppercase">
+            <Text 
+              style={{ fontSize: rf(1.2) }} 
+              // Swapped font-bold for font-main-bold
+              className="text-indigo-300 font-main-bold tracking-[2px] uppercase"
+            >
               Current Challenge
             </Text>
           </View>
@@ -45,7 +50,8 @@ const QuestionSection: React.FC<QuestionSectionProps> = ({ question }) => {
               fontSize: rf(2.4), 
               lineHeight: rf(3.2) 
             }}
-            className="text-white font-bold text-center tracking-tight"
+            // Swapped font-bold for font-main-bold
+            className="text-white font-main-bold text-center tracking-tight"
             numberOfLines={5}
           >
             {question || "Loading your next challenge..."}

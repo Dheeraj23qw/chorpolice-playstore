@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Text,
   TouchableOpacity,
   Image,
   Animated,
@@ -11,6 +10,7 @@ import { useSelector } from "react-redux";
 import { selectSelectedImages } from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
 import { rf } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface PlayerCardProps {
   index: number;
@@ -70,7 +70,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
 
             {/* Role Badge */}
             <View className="absolute bottom-3 bg-indigo-950/90 px-4 py-1.5 rounded-full border border-indigo-400/40 shadow-lg">
-              <Text className="text-indigo-100 font-black uppercase text-[11px] tracking-[2px] italic">
+              <Text className="text-indigo-100 font-main-bold uppercase text-[11px] tracking-[2px] ">
                 {role}
               </Text>
 
@@ -97,7 +97,7 @@ const PlayerCard: React.FC<PlayerCardProps> = React.memo(
               <Text
                 numberOfLines={1}
                 style={{ fontSize: rf(1.25) }}
-                className="text-indigo-100 font-extrabold uppercase tracking-wider italic"
+                className="text-indigo-100 font-main-bold uppercase tracking-wider "
               >
                 {playerName}
               </Text>

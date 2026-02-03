@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
-  Text,
   Image,
   Modal,
   Pressable,
@@ -18,6 +17,7 @@ import {
 import { chorPoliceQuizstyles } from "@/screens/chorPoliceQuizScreen/qiuzStyle";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { Text } from "@/components/Text";
 
 const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   isPopUp,

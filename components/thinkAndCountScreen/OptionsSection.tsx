@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
+import { Text } from "../Text";
 
 interface OptionsSectionProps {
   options: string[] | null;
@@ -49,7 +50,8 @@ const OptionButton: React.FC<OptionButtonProps> = ({
       >
         <Text
           numberOfLines={2}
-          className="text-white text-sm font-semibold text-center"
+          // Swapped font-semibold for font-main-md
+          className="text-white text-sm font-main-md text-center"
         >
           {label}
         </Text>

@@ -1,7 +1,8 @@
 import React from "react";
-import { ScrollView, View, Text } from "react-native";
+import { ScrollView, View } from "react-native";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
+import { Text } from "@/components/Text";
 
 interface GamePlaySectionProps {
   isPlayButtonDisabled: boolean;
@@ -45,10 +46,13 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
         {/* 🧊 Glass Header */}
         <View className="items-center mt-8 mb-10">
           <View className="relative px-6 py-2 rounded-full border border-white/15 bg-white/5 overflow-hidden">
-            {/* Shine */}
+            {/* Shine Reflection */}
             <View className="absolute inset-x-2 top-0 h-[1px] bg-white/40 rounded-full" />
 
-            <Text className="text-indigo-300 font-extrabold uppercase tracking-[4px] text-[11px]">
+            <Text 
+              // Swapped font-extrabold for font-main-bold
+              className="text-indigo-300 font-main-bold uppercase tracking-[4px] text-[11px]"
+            >
               ROUND — {round}
             </Text>
           </View>
@@ -59,6 +63,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           <PlayButton
             disabled={isPlayButtonDisabled}
             onPress={handlePlay}
+            // Logic remains, ensure PlayButton component itself uses Text wrapper
             buttonText={
               isPlayButtonDisabled
                 ? message

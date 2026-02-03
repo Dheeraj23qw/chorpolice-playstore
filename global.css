@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-.text-base {
-  font-family: outfit;
+/* NativeWind v4 doesn't support the 'text' selector like web browsers.
+   To force the system font to go away, we use the custom Text component 
+   we discussed. But for general utility, you can add this:
+*/
+
+@layer base {
+  .font-main {
+    font-family: outfit;
+  }
 }

@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Image, Text } from "react-native";
+import { View, Image } from "react-native";
 import { rf, wp } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface WinnerSectionProps {
   winnerName: string;
@@ -12,17 +13,18 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
   winnerName,
   winnerImage,
 }) => {
-  const imageSource = typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage;
+  const imageSource =
+    typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage;
 
   return (
     <View className="items-center justify-center py-6">
-      
       {/* 1. The Crown / Status Tag */}
       <View className="bg-amber-500/20 border border-amber-500/40 px-4 py-1 rounded-full mb-6 flex-row items-center">
         <Text className="mr-2">🏆</Text>
-        <Text 
-          style={{ fontSize: rf(1.2) }} 
-          className="text-amber-400 font-black uppercase tracking-[3px]"
+        <Text
+          style={{ fontSize: rf(1.2) }}
+          // Changed font-black to font-main-bold
+          className="text-amber-400 font-main-bold uppercase tracking-[3px]"
         >
           Top Operative
         </Text>
@@ -30,19 +32,16 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
 
       {/* 2. Layered Avatar Glass Stack */}
       <View className="items-center justify-center mb-6">
-        {/* Ambient Glow behind the winner */}
-        <View 
-          style={{ width: wp(45), height: wp(45) }} 
-          className="absolute bg-indigo-500/10 rounded-full blur-3xl" 
+        <View
+          style={{ width: wp(45), height: wp(45) }}
+          className="absolute bg-indigo-500/10 rounded-full blur-3xl"
         />
-        
-        {/* Outer Ring */}
-        <View 
+
+        <View
           style={{ width: wp(38), height: wp(38) }}
           className="rounded-full border border-white/10 items-center justify-center bg-white/5"
         >
-          {/* Inner Inner Ring (The Glass Frame) */}
-          <View 
+          <View
             style={{ width: wp(34), height: wp(34) }}
             className="rounded-full border-2 border-indigo-500/50 bg-indigo-950/40 items-center justify-center overflow-hidden"
           >
@@ -52,8 +51,7 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
               className="opacity-90"
               resizeMode="cover"
             />
-            {/* Glass Shine Reflection */}
-            <View 
+            <View
               style={{ width: wp(40), height: wp(10) }}
               className="absolute bg-white/20 -rotate-45 -translate-y-14 opacity-40"
             />
@@ -63,38 +61,26 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
 
       {/* 3. Winner Name with Neon Branding */}
       <View className="items-center mb-4">
-        <Text 
-          style={{ fontSize: rf(1.4) }} 
-          className="text-white/40 font-bold tracking-[5px] uppercase mb-1"
+        <Text
+          style={{ fontSize: rf(1.4) }}
+          // Changed font-bold to font-main-bold
+          className="text-white/40 font-main-bold tracking-[5px] uppercase mb-1"
         >
           Congratulations
         </Text>
-        <Text 
-          style={{ 
+        <Text
+          style={{
             fontSize: rf(3.8),
-            textShadowColor: 'rgba(99, 102, 241, 0.6)',
+            textShadowColor: "rgba(99, 102, 241, 0.6)",
             textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 20
-          }} 
-          className="text-white font-black italic tracking-tighter text-center"
+            textShadowRadius: 20,
+          }}
+          // Changed font-black to font-main-bold
+          className="text-white font-main-bold  tracking-tighter text-center"
         >
           {winnerName.toUpperCase()}
         </Text>
       </View>
-
-      {/* 4. Reward Badge Card */}
-      <View 
-        className="bg-indigo-500/10 border border-indigo-400/20 px-6 py-3 rounded-2xl flex-row items-center"
-      >
-        <View className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse mr-3" />
-        <Text 
-          style={{ fontSize: rf(1.8) }} 
-          className="text-indigo-200 font-bold"
-        >
-          REWARD: <Text className="text-white">1000 COINS</Text>
-        </Text>
-      </View>
-
     </View>
   );
 };

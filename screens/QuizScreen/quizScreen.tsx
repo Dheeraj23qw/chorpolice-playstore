@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useState } from "react";
-import { View, ScrollView, Text, TouchableOpacity, Alert } from "react-native";
+import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
 
@@ -15,6 +15,7 @@ import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
 import { BackHandler } from "react-native";
 import { AudioEngine } from "@/audio/audioEngine";
+import { Text } from "@/components/Text";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -51,7 +52,7 @@ const QuizScreen = () => {
           {
             text: "Cancel",
             style: "cancel",
-            onPress: () => {}, // just close
+            onPress: () => {},
           },
           {
             text: "YES",
@@ -61,7 +62,7 @@ const QuizScreen = () => {
         { cancelable: true },
       );
 
-      return true; // prevent default back action
+      return true;
     };
 
     const subscription = BackHandler.addEventListener(
@@ -107,7 +108,6 @@ const QuizScreen = () => {
 
   return (
     <View className="flex-1 bg-[#09090b]">
-      {/* Hint Modal */}
       <HintSection
         isVisible={showHint}
         hint={question?.hint}
@@ -121,7 +121,6 @@ const QuizScreen = () => {
         }}
       />
 
-      {/* Background Decor */}
       <View
         style={{ width: wp(120), height: wp(120), top: -hp(20), left: -wp(20) }}
         className="absolute bg-indigo-600/10 rounded-full blur-[100px]"
@@ -145,13 +144,13 @@ const QuizScreen = () => {
         >
           <Text
             style={{ fontSize: rf(1.4) }}
-            className="text-indigo-400 font-bold tracking-[3px] uppercase"
+            // Swapped font-bold for font-main-bold
+            className="text-indigo-400 font-main-bold tracking-[3px] uppercase"
           >
             Question {questionIndex + 1}
           </Text>
         </View>
 
-        {/* Timer */}
         <View style={{ marginTop: hp(8) }}>
           <Timer countdown={countdown} />
         </View>
@@ -174,7 +173,8 @@ const QuizScreen = () => {
             <View className="h-[1px] w-20 bg-white/10 mb-4" />
             <Text
               style={{ fontSize: rf(1.4) }}
-              className="text-white/30 text-center tracking-widest uppercase"
+              // Swapped for font-main-md
+              className="text-white/30 text-center font-main-md tracking-widest uppercase"
             >
               Consult the Quiz table to solve
             </Text>
@@ -193,18 +193,20 @@ const QuizScreen = () => {
 
           {isHintButtonVisible && (
             <TouchableOpacity
-              onPress={() => setShowHint(true)} // open modal
+              onPress={() => setShowHint(true)}
               activeOpacity={0.8}
               className="mt-8 flex-row items-center justify-center bg-indigo-500/10 border border-indigo-500/30 py-4 rounded-2xl"
             >
               <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
-              <Text className="ml-3 text-indigo-400 font-bold uppercase tracking-[2px] text-[12px]">
+              <Text 
+                // Swapped font-bold for font-main-bold
+                className="ml-3 text-indigo-400 font-main-bold uppercase tracking-[2px] text-[12px]"
+              >
                 View Solution Hint
               </Text>
             </TouchableOpacity>
           )}
 
-          {/* Lifelines */}
           <View style={{ marginTop: hp(1) }}>
             <QuizButton
               showHint={isHintButtonVisible}

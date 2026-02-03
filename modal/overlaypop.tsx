@@ -1,199 +1,177 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
-  Text,
   Image,
   Modal,
   TouchableWithoutFeedback,
   Animated,
   StatusBar,
+  Easing,
 } from "react-native";
-import { styles } from "@/modal/_styles/overlaypopCSS";
 import { data } from "@/constants/popupData";
 import { useSelector } from "react-redux";
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 import { OverlayPopUpProps } from "@/types/models/OverlayPop";
+import { Text } from "@/components/Text";
+import { hp, wp, rf } from "@/utils/responsive";
 
 const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
   index,
   policeIndex,
-  advisorIndex,
   thiefIndex,
   kingIndex,
-  displayDuration = 2000, // Default to 2 seconds if not provided
-  contentType = "default", // Default content type
+  displayDuration = 3000, 
+  contentType = "default",
   customMessage,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalData, setModalData] = useState<{
-    message: string;
-    point: string | null;
-    image: any;
-    roleMessage: string;
-  } | null>(null);
+  const [modalData, setModalData] = useState<any>(null);
   const [showTapToClose, setShowTapToClose] = useState(false);
 
-  const scaleAnim = useState(new Animated.Value(0))[0];
-  const opacityAnim = useState(new Animated.Value(0))[0];
-  const tapToCloseAnim = useState(new Animated.Value(0))[0]; // For "Tap to close" opacity
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const rayRotation = useRef(new Animated.Value(0)).current;
 
-  const playerNames = useSelector(selectPlayerNames).map(
-    (player) => player.name
-  );
+  const playerNames = useSelector(selectPlayerNames).map((p) => p.name);
 
   const kingName = kingIndex !== null ? playerNames[kingIndex] : "King";
   const policeName = policeIndex !== null ? playerNames[policeIndex] : "Police";
-  const advisorName =
-    advisorIndex !== null ? playerNames[advisorIndex] : "Advisor";
   const thiefName = thiefIndex !== null ? playerNames[thiefIndex] : "Thief";
 
   useEffect(() => {
-    // Initialize animations and reset tap-to-close visibility
-    scaleAnim.setValue(0);
-    opacityAnim.setValue(0);
-    tapToCloseAnim.setValue(0); // Reset "Tap to close" opacity
-    setShowTapToClose(false);
-    if (index != null) {
-      if (index >= 1 && index <= data.length) {
-        const selectedItem = data[index - 1];
-        let roleMessage = "";
-        switch (index) {
-          case 1:
-            roleMessage = `Congratulations ${kingName},\n\n you are the King! 👑`;
-            break;
-          case 2:
-            roleMessage = `${policeName}, you are the Police!🚔 \n\n Catch the Thief`;
-            break;
-          case 3:
-            roleMessage = `Congratulations ${thiefName} 🎉,\n\n lucky escape!`;
-            break;
-          case 4:
-            roleMessage = `🚔 Well done, ${policeName}! 🎉,\n\n you’re the hero! `;
-            break;
-          default:
-            roleMessage = "";
-        }
+    if (index != null && index >= 1 && index <= data.length) {
+      const selectedItem = data[index - 1];
+      let title = "";
+      let accentColor = "#FFD700"; // Default Gold
 
-        setModalData({
-          message: selectedItem.message,
-          point: selectedItem.point || null,
-          image: selectedItem.image,
-          roleMessage: roleMessage,
-        });
-
-        setModalVisible(true);
-
-        // Start entry animations
-        Animated.parallel([
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacityAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        // Set a timer to show "Tap to close" after the display duration
-        const showTapTimer = setTimeout(() => {
-          setShowTapToClose(true);
-          // Animate "Tap to close" text visibility
-          Animated.timing(tapToCloseAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }).start();
-        }, displayDuration);
-
-        // Set a timer to close the popup automatically after the display duration + buffer time
-        const closeTimer = setTimeout(() => {
-          closeModal();
-        }, displayDuration + 1000); // Add buffer time for "Tap to close" message visibility
-
-        return () => {
-          clearTimeout(showTapTimer);
-          clearTimeout(closeTimer);
-        };
+      // Logic for Royal Titles
+      switch (index) {
+    
+        case 2: 
+          title = `CHIEF\n${policeName.toUpperCase()}`; 
+          accentColor = "#3B82F6"; 
+          break;
+        case 3: 
+          title = `THE ELUSIVE\n${thiefName.toUpperCase()}`; 
+          accentColor = "#EF4444"; 
+          break;
+        default: 
+          title = "ROUND COMMENCING";
       }
-    } else {
-      setModalVisible(false);
-    }
-  }, [index, displayDuration]);
 
-  // Function to close the modal after the timer expires
+      setModalData({ ...selectedItem, roleTitle: title, theme: accentColor });
+      setModalVisible(true);
+
+      // Animation: Majestic Scale + Slow Rotation of rays
+      Animated.parallel([
+        Animated.timing(opacityAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
+        Animated.loop(
+          Animated.timing(rayRotation, { toValue: 1, duration: 15000, easing: Easing.linear, useNativeDriver: true })
+        )
+      ]).start();
+
+      setTimeout(() => setShowTapToClose(true), displayDuration);
+    }
+  }, [index]);
+
   const closeModal = () => {
-    Animated.parallel([
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setModalVisible(false));
-  };
-
-  // Handle screen tap to close modal after timeout
-  const handleScreenTap = () => {
-    if (showTapToClose) {
-      closeModal();
-    }
+    Animated.timing(opacityAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => setModalVisible(false));
   };
 
   if (!modalData) return null;
 
-  return (
-    <Modal
-      visible={modalVisible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={() => {}}
-    >
-      <StatusBar backgroundColor={"#000000CC"} />
+  const spin = rayRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
 
-      <TouchableWithoutFeedback onPress={handleScreenTap}>
-        <View style={styles.overlay}>
-          <Animated.View
-            style={[
-              styles.modalContent,
-              {
-                transform: [{ scale: scaleAnim }],
-                opacity: opacityAnim,
-              },
-            ]}
+  return (
+    <Modal visible={modalVisible} transparent animationType="none">
+      <TouchableWithoutFeedback onPress={() => showTapToClose && closeModal()}>
+        
+        {/* SOLID DARK OVERLAY - Kills the BG transparency for total focus */}
+        <Animated.View style={{ opacity: opacityAnim }} className="flex-1 bg-[#050508] justify-center items-center">
+          
+          {/* 1. THE AMBIENT GLOW (God Rays / Aura) */}
+          <Animated.View 
+            style={{ 
+              transform: [{ rotate: spin }],
+              position: 'absolute',
+              width: wp(150),
+              height: wp(150),
+              opacity: 0.2
+            }}
           >
-            {contentType === "textOnly" ? (
-              // Render text-only content
-              <Text style={styles.message}> {customMessage}</Text>
-            ) : (
-              // Render full content (default)
-              <>
-                <Text style={styles.message}>{modalData.message}</Text>
-                <Text style={styles.roleMessage}>{modalData.roleMessage}</Text>
-                <Image
-                  source={modalData.image}
-                  style={styles.image}
-                  resizeMode="contain"
-                />
-                {modalData.point && (
-                  <Text style={styles.point}>{modalData.point}</Text>
-                )}
-              </>
+            {[...Array(8)].map((_, i) => (
+              <View 
+                key={i} 
+                style={{ 
+                  position: 'absolute', 
+                  top: '50%', left: '50%',
+                  width: 2, height: hp(100),
+                  backgroundColor: modalData.theme,
+                  transform: [{ rotate: `${i * 45}deg` }, { translateY: -hp(50) }]
+                }} 
+              />
+            ))}
+          </Animated.View>
+
+          {/* 2. THE MAJESTIC CONTENT */}
+          <Animated.View 
+            style={{ transform: [{ scale: scaleAnim }], width: wp(85) }}
+            className="items-center"
+          >
+            {/* Crown/Icon Label */}
+            <Text className="text-white/40 font-main-bold uppercase tracking-[8px] text-[10px] mb-2">
+              Identity Confirmed
+            </Text>
+
+            {/* Main Role Title */}
+            <Text 
+               style={{ color: modalData.theme, textShadowColor: modalData.theme, textShadowRadius: 15 }}
+               className="text-center font-main-bold text-4xl mb-6 tracking-tighter leading-10"
+            >
+              {modalData.roleTitle}
+            </Text>
+
+            {/* Character Spotlight */}
+            <View className="relative items-center justify-center">
+              <View 
+                style={{ backgroundColor: modalData.theme }} 
+                className="absolute w-64 h-64 rounded-full opacity-10 blur-3xl" 
+              />
+              <Image
+                source={modalData.image}
+                style={{ width: wp(80), height: hp(38) }}
+                resizeMode="contain"
+              />
+            </View>
+
+            {/* Points Reward Pill */}
+            {modalData.point && (
+              <View style={{ borderColor: modalData.theme }} className="mt-4 border-b-2 border-t-2 py-2 px-10">
+                <Text style={{ color: modalData.theme }} className="font-main-bold text-3xl tracking-widest">
+                  {modalData.point}
+                </Text>
+              </View>
             )}
 
+            {/* Philosophical Message */}
+            <Text className="text-slate-400 font-main-md  text-center mt-8 px-6 leading-6">
+              "{modalData.message}"
+            </Text>
+
+            {/* Interaction Hint */}
             {showTapToClose && (
-              <Animated.View style={{ opacity: tapToCloseAnim }}>
-                <Text style={styles.tapToClose}>Tap to close</Text>
-              </Animated.View>
+              <View className="mt-12">
+                <Text className="text-white/20 font-main-bold uppercase tracking-[5px] text-[10px]">
+                  — Proceed to Round —
+                </Text>
+              </View>
             )}
           </Animated.View>
-        </View>
+        </Animated.View>
       </TouchableWithoutFeedback>
     </Modal>
   );

@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
-import { View, Text, Pressable, Animated } from 'react-native';
+import { View, Pressable, Animated } from 'react-native';
 import { rf } from '@/utils/responsive';
 import { Share2, RefreshCw } from 'lucide-react-native';
+import { Text } from '../Text';
 
 interface ActionButtonsProps {
   handlePlayAgain: () => void;
@@ -54,7 +55,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 
           <Text
             style={{ fontSize: rf(1.8) }}
-            className="text-white font-extrabold uppercase tracking-[3px] ml-3"
+            className="text-white font-main-bold uppercase tracking-[3px] ml-3"
           >
             Play Again
           </Text>
@@ -66,7 +67,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         <View className="h-[1px] flex-1 bg-white/10" />
         <Text
           style={{ fontSize: rf(1) }}
-          className="mx-4 text-white/30 font-semibold tracking-widest uppercase"
+          className="mx-4 text-white/30 font-main-md tracking-widest uppercase"
         >
           or
         </Text>
@@ -90,7 +91,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 
         <Text
           style={{ fontSize: rf(1.3) }}
-          className="text-indigo-200 font-medium ml-2 tracking-widest uppercase"
+          className="text-indigo-200 font-main-bold ml-2 tracking-widest uppercase"
         >
           Share Result
         </Text>

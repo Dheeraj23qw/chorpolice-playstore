@@ -1,6 +1,5 @@
-
 import React, { memo } from "react";
-import { Text, View, Pressable, ImageBackground, Dimensions } from "react-native";
+import { View, Pressable, ImageBackground } from "react-native";
 import Animated, {
   FadeInUp,
   useAnimatedStyle,
@@ -8,10 +7,9 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { router } from "expo-router";
+import { Text } from "../Text";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-
 
 export const RuleGroupCard = memo(({ group, index }: { group: any; index: number }) => {
   const scale = useSharedValue(1);
@@ -39,11 +37,19 @@ export const RuleGroupCard = memo(({ group, index }: { group: any; index: number
           <View className="absolute inset-0 bg-black/50" />
           
           <View>
-            <Text className="text-white text-[22px] font-black tracking-tight">
+            <Text 
+              // Changed font-black to font-main-bold
+              className="text-white text-[22px] font-main-bold tracking-tight"
+            >
               {group.title}
             </Text>
+            
             <View className="h-1 w-8 bg-amber-500 rounded-full my-1.5" />
-            <Text className="text-gray-300 text-[14px] font-medium">
+            
+            <Text 
+              // Changed font-medium to font-main-md
+              className="text-gray-300 text-[14px] font-main-md"
+            >
               {group.subtitle}
             </Text>
           </View>

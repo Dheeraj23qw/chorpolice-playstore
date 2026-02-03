@@ -29,7 +29,6 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f3f3f3",
     borderRadius: 15,
-    // CRITICAL: overflow: "hidden" ensures the textureView respects the borderRadius
     overflow: "hidden", 
     marginTop: responsiveHeight(2),
     width: "100%",

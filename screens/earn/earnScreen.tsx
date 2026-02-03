@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
+import { View, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
 import { Coins, Trophy, Lock, RotateCcw } from "lucide-react-native";
 import ScreenWrapper from "@/components/screenwrapper";
+import { Text } from "@/components/Text";
 
 type RewardTier = {
   id: number;
@@ -11,7 +12,7 @@ type RewardTier = {
 };
 
 const REWARD_TIERS: RewardTier[] = [
-  { id: 1, coinsRequired: 2_500_000, reward: "Badminton ", emoji: "🏸" },
+  { id: 1, coinsRequired: 2_500_000, reward: "Badminton", emoji: "🏸" },
   { id: 2, coinsRequired: 6_000_000, reward: "Cricket Kit", emoji: "🏏" },
   { id: 3, coinsRequired: 10_000_000, reward: "₹1,000 Cash", emoji: "💰" },
 ];
@@ -26,9 +27,7 @@ export default function EarnScreen() {
 
   const spinWheel = () => {
     if (spunToday) return;
-
     const win = Math.random() > 0.5;
-
     if (win) {
       setCoins((c) => c + 1000);
       setSpinResult("🎉 You Won +1000 Coins!");
@@ -36,7 +35,6 @@ export default function EarnScreen() {
       setCoins((c) => Math.max(0, c - 500));
       setSpinResult("😢 You Lost -500 Coins");
     }
-
     setSpunToday(true);
   };
 
@@ -45,12 +43,12 @@ export default function EarnScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* ================= Wallet ================= */}
         <View className="mb-6 rounded-3xl bg-indigo-600 p-6 shadow-xl">
-          <Text className="text-xs uppercase tracking-widest text-indigo-200">
+          <Text className="text-xs uppercase font-main-bold tracking-widest text-indigo-200">
             Your Coins
           </Text>
 
           <View className="mt-1 flex-row items-center justify-between">
-            <Text className="text-3xl font-black text-white">
+            <Text className="text-3xl font-main-bold text-white">
               {coins.toLocaleString()} 🪙
             </Text>
 
@@ -59,23 +57,20 @@ export default function EarnScreen() {
             </View>
           </View>
 
-          <Text className="mt-3 text-sm text-indigo-100">
+          <Text className="mt-3 text-sm font-main-md text-indigo-100">
             Reach milestones and unlock real-world rewards 🎁
           </Text>
         </View>
 
         {/* ================= Reward Cards ================= */}
-        <Text className="mb-3 text-lg font-black text-slate-900">
+        <Text className="mb-3 text-lg font-main-bold text-slate-900">
           🎯 Reward Targets
         </Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {REWARD_TIERS.map((tier) => {
             const unlocked = coins >= tier.coinsRequired;
-            const progress = Math.min(
-              (coins / tier.coinsRequired) * 100,
-              100
-            );
+            const progress = Math.min((coins / tier.coinsRequired) * 100, 100);
 
             return (
               <View
@@ -83,7 +78,6 @@ export default function EarnScreen() {
                 style={{ width: CARD_WIDTH }}
                 className="mr-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-md"
               >
-                {/* Icon */}
                 <View className="mb-4 flex-row items-center justify-between">
                   <Text className="text-4xl">{tier.emoji}</Text>
                   {unlocked ? (
@@ -93,21 +87,21 @@ export default function EarnScreen() {
                   )}
                 </View>
 
-                <Text className="text-lg font-black text-slate-900">
+                <Text className="text-lg font-main-bold text-slate-900">
                   {tier.reward}
                 </Text>
 
-                <Text className="mt-1 text-xs text-slate-500">
+                <Text className="mt-1 text-xs font-main-md text-slate-500">
                   Target: {tier.coinsRequired.toLocaleString()} coins
                 </Text>
 
                 {/* Progress */}
                 <View className="mt-4">
                   <View className="mb-1 flex-row justify-between">
-                    <Text className="text-[10px] uppercase text-slate-400">
+                    <Text className="text-[10px] font-main-bold uppercase text-slate-400">
                       Progress
                     </Text>
-                    <Text className="text-[10px] text-slate-400">
+                    <Text className="text-[10px] font-main-bold text-slate-400">
                       {progress.toFixed(0)}%
                     </Text>
                   </View>
@@ -124,7 +118,7 @@ export default function EarnScreen() {
 
                 {unlocked && (
                   <View className="mt-3 rounded-full bg-emerald-100 px-3 py-1 self-start">
-                    <Text className="text-[10px] font-bold text-emerald-700">
+                    <Text className="text-[10px] font-main-bold text-emerald-700">
                       READY TO CLAIM
                     </Text>
                   </View>
@@ -135,33 +129,30 @@ export default function EarnScreen() {
         </ScrollView>
 
         {/* ================= Daily Spin Wheel ================= */}
-        <Text className="mt-8 mb-3 text-lg font-black text-slate-900">
+        <Text className="mt-8 mb-3 text-lg font-main-bold text-slate-900">
           🎡 Daily Spin
         </Text>
 
         <View className="rounded-3xl bg-white p-6 shadow-lg border border-slate-100">
-          {/* Wheel */}
           <View className="items-center">
             <View className="h-40 w-40 items-center justify-center rounded-full border-8 border-indigo-500 bg-indigo-100">
               <RotateCcw size={40} color="#4f46e5" />
             </View>
 
-            <Text className="mt-4 text-sm text-slate-600 text-center">
+            <Text className="mt-4 text-sm font-main-md text-slate-600 text-center">
               Spin once per day  
-              <Text className="font-bold"> Win +1000 🪙 | Lose -500 🪙</Text>
+              <Text className="font-main-bold text-indigo-600"> Win +1000 🪙 | Lose -500 🪙</Text>
             </Text>
           </View>
 
-          {/* Result */}
           {spinResult && (
             <View className="mt-4 rounded-xl bg-slate-100 py-2">
-              <Text className="text-center font-bold text-slate-700">
+              <Text className="text-center font-main-bold text-slate-700">
                 {spinResult}
               </Text>
             </View>
           )}
 
-          {/* Button */}
           <TouchableOpacity
             disabled={spunToday}
             onPress={spinWheel}
@@ -170,7 +161,7 @@ export default function EarnScreen() {
               spunToday ? "bg-slate-300" : "bg-indigo-600"
             }`}
           >
-            <Text className="text-center font-bold text-white">
+            <Text className="text-center font-main-bold text-white">
               {spunToday ? "Come Back Tomorrow" : "Spin Now"}
             </Text>
           </TouchableOpacity>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, View, Text } from "react-native";
+import { Pressable, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 // Utils
 import { rf, hp, wp } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface RulesButtonProps {
   onPress: () => void;
@@ -23,7 +24,6 @@ const RulesButton: React.FC<RulesButtonProps> = ({ onPress }) => {
     transform: [{ scale: scale.value }],
   }));
 
-  // Snappy spring for that "fast" modern feel
   const springConfig = { damping: 12, stiffness: 200 };
 
   return (
@@ -50,13 +50,15 @@ const RulesButton: React.FC<RulesButtonProps> = ({ onPress }) => {
             <View>
               <Text 
                 style={{ fontSize: rf(1.8) }} 
-                className="text-white font-black uppercase tracking-[2px]"
+                // Changed font-black to font-main-bold
+                className="text-white font-main-bold uppercase tracking-[2px]"
               >
                 Game Rules
               </Text>
               <Text 
                 style={{ fontSize: rf(1.1) }} 
-                className="text-white/40 font-bold uppercase"
+                // Changed font-bold to font-main-md for secondary detail
+                className="text-white/40 font-main-md uppercase"
               >
                 Learn how to play
               </Text>
@@ -65,7 +67,11 @@ const RulesButton: React.FC<RulesButtonProps> = ({ onPress }) => {
 
           {/* Minimalist indicator */}
           <View className="flex-row items-center bg-white/10 px-3 py-1 rounded-full border border-white/5">
-            <Text style={{ fontSize: rf(1.1) }} className="text-white/70 font-bold mr-1">
+            <Text 
+              style={{ fontSize: rf(1.1) }} 
+              // Changed font-bold to font-main-bold
+              className="text-white/70 font-main-bold mr-1"
+            >
               VIEW
             </Text>
             <Ionicons name="chevron-forward" size={rf(1.4)} color="rgba(255,255,255,0.5)" />

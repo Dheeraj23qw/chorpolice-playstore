@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, useWindowDimensions } from "react-native";
+import { View,  ScrollView, useWindowDimensions } from "react-native";
 import {
   Trophy,
   Lock,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react-native";
 
 import ScreenWrapper from "@/components/screenwrapper";
+import { Text } from "@/components/Text";
 
 type AwardStatus = "unlocked" | "progress" | "locked";
 type AwardRarity = "Legendary" | "Epic" | "Rare" | "Common";
@@ -151,12 +152,12 @@ export default function AwardsScreen() {
   const renderRow = (title: string, subtitle: string, data: Achievement[]) => (
     <View className="mb-8">
       {/* Section Header */}
-      <View className="mb-3 flex-row items-end justify-between">
+      <View className="mb-3 flex-row items-end justify-between px-1">
         <View>
-          <Text className="text-base font-extrabold text-slate-900">
+          <Text className="text-base font-main-bold text-slate-900">
             {title}
           </Text>
-          <Text className="text-xs text-slate-500">
+          <Text className="text-xs font-main-md text-slate-500">
             {subtitle}
           </Text>
         </View>
@@ -176,7 +177,7 @@ export default function AwardsScreen() {
             <View
               key={award.id}
               style={{ width: CARD_WIDTH }}
-              className="mr-4 rounded-3xl border border-slate-200 bg-white p-4"
+              className="mr-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
             >
               {/* Header */}
               <View className="mb-3 flex-row items-center justify-between">
@@ -188,7 +189,7 @@ export default function AwardsScreen() {
                   }`}
                 >
                   <Text
-                    className={`text-[10px] font-bold uppercase ${
+                    className={`text-[10px] font-main-bold uppercase ${
                       award.rarity === "Legendary"
                         ? "text-amber-700"
                         : "text-slate-600"
@@ -215,7 +216,7 @@ export default function AwardsScreen() {
               {/* Title */}
               <Text
                 numberOfLines={1}
-                className="text-sm font-extrabold uppercase text-slate-900"
+                className="text-sm font-main-bold uppercase text-slate-900"
               >
                 {isLocked ? "Locked Achievement" : award.title}
               </Text>
@@ -223,7 +224,7 @@ export default function AwardsScreen() {
               {/* Description */}
               <Text
                 numberOfLines={3}
-                className="mt-1 text-xs leading-4 text-slate-500"
+                className="mt-1 text-xs leading-4 font-main-md text-slate-500"
               >
                 {isLocked
                   ? "Keep playing to unlock this achievement."
@@ -232,14 +233,14 @@ export default function AwardsScreen() {
 
               {/* Progress */}
               <View className="mt-4">
-                <View className="mb-1 flex-row justify-between">
-                  <Text className="text-[10px] uppercase text-slate-400">
+                <div className="mb-1 flex-row justify-between">
+                  <Text className="text-[10px] font-main-bold uppercase text-slate-400">
                     Progress
                   </Text>
-                  <Text className="text-[10px] text-slate-400">
+                  <Text className="text-[10px] font-main-bold text-slate-400">
                     {award.progress}%
                   </Text>
-                </View>
+                </div>
 
                 <View className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                   <View
@@ -261,12 +262,6 @@ export default function AwardsScreen() {
 
   return (
     <ScreenWrapper title="Awards" subtitle="Progress & Challenges">
-      {/* Overview Card */}
- 
-
-      
-
-      {/* Sections */}
       {renderRow(
         "Career Milestones",
         "Permanent achievements",
@@ -280,11 +275,10 @@ export default function AwardsScreen() {
       )}
 
       {renderRow(
-  "Engagement Boost",
-  "Invite, share & build daily habits",
-  engagementAwards
-)}
-
+        "Engagement Boost",
+        "Invite, share & build daily habits",
+        engagementAwards
+      )}
     </ScreenWrapper>
   );
 }

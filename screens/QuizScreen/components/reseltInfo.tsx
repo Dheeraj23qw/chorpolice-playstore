@@ -1,7 +1,8 @@
 import React, { memo } from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { hp, wp, rf } from "@/utils/responsive";
+import { Text } from "@/components/Text";
 
 interface ResultInfoProps {
   Correct: number;
@@ -16,7 +17,7 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
     return (
       <View className="items-center px-8 pt-6">
         
-        {/* --- 1. Top Achievement Badge (Replaces Image) --- */}
+        {/* --- 1. Top Achievement Badge --- */}
         <View style={{ marginBottom: hp(4) }} className="items-center justify-center">
           {/* Outer Glow Orb */}
           <View 
@@ -51,14 +52,16 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
         {/* --- 2. Title Section --- */}
         <Text 
           style={{ fontSize: rf(1.4) }}
-          className="text-white/40 font-bold tracking-[4px] uppercase mb-1"
+          // Shielded with font-main-bold + wide tracking for HUD feel
+          className="text-white/40 font-main-bold tracking-[4px] uppercase mb-1"
         >
           Session Ended
         </Text>
 
         <Text
           style={{ fontSize: rf(4.8) }}
-          className={`font-black tracking-tighter text-center ${isWinner ? "text-emerald-400" : "text-red-500"}`}
+          // Shielded with font-main-bold for impact
+          className={`font-main-bold tracking-tighter text-center ${isWinner ? "text-emerald-400" : "text-red-500"}`}
         >
           {isWinner ? "VICTORY" : "DEFEAT"}
         </Text>
@@ -71,22 +74,38 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
           <View style={{ padding: wp(6) }} className="bg-[#121212]/50 rounded-[30px] items-center">
             <View className="flex-row items-center justify-center w-full">
                <View className="h-[1px] flex-1 bg-white/10" />
-               <Text style={{ fontSize: rf(1.4) }} className="mx-4 text-white/30 font-bold tracking-widest uppercase">
+               <Text 
+                style={{ fontSize: rf(1.4) }} 
+                // Shielded secondary label
+                className="mx-4 text-white/30 font-main-bold tracking-widest uppercase"
+              >
                  Scorecard
                </Text>
                <View className="h-[1px] flex-1 bg-white/10" />
             </View>
             
             <View className="flex-row items-baseline mt-4">
-              <Text style={{ fontSize: rf(7) }} className="font-black text-white">
+              <Text 
+                style={{ fontSize: rf(7) }} 
+                // Shielded numerical data
+                className="font-main-bold text-white"
+              >
                 {Correct}
               </Text>
-              <Text style={{ fontSize: rf(3) }} className="font-bold text-white/20 ml-2">
+              <Text 
+                style={{ fontSize: rf(3) }} 
+                // Shielded denominator
+                className="font-main-bold text-white/20 ml-2"
+              >
                 / {Total}
               </Text>
             </View>
 
-            <Text style={{ fontSize: rf(1.8) }} className="text-center text-slate-400 mt-2 italic">
+            <Text 
+              style={{ fontSize: rf(1.8) }} 
+              // Using font-main-md for a smoother quote appearance
+              className="text-center text-slate-400 font-main-md mt-2 "
+            >
               "{Message}"
             </Text>
           </View>
@@ -98,8 +117,12 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
             style={{ marginTop: hp(3), paddingHorizontal: wp(6), paddingVertical: hp(1.2) }}
             className="rounded-full bg-yellow-400/10 border border-yellow-400/30 flex-row items-center"
           >
-            <Ionicons name="sparkles" size={rf(1.8)} color="#facc15" className="mr-2" />
-            <Text style={{ fontSize: rf(1.6) }} className="font-bold text-yellow-400 ml-2">
+            <Ionicons name="sparkles" size={rf(1.8)} color="#facc15" />
+            <Text 
+              style={{ fontSize: rf(1.6) }} 
+              // Shielded reward text
+              className="font-main-bold text-yellow-400 ml-2 uppercase tracking-wider"
+            >
               {coinsMessage}
             </Text>
           </View>

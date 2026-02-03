@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
-  Text,
   Image,
   Modal,
   Pressable,
 } from "react-native";
 import { rf, hp, wp } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface FeedbackModalProps {
   feedbackMessage: string;
@@ -87,7 +87,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
           <View className="px-8 items-center">
             <Text 
               style={{ fontSize: rf(1.4), letterSpacing: 4 }} 
-              className="text-white/30 font-black uppercase text-center mb-3"
+              className="text-white/30 font-main-bold uppercase text-center mb-3"
             >
               {isCorrect ? "Mission Complete" : "System Error"}
             </Text>
@@ -96,7 +96,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
             
             <Text 
               style={{ fontSize: rf(2.8), color: isCorrect ? '#bef264' : '#fca5a5' }} 
-              className="font-black text-center italic tracking-tight leading-tight"
+              className="font-main-bold text-center tracking-tight leading-tight"
             >
               {feedbackMessage.toUpperCase()}
             </Text>
@@ -106,7 +106,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
           <View className="mt-10 h-10 justify-center">
             {canClose ? (
               <View className="flex-row items-center bg-white/10 px-6 py-2 rounded-2xl border border-white/20">
-                <Text style={{ fontSize: rf(1.3) }} className="text-white font-bold uppercase tracking-widest">
+                <Text style={{ fontSize: rf(1.3) }} className="text-white font-main-bold uppercase tracking-widest">
                   Tap to Dismiss
                 </Text>
               </View>

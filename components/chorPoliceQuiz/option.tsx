@@ -1,6 +1,7 @@
 import React, { useEffect, useState, memo } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { rf, hp } from "@/utils/responsive";
+import { Text } from "../Text";
 
 type QuizOptionsProps = {
   playerName: string;
@@ -15,22 +16,19 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
   onOptionPress,
   isOptionDisabled,
 }) => {
-  // Lock options briefly to prevent accidental double-taps during transitions
-  const [isOptionsDisabledForSeconds, setIsOptionsDisabledForSeconds] = useState(true);
+  const [isOptionsDisabledForSeconds, setIsOptionsDisabledForSeconds] =
+    useState(true);
 
-  // Updated logic: removed currentPlayerIsBot
   const optionsDisabled = isOptionDisabled || isOptionsDisabledForSeconds;
 
   useEffect(() => {
-    // Reset the local lockout whenever the playerName (current turn) changes
     setIsOptionsDisabledForSeconds(true);
-    
     const timer = setTimeout(() => {
       setIsOptionsDisabledForSeconds(false);
     }, 700);
 
     return () => clearTimeout(timer);
-  }, [playerName]); // Trigger on every player change
+  }, [playerName]);
 
   const handleOptionPress = (score: number) => {
     if (!optionsDisabled) {
@@ -44,9 +42,9 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
       <View className="mb-8 items-center">
         <Text
           style={{ fontSize: rf(2.1) }}
-          className="text-white/90 text-center font-extrabold tracking-wide"
+          className="text-white/90 text-center font-main-bold tracking-wide"
         >
-          <Text className="text-indigo-400 font-black italic">
+          <Text className="text-indigo-400 font-main-bold ">
             {playerName}
           </Text>
           , guess your score ✨
@@ -60,7 +58,7 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
 
           return (
             <TouchableOpacity
-              key={`${playerName}-${index}`} // Better keying for list transitions
+              key={`${playerName}-${index}`}
               activeOpacity={0.85}
               onPress={() => handleOptionPress(score)}
               disabled={isDisabled}
@@ -98,12 +96,8 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
               <Text
                 style={{ fontSize: rf(3.4) }}
                 className={`
-                  font-black italic tracking-wider
-                  ${
-                    isDisabled
-                      ? "text-white/25"
-                      : "text-white drop-shadow-lg"
-                  }
+                  font-main-bold  tracking-wider
+                  ${isDisabled ? "text-white/25" : "text-white"}
                 `}
               >
                 {score}

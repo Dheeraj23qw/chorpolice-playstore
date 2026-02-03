@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
-  Text,
   Pressable,
   Modal,
   useWindowDimensions,
@@ -19,6 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "@/utils/responsive";
+import { Text } from "./Text";
 
 export const FullScreenMenu = ({ visible, onClose, router }: any) => {
   const { width, height } = useWindowDimensions();
@@ -84,7 +84,7 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
           <View className="px-8 py-6 border-b border-white/5 flex-row items-center justify-between">
             <View className="flex-row items-center">
               <View className="w-1.5 h-6 bg-indigo-500 rounded-full mr-3 shadow-lg shadow-indigo-500" />
-              <Text style={{ fontSize: rf(2) }} className="text-white font-black uppercase italic tracking-tighter">
+              <Text style={{ fontSize: rf(2) }} className="text-white font-black uppercase  tracking-tighter">
                 Navigation
               </Text>
             </View>

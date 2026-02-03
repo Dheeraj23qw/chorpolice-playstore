@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text,ScrollView, Alert, BackHandler } from "react-native";
+import { View,ScrollView, Alert, BackHandler } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { wp, hp, rf } from "@/utils/responsive";

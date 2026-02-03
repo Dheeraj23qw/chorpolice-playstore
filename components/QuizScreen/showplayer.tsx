@@ -1,24 +1,23 @@
 import React from "react";
-import { StyleSheet, Text, View, ImageBackground, Image } from "react-native";
+import { StyleSheet, View, ImageBackground, Image } from "react-native";
 import {
   responsiveHeight as rh,
   responsiveWidth as rw,
   responsiveFontSize as rf,
 } from "react-native-responsive-dimensions";
+import { Text } from "../Text";
 
 export default function ShowPlayer() {
-
-
   return (
     <ImageBackground
-      source={require("@/assets/images/bg/quizbg.png")} // Background image
+      source={require("@/assets/images/bg/quizbg.png")}
       style={styles.background}
       resizeMode="cover"
     >
       {/* Overlay */}
       <View style={styles.overlay} />
 
-      {/* Player at top-left */}
+      {/* Player at top-right */}
       <View style={[styles.playerContainer, styles.topLeft]}>
         <View style={styles.imageOverlayContainer}>
           <Image
@@ -29,12 +28,11 @@ export default function ShowPlayer() {
           />
           <View style={styles.textOverlay}>
             <Text style={styles.playerName}>Player 1</Text>
-          
           </View>
         </View>
       </View>
 
-      {/* Player at bottom-right */}
+      {/* Player at bottom-left */}
       <View style={[styles.playerContainer, styles.bottomRight]}>
         <View style={styles.imageOverlayContainer}>
           <Image
@@ -59,8 +57,8 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject, // Covers the entire background
-    backgroundColor: "rgba(0, 0, 0, 0.3)", // Semi-transparent black
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
   playerContainer: {
     position: "absolute",
@@ -92,13 +90,14 @@ const styles = StyleSheet.create({
     marginTop: rh(13),
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent overlay
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     padding: rh(2),
   },
   playerName: {
     color: "#FFD700",
     fontSize: rf(2.5),
-    fontWeight: "bold",
+    // REMOVED fontWeight: "bold"
+    fontFamily: "font-main-bold", // Explicit Outfit-Bold shield
     textShadowColor: "rgba(0, 0, 0, 0.7)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,
@@ -107,7 +106,7 @@ const styles = StyleSheet.create({
   scoreText: {
     color: "white",
     fontSize: rf(2),
-    fontWeight: "bold",
+    fontFamily: "font-main-bold", // Explicit Outfit-Bold shield
     textShadowColor: "rgba(0, 0, 0, 0.7)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,

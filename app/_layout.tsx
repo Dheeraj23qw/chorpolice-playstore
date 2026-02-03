@@ -15,9 +15,7 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, StyleSheet, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 
-// Keep splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {
-  /* focus error or ignore if already hidden */
 });
 
 function AppLayout() {
@@ -28,7 +26,6 @@ function AppLayout() {
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      // Production Check: Ensure AudioEngine exists and is initialized
       if (nextAppState === "active" && AudioEngine && !AudioEngine.isMuted()) {
         AudioEngine.ensureQuizGlobal?.();
       }
@@ -44,8 +41,6 @@ function AppLayout() {
     return () => sub.remove();
   }, []);
 
-  // Memoize screen layout to prevent ScreenWrapper from re-mounting 
-  // every time AppLayout re-renders
   const renderScreenLayout = useCallback(
     ({ children }: { children: React.ReactNode }) => (
       <ScreenWrapper variant="default" breathing={true}>
@@ -85,24 +80,26 @@ export default function RootLayout() {
 
   useSystemUI();
 
-  // Handle Font Loading & Splash Screen
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      // Even if fonts fail (fontError), we hide splash to show 
-      // the app with fallback fonts rather than a stuck splash screen
-      SplashScreen.hideAsync();
+    async function prepare() {
+      try {
+        if (fontsLoaded || fontError) {
+          await SplashScreen.hideAsync();
+        }
+      } catch (e) {
+        console.warn("Splash screen error:", e);
+      }
     }
+    prepare();
   }, [fontsLoaded, fontError]);
 
-  // Production Guard: If fonts aren't ready, we return null so the 
-  // Splash Screen stays up. If they fail, we proceed anyway.
   if (!fontsLoaded && !fontError) return null;
 
   return (
     <Provider store={store}>
       <SafeAreaProvider>
         <AlertNotificationRoot theme="dark">
-          <StatusBar hidden translucent style="light" />
+          <StatusBar hidden translucent backgroundColor="transparent" />
           <AppLayout />
         </AlertNotificationRoot>
       </SafeAreaProvider>

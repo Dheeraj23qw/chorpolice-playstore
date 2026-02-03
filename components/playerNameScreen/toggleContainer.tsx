@@ -1,7 +1,8 @@
 import React, { memo } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { rf } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface ButtonOption {
   label: string;
@@ -21,7 +22,6 @@ const AvatarSelection: React.FC<AvatarSelectionProps> = ({
   pickImage,
   options,
 }) => {
-
   const handleOptionSelect = async (option: ButtonOption) => {
     if (option.value === "gallery") {
       try {
@@ -36,30 +36,31 @@ const AvatarSelection: React.FC<AvatarSelectionProps> = ({
   };
 
   return (
-    <View className="w-full flex-row justify-center items-center py-4">
+    <View className="w-full flex-row justify-center items-center py-4 space-x-4">
       {options.map((option) => {
         const isSelected = selectedOption === option.value;
-        
+
         return (
           <TouchableOpacity
             key={option.value}
             onPress={() => handleOptionSelect(option)}
             activeOpacity={0.8}
             className={`flex-row items-center px-8 py-4 rounded-[24px] border-t-[1.5px] border-l-[1px] ${
-                isSelected 
-                  ? "bg-indigo-500/40 border-indigo-300/60" 
-                  : "bg-white/[0.07] border-white/20"
-              }`}
+              isSelected
+                ? "bg-indigo-500/40 border-indigo-300/60 shadow-lg shadow-indigo-500/20"
+                : "bg-white/[0.07] border-white/20"
+            }`}
           >
             <MaterialIcons
               name={option.value === "gallery" ? "add-photo-alternate" : "face"}
               size={22}
               color={isSelected ? "#fff" : "rgba(255,255,255,0.5)"}
             />
-            
-            <Text 
+
+            <Text
               style={{ fontSize: rf(1.3) }}
-              className={`ml-3 font-black uppercase tracking-[2px] ${
+              // Explicitly using font-main-bold ensures Outfit-Bold is used.
+              className={`ml-3 font-main-bold uppercase tracking-[2px] ${
                 isSelected ? "text-white" : "text-white/50"
               }`}
             >

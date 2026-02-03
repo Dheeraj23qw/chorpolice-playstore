@@ -1,7 +1,8 @@
 import React, { memo } from "react";
-import { Pressable, View, Text } from "react-native";
+import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { hp, wp, rf } from "@/utils/responsive";
+import { Text } from "@/components/Text";
 
 interface RenderButtonsProps {
   handleShare: () => void;
@@ -49,7 +50,7 @@ export const RenderButtons: React.FC<RenderButtonsProps> = memo(({
 });
 
 /* ======================================================
-   Reusable Aesthetic Button Sub-Component
+    Reusable Aesthetic Button Sub-Component
 ====================================================== */
 
 const ActionButton = ({ onPress, label, icon, baseColor, borderColor }: any) => (
@@ -70,7 +71,8 @@ const ActionButton = ({ onPress, label, icon, baseColor, borderColor }: any) => 
       {/* Label */}
       <Text 
         style={{ fontSize: rf(1.4) }} 
-        className="text-white font-black tracking-[2px] uppercase"
+        // Swapped font-black for font-main-bold
+        className="text-white font-main-bold tracking-[2px] uppercase"
       >
         {label}
       </Text>

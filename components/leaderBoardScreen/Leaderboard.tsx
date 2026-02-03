@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Image, Text } from "react-native";
+import { View, Image } from "react-native";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { rf, wp } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface PlayerScore {
   playerName: string;
@@ -51,7 +52,8 @@ const PlayerItem: React.FC<{
       >
         <Text
           style={{ fontSize: rf(1.6) }}
-          className={`font-black ${
+          // 1. font-black -> font-main-bold
+          className={`font-main-bold ${
             rank === 1 ? "text-white" : "text-white/40"
           }`}
         >
@@ -79,13 +81,15 @@ const PlayerItem: React.FC<{
       <View className="flex-1 ml-4">
         <Text
           style={{ fontSize: rf(1.8) }}
-          className="text-white font-bold tracking-tight"
+          // 2. font-bold -> font-main-bold
+          className="text-white font-main-bold tracking-tight"
         >
           {player.playerName || "Unknown Player"}
         </Text>
         <Text
           style={{ fontSize: rf(0.9) }}
-          className="text-white/30 font-black uppercase tracking-[2px]"
+          // 3. font-black -> font-main-bold
+          className="text-white/30 font-main-bold uppercase tracking-[2px]"
         >
           {rank === 1 ? "MVP Status" : "Operative"}
         </Text>
@@ -95,7 +99,8 @@ const PlayerItem: React.FC<{
       <View className="bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-400/20">
         <Text
           style={{ fontSize: rf(1.8) }}
-          className="text-indigo-300 font-black italic"
+          // 4. font-black -> font-main-bold
+          className="text-indigo-300 font-main-bold"
         >
           {player.totalScore ?? 0}
         </Text>
@@ -109,7 +114,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   playerNames,
   selectedImages,
 }) => {
-  // 🛑 Prevent render during redux reset
   if (
     !sortedScores?.length ||
     !playerNames?.length ||
@@ -119,14 +123,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   }
 
   const playerNameToIndexMap = new Map(
-    playerNames.map((p, index) => [p.name, selectedImages[index]])
+    playerNames.map((p, index) => [p.name, selectedImages[index]]),
   );
 
   return (
     <View className="w-full">
       {sortedScores.map((player, index) => {
-        const playerIndex =
-          playerNameToIndexMap.get(player.playerName) ?? 0;
+        const playerIndex = playerNameToIndexMap.get(player.playerName) ?? 0;
 
         return (
           <PlayerItem

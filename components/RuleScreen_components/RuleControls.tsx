@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { Text } from "../Text";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -49,7 +50,8 @@ export default function RulesControls({
             border border-white/20
           "
         >
-          <Text className="text-white font-bold text-lg">Back</Text>
+          {/* Swapped font-bold for font-main-bold */}
+          <Text className="text-white font-main-bold text-lg">Back</Text>
         </AnimatedPressable>
       )}
 
@@ -62,7 +64,8 @@ export default function RulesControls({
           isLast ? "bg-green-500" : "bg-amber-500"
         }`}
       >
-        <Text className="text-[#0F0F1E] font-black text-lg uppercase">
+        {/* Swapped font-black for font-main-bold */}
+        <Text className="text-[#0F0F1E] font-main-bold text-lg uppercase tracking-tight">
           {isLast ? "Start Game" : "Next Step"}
         </Text>
       </AnimatedPressable>

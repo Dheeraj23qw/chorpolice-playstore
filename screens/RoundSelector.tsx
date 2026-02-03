@@ -1,11 +1,12 @@
 import React, { useCallback } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
 import { setGameRound } from "@/redux/reducers/playerReducer";
 import { rf } from "@/utils/responsive";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import { AudioEngine } from "@/audio/audioEngine";
+import { Text } from "@/components/Text";
 
 const RoundSelector: React.FC = () => {
   const dispatch = useDispatch();
@@ -19,7 +20,6 @@ const RoundSelector: React.FC = () => {
     AudioEngine.play("select", "ui");
     dispatch(setGameRound(round));
 
-    // Simple, non-intrusive feedback
     Toast.show({
       type: ALERT_TYPE.SUCCESS,
       title: 'Duration Set',
@@ -35,7 +35,8 @@ const RoundSelector: React.FC = () => {
         <View className="w-1.5 h-4 bg-indigo-500 rounded-full mr-3" />
         <Text
           style={{ fontSize: rf(1.1) }}
-          className="text-white/50 font-black uppercase tracking-[4px]"
+          // Swapped font-black for font-main-bold
+          className="text-white/50 font-main-bold uppercase tracking-[4px]"
         >
           Mission Rounds
         </Text>
@@ -62,7 +63,8 @@ const RoundSelector: React.FC = () => {
             >
               <Text
                 style={{ fontSize: rf(1.3) }}
-                className={`font-black ${isSelected ? "text-white" : "text-white/20"}`}
+                // Swapped font-black for font-main-bold
+                className={`font-main-bold ${isSelected ? "text-white" : "text-white/20"}`}
               >
                 {round}
               </Text>
@@ -80,7 +82,8 @@ const RoundSelector: React.FC = () => {
       <View className="mt-4 bg-indigo-500/10 self-center px-4 py-1.5 rounded-full border border-indigo-500/20">
         <Text
           style={{ fontSize: rf(0.9) }}
-          className="text-indigo-300 font-bold uppercase tracking-[2px]"
+          // Swapped font-bold for font-main-bold
+          className="text-indigo-300 font-main-bold uppercase tracking-[2px]"
         >
           Duration: {selectedRounds} {selectedRounds === 1 ? "Round" : "Rounds"}
         </Text>

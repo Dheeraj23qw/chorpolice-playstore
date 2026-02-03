@@ -1,7 +1,8 @@
 import React, { memo } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { hp, wp, rf } from "@/utils/responsive";
+import { Text } from "../Text";
 
 type Props = {
   label: string;
@@ -17,11 +18,13 @@ const StartButton = ({ label, onPress }: Props) => {
         className="active:scale-[0.97] active:opacity-90 transition-all overflow-hidden rounded-2xl bg-indigo-600 border-b-4 border-indigo-800"
       >
         <View className="flex-1 px-8 flex-row items-center justify-center relative">
+          {/* Shine Effect */}
           <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/30" />
 
           <Text
             style={{ fontSize: rf(1.8) }}
-            className="text-white font-black tracking-[4px] uppercase"
+            // Changed 'font-black' to 'font-main-bold' for the Outfit-Bold shield
+            className="text-white font-main-bold tracking-[4px] uppercase"
           >
             {label}
           </Text>

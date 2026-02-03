@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, ActivityIndicator, Text, StyleSheet, Animated, Easing } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Animated, Easing } from "react-native";
 import { responsiveHeight, responsiveFontSize } from "react-native-responsive-dimensions";
 
 const LoadingIndicator: React.FC<{ loading: boolean; message?: string }> = ({ loading, message }) => {

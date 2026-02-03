@@ -1,11 +1,12 @@
 import React, { memo } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { wp, hp, rf } from "@/utils/responsive";
 import {
   DifficultyOption,
   difficultyConfig,
 } from "@/constants/difficultyConfig";
+import { Text } from "../Text";
 
 type Props = {
   option: DifficultyOption;
@@ -52,7 +53,7 @@ const DifficultyCard = ({ option, selected, onSelect }: Props) => {
             <View className="flex-1">
               <Text
                 style={{ fontSize: rf(2.4) }}
-                className={`font-bold ${
+                className={`font-main-bold ${
                   selected ? "text-white" : "text-white/70"
                 }`}
               >
@@ -60,7 +61,7 @@ const DifficultyCard = ({ option, selected, onSelect }: Props) => {
               </Text>
               <Text
                 style={{ fontSize: rf(1.6) }}
-                className="text-white/40 mt-1"
+                className="text-white/40 mt-1 font-main-md"
                 numberOfLines={1}
               >
                 {config.desc}
@@ -71,9 +72,7 @@ const DifficultyCard = ({ option, selected, onSelect }: Props) => {
           <View
             style={{ width: wp(6), height: wp(6) }}
             className={`rounded-full border-2 items-center justify-center ${
-              selected
-                ? "border-indigo-400 bg-indigo-400"
-                : "border-white/20"
+              selected ? "border-indigo-400 bg-indigo-400" : "border-white/20"
             }`}
           >
             {selected && (

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
-import { Text, Pressable, View, Animated } from "react-native";
+import { Pressable, View, Animated } from "react-native";
 import { rf } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface PlayButtonProps {
   disabled: boolean;
@@ -31,7 +32,7 @@ const PlayButton: React.FC<PlayButtonProps> = ({
             duration: 1800,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
 
       loop.start();
@@ -103,7 +104,8 @@ const PlayButton: React.FC<PlayButtonProps> = ({
           <View className="py-6 items-center justify-center">
             <Text
               style={{ fontSize: rf(1.9) }}
-              className={`font-extrabold uppercase tracking-[4px]  ${
+              // Swapped font-extrabold for font-main-bold
+              className={`font-main-bold uppercase tracking-[4px]  ${
                 disabled ? "text-white/25" : "text-white"
               }`}
             >
@@ -111,7 +113,10 @@ const PlayButton: React.FC<PlayButtonProps> = ({
             </Text>
 
             {!disabled && (
-              <Text className="mt-1 text-[9px] tracking-[3px] uppercase text-indigo-300/60 font-semibold">
+              <Text 
+                // Swapped font-semibold for font-main-md
+                className="mt-1 text-[9px] tracking-[3px] uppercase text-indigo-300/60 font-main-md"
+              >
                 Tap to continue
               </Text>
             )}

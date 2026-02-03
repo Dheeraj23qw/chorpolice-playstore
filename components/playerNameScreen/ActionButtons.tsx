@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { rf } from "@/utils/responsive";
+import { Text } from '../Text';
 
 interface ActionButtonsProps {
   handleStartAdventure?: () => void;
@@ -39,7 +40,8 @@ const PlayernameActionButtonsComponent: React.FC<ActionButtonsProps> = ({
           <View className="flex-row items-center justify-center">
             <Text 
               style={{ fontSize: rf(1.8) }} 
-              className={`font-black uppercase tracking-[8px]  ${
+              // Replaced font-black with font-main-bold to secure the Outfit shield
+              className={`font-main-bold uppercase tracking-[8px]  ${
                 disabled ? "text-white/10" : "text-white"
               }`}
             >

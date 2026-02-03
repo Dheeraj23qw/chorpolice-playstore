@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { useDispatch } from "react-redux";
 
@@ -9,21 +9,20 @@ import { SafeBackButton } from "@/components/SafeBackButton";
 import { useIsRouterReady } from "@/utils/useIsNavigationReady";
 import { AudioEngine } from "@/audio/audioEngine";
 
-
 import {
   DIFFICULTY_OPTIONS,
   DifficultyOption,
 } from "@/constants/difficultyConfig";
 import DifficultyCard from "@/components/difficultySelectScreen/DifficultyCard";
 import StartButton from "@/components/difficultySelectScreen/StartButton";
+import { Text } from "@/components/Text";
 
 const QuizDifficultyScreen = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const isReady = useIsRouterReady();
 
-  const [selected, setSelected] =
-    useState<DifficultyOption | null>(null);
+  const [selected, setSelected] = useState<DifficultyOption | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
 
   const handleSelect = useCallback(
@@ -61,17 +60,19 @@ const QuizDifficultyScreen = () => {
         <View style={{ marginBottom: hp(5) }}>
           <Text
             style={{ fontSize: rf(1.8) }}
-            className="text-indigo-400 font-bold tracking-widest uppercase mb-2"
+            // Swapped font-bold for font-main-bold
+            className="text-indigo-400 font-main-bold tracking-widest uppercase mb-2"
           >
             Challenge Level
           </Text>
 
           <Text
             style={{ fontSize: rf(5.5), lineHeight: hp(6.5) }}
-            className="font-black text-white leading-tight"
+            // Swapped font-black for font-main-bold
+            className="font-main-bold text-white"
           >
             Select Your{"\n"}
-            <Text className="text-indigo-500">
+            <Text className="text-indigo-500 font-main-bold">
               Difficulty
             </Text>
           </Text>

@@ -1,7 +1,8 @@
 import React, { Dispatch, SetStateAction, useMemo } from "react";
-import { View, Text, Modal, FlatList, Pressable} from "react-native"; // Added StatusBar
+import { View, Modal, FlatList, Pressable} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
+import { Text } from "../Text";
 
 interface GameTableProps {
   isTableOpen: boolean;
@@ -21,7 +22,8 @@ const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, tabl
         <View key={index} className="flex-1 items-center justify-center px-1">
           <Text 
             style={{ fontSize: rf(1.4) }} 
-            className="text-indigo-300 font-black uppercase tracking-widest text-center"
+            // Swapped font-black for font-main-bold
+            className="text-indigo-300 font-main-bold uppercase tracking-widest text-center"
           >
             {cell}
           </Text>
@@ -36,7 +38,11 @@ const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, tabl
     >
       {item.map((cell, cellIndex) => (
         <View key={cellIndex} className="flex-1 items-center justify-center px-1">
-          <Text style={{ fontSize: rf(1.6) }} className="text-slate-300 font-medium text-center">
+          <Text 
+            style={{ fontSize: rf(1.6) }} 
+            // Swapped font-medium for font-main-md for data rows
+            className="text-slate-300 font-main-md text-center"
+          >
             {cell}
           </Text>
         </View>
@@ -46,8 +52,6 @@ const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, tabl
 
   return (
     <Modal visible={isTableOpen} transparent animationType="slide" onRequestClose={handleClose}>
-     
-      
       <View className="flex-1 bg-[#09090b]">
         
         {/* Aesthetic Background Orbs */}
@@ -60,11 +64,10 @@ const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, tabl
           className="absolute bg-purple-600/10 rounded-full blur-[100px]" 
         />
 
-        {/* Content Wrapper */}
         <View 
           style={{ 
             flex: 1, 
-            paddingTop: insets.top || hp(2), // Content starts below notch
+            paddingTop: insets.top || hp(2), 
             paddingBottom: insets.bottom || hp(2) 
           }}
           className="px-4"
@@ -75,20 +78,22 @@ const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, tabl
             <View>
               <Text 
                 style={{ fontSize: rf(1.2) }} 
-                className="text-indigo-400 font-bold tracking-[3px] uppercase"
+                // Swapped font-bold for font-main-bold
+                className="text-indigo-400 font-main-bold tracking-[3px] uppercase"
               >
                 Data Reference
               </Text>
               <Text 
                 style={{ fontSize: rf(3.2) }} 
-                className="text-white font-black tracking-tighter"
+                // Swapped font-black for font-main-bold
+                className="text-white font-main-bold tracking-tighter"
               >
                 Quiz Table
               </Text>
             </View>
             
             <View className="h-10 w-10 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-              <View className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+              <View className="h-2 w-2 rounded-full bg-indigo-500 mr-0.5" />
             </View>
           </View>
 
@@ -113,7 +118,8 @@ const GameTable: React.FC<GameTableProps> = ({ isTableOpen, setIsTableOpen, tabl
           >
             <Text 
               style={{ fontSize: rf(1.8) }} 
-              className="text-white font-black uppercase tracking-widest"
+              // Swapped font-black for font-main-bold
+              className="text-white font-main-bold uppercase tracking-widest"
             >
               Back to Question
             </Text>

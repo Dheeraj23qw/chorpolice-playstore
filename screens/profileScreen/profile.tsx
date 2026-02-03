@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, ScrollView, TouchableOpacity } from "react-native";
 import {
   Edit3,
   Settings,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react-native";
 
 import ScreenWrapper from "@/components/screenwrapper";
+import { Text } from "@/components/Text";
 
 type StatProps = {
   value: string;
@@ -41,20 +42,18 @@ export default function ProfileScreen() {
   );
 }
 
-/* ========================================================= */
 /* ===================== LOGGED OUT UI ===================== */
-/* ========================================================= */
 
 function LoggedOutView() {
   return (
     <View className="mt-10 items-center rounded-3xl bg-white p-8 shadow-lg border border-slate-100">
       <Text className="text-5xl">👋</Text>
 
-      <Text className="mt-4 text-2xl font-black text-slate-900">
+      <Text className="mt-4 text-2xl font-main-bold text-slate-900">
         Welcome Player
       </Text>
 
-      <Text className="mt-2 text-center text-sm text-slate-500">
+      <Text className="mt-2 text-center text-sm font-main-md text-slate-500">
         Login to sync your awards, coins, progress and unlock cloud backup.
       </Text>
 
@@ -64,22 +63,19 @@ function LoggedOutView() {
         className="mt-8 w-full flex-row items-center justify-center gap-x-3 rounded-2xl bg-indigo-600 py-4 shadow-lg"
       >
         <Mail size={20} color="white" />
-        <Text className="text-base font-bold text-white">
+        <Text className="text-base font-main-bold text-white">
           Continue with Google
         </Text>
       </TouchableOpacity>
 
-      {/* Guest hint */}
-      <Text className="mt-4 text-xs text-slate-400">
+      <Text className="mt-4 text-xs font-main-md text-slate-400">
         You can continue offline without login.
       </Text>
     </View>
   );
 }
 
-/* ========================================================= */
 /* ===================== LOGGED IN UI ======================= */
-/* ========================================================= */
 
 function LoggedInView() {
   return (
@@ -96,17 +92,17 @@ function LoggedInView() {
           </TouchableOpacity>
         </View>
 
-        <Text className="mt-5 text-2xl font-black text-slate-900">
+        <Text className="mt-5 text-2xl font-main-bold text-slate-900">
           Alex Rivera
         </Text>
 
-        <Text className="mt-1 text-sm font-medium text-slate-500">
+        <Text className="mt-1 text-sm font-main-md text-slate-500">
           @arivera_pro
         </Text>
 
         <View className="mt-4 flex-row items-center rounded-full bg-indigo-50 px-4 py-1.5">
           <Star size={14} color="#6366f1" />
-          <Text className="ml-2 text-xs font-bold text-indigo-600">
+          <Text className="ml-2 text-xs font-main-bold text-indigo-600">
             PRO MEMBER
           </Text>
         </View>
@@ -123,19 +119,19 @@ function LoggedInView() {
 
       {/* About */}
       <View className="mt-8">
-        <Text className="mb-3 text-lg font-black text-slate-900">
+        <Text className="mb-3 text-lg font-main-bold text-slate-900">
           About Me
         </Text>
 
         <View className="rounded-2xl bg-white p-5 shadow-md border border-slate-100">
-          <Text className="leading-6 text-slate-600">
+          <Text className="leading-6 font-main-md text-slate-600">
             Product designer by day, competitive gamer by night 🚀
           </Text>
         </View>
       </View>
 
       {/* Meta Info */}
-      <View className="mt-6 mb-6 space-y-4 rounded-2xl bg-white p-5 shadow-md border border-slate-100">
+      <View className="mt-6 mb-6 gap-y-4 rounded-2xl bg-white p-5 shadow-md border border-slate-100">
         <InfoRow
           icon={<MapPin size={18} color="#64748b" />}
           text="Tokyo, Japan"
@@ -149,15 +145,13 @@ function LoggedInView() {
   );
 }
 
-/* ========================================================= */
-/* ===================== COMPONENTS ========================= */
-/* ========================================================= */
+/* ===================== SUB-COMPONENTS ========================= */
 
 function Stat({ value, label }: StatProps) {
   return (
     <View className="flex-1 items-center">
-      <Text className="text-xl font-black text-slate-900">{value}</Text>
-      <Text className="mt-1 text-xs font-medium text-slate-400">
+      <Text className="text-xl font-main-bold text-slate-900">{value}</Text>
+      <Text className="mt-1 text-[10px] font-main-bold uppercase tracking-wider text-slate-400">
         {label}
       </Text>
     </View>
@@ -172,7 +166,7 @@ function InfoRow({ icon, text }: InfoRowProps) {
   return (
     <View className="flex-row items-center">
       {icon}
-      <Text className="ml-3 text-sm font-medium text-slate-500">
+      <Text className="ml-3 text-sm font-main-md text-slate-500">
         {text}
       </Text>
     </View>

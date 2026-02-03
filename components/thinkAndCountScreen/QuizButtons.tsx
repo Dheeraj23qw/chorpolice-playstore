@@ -1,8 +1,8 @@
 import React, { memo } from "react";
-import { View, Text, Pressable } from "react-native";
-import { useDispatch } from "react-redux";
+import { View, Pressable } from "react-native";
 import { Table, FastForward, Split, Zap } from "lucide-react-native";
 import { AudioEngine } from "@/audio/audioEngine";
+import { Text } from "../Text";
 
 interface ButtonProps {
   showHint: boolean;
@@ -28,7 +28,6 @@ const ActionButton = memo(
       onPress();
     };
 
-    // Define color themes
     const themes = {
       primary: {
         bg: "bg-indigo-500/10",
@@ -65,7 +64,8 @@ const ActionButton = memo(
       >
         {Icon && <Icon size={18} color={current.icon} strokeWidth={2.5} />}
         <Text
-          className={`ml-2 text-[11px] font-black uppercase tracking-[2px] ${current.text}`}
+          // Swapped font-black for font-main-bold
+          className={`ml-2 text-[11px] font-main-bold uppercase tracking-[2px] ${current.text}`}
         >
           {label}
         </Text>
@@ -81,13 +81,15 @@ export const QuizButton: React.FC<ButtonProps> = memo(
         {/* Label for the action section */}
         <View className="flex-row items-center mb-4 px-2">
           <Zap size={12} color="#6366f1" fill="#6366f1" />
-          <Text className="ml-2 text-[10px] font-bold text-indigo-500/60 uppercase tracking-[3px]">
+          <Text 
+            // Swapped font-bold for font-main-bold
+            className="ml-2 text-[10px] font-main-bold text-indigo-500/60 uppercase tracking-[3px]"
+          >
             Available Lifelines
           </Text>
         </View>
 
         <View className="flex-row gap-3">
-          {/* Lifeline: 50-50 */}
           {!showHint && (
             <ActionButton
               label="50:50"
@@ -97,7 +99,6 @@ export const QuizButton: React.FC<ButtonProps> = memo(
             />
           )}
 
-          {/* Reference: Quiz Table */}
           <ActionButton
             label="Table"
             onPress={() => setIsTableOpen(true)}
@@ -105,7 +106,6 @@ export const QuizButton: React.FC<ButtonProps> = memo(
             icon={Table}
           />
 
-          {/* Primary Action: Next (Changes to Accent color when available) */}
           {showHint && (
             <ActionButton
               label="Proceed"

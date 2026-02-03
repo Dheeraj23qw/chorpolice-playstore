@@ -1,29 +1,17 @@
 import { useEffect } from "react";
-import { Appearance, Platform, Text, TextInput } from "react-native";
+import { Appearance, Platform } from "react-native";
 import * as NavigationBar from "expo-navigation-bar";
 
 export const useSystemUI = () => {
   useEffect(() => {
     const setup = async () => {
       if (Platform.OS === "android") {
+        // 1. Hide the bar for immersion
         await NavigationBar.setVisibilityAsync("hidden");
-        Appearance.setColorScheme("light");
+        
+        // Force app theme to dark
+        Appearance.setColorScheme("dark"); 
       }
-
-      // Global Font Setup
-      (Text as any).defaultProps = {
-        ...(Text as any).defaultProps,
-        allowFontScaling: true,
-        maxFontSizeMultiplier: 1.1,
-        style: { fontFamily: "outfit" },
-      };
-
-      (TextInput as any).defaultProps = {
-        ...(TextInput as any).defaultProps,
-        allowFontScaling: true,
-        maxFontSizeMultiplier: 1.1,
-        style: { fontFamily: "outfit" },
-      };
     };
 
     setup();

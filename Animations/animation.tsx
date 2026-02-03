@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Image, Text, ImageSourcePropType, TextStyle, ImageStyle, ViewStyle, Easing } from "react-native";
+import { Animated, ImageSourcePropType, TextStyle, ImageStyle } from "react-native";
 
 // TypeScript Prop Types for Image and Text Animation Components
 interface ImageAnimationProps {

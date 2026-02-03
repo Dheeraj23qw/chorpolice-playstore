@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable, ImageBackground, Text } from "react-native";
+import { View, Pressable, ImageBackground } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, hp } from "@/utils/responsive";
 import { GameModeType } from "@/constants/gamemode";
+import { Text } from "../Text";
 
 interface Props {
   item: GameModeType;
@@ -54,19 +55,13 @@ export const GameModeCard = ({ item, index }: Props) => {
         >
           {/* Glow */}
           <Animated.View
-            style={[
-              glowStyle,
-              { backgroundColor: item.accentColor },
-            ]}
+            style={[glowStyle, { backgroundColor: item.accentColor }]}
             className="absolute inset-6 rounded-full"
           />
 
           {/* Card */}
           <View className="flex-1 rounded-[32px] bg-[#0F0F18] border border-white/10 overflow-hidden">
-            <ImageBackground
-              source={item.image}
-              className="flex-1"
-            >
+            <ImageBackground source={item.image} className="flex-1">
               <View className="absolute inset-0 bg-black/70" />
 
               <View className="flex-1 p-6 justify-between">
@@ -85,7 +80,7 @@ export const GameModeCard = ({ item, index }: Props) => {
                         color: item.accentColor,
                         letterSpacing: 1.5,
                       }}
-                      className="font-bold uppercase"
+                      className="font-main-bold uppercase"
                     >
                       {item.difficulty}
                     </Text>
@@ -93,7 +88,7 @@ export const GameModeCard = ({ item, index }: Props) => {
 
                   <View className="w-12 h-12 rounded-2xl bg-black/40 items-center justify-center border border-white/10">
                     <Ionicons
-                      name={item.icon}
+                      name={item.icon as any}
                       size={rf(2.4)}
                       color={item.accentColor}
                     />
@@ -104,13 +99,13 @@ export const GameModeCard = ({ item, index }: Props) => {
                 <View>
                   <Text
                     style={{ fontSize: rf(3.5), lineHeight: rf(4) }}
-                    className="text-white font-black"
+                    className="text-white font-main-bold"
                   >
                     {item.title}
                   </Text>
 
                   <Text
-                    className="text-white/50 mt-1 mb-4"
+                    className="text-white/50 mt-1 mb-4 font-main-md"
                     style={{ fontSize: rf(1.4) }}
                   >
                     {item.subtitle}
@@ -120,7 +115,7 @@ export const GameModeCard = ({ item, index }: Props) => {
                     style={{ backgroundColor: item.accentColor }}
                     className="h-12 px-8 rounded-2xl flex-row items-center justify-center"
                   >
-                    <Text className="text-black  font-extrabold mr-2 uppercase text-xs tracking-widest">
+                    <Text className="text-black font-main-bold mr-2 uppercase text-xs tracking-widest">
                       {item.buttonText}
                     </Text>
                     <Ionicons

@@ -1,8 +1,9 @@
 // src/components/Option.tsx
 
 import React, { memo } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { DifficultyOption } from "@/constants/DifficultyConstant";
+import { Text } from "@/components/Text";
 
 interface OptionProps {
   option: DifficultyOption;
@@ -14,7 +15,8 @@ const Option: React.FC<OptionProps> = ({ option, isSelected, onSelect }) => {
   return (
     <Pressable
       onPress={() => onSelect(option)}
-      className="active:scale-95"
+      // Native-feeling touch response
+      className="active:scale-95 transition-transform"
     >
       <View
         className={`
@@ -26,7 +28,6 @@ const Option: React.FC<OptionProps> = ({ option, isSelected, onSelect }) => {
           px-4
           py-3
           shadow-sm
-
           ${
             isSelected
               ? "bg-indigo-600 border-indigo-400"
@@ -37,8 +38,9 @@ const Option: React.FC<OptionProps> = ({ option, isSelected, onSelect }) => {
         <Text
           className={`
             text-base
-            font-semibold
+            font-main-bold
             tracking-wide
+            uppercase
             ${
               isSelected
                 ? "text-white"

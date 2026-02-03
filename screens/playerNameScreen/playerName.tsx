@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { ScrollView, View, Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -25,12 +25,12 @@ import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
 import { SelectedImageGrid } from "@/components/playerNameScreen/SelectedImageGrid";
 import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionButtons";
 import RoundSelector from "../RoundSelector";
+import { Text } from "@/components/Text";
 
 const PlayerNameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const router = useRouter();
-  // Toggle for showing/hiding the round selection table
   const [showRoundTable, setShowRoundTable] = useState(false);
 
   /* -------------------- 🎬 Entrance Animation -------------------- */
@@ -73,8 +73,6 @@ const PlayerNameScreen: React.FC = () => {
       <View className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-indigo-600/10 blur-3xl" />
       <View className="absolute bottom-40 -right-20 w-72 h-72 rounded-full bg-blue-600/5 blur-3xl" />
 
-      {/* 🔙 Fixed Back Button */}
-
       <SafeBackButton />
 
       {/* 📍 FIXED HEADER AREA */}
@@ -108,11 +106,12 @@ const PlayerNameScreen: React.FC = () => {
             </View>
 
             <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-4 px-5 mb-6">
-              <Text className="text-indigo-200 font-bold text-xs uppercase tracking-widest mb-2">
+              {/* Swapped font-bold for font-main-bold */}
+              <Text className="text-indigo-200 font-main-bold text-xs uppercase tracking-widest mb-2">
                 Best Experience
               </Text>
 
-              <Text className="text-white/80 text-sm leading-5">
+              <Text className="text-white/80 font-main-md text-sm leading-5">
                 For the most fun experience, play with 4 real players 👑
                 {"\n\n"}
                 Upload your own images and use your real names to make the game
@@ -120,7 +119,7 @@ const PlayerNameScreen: React.FC = () => {
               </Text>
             </View>
             <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-3 px-4 mb-4 items-center">
-              <Text className="text-indigo-200 font-bold uppercase tracking-wider text-xs">
+              <Text className="text-indigo-200 font-main-bold uppercase tracking-wider text-xs">
                 Select {4 - selectedImages.length} Players to Begin
               </Text>
             </View>
@@ -155,10 +154,11 @@ const PlayerNameScreen: React.FC = () => {
                   <Ionicons name="timer-outline" size={20} color="#818cf8" />
                 </View>
                 <View>
-                  <Text className="text-white/40 text-[10px] uppercase font-bold tracking-widest">
+                  <Text className="text-white/40 text-[10px] uppercase font-main-bold tracking-widest">
                     Game Duration
                   </Text>
-                  <Text className="text-white text-base font-black italic">
+                  {/* Swapped font-black for font-main-bold italic */}
+                  <Text className="text-white text-base font-main-bold ">
                     {showRoundTable ? "CLOSE SELECTOR" : "SELECT ROUNDS"}
                   </Text>
                 </View>
@@ -181,13 +181,11 @@ const PlayerNameScreen: React.FC = () => {
         {/* --- 4. FINAL START ACTION --- */}
         {selectedImages.length === 4 && !showRoundTable && (
           <Animated.View entering={FadeIn} className="mt-4">
-
-            
             <PlayernameActionButtons
               handleStartAdventure={handleStartAdventure}
               disabled={isButtonDisabled}
             />
-            <Text className="text-white/20 text-center mt-4 uppercase tracking-[4px] text-[8px]">
+            <Text className="text-white/20 text-center mt-4 uppercase font-main-bold tracking-[4px] text-[8px]">
               Ready for Fun
             </Text>
           </Animated.View>

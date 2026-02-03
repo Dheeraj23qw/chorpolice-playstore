@@ -1,21 +1,17 @@
 import React from "react";
-import { Text, View, Pressable, ImageBackground } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
+import { View, ImageBackground } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { rulesGroups } from "@/constants/gameRules";
 import { RuleGroupCard } from "@/components/RuleScreen_components/RuleGroupCard";
 import { SafeBackButton } from "@/components/SafeBackButton";
+import { Text } from "@/components/Text";
 
 export default function RulesHome() {
-  const insets = useSafeAreaInsets(); // 👈 dynamic notch spacing
+  const insets = useSafeAreaInsets();
 
   return (
-    <View className="flex-1 ">
+    <View className="flex-1">
       <ImageBackground
         source={require("@/assets/images/bg/quiz.png")}
         resizeMode="cover"
@@ -31,10 +27,16 @@ export default function RulesHome() {
           <View className="flex-1 px-6">
             {/* Header */}
             <View className="h-[25%] justify-end pb-8">
-              <Text className="text-white text-xs font-bold tracking-[4px] text-center uppercase opacity-60 mb-2">
+              <Text 
+                // Swapped font-bold for font-main-bold
+                className="text-white text-xs font-main-bold tracking-[4px] text-center uppercase opacity-60 mb-2"
+              >
                 Knowledge Base
               </Text>
-              <Text className="text-white text-4xl font-black text-center tracking-tighter">
+              <Text 
+                // Swapped font-black for font-main-bold
+                className="text-white text-4xl font-main-bold text-center tracking-tighter"
+              >
                 Game Rules
               </Text>
             </View>
