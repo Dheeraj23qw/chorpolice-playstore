@@ -21,20 +21,16 @@ export const handleAppReview = async ({
   onComplete,
 }: ReviewOptions) => {
   try {
-    // Copy comment to clipboard
     if (comment.trim().length > 0) {
       try {
         await Clipboard.setStringAsync(comment.trim());
-        // Light haptic to confirm the copy action
         Haptics.selectionAsync(); 
       } catch (err) {
         console.warn("Clipboard failed", err);
       }
     }
 
-    // 2. Low Rating: Internal feedback
     if (rating < 4) {
-      // Trigger a Warning haptic for "room for improvement"
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
       Dialog.show({
@@ -50,8 +46,7 @@ export const handleAppReview = async ({
       return;
     }
 
-    // 3. High Rating: Go to Store
-    // Trigger a Success haptic for a great review
+ 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     Dialog.show({

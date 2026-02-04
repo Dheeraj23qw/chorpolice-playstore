@@ -7,19 +7,52 @@ interface PlayButtonProps {
   disabled: boolean;
   onPress: () => void;
   buttonText: string;
+  variant?: "primary" | "secondary";
 }
+
+/* ===============================
+   🔥 Variant Config (Clean Architecture)
+================================== */
+
+const BUTTON_VARIANTS = {
+  primary: {
+    containerEnabled: "bg-indigo-600 border border-indigo-400/40",
+    containerDisabled: "bg-[#08080c] border border-white/5",
+    textEnabled: "text-white",
+    textDisabled: "text-white/25",
+    bottomWidth: 6,
+    bottomColorEnabled: "#312e81",
+    bottomColorDisabled: "#141418",
+    showGlow: true,
+  },
+  secondary: {
+    containerEnabled: "bg-white/5 border border-white/15",
+    containerDisabled: "bg-white/5 border border-white/10",
+    textEnabled: "text-indigo-300",
+    textDisabled: "text-white/25",
+    bottomWidth: 2,
+    bottomColorEnabled: "#ffffff20",
+    bottomColorDisabled: "#ffffff10",
+    showGlow: false,
+  },
+} as const;
+
+/* =============================== */
 
 const PlayButton: React.FC<PlayButtonProps> = ({
   disabled,
   onPress,
   buttonText,
+  variant = "primary",
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0.3)).current;
 
-  /** 🌊 Ambient glow breathing */
+  const config = BUTTON_VARIANTS[variant];
+
+  /* 🌊 Glow breathing (only if enabled for variant) */
   useEffect(() => {
-    if (!disabled) {
+    if (!disabled && config.showGlow) {
       const loop = Animated.loop(
         Animated.sequence([
           Animated.timing(glowAnim, {
@@ -32,13 +65,13 @@ const PlayButton: React.FC<PlayButtonProps> = ({
             duration: 1800,
             useNativeDriver: true,
           }),
-        ]),
+        ])
       );
 
       loop.start();
       return () => loop.stop();
     }
-  }, [disabled]);
+  }, [disabled, variant]);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -69,63 +102,47 @@ const PlayButton: React.FC<PlayButtonProps> = ({
         style={{ transform: [{ scale: scaleAnim }] }}
         className="w-full"
       >
-        {/* 🌟 Soft Aura Glow */}
-        {!disabled && (
+        {/* 🌟 Glow (Primary Only) */}
+        {!disabled && config.showGlow && (
           <Animated.View
             pointerEvents="none"
             style={{ opacity: glowAnim }}
-            className="absolute -inset-3 rounded-[36px] bg-indigo-500/20 blur-3xl"
+            className="absolute -inset-3 rounded-[36px] bg-indigo-500/30 blur-3xl"
           />
         )}
 
-        {/* 🧊 Glass Body */}
+        {/* 🧊 Button Body */}
         <View
           className={`rounded-[30px] overflow-hidden ${
             disabled
-              ? "bg-[#08080c] border border-white/5"
-              : "bg-[#0c0c12] border border-white/10"
+              ? config.containerDisabled
+              : config.containerEnabled
           }`}
           style={{
-            borderBottomWidth: disabled ? 1 : 5,
-            borderBottomColor: disabled ? "#141418" : "#1e1b4b",
+            borderBottomWidth: config.bottomWidth,
+            borderBottomColor: disabled
+              ? config.bottomColorDisabled
+              : config.bottomColorEnabled,
           }}
         >
-          {/* ✨ Gradient Wash */}
-          {!disabled && (
-            <View className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-indigo-500/10" />
-          )}
-
-          {/* 💎 Inner Glow Border */}
-          {!disabled && (
-            <View className="absolute inset-[1px] rounded-[28px] border border-indigo-400/20" />
-          )}
-
-          {/* 🎯 Content */}
           <View className="py-6 items-center justify-center">
             <Text
               style={{ fontSize: rf(1.9) }}
-              // Swapped font-extrabold for font-main-bold
-              className={`font-main-bold uppercase tracking-[4px]  ${
-                disabled ? "text-white/25" : "text-white"
+              className={`font-main-bold uppercase tracking-[4px] ${
+                disabled
+                  ? config.textDisabled
+                  : config.textEnabled
               }`}
             >
               {buttonText}
             </Text>
 
-            {!disabled && (
-              <Text 
-                // Swapped font-semibold for font-main-md
-                className="mt-1 text-[9px] tracking-[3px] uppercase text-indigo-300/60 font-main-md"
-              >
+            {!disabled && variant === "primary" && (
+              <Text className="mt-1 text-[9px] tracking-[3px] uppercase text-indigo-300/60 font-main-md">
                 Tap to continue
               </Text>
             )}
           </View>
-
-          {/* 🌈 Top Light Reflection */}
-          {!disabled && (
-            <View className="absolute top-0 left-10 right-10 h-[1px] bg-white/30" />
-          )}
         </View>
       </Animated.View>
     </Pressable>

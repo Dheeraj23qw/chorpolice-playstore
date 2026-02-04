@@ -61,6 +61,7 @@ const RajaMantriGameScreen: React.FC = () => {
     handleExitGame,
     isGameReset,
     handleResetgame,
+    showTableButton,
   } = useRajaMantriGame({ playerNames });
 
   useEffect(() => {
@@ -130,6 +131,7 @@ const RajaMantriGameScreen: React.FC = () => {
         playerNames={playerNames}
         playerScores={playerScores}
         popupTable={popupTable}
+        onClose={() => setPopupTable(false)}
       />
 
       {popupIndex && (
@@ -142,7 +144,7 @@ const RajaMantriGameScreen: React.FC = () => {
           displayDuration={3000}
         />
       )}
-      
+
       {isRoundStartPopupVisible && <RoundStartLoader />}
 
       {isDynamicPopUp && mediaId != null && mediaType != null && (
@@ -182,6 +184,7 @@ const RajaMantriGameScreen: React.FC = () => {
               round={round}
               message={message}
               getCardStyle={getCardStyle}
+              showTableButton={showTableButton}
             />
           )}
         </View>

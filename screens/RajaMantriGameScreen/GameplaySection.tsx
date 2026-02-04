@@ -17,6 +17,7 @@ interface GamePlaySectionProps {
   round: number;
   message: string | null;
   getCardStyle: (index: number) => any;
+  showTableButton: boolean;
 }
 
 export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
@@ -31,6 +32,8 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   round,
   message,
   getCardStyle,
+  showTableButton,
+  toggleModal, // 👈 ADD THIS
 }) => {
   return (
     <View className="flex-1 bg-[#020207]">
@@ -49,7 +52,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
             {/* Shine Reflection */}
             <View className="absolute inset-x-2 top-0 h-[1px] bg-white/40 rounded-full" />
 
-            <Text 
+            <Text
               // Swapped font-extrabold for font-main-bold
               className="text-indigo-300 font-main-bold uppercase tracking-[4px] text-[11px]"
             >
@@ -60,18 +63,27 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
         {/* 🚀 Play Button Glass Stage */}
         <View className="mb-9">
-          <PlayButton
-            disabled={isPlayButtonDisabled}
-            onPress={handlePlay}
-            // Logic remains, ensure PlayButton component itself uses Text wrapper
-            buttonText={
-              isPlayButtonDisabled
-                ? message
+          {showTableButton ? (
+            <PlayButton
+              disabled={false}
+              onPress={toggleModal}
+              buttonText="Show Score Table"
+              variant="secondary" // 👈 important
+            />
+          ) : (
+            <PlayButton
+              disabled={isPlayButtonDisabled}
+              onPress={handlePlay}
+              buttonText={
+                isPlayButtonDisabled
                   ? message
-                  : `Round ${round}`
-                : `Press me to play!`
-            }
-          />
+                    ? message
+                    : `Round ${round}`
+                  : `Press me to play!`
+              }
+              variant="primary" // 👈 important
+            />
+          )}
         </View>
 
         {/* 🎴 Card Arena */}

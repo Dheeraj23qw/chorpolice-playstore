@@ -70,6 +70,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const [mediaType, setMediaType] = useState<"image" | "video" | "gif" | null>(
     null,
   );
+  const [showTableButton, setShowTableButton] = useState(false);
+
   const [playerData, setPlayerData] = useState<PlayerData>({
     image: null,
     message: null,
@@ -141,6 +143,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   };
 
   const handleResetgame = () => {
+    setShowTableButton(false);
     resetGame(
       initialFlippedStates,
       initialClickedCards,
@@ -196,6 +199,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   const handlePlay = () => {
     if (isLocked) return;
+    setShowTableButton(true);
     handlesetRoundStartMessage();
 
     safeSetTimeout(() => {
@@ -406,6 +410,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
 
   const resetForNextRoundHandler = () => {
     if (isLocked) return;
+    setShowTableButton(false);
     resetForNextRound(
       round,
       initialFlipAnims,
@@ -477,6 +482,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     setIsDynamicPopUp,
 
     isGameReset,
+    showTableButton,
+    setShowTableButton,
   };
 };
 

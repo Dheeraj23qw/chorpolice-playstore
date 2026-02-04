@@ -115,13 +115,13 @@ export const GameModeCard = ({ item, index }: Props) => {
                     style={{ backgroundColor: item.accentColor }}
                     className="h-12 px-8 rounded-2xl flex-row items-center justify-center"
                   >
-                    <Text className="text-black font-main-bold mr-2 uppercase text-xs tracking-widest">
+                    <Text className=" font-main-bold mr-2 uppercase text-xs tracking-widest">
                       {item.buttonText}
                     </Text>
                     <Ionicons
                       name="chevron-forward"
-                      size={rf(1.8)}
-                      color="black"
+                      size={rf(2)}
+                      color="white"
                     />
                   </View>
                 </View>
