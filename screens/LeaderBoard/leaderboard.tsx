@@ -1,6 +1,8 @@
 import React from "react";
 import { View, TouchableOpacity, ScrollView } from "react-native";
 import { rf, hp, wp } from "@/utils/responsive";
+import { Crown, Trophy, Medal, TrendingUp, ChevronRight } from "lucide-react-native";
+import ScreenWrapper from "@/components/screenwrapper";
 import { Text } from "@/components/Text";
 
 type Player = {
@@ -10,116 +12,126 @@ type Player = {
 };
 
 const PLAYERS: Player[] = [
-  { id: "1", name: "Alex", score: 980 },
-  { id: "2", name: "Jordan", score: 920 },
-  { id: "3", name: "Maya", score: 880 },
-  { id: "4", name: "Sam", score: 750 },
-  { id: "5", name: "Chris", score: 620 },
+  { id: "1", name: "Alex Rivera", score: 2980 },
+  { id: "2", name: "Jordan Smith", score: 2420 },
+  { id: "3", name: "Maya Chen", score: 2180 },
+  { id: "4", name: "Sam Wilson", score: 1750 },
+  { id: "5", name: "Chris Evans", score: 1620 },
+  { id: "6", name: "Luna Love", score: 1400 },
 ];
 
 export default function LeaderboardScreen() {
+  const topThree = PLAYERS.slice(0, 3);
+  const remainingPlayers = PLAYERS.slice(3);
+
   return (
-    <View className="flex-1 bg-[#09090b] px-6">
-      {/* 1. Header Section */}
-      <View className="mt-12 mb-8">
-        <Text 
-          style={{ fontSize: rf(3.5) }} 
-          // Swapped font-black for font-main-bold + italic
-          className="text-white font-main-bold  tracking-tighter"
-        >
-          LEADERBOARD
-        </Text>
-        <View className="flex-row items-center mt-2">
-          <View className="h-1 w-8 bg-indigo-500 rounded-full mr-2" />
-          <Text 
-            style={{ fontSize: rf(1.2) }} 
-            // Swapped font-bold for font-main-bold
-            className="text-white/40 font-main-bold uppercase tracking-[3px]"
-          >
-            Season High Scores
-          </Text>
+    <ScreenWrapper title="Leaderboard" variant="dark" subtitle="Season 4: Global Ranks">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="pb-10 pt-4 bg-slate-950 px-5">
+        
+        {/* ================= 🏆 TOP 3 PODIUM SECTION ================= */}
+        <View className="flex-row items-end justify-between mb-10 mt-6 px-2">
+          
+          {/* Rank 2 */}
+          <View className="items-center w-[30%]">
+            <View className="relative mb-3">
+               <View className="h-16 w-16 items-center justify-center rounded-[22px] bg-slate-800 border-2 border-slate-400/30 shadow-2xl">
+                 <Text className="text-2xl">🥈</Text>
+               </View>
+               <View className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-slate-400 items-center justify-center border-2 border-slate-950">
+                 <Text className="text-[10px] font-main-bold text-white">2</Text>
+               </View>
+            </View>
+            <Text numberOfLines={1} className="text-white font-main-bold text-xs">{topThree[1].name}</Text>
+            <Text className="text-slate-500 font-main-bold text-[10px] mt-1">{topThree[1].score.toLocaleString()}</Text>
+          </View>
+
+          {/* Rank 1 (The King) */}
+          <View className="items-center w-[35%]">
+            <View className="relative mb-4">
+               {/* Glowing Aura */}
+               <View className="absolute -inset-4 rounded-full bg-indigo-500/20 blur-xl" />
+               <View className="h-20 w-20 items-center justify-center rounded-[28px] bg-indigo-600 border-2 border-indigo-400 shadow-2xl shadow-indigo-500/50">
+                 <Crown size={32} color="white" strokeWidth={2.5} />
+               </View>
+               <View className="absolute -top-3 -right-2 h-8 w-8 rounded-full bg-amber-500 items-center justify-center border-4 border-slate-950 shadow-lg">
+                 <Text className="text-xs font-main-bold text-white">1</Text>
+               </View>
+            </View>
+            <Text numberOfLines={1} className="text-white font-main-bold text-sm tracking-tight">{topThree[0].name}</Text>
+            <Text className="text-indigo-400 font-main-bold text-xs mt-1">{topThree[0].score.toLocaleString()}</Text>
+          </View>
+
+          {/* Rank 3 */}
+          <View className="items-center w-[30%]">
+            <View className="relative mb-3">
+               <View className="h-16 w-16 items-center justify-center rounded-[22px] bg-slate-800 border-2 border-orange-500/30 shadow-2xl">
+                 <Text className="text-2xl">🥉</Text>
+               </View>
+               <View className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-orange-500 items-center justify-center border-2 border-slate-950">
+                 <Text className="text-[10px] font-main-bold text-white">3</Text>
+               </View>
+            </View>
+            <Text numberOfLines={1} className="text-white font-main-bold text-xs">{topThree[2].name}</Text>
+            <Text className="text-slate-500 font-main-bold text-[10px] mt-1">{topThree[2].score.toLocaleString()}</Text>
+          </View>
         </View>
-      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {PLAYERS.map((player, index) => {
-          const isWinner = index === 0;
+        {/* ================= 📊 REMAINING LIST ================= */}
+        <View className="space-y-3">
+          <Text className="px-2 text-[10px] font-main-bold text-slate-500 uppercase tracking-[2px] mb-2">
+            Regional Contenders
+          </Text>
 
-          return (
+          {remainingPlayers.map((player, index) => (
             <TouchableOpacity
               key={player.id}
               activeOpacity={0.8}
-              className={`
-                mb-4 flex-row items-center rounded-[28px] p-5
-                ${isWinner ? 'bg-indigo-600/20 border border-indigo-500/40' : 'bg-white/[0.03] border border-white/10'}
-              `}
-              style={isWinner ? {
-                shadowColor: "#6366f1",
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.3,
-                shadowRadius: 20,
-                elevation: 10
-              } : {}}
+              className="flex-row items-center rounded-[24px] bg-slate-900/50 p-4 border border-white/5"
             >
-              {/* 2. Rank Badge */}
-              <View 
-                className={`w-12 h-12 items-center justify-center rounded-2xl mr-4
-                  ${index === 0 ? 'bg-indigo-500' : index === 1 ? 'bg-slate-500/50' : index === 2 ? 'bg-orange-500/50' : 'bg-white/5'}
-                `}
-              >
-                <Text 
-                   style={{ fontSize: rf(1.8) }} 
-                   // Swapped font-black for font-main-bold
-                   className={`font-main-bold ${index < 3 ? 'text-white' : 'text-white/30'}`}
-                >
-                  {index + 1}
-                </Text>
+              {/* Rank Index */}
+              <View className="w-10 h-10 items-center justify-center rounded-xl bg-slate-800 mr-4">
+                <Text className="text-slate-500 font-main-bold text-xs">{index + 4}</Text>
               </View>
 
-              {/* 3. Player Identity */}
+              {/* Player Info */}
               <View className="flex-1">
-                <Text 
-                  style={{ fontSize: rf(2) }} 
-                  // Swapped font-bold for font-main-bold
-                  className={`font-main-bold tracking-tight ${isWinner ? 'text-white' : 'text-white/80'}`}
-                >
-                  {player.name}
-                </Text>
-                <Text 
-                  style={{ fontSize: rf(1) }} 
-                  // Swapped font-black for font-main-bold
-                  className="text-indigo-400/50 font-main-bold uppercase tracking-widest mt-1"
-                >
-                  Active Operative
-                </Text>
+                <Text className="text-white font-main-bold text-sm">{player.name}</Text>
+                <View className="flex-row items-center mt-1">
+                  <TrendingUp size={10} color="#10b981" />
+                  <Text className="text-[10px] text-emerald-500 font-main-md ml-1">+12 pos</Text>
+                </View>
               </View>
 
-              {/* 4. Score with Glass Label */}
-              <View className="items-end">
-                <Text 
-                  style={{ fontSize: rf(2.2) }} 
-                  // Swapped font-black for font-main-bold + italic
-                  className="text-white font-main-bold "
-                >
+              {/* Score */}
+              <View className="items-end mr-2">
+                <Text className="text-white font-main-bold text-sm">
                   {player.score.toLocaleString()}
                 </Text>
-                <Text 
-                  style={{ fontSize: rf(0.8) }} 
-                  // Swapped font-bold for font-main-bold
-                  className="text-white/20 uppercase font-main-bold tracking-tighter"
-                >
-                  Points Earned
+                <Text className="text-[9px] text-slate-600 font-main-bold uppercase tracking-tighter">
+                  PTS
                 </Text>
               </View>
-
-              {/* 5. Winner Shine Effect */}
-              {isWinner && (
-                <View className="absolute top-0 right-0 left-0 h-[1px] bg-white/20 rounded-full mx-8" />
-              )}
+              
+              <ChevronRight size={14} color="#334155" />
             </TouchableOpacity>
-          );
-        })}
+          ))}
+        </View>
+
+        {/* ================= 👤 CURRENT USER POSITION (STICKY FEEL) ================= */}
+        <View className="mt-10 rounded-[32px] bg-indigo-600/10 border border-indigo-500/20 p-6 flex-row items-center">
+             <View className="h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600">
+                <Text className="text-white font-main-bold text-lg">14</Text>
+             </View>
+             <View className="ml-4 flex-1">
+                <Text className="text-white font-main-bold text-base">You (Alex Rivera)</Text>
+                <Text className="text-indigo-400 text-xs font-main-md">Top 5% of this season</Text>
+             </View>
+             <TouchableOpacity className="bg-white/10 px-4 py-2 rounded-xl">
+                <Text className="text-white text-[10px] font-main-bold uppercase tracking-wider">Details</Text>
+             </TouchableOpacity>
+        </View>
+
       </ScrollView>
-    </View>
+    </ScreenWrapper>
   );
 }

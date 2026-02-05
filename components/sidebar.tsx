@@ -1,10 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Pressable,
-  Modal,
-  useWindowDimensions,
-} from "react-native";
+import { View, Pressable, Modal, useWindowDimensions, TouchableOpacity } from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -15,8 +10,20 @@ import Animated, {
   withRepeat,
   withTiming,
   useAnimatedScrollHandler,
+  FadeInDown,
 } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import { 
+  Flashlight, 
+  User, 
+  Users, 
+  Trophy, 
+  Medal, 
+  BarChart3, 
+  Bug, 
+  HelpCircle, 
+  X, 
+  ChevronDown 
+} from "lucide-react-native";
 import { rf } from "@/utils/responsive";
 import { Text } from "./Text";
 
@@ -24,10 +31,9 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
   const { width, height } = useWindowDimensions();
   const [canScroll, setCanScroll] = useState(false);
 
-  // Responsive Constants
   const isTablet = width > 768;
-  const CARD_WIDTH = isTablet ? 550 : width * 0.94;
-  const CARD_HEIGHT = isTablet ? 650 : height * 0.75;
+  const CARD_WIDTH = isTablet ? 550 : width * 0.92;
+  const CARD_HEIGHT = isTablet ? 650 : height * 0.70;
 
   const showIndicator = useSharedValue(1);
   const arrowY = useSharedValue(0);
@@ -52,100 +58,105 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
   });
 
   const menuItems = [
-    { label: "Earn", icon: "flash", path: "/earn" },
-    { label: "Profile", icon: "person", path: "/profile" },
-    { label: "Friends", icon: "people", path: "/friends" },
-    { label: "Ranks", icon: "trophy", path: "/leaderboard" },
-    { label: "Awards", icon: "medal", path: "/award" },
-    { label: "Stats", icon: "bar-chart", path: "/stats" },
-    { label: "Bugs", icon: "bug", path: "/bug" },
-    { label: "Help", icon: "chatbubbles", path: "/support" },
+    { label: "Earn", icon: Flashlight, path: "/earn" },
+    { label: "Profile", icon: User, path: "/profile" },
+    { label: "Friends", icon: Users, path: "/friends" },
+    { label: "Ranks", icon: Trophy, path: "/leaderboard" },
+    { label: "Awards", icon: Medal, path: "/award" },
+    { label: "Stats", icon: BarChart3, path: "/stats" },
+    { label: "Bugs", icon: Bug, path: "/bug" },
+    { label: "Help", icon: HelpCircle, path: "/support" },
   ];
 
   return (
     <Modal transparent visible={visible} animationType="none">
       <View className="flex-1 items-center justify-center">
-        {/* Obsidian Backdrop */}
+        {/* Deep Obsidian Backdrop */}
         <Animated.View
           entering={FadeIn.duration(300)}
           exiting={FadeOut.duration(200)}
-          className="absolute inset-0 bg-[#020205e6]"
+          className="absolute inset-0 bg-slate-950/95"
         />
         <Pressable className="absolute inset-0" onPress={onClose} />
 
-        {/* Glossy Main Card */}
+        {/* Glossy Navigation Terminal */}
         <Animated.View
-          entering={ZoomIn.springify().damping(20).mass(0.8)}
+          entering={ZoomIn.springify().damping(18).mass(0.9)}
           exiting={ZoomOut.duration(150)}
           style={{ width: CARD_WIDTH, maxHeight: CARD_HEIGHT }}
-          className="bg-[#08080a] rounded-[40px] overflow-hidden border-t-[1.5px] border-l-[1px] border-white/20 shadow-2xl shadow-indigo-500/20"
+          className="bg-slate-900 rounded-[48px] overflow-hidden border border-white/10 shadow-2xl shadow-indigo-500/20"
         >
-          {/* Header */}
-          <View className="px-8 py-6 border-b border-white/5 flex-row items-center justify-between">
-            <View className="flex-row items-center">
-              <View className="w-1.5 h-6 bg-indigo-500 rounded-full mr-3 shadow-lg shadow-indigo-500" />
-              <Text style={{ fontSize: rf(2) }} className="text-white font-black uppercase  tracking-tighter">
+          {/* Header Section */}
+          <View className="px-8 py-7 border-b border-white/5 flex-row items-center justify-between bg-slate-900/50">
+            <View>
+              <Text style={{ fontSize: rf(1.8) }} className="text-white font-main-bold uppercase tracking-[2px]">
                 Navigation
               </Text>
+              <Text className="text-[10px] text-indigo-400 font-main-md uppercase tracking-widest mt-0.5">
+                Main Terminal
+              </Text>
             </View>
-            <Pressable
+            <TouchableOpacity
               onPress={onClose}
-              className="bg-white/5 active:bg-indigo-500/20 rounded-2xl p-2.5 border border-white/10"
+              className="bg-slate-800 active:bg-indigo-500 rounded-2xl p-3 border border-white/5"
             >
-              <Ionicons name="close-outline" size={24} color="#818cf8" />
-            </Pressable>
+              <X size={20} color="white" />
+            </TouchableOpacity>
           </View>
 
-          {/* Grid Scroll Area */}
+          {/* Staggered Grid Menu */}
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
             onScroll={scrollHandler}
             onContentSizeChange={(_, h) => setCanScroll(h > CARD_HEIGHT - 100)}
-            contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+            contentContainerClassName="p-6 pb-12"
           >
             <View className="flex-row flex-wrap justify-between">
               {menuItems.map((item, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => {
-                    router.push(item.path);
-                    onClose();
-                  }}
-                  // Metamorphic Tile Styling
-                  className="w-[30%] aspect-square bg-white/[0.03] active:bg-indigo-500/10 rounded-[28px] mb-5 items-center justify-center border-t border-l border-white/10"
-                  style={({ pressed }) => [
-                    { transform: [{ scale: pressed ? 0.92 : 1 }] },
-                  ]}
+                <Animated.View 
+                  key={index} 
+                  entering={FadeInDown.delay(index * 50).springify().damping(20)}
+                  className="w-[30%] aspect-square mb-5"
                 >
-                  {/* Icon Container with Subtle Glow */}
-                  <View className="bg-indigo-500/10 p-3 rounded-2xl mb-2 border border-indigo-500/20">
-                    <Ionicons
-                      name={item.icon as any}
-                      size={isTablet ? 32 : 26}
-                      color="#818cf8"
-                    />
-                  </View>
-                  <Text
-                    numberOfLines={1}
-                    className="text-white/80 text-[10px] font-black uppercase tracking-widest text-center px-1"
+                  <Pressable
+                    onPress={() => {
+                      router.push(item.path);
+                      onClose();
+                    }}
+                    className="flex-1 bg-slate-800/40 active:bg-indigo-600 rounded-[32px] items-center justify-center border border-white/5"
                   >
-                    {item.label}
-                  </Text>
-                </Pressable>
+                    <View className="mb-2">
+                      <item.icon
+                        size={isTablet ? 32 : 24}
+                        color="white"
+                        strokeWidth={2}
+                      />
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      className="text-white text-[9px] font-main-bold uppercase tracking-widest text-center px-1"
+                    >
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
               ))}
+              
+              {/* Spacer for grid alignment if items are not multiple of 3 */}
+              <View className="w-[30%] aspect-square mb-5 invisible" />
             </View>
           </Animated.ScrollView>
 
-          {/* Low GPU Indicator */}
+          {/* Scroll Hint */}
           {canScroll && (
             <Animated.View
               pointerEvents="none"
               style={arrowStyle}
               className="absolute bottom-6 w-full items-center"
             >
-              <View className="bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-500/30">
-                 <Ionicons name="chevron-down" size={16} color="#818cf8" />
+              <View className="bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-500/30 blur-sm">
+                 <ChevronDown size={16} color="#818cf8" />
               </View>
             </Animated.View>
           )}

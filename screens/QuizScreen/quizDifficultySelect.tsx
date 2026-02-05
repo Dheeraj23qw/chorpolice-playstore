@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useState } from "react";
-import { View, ScrollView } from "react-native";
+import { View, ScrollView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useDispatch } from "react-redux";
 
@@ -31,7 +31,7 @@ const QuizDifficultyScreen = () => {
       dispatch(setDifficulty(option));
       setSelected(option);
     },
-    [dispatch],
+    [dispatch]
   );
 
   const handleBegin = useCallback(() => {
@@ -46,57 +46,93 @@ const QuizDifficultyScreen = () => {
   }, [selected, isReady, isNavigating, router]);
 
   return (
-    <View className="flex-1 bg-[#09090b]">
-      <SafeBackButton />
+    <View className="flex-1 bg-[#020617]"> 
+      {/* --- 🌌 Ambient Background Art --- */}
+      {/* Top Left Glow */}
+      <View 
+        style={{ width: wp(100), height: hp(40), top: -hp(10), left: -wp(20) }}
+        className="absolute bg-indigo-600/10 blur-[120px] rounded-full" 
+        pointerEvents="none" 
+      />
+      {/* Center Right Glow */}
+      <View 
+        style={{ width: wp(80), height: hp(30), top: hp(30), right: -wp(30) }}
+        className="absolute bg-blue-500/5 blur-[100px] rounded-full" 
+        pointerEvents="none" 
+      />
+
+      {/* --- 🔙 Navigation --- */}
+      <View className="z-50">
+        <SafeBackButton />
+      </View>
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: hp(12),
-          paddingBottom: hp(20),
-          paddingHorizontal: wp(8),
+          paddingTop: hp(15), // Responsive Top Spacing
+          paddingBottom: hp(25), // Extra space for floating button
+          paddingHorizontal: wp(7),
         }}
         showsVerticalScrollIndicator={false}
+        bounces={true}
       >
+        {/* --- 🏷️ Header Section --- */}
         <View style={{ marginBottom: hp(5) }}>
-          <Text
-            style={{ fontSize: rf(1.8) }}
-            // Swapped font-bold for font-main-bold
-            className="text-indigo-400 font-main-bold tracking-widest uppercase mb-2"
-          >
-            Challenge Level
-          </Text>
+          <View className="flex-row items-center mb-4">
+            <View className="h-[1px] w-10 bg-indigo-500/50 mr-3" />
+            <Text
+              style={{ fontSize: rf(1.5) }}
+              className="text-indigo-400 font-main-bold tracking-[4px] uppercase"
+            >
+              Mode Selection
+            </Text>
+          </View>
 
           <Text
-            style={{ fontSize: rf(5.5), lineHeight: hp(6.5) }}
-            // Swapped font-black for font-main-bold
-            className="font-main-bold text-white"
+            style={{ fontSize: rf(5.2), lineHeight: rf(6) }}
+            className="font-main-bold text-white tracking-tighter"
           >
-            Select Your{"\n"}
-            <Text className="text-indigo-500 font-main-bold">
-              Difficulty
-            </Text>
+            Choose your{"\n"}
+            <Text className="text-indigo-500">Battlefield</Text>
+          </Text>
+          
+          <Text 
+            style={{ fontSize: rf(1.7) }}
+            className="text-slate-400 font-main-md mt-4 leading-6 opacity-80"
+          >
+            Every level has its own rewards and challenges. Are you ready?
           </Text>
         </View>
 
-        {DIFFICULTY_OPTIONS.map((option) => (
-          <DifficultyCard
-            key={option}
-            option={option}
-            selected={selected === option}
-            onSelect={handleSelect}
-          />
-        ))}
+        {/* --- 🗂️ Difficulty Grid/List --- */}
+        <View style={{ gap: hp(2) }}>
+          {DIFFICULTY_OPTIONS.map((option) => (
+            <DifficultyCard
+              key={option}
+              option={option}
+              selected={selected === option}
+              onSelect={handleSelect}
+            />
+          ))}
+        </View>
       </ScrollView>
 
+      {/* --- 🚀 Fixed Bottom Button --- */}
       {selected && (
         <View
-          style={{ bottom: hp(5), left: wp(8), right: wp(8) }}
-          className="absolute"
+          style={{ 
+            bottom: hp(5), 
+            left: wp(7), 
+            right: wp(7),
+            padding: 4,
+          }}
+          className="absolute rounded-[36px] bg-[#020617]/40 backdrop-blur-xl border border-white/5"
         >
-          <StartButton
-            label="Begin Journey"
-            onPress={handleBegin}
-          />
+          <View className="shadow-2xl shadow-indigo-500/40">
+             <StartButton
+               label="Initiate Quiz"
+               onPress={handleBegin}
+             />
+          </View>
         </View>
       )}
     </View>

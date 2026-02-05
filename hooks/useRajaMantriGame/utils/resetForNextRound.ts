@@ -30,16 +30,20 @@ export const resetForNextRound = (
     React.SetStateAction<"image" | "video" | "gif" | null>
   >,
   selectedRounds: number,
+   setPopupIndex: React.Dispatch<React.SetStateAction<number | null>>,
+
+
 ) => {
   if (round == selectedRounds) {
     AudioEngine.play("next", "ui");
     calculateTotalScores();
     setTimeout(() => {
-      router.push("/chorPoliceQuiz");
+     router.replace("/chorPoliceQuiz");
     }, 3000);
 
     return;
   } else {
+    setPopupIndex(null);
     setRound((count) => count + 1);
     setFlipAnims(initialFlipAnims.map(() => new Animated.Value(0)));
     setFlippedStates(initialFlippedStates);

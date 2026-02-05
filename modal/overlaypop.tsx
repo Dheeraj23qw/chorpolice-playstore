@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, memo } from "react";
 import {
   View,
   Image,
   Modal,
   TouchableWithoutFeedback,
   Animated,
-  StatusBar,
   Easing,
 } from "react-native";
 import { data } from "@/constants/popupData";
@@ -15,22 +14,27 @@ import { OverlayPopUpProps } from "@/types/models/OverlayPop";
 import { Text } from "@/components/Text";
 import { hp, wp, rf } from "@/utils/responsive";
 
-const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
+// Added onStateChange to notify parent to hide/show game cards
+interface ExtendedProps extends OverlayPopUpProps {
+  onStateChange?: (isVisible: boolean) => void;
+}
+
+const OverlayPopUp: React.FC<ExtendedProps> = ({
   index,
   policeIndex,
   thiefIndex,
   kingIndex,
-  displayDuration = 3000, 
-  contentType = "default",
-  customMessage,
+  displayDuration = 3000,
+  onStateChange,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
-  const [showTapToClose, setShowTapToClose] = useState(false);
-
+  
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const rayRotation = useRef(new Animated.Value(0)).current;
+  
+  const autoCloseTimer = useRef<number | null>(null);
 
   const playerNames = useSelector(selectPlayerNames).map((p) => p.name);
 
@@ -38,31 +42,51 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
   const policeName = policeIndex !== null ? playerNames[policeIndex] : "Police";
   const thiefName = thiefIndex !== null ? playerNames[thiefIndex] : "Thief";
 
+  const closeModal = useCallback(() => {
+    if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
+
+    Animated.timing(opacityAnim, {
+      toValue: 0,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
+      setModalData(null);
+      // Notify parent that modal is gone (Show cards again)
+      if (onStateChange) onStateChange(false);
+    });
+  }, [opacityAnim, onStateChange]);
+
   useEffect(() => {
     if (index != null && index >= 1 && index <= data.length) {
       const selectedItem = data[index - 1];
       let title = "";
-      let accentColor = "#FFD700"; // Default Gold
+      let accentColor = "#FFD700";
 
-      // Logic for Royal Titles
       switch (index) {
-    
-        case 2: 
-          title = `CHIEF\n${policeName.toUpperCase()}`; 
-          accentColor = "#3B82F6"; 
+        case 1:
+          title = `THE MIGHTY\n${kingName.toUpperCase()}`;
+          accentColor = "#FACC15";
           break;
-        case 3: 
-          title = `THE ELUSIVE\n${thiefName.toUpperCase()}`; 
-          accentColor = "#EF4444"; 
+        case 2:
+          title = `THE CHIEF\n${policeName.toUpperCase()}`;
+          accentColor = "#3B82F6";
           break;
-        default: 
-          title = "ROUND COMMENCING";
+        case 3:
+          title = `THE THIEF\n${thiefName.toUpperCase()}`;
+          accentColor = "#EF4444";
+          break;
+        default:
+          title = "GET READY";
+          accentColor = "#A855F7";
       }
 
       setModalData({ ...selectedItem, roleTitle: title, theme: accentColor });
       setModalVisible(true);
+      
+      // Notify parent that modal is active (Hide cards)
+      if (onStateChange) onStateChange(true);
 
-      // Animation: Majestic Scale + Slow Rotation of rays
       Animated.parallel([
         Animated.timing(opacityAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
         Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
@@ -71,105 +95,109 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
         )
       ]).start();
 
-      setTimeout(() => setShowTapToClose(true), displayDuration);
+      autoCloseTimer.current = setTimeout(() => {
+        closeModal();
+      }, displayDuration);
     }
-  }, [index]);
 
-  const closeModal = () => {
-    Animated.timing(opacityAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => setModalVisible(false));
-  };
+    return () => {
+      if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
+    };
+  }, [index, kingName, policeName, thiefName, closeModal, displayDuration, onStateChange]);
 
   if (!modalData) return null;
 
   const spin = rayRotation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg']
+    outputRange: ["0deg", "360deg"],
   });
 
   return (
     <Modal visible={modalVisible} transparent animationType="none">
-      <TouchableWithoutFeedback onPress={() => showTapToClose && closeModal()}>
-        
-        {/* SOLID DARK OVERLAY - Kills the BG transparency for total focus */}
-        <Animated.View style={{ opacity: opacityAnim }} className="flex-1 bg-[#050508] justify-center items-center">
-          
-          {/* 1. THE AMBIENT GLOW (God Rays / Aura) */}
-          <Animated.View 
-            style={{ 
+      <TouchableWithoutFeedback onPress={closeModal}>
+        <Animated.View 
+          style={{ opacity: opacityAnim }} 
+          className="flex-1 bg-[#050508] justify-center items-center"
+        >
+          {/* Background Rays */}
+          <Animated.View
+            style={{
               transform: [{ rotate: spin }],
-              position: 'absolute',
-              width: wp(150),
-              height: wp(150),
-              opacity: 0.2
+              position: "absolute",
+              width: wp(140),
+              height: wp(140),
+              opacity: 0.1,
             }}
           >
-            {[...Array(8)].map((_, i) => (
-              <View 
-                key={i} 
-                style={{ 
-                  position: 'absolute', 
-                  top: '50%', left: '50%',
-                  width: 2, height: hp(100),
+            {[...Array(12)].map((_, i) => (
+              <View
+                key={i}
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  width: 1,
+                  height: hp(100),
                   backgroundColor: modalData.theme,
-                  transform: [{ rotate: `${i * 45}deg` }, { translateY: -hp(50) }]
-                }} 
+                  transform: [{ rotate: `${i * 30}deg` }, { translateY: -hp(50) }],
+                }}
               />
             ))}
           </Animated.View>
 
-          {/* 2. THE MAJESTIC CONTENT */}
-          <Animated.View 
+          {/* Content Card */}
+          <Animated.View
             style={{ transform: [{ scale: scaleAnim }], width: wp(85) }}
             className="items-center"
           >
-            {/* Crown/Icon Label */}
-            <Text className="text-white/40 font-main-bold uppercase tracking-[8px] text-[10px] mb-2">
-              Identity Confirmed
+            <Text className="text-white/20 font-main-bold uppercase tracking-[8px] text-[9px] mb-4">
+              Identity Revealed
             </Text>
 
-            {/* Main Role Title */}
-            <Text 
-               style={{ color: modalData.theme, textShadowColor: modalData.theme, textShadowRadius: 15 }}
-               className="text-center font-main-bold text-4xl mb-6 tracking-tighter leading-10"
+            <Text
+              style={{
+                color: modalData.theme,
+                textShadowColor: modalData.theme,
+                textShadowRadius: 15,
+                fontSize: rf(4.5),
+              }}
+              className="text-center font-main-bold mb-8 tracking-tighter leading-[50px]"
             >
               {modalData.roleTitle}
             </Text>
 
-            {/* Character Spotlight */}
             <View className="relative items-center justify-center">
-              <View 
-                style={{ backgroundColor: modalData.theme }} 
-                className="absolute w-64 h-64 rounded-full opacity-10 blur-3xl" 
+              <View
+                style={{ backgroundColor: modalData.theme }}
+                className="absolute w-64 h-64 rounded-full opacity-[0.08] blur-3xl"
               />
               <Image
                 source={modalData.image}
-                style={{ width: wp(80), height: hp(38) }}
+                style={{ width: wp(85), height: hp(38) }}
                 resizeMode="contain"
               />
             </View>
 
-            {/* Points Reward Pill */}
             {modalData.point && (
-              <View style={{ borderColor: modalData.theme }} className="mt-4 border-b-2 border-t-2 py-2 px-10">
-                <Text style={{ color: modalData.theme }} className="font-main-bold text-3xl tracking-widest">
+              <View 
+                style={{ borderColor: `${modalData.theme}20` }} 
+                className="mt-8 py-3 px-14"
+              >
+                <Text style={{ color: modalData.theme }} className="font-main-bold text-2xl tracking-[4px]">
                   {modalData.point}
                 </Text>
               </View>
             )}
 
-            {/* Philosophical Message */}
-            <Text className="text-slate-400 font-main-md  text-center mt-8 px-6 leading-6">
+            <Text className="text-slate-500 font-main-md text-center mt-10 px-8 text-xl leading-6 ">
               "{modalData.message}"
             </Text>
 
-            {/* Interaction Hint */}
-            {showTapToClose && (
-              <View className="mt-12">
-                <Text className="text-white/20 font-main-bold uppercase tracking-[5px] text-[10px]">
-                  — Proceed to Round —
-                </Text>
-              </View>
-            )}
+            <View className="mt-14 opacity-30">
+              <Text className="text-white font-main-bold uppercase tracking-[3px] text-[8px]">
+                Tap anywhere to continue
+              </Text>
+            </View>
           </Animated.View>
         </Animated.View>
       </TouchableWithoutFeedback>
@@ -177,4 +205,4 @@ const OverlayPopUp: React.FC<OverlayPopUpProps> = ({
   );
 };
 
-export default OverlayPopUp;
+export default memo(OverlayPopUp);

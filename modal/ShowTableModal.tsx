@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import {
   Modal,
   View,
@@ -6,7 +6,6 @@ import {
   StatusBar,
   TouchableOpacity,
   Dimensions,
-  ScrollView,
 } from "react-native";
 import Animated, {
   FadeInUp,
@@ -17,7 +16,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { AudioEngine } from "@/audio/audioEngine";
 import { Text } from "@/components/Text";
 import { rf, hp } from "@/utils/responsive";
 
@@ -51,20 +49,12 @@ const ScoreTable: React.FC<Props> = ({
     (state: RootState) => state.player.gameRound
   );
 
-  // const [isModalVisible, setIsModalVisible] = useState(popupTable);
 
   const scrollY = useSharedValue(0);
 const scrollRef = useRef<Animated.ScrollView>(null);
   const autoScrollRef = useRef<number | null>(null);
 
-  // useEffect(() => {
-  //   if (popupTable) {
-  //     AudioEngine.play("select", "ui");
-  //   }
-  //   setIsModalVisible(popupTable);
-  // }, [popupTable]);
 
-  // const handleClose = () => setIsModalVisible(false);
 
   /* ---------------- Score Data ---------------- */
 

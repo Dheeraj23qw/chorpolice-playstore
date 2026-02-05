@@ -1,6 +1,12 @@
 import React, { memo } from "react";
 import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring, 
+  withSequence 
+} from "react-native-reanimated";
 import { hp, wp, rf } from "@/utils/responsive";
 import { Text } from "../Text";
 
@@ -10,32 +16,61 @@ type Props = {
 };
 
 const StartButton = ({ label, onPress }: Props) => {
+  const scale = useSharedValue(1);
+
+  // Reanimated-safe press handler
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
+
   return (
-    <View className="shadow-2xl shadow-indigo-500/60">
+    <View className="shadow-2xl shadow-indigo-500/40">
       <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         onPress={onPress}
-        style={{ height: hp(7.5) }}
-        className="active:scale-[0.97] active:opacity-90 transition-all overflow-hidden rounded-2xl bg-indigo-600 border-b-4 border-indigo-800"
       >
-        <View className="flex-1 px-8 flex-row items-center justify-center relative">
-          {/* Shine Effect */}
-          <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/30" />
+        <Animated.View
+          style={[{ height: hp(7.8) }, animatedStyle]}
+          className="overflow-hidden rounded-3xl bg-indigo-600 justify-center items-center"
+        >
+          {/* --- ✨ Internal Lighting Effects --- */}
+          {/* Top Edge Highlight */}
+          <View className="absolute top-0 left-0 right-0 h-[1px] bg-white/40" />
+          
+          {/* Subtle Radial Glow */}
+          <View 
+            className="absolute -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" 
+            pointerEvents="none" 
+          />
 
-          <Text
-            style={{ fontSize: rf(1.8) }}
-            // Changed 'font-black' to 'font-main-bold' for the Outfit-Bold shield
-            className="text-white font-main-bold tracking-[4px] uppercase"
-          >
-            {label}
-          </Text>
+          <View className="flex-row items-center justify-center px-10">
+            <Text
+              style={{ fontSize: rf(1.7) }}
+              className="text-white font-main-bold tracking-[5px] uppercase"
+            >
+              {label}
+            </Text>
 
-          <View
-            style={{ width: wp(8), height: wp(8) }}
-            className="ml-4 bg-indigo-500 rounded-full items-center justify-center border border-white/20"
-          >
-            <Ionicons name="chevron-forward" size={rf(2)} color="white" />
+            <View
+              style={{ width: wp(9), height: wp(9) }}
+              className="ml-5 bg-white/15 rounded-2xl items-center justify-center border border-white/20"
+            >
+              <Ionicons name="arrow-forward" size={rf(2.2)} color="white" />
+            </View>
           </View>
-        </View>
+
+          {/* Bottom Shadow Overlay for Depth */}
+          <View className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/20" />
+        </Animated.View>
       </Pressable>
     </View>
   );

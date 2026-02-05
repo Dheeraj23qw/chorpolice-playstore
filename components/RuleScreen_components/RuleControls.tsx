@@ -1,5 +1,6 @@
-import React from "react";
+import React, { memo } from "react";
 import { View, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,12 +17,7 @@ interface Props {
   onBack: () => void;
 }
 
-export default function RulesControls({
-  step,
-  total,
-  onNext,
-  onBack,
-}: Props) {
+const RulesControls = memo(({ step, total, onNext, onBack }: Props) => {
   const nextScale = useSharedValue(1);
   const backScale = useSharedValue(1);
 
@@ -35,40 +31,45 @@ export default function RulesControls({
 
   const isLast = step === total - 1;
 
+  // Optimized Press Handler with Haptics
+  const handlePress = (type: "next" | "back") => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (type === "next") onNext();
+    else onBack();
+  };
+
   return (
-    <View className="flex-row space-x-4 pb-6">
+    <View className="flex-row items-center gap-x-4 pb-8">
       {step > 0 && (
         <AnimatedPressable
           style={backStyle}
-          onPressIn={() => (backScale.value = withSpring(0.92))}
+          onPressIn={() => (backScale.value = withSpring(0.94))}
           onPressOut={() => (backScale.value = withSpring(1))}
-          onPress={onBack}
-          className="
-            flex-1 h-16 
-            items-center justify-center 
-            rounded-2xl 
-            border border-white/20
-          "
+          onPress={() => handlePress("back")}
+          className="flex-1 h-14 items-center justify-center rounded-[20px] bg-white/5 border border-white/10"
         >
-          {/* Swapped font-bold for font-main-bold */}
-          <Text className="text-white font-main-bold text-lg">Back</Text>
+          <Text className="text-slate-400 font-main-bold text-base">Back</Text>
         </AnimatedPressable>
       )}
 
       <AnimatedPressable
         style={nextStyle}
-        onPressIn={() => (nextScale.value = withSpring(0.92))}
+        onPressIn={() => (nextScale.value = withSpring(0.96))}
         onPressOut={() => (nextScale.value = withSpring(1))}
-        onPress={onNext}
-        className={`flex-[2] h-16 items-center justify-center rounded-2xl shadow-lg ${
-          isLast ? "bg-green-500" : "bg-amber-500"
+        onPress={() => handlePress("next")}
+        className={`flex-[2.5] h-14 items-center justify-center rounded-[20px] shadow-xl ${
+          isLast ? "bg-emerald-500 shadow-emerald-500/30" : "bg-indigo-600 shadow-indigo-500/40"
         }`}
       >
-        {/* Swapped font-black for font-main-bold */}
-        <Text className="text-[#0F0F1E] font-main-bold text-lg uppercase tracking-tight">
-          {isLast ? "Start Game" : "Next Step"}
+        <Text className="text-white font-main-bold text-[15px] uppercase tracking-[1px]">
+          {isLast ? "Finish & Start" : "Continue"}
         </Text>
+        
+        {/* Subtle Metamorphic Shine */}
+        <View className="absolute top-0 left-0 right-0 h-[40%] bg-white/10 rounded-t-[20px]" />
       </AnimatedPressable>
     </View>
   );
-}
+});
+
+export default RulesControls;

@@ -1,5 +1,5 @@
 import React from "react";
-import { View,  ScrollView, useWindowDimensions } from "react-native";
+import { View, ScrollView, useWindowDimensions } from "react-native";
 import {
   Trophy,
   Lock,
@@ -9,7 +9,10 @@ import {
   Shield,
   Coins,
   Swords,
-   UserPlus, Share2, Flame, Gift
+  UserPlus,
+  Share2,
+  Flame,
+  Gift,
 } from "lucide-react-native";
 
 import ScreenWrapper from "@/components/screenwrapper";
@@ -30,226 +33,99 @@ type Achievement = {
 
 const ICON_SIZE = 26;
 
-/* ---------------- Career Achievements ---------------- */
-
+/* ---------------- Data Mockups ---------------- */
 const careerAchievements: Achievement[] = [
-  {
-    id: 1,
-    title: "Apex Predator",
-    desc: "Eliminate 50 enemies in one round",
-    progress: 100,
-    status: "unlocked",
-    rarity: "Legendary",
-    icon: <Zap size={ICON_SIZE} color="#eab308" />,
-  },
-  {
-    id: 2,
-    title: "Silent Ghost",
-    desc: "Complete 'Sector 7' without detection",
-    progress: 75,
-    status: "progress",
-    rarity: "Epic",
-    icon: <Shield size={ICON_SIZE} color="#8b5cf6" />,
-  },
-  {
-    id: 3,
-    title: "Master Architect",
-    desc: "Build a base with 500+ structures",
-    progress: 0,
-    status: "locked",
-    rarity: "Rare",
-    icon: <Target size={ICON_SIZE} color="#3b82f6" />,
-  },
+  { id: 1, title: "Apex Predator", desc: "Eliminate 50 enemies in one round", progress: 100, status: "unlocked", rarity: "Legendary", icon: <Zap size={ICON_SIZE} color="#fbbf24" /> },
+  { id: 2, title: "Silent Ghost", desc: "Complete 'Sector 7' without detection", progress: 75, status: "progress", rarity: "Epic", icon: <Shield size={ICON_SIZE} color="#a78bfa" /> },
+  { id: 3, title: "Master Architect", desc: "Build a base with 500+ structures", progress: 0, status: "locked", rarity: "Rare", icon: <Target size={ICON_SIZE} color="#60a5fa" /> },
 ];
-
-/* ---------------- Daily & Streak Challenges ---------------- */
 
 const dailyChallenges: Achievement[] = [
-  {
-    id: 101,
-    title: "Win Streak",
-    desc: "Win 3 matches in a row",
-    progress: 66,
-    status: "progress",
-    rarity: "Common",
-    icon: <Flame size={ICON_SIZE} color="#f97316" />,
-  },
-  {
-    id: 102,
-    title: "Coin Hunter",
-    desc: "Collect 500 coins today",
-    progress: 40,
-    status: "progress",
-    rarity: "Common",
-    icon: <Coins size={ICON_SIZE} color="#facc15" />,
-  },
-  {
-    id: 103,
-    title: "Match Grinder",
-    desc: "Play 5 matches today",
-    progress: 100,
-    status: "unlocked",
-    rarity: "Common",
-    icon: <Swords size={ICON_SIZE} color="#6366f1" />,
-  },
-  {
-    id: 104,
-    title: "Perfect Run",
-    desc: "Win without losing a round",
-    progress: 0,
-    status: "locked",
-    rarity: "Rare",
-    icon: <Star size={ICON_SIZE} color="#eab308" />,
-  },
+  { id: 101, title: "Win Streak", desc: "Win 3 matches in a row", progress: 66, status: "progress", rarity: "Common", icon: <Flame size={ICON_SIZE} color="#fb923c" /> },
+  { id: 102, title: "Coin Hunter", desc: "Collect 500 coins today", progress: 40, status: "progress", rarity: "Common", icon: <Coins size={ICON_SIZE} color="#fde047" /> },
+  { id: 103, title: "Match Grinder", desc: "Play 5 matches today", progress: 100, status: "unlocked", rarity: "Common", icon: <Swords size={ICON_SIZE} color="#818cf8" /> },
 ];
-
-/* ---------------- Engagement Boost Awards ---------------- */
-
-const engagementAwards: Achievement[] = [
-  {
-    id: 401,
-    title: "Invite a Friend",
-    desc: "Invite your first friend to the game",
-    progress: 100,
-    status: "unlocked",
-    rarity: "Common",
-    icon: <UserPlus size={ICON_SIZE} color="#22c55e" />,
-  },
-  {
-    id: 402,
-    title: "Share the Game",
-    desc: "Share the game with 5 friends",
-    progress: 40,
-    status: "progress",
-    rarity: "Rare",
-    icon: <Share2 size={ICON_SIZE} color="#3b82f6" />,
-  },
-  {
-    id: 403,
-    title: "7-Day Streak",
-    desc: "Play the game 7 days in a row",
-    progress: 70,
-    status: "progress",
-    rarity: "Epic",
-    icon: <Flame size={ICON_SIZE} color="#f97316" />,
-  },
-  {
-    id: 404,
-    title: "Mystery Reward",
-    desc: "Unlock a surprise reward",
-    progress: 0,
-    status: "locked",
-    rarity: "Legendary",
-    icon: <Gift size={ICON_SIZE} color="#e879f9" />,
-  },
-];
-
 
 export default function AwardsScreen() {
   const { width } = useWindowDimensions();
-  const CARD_WIDTH = Math.min(width * 0.78, 320);
+  const CARD_WIDTH = Math.min(width * 0.78, 300);
+
+  const getRarityStyles = (rarity: AwardRarity) => {
+    switch (rarity) {
+      case "Legendary": return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+      case "Epic": return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+      case "Rare": return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+      default: return "bg-slate-500/10 text-slate-400 border-slate-500/30";
+    }
+  };
 
   const renderRow = (title: string, subtitle: string, data: Achievement[]) => (
-    <View className="mb-8">
-      {/* Section Header */}
-      <View className="mb-3 flex-row items-end justify-between px-1">
+    <View className="mb-10">
+      <View className="mb-4 flex-row items-end justify-between px-5">
         <View>
-          <Text className="text-base font-main-bold text-slate-900">
-            {title}
-          </Text>
-          <Text className="text-xs font-main-md text-slate-500">
-            {subtitle}
-          </Text>
+          <Text className="text-xl font-main-bold text-white tracking-tight">{title}</Text>
+          <Text className="text-xs font-main-md text-slate-500 tracking-wide uppercase mt-1">{subtitle}</Text>
         </View>
       </View>
 
-      {/* Cards */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingRight: 12 }}
+        contentContainerClassName="px-5"
+        snapToInterval={CARD_WIDTH + 16}
+        decelerationRate="fast"
       >
         {data.map((award) => {
           const isLocked = award.status === "locked";
           const isUnlocked = award.status === "unlocked";
+          const rarityStyles = getRarityStyles(award.rarity);
 
           return (
             <View
               key={award.id}
               style={{ width: CARD_WIDTH }}
-              className="mr-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
+              className={`mr-4 rounded-[40px] border p-6 ${
+                isUnlocked ? "bg-slate-900 border-indigo-500/20" : "bg-slate-900/50 border-white/5"
+              }`}
             >
-              {/* Header */}
-              <View className="mb-3 flex-row items-center justify-between">
-                <View
-                  className={`rounded-full px-3 py-1 ${
-                    award.rarity === "Legendary"
-                      ? "bg-amber-100"
-                      : "bg-slate-100"
-                  }`}
-                >
-                  <Text
-                    className={`text-[10px] font-main-bold uppercase ${
-                      award.rarity === "Legendary"
-                        ? "text-amber-700"
-                        : "text-slate-600"
-                    }`}
-                  >
-                    {award.rarity}
-                  </Text>
+              {/* Badge & Lock */}
+              <View className="mb-6 flex-row items-center justify-between">
+                <View className={`rounded-full border px-3 py-1 ${rarityStyles}`}>
+                  <Text className="text-[9px] font-main-bold uppercase tracking-[1px]">{award.rarity}</Text>
+                </View>
+                {isLocked && <Lock size={14} color="#475569" />}
+              </View>
+
+              {/* Icon Glow Container */}
+              <View className="relative mb-6 h-16 w-16 items-center justify-center">
+                {isUnlocked && <View className="absolute inset-0 rounded-3xl bg-indigo-500/20 blur-xl" />}
+                <View className={`h-16 w-16 items-center justify-center rounded-3xl border ${
+                  isUnlocked ? "bg-slate-800 border-indigo-500/40 shadow-2xl" : "bg-slate-900 border-white/5"
+                }`}>
+                  {!isLocked ? award.icon : <Lock size={24} color="#1e293b" />}
+                </View>
+              </View>
+
+              {/* Title & Description */}
+              <Text numberOfLines={1} className={`text-base font-main-bold uppercase tracking-tighter ${isLocked ? "text-slate-600" : "text-white"}`}>
+                {isLocked ? "Secret Award" : award.title}
+              </Text>
+
+              <Text numberOfLines={2} className="mt-2 text-xs leading-5 font-main-md text-slate-500">
+                {isLocked ? "Complete hidden objectives to reveal." : award.desc}
+              </Text>
+
+              {/* Progress Bar Section */}
+              <View className="mt-8">
+                <View className="mb-2 flex-row justify-between">
+                  <Text className="text-[10px] font-main-bold uppercase tracking-widest text-slate-600">Sync Status</Text>
+                  <Text className="text-[10px] font-main-bold text-indigo-400">{award.progress}%</Text>
                 </View>
 
-                {isLocked && <Lock size={16} color="#94a3b8" />}
-              </View>
-
-              {/* Icon */}
-              <View
-                className={`mb-4 h-14 w-14 items-center justify-center rounded-2xl ${
-                  isUnlocked ? "bg-amber-100" : "bg-slate-100"
-                }`}
-              >
-                {!isLocked ? award.icon : (
-                  <Lock size={22} color="#94a3b8" />
-                )}
-              </View>
-
-              {/* Title */}
-              <Text
-                numberOfLines={1}
-                className="text-sm font-main-bold uppercase text-slate-900"
-              >
-                {isLocked ? "Locked Achievement" : award.title}
-              </Text>
-
-              {/* Description */}
-              <Text
-                numberOfLines={3}
-                className="mt-1 text-xs leading-4 font-main-md text-slate-500"
-              >
-                {isLocked
-                  ? "Keep playing to unlock this achievement."
-                  : award.desc}
-              </Text>
-
-              {/* Progress */}
-              <View className="mt-4">
-                <div className="mb-1 flex-row justify-between">
-                  <Text className="text-[10px] font-main-bold uppercase text-slate-400">
-                    Progress
-                  </Text>
-                  <Text className="text-[10px] font-main-bold text-slate-400">
-                    {award.progress}%
-                  </Text>
-                </div>
-
-                <View className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                <View className="h-2 w-full overflow-hidden rounded-full bg-black/40">
                   <View
                     style={{ width: `${award.progress}%` }}
-                    className={`h-full ${
-                      isUnlocked
-                        ? "bg-amber-400"
-                        : "bg-indigo-500"
-                    }`}
+                    className={`h-full rounded-full ${isUnlocked ? "bg-amber-400" : "bg-indigo-500 shadow-sm shadow-indigo-500"}`}
                   />
                 </View>
               </View>
@@ -261,24 +137,21 @@ export default function AwardsScreen() {
   );
 
   return (
-    <ScreenWrapper title="Awards" subtitle="Progress & Challenges">
-      {renderRow(
-        "Career Milestones",
-        "Permanent achievements",
-        careerAchievements
-      )}
-
-      {renderRow(
-        "Daily Challenges",
-        "Refresh every 24 hours",
-        dailyChallenges
-      )}
-
-      {renderRow(
-        "Engagement Boost",
-        "Invite, share & build daily habits",
-        engagementAwards
-      )}
+    <ScreenWrapper title="Trophy Room" variant="dark" subtitle="Elite Achievements">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="pb-10 pt-4 bg-slate-950">
+        {renderRow("Career Milestones", "Path to Legend", careerAchievements)}
+        {renderRow("Daily Operations", "Resets in 14h 22m", dailyChallenges)}
+        
+        {/* Premium Banner */}
+        <View className="mx-5 mt-4 rounded-[32px] bg-indigo-600 p-6 flex-row items-center justify-between overflow-hidden shadow-2xl shadow-indigo-500/30">
+             <View className="absolute -right-10 -top-10 h-32 w-32 bg-white/10 rounded-full" />
+             <View className="flex-1 pr-4">
+                <Text className="text-white font-main-bold text-lg">Pro Rewards</Text>
+                <Text className="text-indigo-100/70 text-xs font-main-md mt-1">Unlock exclusive Legendary awards by reaching Level 20.</Text>
+             </View>
+             <Trophy size={32} color="white" strokeWidth={2.5} />
+        </View>
+      </ScrollView>
     </ScreenWrapper>
   );
 }

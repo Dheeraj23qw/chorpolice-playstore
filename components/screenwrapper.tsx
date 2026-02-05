@@ -1,15 +1,9 @@
 import React, { ReactNode } from "react";
-import {
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from "react-native";
+import { View, TouchableOpacity, Platform } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Text } from "./Text";
-
 
 type ScreenWrapperProps = {
   title: string;
@@ -17,9 +11,9 @@ type ScreenWrapperProps = {
   showBackButton?: boolean;
   subtitle?: string;
   rightAction?: ReactNode;
-  onBackPress?: () => void;   // optional override
+  onBackPress?: () => void;
+  variant?: "dark" | "light"; // Toggle between themes
 };
-
 
 const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   title,
@@ -28,95 +22,84 @@ const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   subtitle,
   rightAction,
   onBackPress,
+  variant = "dark",
 }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  const isDark = variant === "dark";
 
   const handleBack = () => {
-    if (onBackPress) {
-      onBackPress();
-      return;
-    }
-
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/"); // fallback home route
-    }
+    if (onBackPress) return onBackPress();
+    router.canGoBack() ? router.back() : router.replace("/");
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]">
-      {/* ================= Header ================= */}
-      <View
-        className="bg-white px-5 pb-4 pt-3"
-        style={{
-          borderBottomLeftRadius: 24,
-          borderBottomRightRadius: 24,
-          ...Platform.select({
-            ios: {
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-            },
-            android: {
-              elevation: 6,
-            },
-          }),
-        }}
+    <View className={`flex-1 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+      
+      {/* ================= Fancy Header ================= */}
+      <View 
+        style={{ paddingTop: insets.top + 10 }}
+        className={`px-6 pb-6 rounded-b-[40px] shadow-2xl ${
+          isDark 
+            ? "bg-slate-900 border-b border-slate-800 shadow-indigo-500/10" 
+            : "bg-white border-b border-slate-100 shadow-slate-200"
+        }`}
       >
+        {/* Background Decorative "Glow" for Dark Mode */}
+        {isDark && (
+          <View className="absolute -top-10 left-1/2 -translate-x-1/2 h-32 w-64 bg-indigo-500/10 blur-3xl rounded-full" />
+        )}
+
         <View className="flex-row items-center justify-between">
           {/* Back Button */}
           {showBackButton ? (
             <TouchableOpacity
-              activeOpacity={0.7}
+              activeOpacity={0.8}
               onPress={handleBack}
-              className="h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white"
+              className={`h-12 w-12 items-center justify-center rounded-2xl border ${
+                isDark 
+                  ? "bg-slate-800 border-slate-700 shadow-black/50" 
+                  : "bg-slate-50 border-slate-200 shadow-sm"
+              }`}
             >
-              <ChevronLeft size={22} color="grey" strokeWidth={3.5} />
+              <ChevronLeft size={24} color={isDark ? "#F8FAFC" : "#1E293B"} strokeWidth={2.5} />
             </TouchableOpacity>
           ) : (
-            <View className="h-10 w-10" />
+            <View className="h-12 w-12" />
           )}
 
-          {/* Title */}
-          <View className="flex-1 items-center px-3">
+          {/* Title Area */}
+          <View className="flex-1 items-center px-4">
             <Text
               numberOfLines={1}
-              className="text-[18px] font-main-bold tracking-tight text-slate-900"
+              className={`text-xl font-main-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}
             >
               {title}
             </Text>
 
             {subtitle && (
-              <Text className="mt-[2px] text-[11px] font-main-md uppercase tracking-widest text-indigo-500">
-                {subtitle}
-              </Text>
+              <View className={`mt-1 px-3 py-0.5 rounded-full ${isDark ? "bg-indigo-500/10" : "bg-indigo-50"}`}>
+                <Text className="text-[10px] font-main-bold uppercase tracking-[1.5px] text-indigo-500">
+                  {subtitle}
+                </Text>
+              </View>
             )}
           </View>
 
-          {/* Right Action Slot */}
-          <View className="h-10 w-10 items-center justify-center">
-            {rightAction}
+          {/* Right Action */}
+          <View className="h-12 w-12 items-center justify-center">
+            {rightAction || <View className="h-2 w-2 rounded-full bg-indigo-500/20" />}
           </View>
         </View>
       </View>
 
       {/* ================= Content ================= */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        bounces
-        contentContainerStyle={{
-          paddingTop: 20,
-          paddingBottom: 80,
-        }}
-        className="flex-1 px-5"
-      >
+      <View className="flex-1">
         {children}
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </View>
   );
 };
-
 
 export default ScreenWrapper;
