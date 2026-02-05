@@ -1,31 +1,50 @@
 import React from "react";
-import { View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { View, Image, StyleSheet } from "react-native";
+import Animated, { 
+  FadeIn, 
+  FadeOut, 
+  ZoomIn, 
+} from "react-native-reanimated";
 import AnimatedLogoLoader from "./AnimatedLogoLoader";
-import { Text } from "./Text";
 
 interface Props {
   visible: boolean;
   message?: string;
 }
 
-const GlobalLoader: React.FC<Props> = ({ visible, message = "Loading..." }) => {
+const GlobalLoader: React.FC<Props> = ({ visible }) => {
   if (!visible) return null;
 
   return (
     <Animated.View
-      entering={FadeIn.duration(200)}
-      exiting={FadeOut.duration(200)}
-      className="absolute inset-0 z-50 items-center justify-center bg-black/70"
+      entering={FadeIn.duration(300)}
+      exiting={FadeOut.duration(300)}
+      className="absolute inset-0 z-[999] items-center justify-center bg-black/80"
     >
-      {/* Card */}
-      <View className=" px-10 py-8 rounded-3xl items-center">
-        {/* Animated Logo */}
-        <AnimatedLogoLoader />
 
-        {/* Message */}
-        <Text className="text-white font-main-bold text-sm mt-5 tracking-wide">{message}</Text>
-      </View>
+      <Animated.Image
+        entering={FadeIn.delay(100).duration(800)}
+        source={require("@/assets/modalImages/intro.png")}
+        className="absolute w-[85%] h-[85%] opacity-20"
+        resizeMode="contain"
+      />
+
+      {/* 3. The Content Container */}
+      <Animated.View 
+        entering={ZoomIn.duration(400).springify()}
+        className="items-center justify-center p-8 rounded-3xl"
+      >
+        
+        <AnimatedLogoLoader />
+        
+        {/* Adding a soft-text message if provided */}
+        <Animated.Text 
+          entering={FadeIn.delay(200)}
+          className="mt-6 text-white/70 font-main-bold tracking-widest text-xs uppercase"
+        >
+          Loading Excellence
+        </Animated.Text>
+      </Animated.View>
     </Animated.View>
   );
 };

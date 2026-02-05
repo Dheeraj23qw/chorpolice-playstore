@@ -1,29 +1,26 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useNavigation } from "expo-router";
 import { initializeCoins } from "@/redux/reducers/coinsReducer";
-import * as SecureStore from "expo-secure-store";
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import { AudioEngine } from "@/audio/audioEngine";
 import { loadSounds } from "@/redux/reducers/soundReducer";
+import RoundStartLoader from "@/components/RoundStartLoader";
 import { View } from "react-native";
 
 export default function Index() {
   const navigation = useNavigation();
   const dispatch = useDispatch<AppDispatch>();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+  const [stage, setStage] = useState<
+    "splash" | "video" | "game"
+  >("splash");
 
-  /* ---------------- INIT COINS ---------------- */
+  /* ---------------- INIT ---------------- */
   useEffect(() => {
     dispatch(initializeCoins());
-  }, [dispatch]);
-
-  /* ---------------- LOAD AUDIO ONCE ---------------- */
-  useEffect(() => {
     dispatch(loadSounds());
   }, [dispatch]);
 
@@ -32,35 +29,44 @@ export default function Index() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  /* ---------------- FIRST LAUNCH CHECK ---------------- */
+  /* ---------------- SPLASH FLOW ---------------- */
   useEffect(() => {
-    const checkFirstLaunch = async () => {
-      const hasLaunched = await SecureStore.getItemAsync("hasLaunched");
+    const runSplashFlow = async () => {
+      // 1️⃣ Show loader for 3 sec
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-      if (hasLaunched === null) {
-        setIsFirstLaunch(true);
-        await SecureStore.setItemAsync("hasLaunched", "true");
-      } else {
-        setIsFirstLaunch(false);
-      }
+      // 2️⃣ Then show video
+      setStage("video");
     };
 
-    checkFirstLaunch();
+    runSplashFlow();
   }, []);
 
-  /* ---------------- INTRO END HANDLER ---------------- */
+  /* ---------------- VIDEO END ---------------- */
   const handleIntroEnd = () => {
-    setIsLoading(false);
+    // 3️⃣ After video finishes
+    setStage("game");
 
+    // 4️⃣ Start background music
     AudioEngine.play("quiz", "background");
   };
 
   /* ---------------- UI ---------------- */
-  if (isLoading) {
+
+  if (stage === "splash") {
     return (
-      <View className="flex-1 bg-white">
-        <VideoPlayerComponent videoIndex={1} onVideoEnd={handleIntroEnd} />
+      <View style={{ flex: 1, backgroundColor: "#050508" }}>
+        <RoundStartLoader />
       </View>
+    );
+  }
+
+  if (stage === "video") {
+    return (
+      <VideoPlayerComponent
+        videoIndex={1}
+        onVideoEnd={handleIntroEnd}
+      />
     );
   }
 

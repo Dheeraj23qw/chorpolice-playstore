@@ -1,7 +1,6 @@
 import React, { ReactNode } from "react";
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   Platform,
@@ -9,6 +8,7 @@ import {
 import { ChevronLeft } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Text } from "./Text";
 
 
 type ScreenWrapperProps = {
@@ -83,13 +83,13 @@ const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
           <View className="flex-1 items-center px-3">
             <Text
               numberOfLines={1}
-              className="text-[18px] font-extrabold tracking-tight text-slate-900"
+              className="text-[18px] font-main-bold tracking-tight text-slate-900"
             >
               {title}
             </Text>
 
             {subtitle && (
-              <Text className="mt-[2px] text-[11px] font-semibold uppercase tracking-widest text-indigo-500">
+              <Text className="mt-[2px] text-[11px] font-main-md uppercase tracking-widest text-indigo-500">
                 {subtitle}
               </Text>
             )}

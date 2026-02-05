@@ -18,7 +18,7 @@ export default function AnimatedLogoLoader() {
   useEffect(() => {
     // Continuous rotation
     rotate.value = withRepeat(
-      withTiming(1000,{ duration: 2800, easing: Easing.linear }),
+      withTiming(1000000,{ duration: 2000, easing: Easing.linear }),
       -1
     );
 
@@ -53,10 +53,10 @@ export default function AnimatedLogoLoader() {
   }));
 
   return (
-    <View className="flex-1 items-center justify-center">
+    <View className="flex-1 items-center justify-end">
       <Animated.View
         style={animatedStyle}
-        className="w-28 h-28 rounded-full overflow-hidden items-center justify-center border-4 border-white shadow-xl"
+        className="w-20 h-20 rounded-full overflow-hidden items-center justify-center border-4 border-white shadow-xl"
       >
         <Image
           source={require("@/assets/images/chorsipahi/king.png")}
