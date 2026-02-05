@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 import { Text } from "@/components/Text";
+import { VictoryCelebration } from "@/components/VictoryCelebration";
 
 const ChorPoliceResult = () => {
   const insets = useSafeAreaInsets();
@@ -32,12 +33,13 @@ const ChorPoliceResult = () => {
 
   const playerNamesList = useMemo(
     () => playerNamess.map((player) => player.name),
-    [playerNamess]
+    [playerNamess],
   );
 
   const { handleExitGame } = useRajaMantriGame({
     playerNames: playerNamesList,
   });
+  const [showCelebration, setShowCelebration] = useState(true);
 
   useEffect(() => {
     const backAction = () => {
@@ -48,22 +50,36 @@ const ChorPoliceResult = () => {
           { text: "Cancel", style: "cancel" },
           { text: "YES", onPress: handleExitGame },
         ],
-        { cancelable: true }
+        { cancelable: true },
       );
       return true;
     };
 
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
-      backAction
+      backAction,
     );
 
     return () => subscription.remove();
   }, [handleExitGame]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCelebration(false);
+    }, 4500); // same as duration in component
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <View className="flex-1 bg-[#09090b]">
-      {/* Background Metamorphism Glows */}
+      {showCelebration && (
+        <VictoryCelebration
+          type="GOLD"
+          intensity="MEDIUM"
+          duration={4500}
+          onComplete={() => setShowCelebration(false)}
+        />
+      )}
       <View
         style={{
           width: wp(110),

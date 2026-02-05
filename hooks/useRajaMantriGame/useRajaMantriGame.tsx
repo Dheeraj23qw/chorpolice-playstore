@@ -175,7 +175,6 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
   };
 
-  console.log(playerScores);
   const randomMessageWin = useRandomMessage(
     policeIndex !== null && policeIndex >= 0
       ? playerNamesRedux[policeIndex]?.name || ""

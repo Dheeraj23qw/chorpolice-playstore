@@ -161,7 +161,7 @@ const useQuizLogic = (router: any) => {
           if (!isGameReset) {
             router.replace("/chorpoliceResult");
           }
-        }, 10);
+        }, 1);
         return prevIndex;
       }
     });

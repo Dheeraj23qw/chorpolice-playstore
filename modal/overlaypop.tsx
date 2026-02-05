@@ -13,6 +13,7 @@ import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 import { OverlayPopUpProps } from "@/types/models/OverlayPop";
 import { Text } from "@/components/Text";
 import { hp, wp, rf } from "@/utils/responsive";
+import { VictoryCelebration } from "@/components/VictoryCelebration";
 
 // Added onStateChange to notify parent to hide/show game cards
 interface ExtendedProps extends OverlayPopUpProps {
@@ -29,11 +30,11 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
-  
+
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const rayRotation = useRef(new Animated.Value(0)).current;
-  
+
   const autoCloseTimer = useRef<number | null>(null);
 
   const playerNames = useSelector(selectPlayerNames).map((p) => p.name);
@@ -41,6 +42,8 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
   const kingName = kingIndex !== null ? playerNames[kingIndex] : "King";
   const policeName = policeIndex !== null ? playerNames[policeIndex] : "Police";
   const thiefName = thiefIndex !== null ? playerNames[thiefIndex] : "Thief";
+
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const closeModal = useCallback(() => {
     if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
@@ -52,6 +55,7 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
     }).start(() => {
       setModalVisible(false);
       setModalData(null);
+      setShowConfetti(false); // Reset confetti
       // Notify parent that modal is gone (Show cards again)
       if (onStateChange) onStateChange(false);
     });
@@ -60,6 +64,9 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
   useEffect(() => {
     if (index != null && index >= 1 && index <= data.length) {
       const selectedItem = data[index - 1];
+
+      const shouldCelebrate = index === 1 || index === 2;
+      setShowConfetti(shouldCelebrate);
       let title = "";
       let accentColor = "#FFD700";
 
@@ -83,16 +90,30 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
       setModalData({ ...selectedItem, roleTitle: title, theme: accentColor });
       setModalVisible(true);
-      
+
       // Notify parent that modal is active (Hide cards)
       if (onStateChange) onStateChange(true);
 
       Animated.parallel([
-        Animated.timing(opacityAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
         Animated.loop(
-          Animated.timing(rayRotation, { toValue: 1, duration: 15000, easing: Easing.linear, useNativeDriver: true })
-        )
+          Animated.timing(rayRotation, {
+            toValue: 1,
+            duration: 15000,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+        ),
       ]).start();
 
       autoCloseTimer.current = setTimeout(() => {
@@ -103,7 +124,15 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
     return () => {
       if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
     };
-  }, [index, kingName, policeName, thiefName, closeModal, displayDuration, onStateChange]);
+  }, [
+    index,
+    kingName,
+    policeName,
+    thiefName,
+    closeModal,
+    displayDuration,
+    onStateChange,
+  ]);
 
   if (!modalData) return null;
 
@@ -115,10 +144,19 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
   return (
     <Modal visible={modalVisible} transparent animationType="none">
       <TouchableWithoutFeedback onPress={closeModal}>
-        <Animated.View 
-          style={{ opacity: opacityAnim }} 
+        <Animated.View
+          style={{ opacity: opacityAnim }}
           className="flex-1 bg-[#050508] justify-center items-center"
         >
+          {showConfetti && modalVisible && (
+            <VictoryCelebration
+              type={index === 1 ? "GOLD" : "THEME"}
+              intensity="LOW"
+              duration={displayDuration - 500}
+              onComplete={() => setShowConfetti(false)}
+            />
+          )}
+
           {/* Background Rays */}
           <Animated.View
             style={{
@@ -139,7 +177,10 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
                   width: 1,
                   height: hp(100),
                   backgroundColor: modalData.theme,
-                  transform: [{ rotate: `${i * 30}deg` }, { translateY: -hp(50) }],
+                  transform: [
+                    { rotate: `${i * 30}deg` },
+                    { translateY: -hp(50) },
+                  ],
                 }}
               />
             ))}
@@ -179,11 +220,14 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
             </View>
 
             {modalData.point && (
-              <View 
-                style={{ borderColor: `${modalData.theme}20` }} 
+              <View
+                style={{ borderColor: `${modalData.theme}20` }}
                 className="mt-8 py-3 px-14"
               >
-                <Text style={{ color: modalData.theme }} className="font-main-bold text-2xl tracking-[4px]">
+                <Text
+                  style={{ color: modalData.theme }}
+                  className="font-main-bold text-2xl tracking-[4px]"
+                >
                   {modalData.point}
                 </Text>
               </View>

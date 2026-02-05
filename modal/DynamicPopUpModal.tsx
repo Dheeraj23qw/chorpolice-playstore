@@ -142,6 +142,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
     <Modal visible animationType="fade" transparent>
       <TouchableWithoutFeedback>
         <View style={styles.overlay}>
+          
           {/* Player Info */}
           <Animated.View
             style={[
