@@ -21,7 +21,10 @@ type SoundCategory = "ui" | "gameplay" | "background";
 
 /* ---------------- CONFIG ---------------- */
 
-let DEBUG = __DEV__;
+// let DEBUG = __DEV__;
+
+let DEBUG = false;
+
 let isMutedState = false;
 let exitLock = false;
 let appStateSubscription: any = null;

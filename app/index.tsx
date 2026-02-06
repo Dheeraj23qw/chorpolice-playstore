@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
-import { useNavigation, useRouter } from "expo-router"; // Added useRouter for navigation
-import { initializeCoins, addCoins } from "@/redux/reducers/coinsReducer";
+import { useNavigation } from "expo-router";
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
@@ -9,13 +8,14 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { loadSounds } from "@/redux/reducers/soundReducer";
 import RoundStartLoader from "@/components/RoundStartLoader";
 import { View } from "react-native";
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
+import { initializeWallet } from "@/features/wallet/walletThunks";
 
+// ✅ NEW
 
 export default function Index() {
   const navigation = useNavigation();
-  const router = useRouter(); 
   const dispatch = useDispatch<AppDispatch>();
 
   const [stage, setStage] = useState<"splash" | "video" | "game">("splash");
@@ -24,19 +24,11 @@ export default function Index() {
   /* ---------------- INIT ---------------- */
   useEffect(() => {
     const initApp = async () => {
-      // 1. Initialize coins logic
-      await dispatch(initializeCoins());
-      dispatch(loadSounds());
+      await dispatch(initializeWallet());
 
-      // 2. Check for First Launch flag
-      const hasLaunched = await SecureStore.getItemAsync('hasLaunchedBefore');
-      if (hasLaunched === null) {
-        // We don't show it yet (waiting for 'game' stage)
-        // We just mark that we NEED to show it later
-        await SecureStore.setItemAsync('hasLaunchedBefore', 'true');
-        // We delay the true state until the game menu is visible
-      }
+      dispatch(loadSounds());
     };
+
     initApp();
   }, [dispatch]);
 
@@ -48,9 +40,10 @@ export default function Index() {
   /* ---------------- SPLASH FLOW ---------------- */
   useEffect(() => {
     const runSplashFlow = async () => {
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       setStage("video");
     };
+
     runSplashFlow();
   }, []);
 
@@ -59,11 +52,17 @@ export default function Index() {
     setStage("game");
     AudioEngine.play("quiz", "background");
 
-    // 🚩 Check if this was the very first launch to show popup
-    const firstLaunch = await SecureStore.getItemAsync('welcome_popup_shown');
+    // Show welcome popup only first time
+    const firstLaunch = await SecureStore.getItemAsync(
+      "welcome_popup_shown"
+    );
+
     if (!firstLaunch) {
       setShowWelcome(true);
-      await SecureStore.setItemAsync('welcome_popup_shown', 'true');
+      await SecureStore.setItemAsync(
+        "welcome_popup_shown",
+        "true"
+      );
     }
   };
 
@@ -88,18 +87,21 @@ export default function Index() {
 
   if (stage === "video") {
     return (
-      <VideoPlayerComponent videoIndex={1} onVideoEnd={handleIntroEnd} />
+      <VideoPlayerComponent
+        videoIndex={1}
+        onVideoEnd={handleIntroEnd}
+      />
     );
   }
 
   return (
     <View style={{ flex: 1 }}>
       <GameModeScreen />
-      
-      <WelcomeBonusModal 
-        isVisible={showWelcome} 
-        onClaim={handleClaim} 
-        onGoToSpin={handleGoToSpin} 
+
+      <WelcomeBonusModal
+        isVisible={showWelcome}
+        onClaim={handleClaim}
+        onGoToSpin={handleGoToSpin}
       />
     </View>
   );

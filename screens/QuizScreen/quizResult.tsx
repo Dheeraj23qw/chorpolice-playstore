@@ -7,13 +7,13 @@ import { hp, wp } from "@/utils/responsive";
 import useRandomMessage from "@/hooks/useRandomMessage";
 import CustomRatingModal from "@/modal/RatingModal";
 import { RootState } from "@/redux/store";
-import { addCoins } from "@/redux/reducers/coinsReducer";
 import { resetDifficulty } from "@/redux/reducers/quiz";
 
 import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
 import { handleShare } from "@/utils/share";
 import { AudioEngine } from "@/audio/audioEngine";
+import { creditCoins } from "@/features/wallet/walletSlice";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -33,25 +33,39 @@ export default function QuizResult() {
 
   /* ------------------ COIN REWARD ------------------ */
 
-  useEffect(() => {
-    if (!level) return;
+ useEffect(() => {
+  if (!level) return;
 
-    const coinValues = {
-      easy: isWinner ? 250 : 40,
-      medium: isWinner ? 800 : 100,
-      hard: isWinner ? 2000 : 200,
-    } as const;
+  const coinValues = {
+    easy: isWinner ? 250 : 40,
+    medium: isWinner ? 800 : 100,
+    hard: isWinner ? 2000 : 200,
+  } as const;
 
-    const reward = coinValues[level];
+  const reward = coinValues[level];
 
-    dispatch(addCoins(reward));
+  // ✅ Credit to wallet instead of old coins store
+  dispatch(
+    creditCoins({
+      amount: reward,
+      reason: isWinner ? "Quiz Win" : "Quiz Participation",
+      source: "quiz_reward",
+      metadata: {
+        level,               // easy/medium/hard
+        isWinner,            // true/false
+        correctQuestions: Correct,
+        totalQuestions: Total,
+      },
+    })
+  );
 
-    setCoinsAwarded(
-      isWinner
-        ? `You won ${reward} coins!`
-        : `Participation Reward: ${reward} coins`,
-    );
-  }, [level, isWinner, dispatch]);
+  setCoinsAwarded(
+    isWinner
+      ? `You won ${reward} coins!`
+      : `Participation Reward: ${reward} coins`,
+  );
+}, [level, isWinner, Correct, Total, dispatch]);
+
 
   useEffect(() => {
     AudioEngine.stop("timer");

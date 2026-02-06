@@ -1,28 +1,22 @@
 import { configureStore } from "@reduxjs/toolkit";
-import thunk from "redux-thunk"; // Import thunk middleware
 import playerReducer from "./reducers/playerReducer";
 import soundSlice from "./reducers/soundReducer";
 import playerImagesReducer from "./reducers/dynamicImagesReducer";
 import difficultyReducer from "@/redux/reducers/quiz";
-import coinsReducer from "@/redux/reducers/coinsReducer";
 import loaderReducer from "./reducers/loaderReducer";
 import popupReducer from "./reducers/popupReducer";
+import walletReducer from "@/features/wallet/walletSlice";
+
 const store = configureStore({
   reducer: {
     player: playerReducer,
     sound: soundSlice,
     playerImages: playerImagesReducer,
     difficulty: difficultyReducer,
-    coins: coinsReducer,
     loader: loaderReducer,
-    popup :popupReducer
-
+    popup: popupReducer,
+    wallet: walletReducer,
   },
-  // Include thunk middleware
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      thunk: true, // Thunk is enabled by default in Redux Toolkit
-    }),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
