@@ -40,10 +40,17 @@ const coinsSlice = createSlice({
     },
 
     // Action to add coins (and persist the updated value to SecureStore)
-    addCoins: (state, action: PayloadAction<number>) => {
-      state.coins += action.payload;
-      setCoins(state.coins); // Persist the updated coin value to SecureStore
-    },
+  addCoins: (state, action: PayloadAction<number>) => {
+  const nextValue = state.coins + action.payload;
+  // Safety: Don't let coins go negative
+  state.coins = nextValue < 0 ? 0 : nextValue; 
+  setCoins(state.coins); 
+},
+deductCoins: (state, action: PayloadAction<number>) => {
+  if (state.coins >= action.payload) {
+    state.coins -= action.payload;
+  }
+},
 
     // Action to reset coins to 0 (or any value)
     resetCoins: (state) => {
@@ -55,12 +62,25 @@ const coinsSlice = createSlice({
 
 // Async initialization for the initialState of coins
 export const initializeCoins = () => async (dispatch: any) => {
-  const coins = await getCoins(); // Fetch the coins asynchronously
-  dispatch(setInitialCoins(coins)); // Dispatch to set the initial coins state
+  try {
+    const storedCoins = await SecureStore.getItemAsync("coins");
+
+    if (storedCoins === null) {
+      // THIS IS THE MOMENT IT GETS STORED FOR THE FIRST TIME
+      const welcomeAmount = 1000;
+      await SecureStore.setItemAsync("coins", welcomeAmount.toString()); 
+      dispatch(setInitialCoins(welcomeAmount));
+    } else {
+      // Returning user: Just load what was already there
+      dispatch(setInitialCoins(parseInt(storedCoins)));
+    }
+  } catch (error) {
+    dispatch(setInitialCoins(0));
+  }
 };
 
 // Export actions
-export const { addCoins, setInitialCoins, resetCoins } = coinsSlice.actions;
+export const { addCoins, setInitialCoins, resetCoins ,deductCoins} = coinsSlice.actions;
 
 // Export reducer
 export default coinsSlice.reducer;

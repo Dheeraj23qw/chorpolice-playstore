@@ -1,0 +1,32 @@
+import { SpinSegment } from "@/features/SpinWheel/types";
+
+export const segments: SpinSegment[] = [
+  {
+    label: "RAJA",
+    value: 1000,
+    color: "#fbbf24",
+    bg: "#78350f",
+    img: require("@/assets/images/chorsipahi/king.png"),
+  },
+  {
+    label: "MANTRI",
+    value: 800,
+    color: "#818cf8",
+    bg: "#1e1b4b",
+    img: require("@/assets/images/chorsipahi/advisor.png"),
+  },
+  {
+    label: "CHOR",
+    value: -500,
+    color: "#ef4444",
+    bg: "#450a0a",
+    img: require("@/assets/images/chorsipahi/thief.png"),
+  },
+  {
+    label: "SIPAHI",
+    value: 500,
+    color: "#10b981",
+    bg: "#064e3b",
+    img: require("@/assets/images/chorsipahi/police.png"),
+  },
+];
