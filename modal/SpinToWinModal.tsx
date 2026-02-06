@@ -80,8 +80,8 @@ const SpinController: React.FC<SpinControllerProps> = ({
                   transform: [
                     {
                       rotate: spinAnim.interpolate({
-                        inputRange: [0, 10000], // Increased range to handle multiple spins
-                        outputRange: ["0deg", "10000deg"],
+                        inputRange: [0, 500000], // Increased to allow ~50+ spins without resetting
+                        outputRange: ["0deg", "500000deg"],
                       }),
                     },
                   ],

@@ -54,7 +54,7 @@ export const useSpinWheel = () => {
     }).start();
   }, [scaleAnim]);
 
-  const handleSpin = useCallback(() => {
+const handleSpin = useCallback(() => {
     if (status === "SPINNING") return;
 
     AudioEngine.play("spin");
@@ -63,24 +63,29 @@ export const useSpinWheel = () => {
     const randomIndex = Math.floor(Math.random() * segments.length);
     const selected = segments[randomIndex];
 
-    // --- CRAZY PRODUCTION LOGIC ---
-    const fullSpins = 15; // High speed
+    // --- INCREASED DURATION CONFIG ---
+    const fullSpins = 25;      // Increased from 15 to 25 (More laps = more speed)
+    const spinDuration = 8000; // Increased from 4.5s to 8s (Longer suspense)
+
     const centers = [315, 45, 225, 135];
     const targetCenter = centers[randomIndex];
 
-    // Calculate the distance needed to reach the next target from the CURRENT position
-    const extraRotation = fullSpins * 360 + (360 - targetCenter);
+    // Maintain cumulative rotation for reliability
+    const extraRotation = (fullSpins * 360) + (360 - targetCenter);
     const finalValue = currentRotation.current + extraRotation;
+
+    spinAnim.setValue(currentRotation.current); // Start from last position
 
     Animated.timing(spinAnim, {
       toValue: finalValue,
-      duration: 4500, // Balanced "Crazy" speed
-      easing: Easing.bezier(0.15, 0, 0, 1), // "Imperial" premium easing
+      duration: spinDuration,
+      // Aggressive start, very slow creep at the end for maximum "Imperial" drama
+      easing: Easing.bezier(0.12, 0.8, 0.1, 1), 
       useNativeDriver: true,
     }).start(({ finished }) => {
-      if (!finished) return; // Prevent logic trigger if animation was interrupted
+      if (!finished) return;
 
-      currentRotation.current = finalValue; // Update ref for next spin
+      currentRotation.current = finalValue;
       setResult(selected);
       setStatus("DONE");
 
