@@ -91,45 +91,27 @@ const SpinController: React.FC<SpinControllerProps> = ({
                 {segments.map((seg, i) => (
                   <View
                     key={i}
+                    className="absolute w-1/2 h-1/2 items-center justify-center border-[0.5px] border-white/10"
                     style={{
-                      position: "absolute",
-                      width: "50%",
-                      height: "50%",
+                      // Keeping the grid-positioning logic as is since it works
                       top: i < 2 ? 0 : "50%",
                       left: i % 2 === 0 ? 0 : "50%",
                       backgroundColor: seg.bg,
-                      borderWidth: 0.5,
-                      borderColor: "rgba(255,255,255,0.08)",
                     }}
-                    className="items-center justify-center"
                   >
                     {/* Circular Premium Badge */}
                     <View
-                      style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: 36,
-                        backgroundColor: "rgba(255,255,255,0.06)",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderWidth: 2,
-                        borderColor: seg.color, // colored ring per segment 🔥
-
-                        elevation: 8,
-                      }}
+                      className="w-16 h-16 rounded-full items-center justify-center border-2 bg-white/5 shadow-lg"
+                      style={{ borderColor: seg.color }}
                     >
                       <Image
                         source={seg.img}
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 22,
-                        }}
+                        className="w-11 h-11 rounded-full"
                         resizeMode="contain"
                       />
                     </View>
 
-                    <Text className="text-xs font-main-bold text-white mt-1 tracking-[2px]">
+                    <Text className="text-[10px] font-main-bold text-white mt-2 tracking-[2px] uppercase">
                       {seg.label}
                     </Text>
                   </View>
