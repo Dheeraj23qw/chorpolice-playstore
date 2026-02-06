@@ -1,14 +1,10 @@
-import { useState, useRef, useCallback } from "react";
-import { Animated, Easing, Vibration } from "react-native";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Animated, Easing, Vibration, Platform } from "react-native";
 import { useDispatch } from "react-redux";
 import { SpinSegment, SpinStatus } from "./types";
 import { segments } from "@/constants/spinwheel";
 import { AudioEngine } from "@/audio/audioEngine";
 import { creditCoins } from "../wallet/walletSlice";
-
-// ✅ NEW WALLET IMPORT
-
-const MAX_ROTATION = 360 * 10;
 
 export const useSpinWheel = () => {
   const dispatch = useDispatch();
@@ -17,17 +13,29 @@ export const useSpinWheel = () => {
   const [result, setResult] = useState<SpinSegment | null>(null);
   const [showVictory, setShowVictory] = useState(false);
 
+  // Use a ref to track the cumulative rotation so the wheel doesn't "reset" visually
+  const currentRotation = useRef(0);
   const spinAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  /* ---------------- RESET ---------------- */
+  // CLEANUP: Prevent memory leaks if the modal closes mid-animation
+  useEffect(() => {
+    return () => {
+      spinAnim.stopAnimation();
+      pulseLoopRef.current?.stop();
+    };
+  }, []);
+
   const reset = useCallback(() => {
     spinAnim.stopAnimation();
     pulseLoopRef.current?.stop();
 
+    // Reset to 0 for a fresh start, or keep currentRotation.current
+    // if you want it to stay where it landed.
+    currentRotation.current = 0;
     spinAnim.setValue(0);
     scaleAnim.setValue(0);
     pulseAnim.setValue(1);
@@ -37,55 +45,44 @@ export const useSpinWheel = () => {
     setShowVictory(false);
   }, [spinAnim, scaleAnim, pulseAnim]);
 
-  /* ---------------- MODAL ENTRY ANIMATION ---------------- */
   const animateModalIn = useCallback(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      tension: 40,
-      friction: 7,
       useNativeDriver: true,
+      damping: 12,
+      stiffness: 90,
     }).start();
   }, [scaleAnim]);
 
-  /* ---------------- SPIN LOGIC ---------------- */
-/* ---------------- SPIN LOGIC ---------------- */
-const handleSpin = useCallback(() => {
-  if (status === "SPINNING") return;
+  const handleSpin = useCallback(() => {
+    if (status === "SPINNING") return;
 
-  AudioEngine.play("spin");
-  setStatus("SPINNING");
+    AudioEngine.play("spin");
+    setStatus("SPINNING");
 
-  const randomIndex = Math.floor(Math.random() * segments.length);
-  const selected = segments[randomIndex];
+    const randomIndex = Math.floor(Math.random() * segments.length);
+    const selected = segments[randomIndex];
 
-  const fullSpins = 8; // How many times it spins before stopping
-  
-  /**
-   * THE MAPPING LOGIC
-   * We want the CENTER of the segment to be at the top (0°).
-   * Visual positions of your grid segments:
-   * Index 0 (Top-Left): Center is at 315°
-   * Index 1 (Top-Right): Center is at 45°
-   * Index 2 (Bottom-Left): Center is at 225°
-   * Index 3 (Bottom-Right): Center is at 135°
-   */
-  const centers = [315, 45, 225, 135];
-  const targetCenter = centers[randomIndex];
+    // --- CRAZY PRODUCTION LOGIC ---
+    const fullSpins = 15; // High speed
+    const centers = [315, 45, 225, 135];
+    const targetCenter = centers[randomIndex];
 
-  // To bring 'targetCenter' to the Top (0°/360°), 
-  // we rotate the wheel by (360 - targetCenter)
-  const finalRotation = (fullSpins * 360) + (360 - targetCenter);
+    // Calculate the distance needed to reach the next target from the CURRENT position
+    const extraRotation = fullSpins * 360 + (360 - targetCenter);
+    const finalValue = currentRotation.current + extraRotation;
 
-  spinAnim.setValue(0);
+    Animated.timing(spinAnim, {
+      toValue: finalValue,
+      duration: 4500, // Balanced "Crazy" speed
+      easing: Easing.bezier(0.15, 0, 0, 1), // "Imperial" premium easing
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (!finished) return; // Prevent logic trigger if animation was interrupted
 
-  Animated.timing(spinAnim, {
-    toValue: finalRotation,
-    duration: 5000,
-    easing: Easing.out(Easing.bezier(0.2, 0, 0, 1)), // Sleek "weighted" stop
-    useNativeDriver: true,
-  }).start(() => {
-    setResult(selected);
-    setStatus("DONE");
+      currentRotation.current = finalValue; // Update ref for next spin
+      setResult(selected);
+      setStatus("DONE");
 
       if (selected.value > 0) {
         dispatch(
@@ -94,11 +91,8 @@ const handleSpin = useCallback(() => {
             reason: `Spin Reward - ${selected.label}`,
           }),
         );
-      }
-
-      if (selected.value > 0) {
         setShowVictory(true);
-        Vibration.vibrate(100);
+        Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
       }
 
       pulseLoopRef.current = Animated.loop(
@@ -115,7 +109,6 @@ const handleSpin = useCallback(() => {
           }),
         ]),
       );
-
       pulseLoopRef.current.start();
     });
   }, [status, spinAnim, pulseAnim, dispatch]);

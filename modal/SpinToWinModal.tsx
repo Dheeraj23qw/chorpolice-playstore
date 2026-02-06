@@ -119,8 +119,10 @@ const SpinController: React.FC<SpinControllerProps> = ({
               </Animated.View>
 
               {/* Center Hub */}
-              <View className="absolute z-20 w-12 h-12 bg-black rounded-full border-2 border-indigo-500 items-center justify-center shadow-2xl">
-                <Trophy size={20} color="#818cf8" />
+              {/* Center Hub */}
+              <View className="absolute z-20 w-16 h-16 bg-zinc-950 rounded-full border-2 border-indigo-500 items-center justify-center shadow-2xl shadow-indigo-500/50">
+                {/* Increased Trophy size to match larger hub */}
+                <Trophy size={rf(3.5)} color="#818cf8" />
               </View>
 
               {/* Pointer */}
