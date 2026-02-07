@@ -2,14 +2,10 @@ import React from "react";
 import { View, TouchableOpacity } from "react-native";
 import { Trophy, Lock } from "lucide-react-native";
 import { Text } from "@/components/Text";
+import { RewardTier } from "@/constants/RewardsConst";
 
 interface MilestoneCardProps {
-  tier: {
-    id: number;
-    coinsRequired: number;
-    reward: string;
-    emoji: string;
-  };
+  tier:RewardTier;
   currentCoins: number;
   cardWidth: number;
   onClaim: (reward: string, cost: number) => void;

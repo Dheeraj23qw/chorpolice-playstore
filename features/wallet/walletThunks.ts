@@ -31,6 +31,7 @@ export const initializeWallet = () => async (dispatch: AppDispatch) => {
         daily_bonus: welcomeBonus,
         chor_police: 0,
         other: 0,
+        rewards_claim: 0,
       },
     };
 
@@ -48,6 +49,7 @@ export const initializeWallet = () => async (dispatch: AppDispatch) => {
         daily_bonus: storedWallet.totalBySource?.daily_bonus || 0,
         chor_police: storedWallet.totalBySource?.chor_police || 0,
         other: storedWallet.totalBySource?.other || 0,
+        rewards_claim: storedWallet.totalBySource?.rewards_claim || 0,
       },
     };
 

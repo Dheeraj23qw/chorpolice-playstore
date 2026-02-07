@@ -1,76 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Alert, ScrollView, useWindowDimensions } from "react-native";
-import ScreenWrapper from "@/components/screenwrapper";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+
+import ScreenWrapper from "@/components/screenwrapper";
 import SpinToWinModal from "@/modal/SpinToWinModal";
 import { WalletCard } from "@/components/EarnScreen/WalletCard";
 import { MilestonesSection } from "@/components/EarnScreen/MilestonesSection";
 import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
+
+import { RootState } from "@/redux/store";
 import { debitCoins } from "@/features/wallet/walletSlice";
+import { REWARD_TIERS } from "@/constants/RewardsConst";
 
-// ✅ NEW WALLET IMPORT
+// Types
 
-type RewardTier = {
-  id: number;
-  coinsRequired: number;
-  reward: string;
-  emoji: string;
-};
-
-const REWARD_TIERS: RewardTier[] = [
-  { id: 1, coinsRequired: 25000, reward: "Badminton Pro", emoji: "🏸" },
-  { id: 2, coinsRequired: 6000, reward: "Cricket Elite Kit", emoji: "🏏" },
-  { id: 3, coinsRequired: 10, reward: "₹1,000 Cash", emoji: "💰" },
-];
 
 export default function EarnScreen() {
   const { width } = useWindowDimensions();
-  const CARD_WIDTH = Math.min(width * 0.78, 300);
-
+  const dispatch = useDispatch();
+  
+  // State
   const [isSpinModalVisible, setIsSpinModalVisible] = useState(false);
   const [hasSpunToday, setHasSpunToday] = useState(false);
 
-  const dispatch = useDispatch();
-
-  // ✅ NEW WALLET SELECTOR
+  // Redux Selectors
   const coins = useSelector((state: RootState) => state.wallet.coins);
 
-const handleClaim = (rewardName: string, cost: number) => {
-  if (coins < cost) {
-    Alert.alert("Not Enough Coins", "You don't have enough coins.");
-    return;
-  }
+  // Derived Values
+  const cardWidth = useMemo(() => Math.min(width * 0.78, 300), [width]);
 
-  Alert.alert(
-    "Confirm Claim",
-    `Are you sure you want to spend ${cost.toLocaleString()} 🪙 for ${rewardName}?`,
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Claim Now",
-        onPress: () => {
-          // ✅ Use walletSlice debitCoins instead of old coinsReducer
-          dispatch(
-            debitCoins({
-              amount: cost,
-              reason: `Claimed reward: ${rewardName}`,
-              source: "game_reward", // categorize the spending
-              metadata: { rewardName }, // optional metadata
-            })
-          );
+  // Handlers
+  const handleClaim = useCallback((rewardName: string, cost: number) => {
+    if (coins < cost) {
+      Alert.alert(
+        "Insufficient Balance", 
+        `You need ${ (cost - coins).toLocaleString() } more coins to claim this reward.`
+      );
+      return;
+    }
 
-          Alert.alert(
-            "Congratulations! 🎉",
-            `You have successfully claimed: ${rewardName}. Our team will contact you shortly regarding delivery!`,
-            [{ text: "Awesome!" }],
-          );
+    Alert.alert(
+      "Confirm Redemption",
+      `Spend ${cost.toLocaleString()} 🪙 for ${rewardName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Redeem",
+          onPress: () => {
+            try {
+              dispatch(
+                debitCoins({
+                  amount: cost,
+                  reason: `Reward: ${rewardName}`,
+                  source: "rewards_claim",
+                  metadata: { rewardName, timestamp: new Date().toISOString() },
+                })
+              );
+
+              Alert.alert(
+                "Success! 🎉",
+                `Your ${rewardName} is on the way. Our team will contact you shortly.`,
+                [{ text: "Great!" }]
+              );
+            } catch (error) {
+              console.error("Redemption Error:", error);
+              Alert.alert("Error", "Something went wrong. Please try again.");
+            }
+          },
         },
-      },
-    ],
-  );
-};
+      ],
+      { cancelable: true }
+    );
+  }, [coins, dispatch]);
 
+  const toggleSpinModal = useCallback(() => {
+    setIsSpinModalVisible(prev => !prev);
+  }, []);
 
   return (
     <ScreenWrapper
@@ -80,25 +85,28 @@ const handleClaim = (rewardName: string, cost: number) => {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="pb-12 pt-4 px-5 bg-slate-950"
+        // NativeWind 4+ uses className, ensure your setup matches
+        className="flex-1 bg-slate-950"
+        contentContainerClassName="pb-12 pt-4 px-5"
       >
         <WalletCard balance={coins} />
 
         <MilestonesSection
           tiers={REWARD_TIERS}
           coins={coins}
-          cardWidth={CARD_WIDTH}
+          cardWidth={cardWidth}
           onClaim={handleClaim}
         />
 
         <SpinToWinCard
           isEnabled={!hasSpunToday}
-          onPress={() => setIsSpinModalVisible(true)}
+          onPress={toggleSpinModal}
         />
 
         <SpinToWinModal
           isVisible={isSpinModalVisible}
-          onClose={() => setIsSpinModalVisible(false)}
+          onClose={toggleSpinModal}
+          // Assuming SpinToWinModal handles the 'hasSpunToday' update via Redux or Callback
         />
       </ScrollView>
     </ScreenWrapper>

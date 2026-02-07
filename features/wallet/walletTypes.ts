@@ -7,6 +7,7 @@ export type WalletSource =
   | "app_share"
   | "daily_bonus"
   | "chor_police"
+  |"rewards_claim"
   | "other";
 
 // Each transaction in the wallet

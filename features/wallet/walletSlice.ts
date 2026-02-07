@@ -15,6 +15,7 @@ const initialState: WalletState = {
     daily_bonus: 0,
     chor_police: 0,
     other: 0,
+    rewards_claim: 0,
   },
 };
 

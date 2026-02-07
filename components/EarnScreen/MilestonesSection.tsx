@@ -3,9 +3,10 @@ import { ScrollView, View } from "react-native";
 import { Gift } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { MilestoneCard } from "./MilestoneCard";
+import { RewardTier } from "@/constants/RewardsConst";
 
 interface MilestonesSectionProps {
-  tiers: any[];
+  tiers: RewardTier[];
   coins: number;
   cardWidth: number;
   onClaim: (reward: string, cost: number) => void;

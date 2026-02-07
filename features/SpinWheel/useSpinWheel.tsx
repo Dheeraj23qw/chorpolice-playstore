@@ -5,36 +5,47 @@ import { SpinSegment, SpinStatus } from "./types";
 import { segments } from "@/constants/spinwheel";
 import { AudioEngine } from "@/audio/audioEngine";
 import { creditCoins } from "../wallet/walletSlice";
+import { useTimeoutManager } from "@/hooks/useTimeOutManager";
 
 export const useSpinWheel = () => {
   const dispatch = useDispatch();
 
+  // --- UI STATES ---
   const [status, setStatus] = useState<SpinStatus>("IDLE");
   const [result, setResult] = useState<SpinSegment | null>(null);
   const [showVictory, setShowVictory] = useState(false);
 
-  // Use a ref to track the cumulative rotation so the wheel doesn't "reset" visually
+  // --- TIMEOUT MANAGER ---
+  // We lock timeouts if status is IDLE to ensure a clean slate
+  const { safeSetTimeout, clearAllTimeouts } = useTimeoutManager(status === "IDLE");
+
+  // --- ANIMATION VALUES ---
   const currentRotation = useRef(0);
   const spinAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  // --- REFS FOR CLEANUP ---
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // CLEANUP: Prevent memory leaks if the modal closes mid-animation
+  // Robust cleanup on unmount
   useEffect(() => {
     return () => {
       spinAnim.stopAnimation();
       pulseLoopRef.current?.stop();
+      clearAllTimeouts();
     };
   }, []);
 
+  /**
+   * RESET: Cleans up all animations and timers
+   * Used when modal closes or before a fresh start
+   */
   const reset = useCallback(() => {
     spinAnim.stopAnimation();
     pulseLoopRef.current?.stop();
+    clearAllTimeouts();
 
-    // Reset to 0 for a fresh start, or keep currentRotation.current
-    // if you want it to stay where it landed.
     currentRotation.current = 0;
     spinAnim.setValue(0);
     scaleAnim.setValue(0);
@@ -43,8 +54,11 @@ export const useSpinWheel = () => {
     setStatus("IDLE");
     setResult(null);
     setShowVictory(false);
-  }, [spinAnim, scaleAnim, pulseAnim]);
+  }, [spinAnim, scaleAnim, pulseAnim, clearAllTimeouts]);
 
+  /**
+   * MODAL ENTRY: Springs the UI into view
+   */
   const animateModalIn = useCallback(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
@@ -54,7 +68,10 @@ export const useSpinWheel = () => {
     }).start();
   }, [scaleAnim]);
 
-const handleSpin = useCallback(() => {
+  /**
+   * HANDLE SPIN: The core logic
+   */
+  const handleSpin = useCallback(() => {
     if (status === "SPINNING") return;
 
     AudioEngine.play("spin");
@@ -63,23 +80,22 @@ const handleSpin = useCallback(() => {
     const randomIndex = Math.floor(Math.random() * segments.length);
     const selected = segments[randomIndex];
 
-    // --- INCREASED DURATION CONFIG ---
-    const fullSpins = 25;      // Increased from 15 to 25 (More laps = more speed)
-    const spinDuration = 8000; // Increased from 4.5s to 8s (Longer suspense)
-
+    // --- CRAZY IMPERIAL CONFIG ---
+    const fullSpins = 25;      // High velocity
+    const spinDuration = 8000; // 8 seconds of suspense
     const centers = [315, 45, 225, 135];
     const targetCenter = centers[randomIndex];
 
-    // Maintain cumulative rotation for reliability
+    // Calculate rotation to land exactly in the center of the quadrant
     const extraRotation = (fullSpins * 360) + (360 - targetCenter);
     const finalValue = currentRotation.current + extraRotation;
 
-    spinAnim.setValue(currentRotation.current); // Start from last position
+    spinAnim.setValue(currentRotation.current);
 
     Animated.timing(spinAnim, {
       toValue: finalValue,
       duration: spinDuration,
-      // Aggressive start, very slow creep at the end for maximum "Imperial" drama
+      // Aggressive start, very slow creep at the end
       easing: Easing.bezier(0.12, 0.8, 0.1, 1), 
       useNativeDriver: true,
     }).start(({ finished }) => {
@@ -89,17 +105,20 @@ const handleSpin = useCallback(() => {
       setResult(selected);
       setStatus("DONE");
 
+      // 1. Reward Logic
       if (selected.value > 0) {
         dispatch(
           creditCoins({
             amount: selected.value,
             reason: `Spin Reward - ${selected.label}`,
-          }),
+          })
         );
         setShowVictory(true);
         Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
       }
 
+
+      // 3. Victory Pulse Animation
       pulseLoopRef.current = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -112,11 +131,11 @@ const handleSpin = useCallback(() => {
             duration: 500,
             useNativeDriver: true,
           }),
-        ]),
+        ])
       );
       pulseLoopRef.current.start();
     });
-  }, [status, spinAnim, pulseAnim, dispatch]);
+  }, [status, spinAnim, pulseAnim, dispatch, safeSetTimeout]);
 
   return {
     status,
