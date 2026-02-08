@@ -1,5 +1,5 @@
 import "../global.css";
-import React, { useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback } from "react";
 import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
@@ -14,36 +14,63 @@ import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, StyleSheet, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
+import { notificationService } from "@/notification/notifications";
 
-SplashScreen.preventAutoHideAsync().catch(() => {
-});
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
-  const loaderVisible = useSelector((state: RootState) => state.loader.visible);
-  const loaderMessage = useSelector((state: RootState) => state.loader.message);
+  const loaderVisible = useSelector(
+    (state: RootState) => state.loader.visible
+  );
+  const loaderMessage = useSelector(
+    (state: RootState) => state.loader.message
+  );
 
   useAppExit();
 
+  /**
+   * --------------------------------------------
+   * Audio Restore On Foreground
+   * --------------------------------------------
+   */
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === "active" && AudioEngine && !AudioEngine.isMuted()) {
+      if (nextAppState === "active" && !AudioEngine.isMuted()) {
         AudioEngine.ensureQuizGlobal?.();
       }
     };
 
-    const sub = AppState.addEventListener("change", handleAppStateChange);
+    const sub = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
 
-    // Initial check
-    if (AudioEngine && !AudioEngine.isMuted()) {
+    if (!AudioEngine.isMuted()) {
       AudioEngine.ensureQuizGlobal?.();
     }
 
     return () => sub.remove();
   }, []);
 
+  /**
+   * --------------------------------------------
+   * Notifications Setup (Production Safe)
+   * --------------------------------------------
+   */
+useEffect(() => {
+  notificationService.registerPermissions();
+  notificationService.listen();
+  notificationService.handleInitialNotification();
+
+  return () => {
+    notificationService.cleanup();
+  };
+}, []);
+
+
   const renderScreenLayout = useCallback(
     ({ children }: { children: React.ReactNode }) => (
-      <ScreenWrapper variant="default" breathing={true}>
+      <ScreenWrapper variant="default" breathing>
         {children}
       </ScreenWrapper>
     ),
@@ -64,7 +91,10 @@ function AppLayout() {
       </Stack>
 
       <RouteLoader />
-      <GlobalLoader visible={loaderVisible} message={loaderMessage} />
+      <GlobalLoader
+        visible={loaderVisible}
+        message={loaderMessage}
+      />
     </View>
   );
 }

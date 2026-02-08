@@ -8,11 +8,12 @@ import { claimSpinReward } from "../wallet/walletSlice"; // Changed to claimSpin
 import { useTimeoutManager } from "@/hooks/useTimeOutManager";
 import { RootState } from "@/redux/store"; // Adjust path to your store
 import { formatTime } from "@/utils/TimeFormat";
+import { notificationService } from "@/notification/notifications";
 
 export const useSpinWheel = () => {
   const dispatch = useDispatch();
 
-  const COOLDOWN = 12 * 60 * 60 * 1000;
+  const COOLDOWN = 60 * 1000;
 
   const [remainingTime, setRemainingTime] = useState(0);
 
@@ -69,6 +70,21 @@ export const useSpinWheel = () => {
     };
   }, []);
 
+useEffect(() => {
+  if (!isLocked && spinLock.lastUsedTimestamp) {
+    const remainingCooldown = COOLDOWN;
+    const lastUsed = spinLock.lastUsedTimestamp;
+    const timeUntilUnlock = remainingCooldown - (Date.now() - lastUsed);
+
+    console.log("Scheduling unlock notification in", timeUntilUnlock, "ms");
+
+    if (timeUntilUnlock > 0) {
+      notificationService.scheduleSpinUnlock(Math.ceil(timeUntilUnlock / 1000));
+    }
+  }
+}, [isLocked, spinLock.lastUsedTimestamp]);
+
+
   const reset = useCallback(() => {
     spinAnim.stopAnimation();
     pulseLoopRef.current?.stop();
@@ -94,6 +110,8 @@ export const useSpinWheel = () => {
   /**
    * HANDLE SPIN
    */
+
+
   const handleSpin = useCallback(() => {
     const lastUsed = spinLock.lastUsedTimestamp;
 
@@ -122,7 +140,7 @@ export const useSpinWheel = () => {
       duration: spinDuration,
       easing: Easing.bezier(0.12, 0.8, 0.1, 1),
       useNativeDriver: true,
-    }).start(({ finished }) => {
+    }).start(async ({ finished }) => {
       if (!finished) return;
 
       currentRotation.current = finalValue;

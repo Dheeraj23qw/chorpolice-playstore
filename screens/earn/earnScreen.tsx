@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { Alert, ScrollView, useWindowDimensions } from "react-native";
+import { Alert, Button, ScrollView, useWindowDimensions } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 
 import ScreenWrapper from "@/components/screenwrapper";
@@ -12,6 +12,7 @@ import { RootState } from "@/redux/store";
 import { debitCoins } from "@/features/wallet/walletSlice";
 import { REWARD_TIERS } from "@/constants/RewardsConst";
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
+import { notificationService } from "@/notification/notifications";
 
 // Types
 
@@ -109,6 +110,13 @@ export default function EarnScreen() {
           formattedTime={formattedTime}
           onPress={() => {
             if (!isLocked) toggleSpinModal();
+          }}
+        />
+
+        <Button
+          title="Test Notification"
+          onPress={async () => {
+            await notificationService.scheduleSpinUnlock(5); // 5 sec for test
           }}
         />
 

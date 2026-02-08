@@ -110,30 +110,37 @@ const walletSlice = createSlice({
       saveWalletToStorage(state);
     },
 
-    claimSpinReward: (
-      state,
-      action: PayloadAction<{ amount: number; reason: string }>,
-    ) => {
-      const { amount, reason } = action.payload;
+  claimSpinReward: (
+  state,
+  action: PayloadAction<{ amount: number; reason: string }>
+) => {
+  const { amount, reason } = action.payload;
+  const timestamp = Date.now();
 
-      state.coins += amount;
-      state.totalBySource["spin_reward"] +=
-        (state.totalBySource["spin_reward"] || 0) + amount;
+  if (amount === 0) return;
 
-      state.transactions.unshift({
-        id: Date.now().toString(),
-        type: "CREDIT",
-        amount,
-        reason,
-        source: "spin_reward",
-        timestamp: Date.now(),
-      });
+  // Allow negative balance
+  state.coins += amount;
+
+  state.transactions.unshift({
+    id: timestamp.toString(),
+    type: amount >= 0 ? "CREDIT" : "DEBIT",
+    amount: Math.abs(amount),
+    reason,
+    source: "spin_reward",
+    timestamp,
+  });
+
+  // Track net spin earnings (can go negative)
+  state.totalBySource.spin_reward += amount;
+
+  // Lock spin cooldown
+  state.locks.spin.lastUsedTimestamp = timestamp;
+
+  saveWalletToStorage(state);
+},
 
 
-      state.locks.spin.lastUsedTimestamp = Date.now();
-
-      saveWalletToStorage(state);
-    },
   },
 });
 
