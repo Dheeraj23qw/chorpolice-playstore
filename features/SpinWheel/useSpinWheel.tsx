@@ -1,48 +1,49 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Animated, Easing, Vibration, Platform } from "react-native";
-import { useDispatch, useSelector } from "react-redux"; // Added useSelector
+import { useDispatch, useSelector } from "react-redux";
 import { SpinSegment, SpinStatus } from "./types";
 import { segments } from "@/constants/spinwheel";
 import { AudioEngine } from "@/audio/audioEngine";
-import { claimSpinReward } from "../wallet/walletSlice"; // Changed to claimSpinReward
+import { claimSpinReward } from "../wallet/walletSlice";
 import { useTimeoutManager } from "@/hooks/useTimeOutManager";
-import { RootState } from "@/redux/store"; // Adjust path to your store
+import { RootState } from "@/redux/store";
 import { formatTime } from "@/utils/TimeFormat";
 import { notificationService } from "@/notification/notifications";
+import { Vibration, Platform } from "react-native";
+// ✅ Import all Reanimated tools
+import { 
+  useSharedValue, 
+  withTiming, 
+  withSpring, 
+  withRepeat, 
+  withSequence, 
+  Easing, 
+  runOnJS,
+  cancelAnimation 
+} from "react-native-reanimated";
 
 export const useSpinWheel = () => {
-  // UI STATES
   const [status, setStatus] = useState<SpinStatus>("IDLE");
   const [result, setResult] = useState<SpinSegment | null>(null);
   const [showVictory, setShowVictory] = useState(false);
-
-  const { safeSetTimeout, clearAllTimeouts } = useTimeoutManager(
-    status === "IDLE",
-  );
-
   const [remainingTime, setRemainingTime] = useState(0);
 
+  const { clearAllTimeouts } = useTimeoutManager(status === "IDLE");
   const dispatch = useDispatch();
+  
   const spinLock = useSelector(
-    (state: RootState) =>
-      state.wallet.locks.spin ?? { lastUsedTimestamp: null },
+    (state: RootState) => state.wallet.locks.spin ?? { lastUsedTimestamp: null }
   );
-  const COOLDOWN = 12 * 60 * 60 * 1000;
-
-  const lastUsed = spinLock.lastUsedTimestamp;
-
+  const COOLDOWN =  60 * 1000;
   const isLocked = remainingTime > 0;
 
-  // ANIMATION VALUES
-  const currentRotation = useRef(0);
-  const spinAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+  // ✅ REANIMATED VALUES
+  const spinAnim = useSharedValue(0);
+  const scaleAnim = useSharedValue(0);
+  const pulseAnim = useSharedValue(1);
 
+  // 1. Timer Logic
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-
     const lastUsed = spinLock.lastUsedTimestamp;
 
     if (lastUsed !== null) {
@@ -50,60 +51,85 @@ export const useSpinWheel = () => {
         const diff = COOLDOWN - (Date.now() - lastUsed);
         setRemainingTime(diff > 0 ? diff : 0);
       };
-
       updateRemaining();
       interval = setInterval(updateRemaining, 1000);
     } else {
       setRemainingTime(0);
     }
-
-    return () => {
-      if (interval !== null) clearInterval(interval);
-    };
+    return () => { if (interval) clearInterval(interval); };
   }, [spinLock.lastUsedTimestamp]);
 
-  useEffect(() => {
-    return () => {
-      spinAnim.stopAnimation();
-      pulseLoopRef.current?.stop();
-      clearAllTimeouts();
-    };
-  }, []);
-
+  // 2. Notification Logic
   useEffect(() => {
     if (remainingTime <= 0) return;
-
     notificationService.cancelNotificationById("spin-unlock-reminder");
     notificationService.scheduleSpinUnlock(Math.ceil(remainingTime / 1000));
   }, [remainingTime]);
 
+  // 3. Cleanup on Unmount
+  useEffect(() => {
+    return () => {
+      cancelAnimation(spinAnim);
+      cancelAnimation(scaleAnim);
+      cancelAnimation(pulseAnim);
+      clearAllTimeouts();
+    };
+  }, []);
+
+  // ✅ CORRECTED RESET (Uses .value)
   const reset = useCallback(() => {
-    spinAnim.stopAnimation();
-    pulseLoopRef.current?.stop();
+    cancelAnimation(spinAnim);
+    cancelAnimation(scaleAnim);
+    cancelAnimation(pulseAnim);
     clearAllTimeouts();
-    currentRotation.current = 0;
-    spinAnim.setValue(0);
-    scaleAnim.setValue(0);
-    pulseAnim.setValue(1);
+    
+    spinAnim.value = 0;
+    scaleAnim.value = 0;
+    pulseAnim.value = 1;
+    
     setStatus("IDLE");
     setResult(null);
     setShowVictory(false);
-  }, [spinAnim, scaleAnim, pulseAnim, clearAllTimeouts]);
+  }, [clearAllTimeouts]);
 
+  // ✅ CORRECTED ANIMATE IN (Uses withSpring)
   const animateModalIn = useCallback(() => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
+    scaleAnim.value = withSpring(1, {
       damping: 12,
       stiffness: 90,
-    }).start();
-  }, [scaleAnim]);
+    });
+  }, []);
 
+  // Helper for things that must run on the Main JS Thread
+  const handleSpinEnd = useCallback((selected: SpinSegment, finalRotation: number) => {
+    setResult(selected);
+    setStatus("DONE");
+
+    if (selected.value) {
+      dispatch(claimSpinReward({
+        amount: selected.value,
+        reason: `Spin Reward - ${selected.label}`,
+      }));
+      setShowVictory(true);
+      Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
+    }
+
+    // ✅ REANIMATED PULSE LOOP (much cleaner)
+    pulseAnim.value = withRepeat(
+      withSequence(
+        withTiming(1.1, { duration: 500 }),
+        withTiming(1, { duration: 500 })
+      ),
+      -1,
+      true
+    );
+  }, [dispatch]);
+
+  // ✅ CORRECTED HANDLE SPIN
   const handleSpin = useCallback(() => {
     if (status !== "IDLE" || isLocked) return;
 
     setStatus("SPINNING");
-
     AudioEngine.play("spin");
 
     const randomIndex = Math.floor(Math.random() * segments.length);
@@ -115,53 +141,18 @@ export const useSpinWheel = () => {
     const targetCenter = centers[randomIndex];
 
     const extraRotation = fullSpins * 360 + (360 - targetCenter);
-    const finalValue = currentRotation.current + extraRotation;
+    const finalValue = spinAnim.value + extraRotation;
 
-    spinAnim.setValue(currentRotation.current);
-
-    Animated.timing(spinAnim, {
-      toValue: finalValue,
+    spinAnim.value = withTiming(finalValue, {
       duration: spinDuration,
       easing: Easing.bezier(0.12, 0.8, 0.1, 1),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (!finished) return;
-
-      currentRotation.current = finalValue;
-      setResult(selected);
-      setStatus("DONE");
-
-      if (selected.value) {
-        dispatch(
-          claimSpinReward({
-            amount: selected.value,
-            reason: `Spin Reward - ${selected.label}`,
-          }),
-        );
-
-        setShowVictory(true);
-
-        Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
+    }, (finished) => {
+      if (finished) {
+        // We must bridge back to the JS thread to update React state
+        runOnJS(handleSpinEnd)(selected, finalValue);
       }
-
-      pulseLoopRef.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-
-      pulseLoopRef.current.start();
     });
-  }, [status, isLocked, dispatch]);
+  }, [status, isLocked, handleSpinEnd]);
 
   return {
     status,

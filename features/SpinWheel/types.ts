@@ -1,8 +1,9 @@
-import { Animated } from "react-native";
 
 /* ================================
    Core Types
 ================================ */
+
+import { SharedValue } from "react-native-reanimated";
 
 export type SpinStatus = "IDLE" | "SPINNING" | "DONE";
 
@@ -19,8 +20,8 @@ export interface SpinSegment {
 ================================ */
 
 export interface SpinWheelViewProps {
-  spinAnim: Animated.Value;
-  segments: any[];
+ spinAnim: SharedValue<number>;
+  segments: SpinSegment[];
 }
 
 export interface SpinButtonProps {
@@ -42,5 +43,5 @@ export interface SpinHeaderProps {
 export interface SpinResultProps {
   status: SpinStatus;
   result: SpinSegment | null;
-  pulseAnim: Animated.Value;
+  pulseAnim: SharedValue<number>;
 }

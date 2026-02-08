@@ -1,15 +1,26 @@
 import React, { memo } from "react";
-import { View, Animated } from "react-native";
+import { View } from "react-native";
+import Animated, { useAnimatedStyle } from "react-native-reanimated"; // Use Reanimated's Animated
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { SpinResultProps } from "./types";
 
 const SpinResult = ({ status, result, pulseAnim }: SpinResultProps) => {
+  const isDone = status === "DONE" && result;
+
+  // 1. Define the animated style hook
+  // This ensures 'pulseAnim.value' is accessed on the UI thread, not during React render
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: pulseAnim.value }], 
+    };
+  });
+
   return (
     <View className="h-28 justify-center items-center mb-6 px-4">
-      {status === "DONE" && result ? (
+      {isDone ? (
         <Animated.View
-          style={{ transform: [{ scale: pulseAnim }] }}
+          style={animatedStyle} // 2. Apply the hook here
           className="items-center"
         >
           <Text

@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect, memo } from "react";
-import { Modal, View, Animated } from "react-native";
+import React, { useEffect, memo } from "react";
+import { Modal, View } from "react-native";
+// ✅ Import Reanimated components and hooks
+import Animated, { useAnimatedStyle } from "react-native-reanimated"; 
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
 import SpinHeader from "@/features/SpinWheel/SpinHeader";
 import VictoryOverlay from "@/features/SpinWheel/VictoryOverlay";
@@ -27,30 +29,38 @@ const SpinController: React.FC<SpinControllerProps> = ({ isVisible, onClose }) =
     animateModalIn,
   } = useSpinWheel();
 
-  // ✅ Auto-close after 3s when result is done
+
+  const modalAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleAnim.value }],
+  }));
+
   useEffect(() => {
     let timer: number;
     if (status === "DONE") {
       timer = setTimeout(() => {
-        setShowVictory(false); // hide victory overlay
-        onClose(); // close modal
+        setShowVictory(false);
+        onClose();
       }, 3000);
     }
     return () => clearTimeout(timer);
   }, [status, onClose, setShowVictory]);
 
   useEffect(() => {
-    if (isVisible) animateModalIn();
-    else reset();
-  }, [isVisible]);
+    if (isVisible) {
+      animateModalIn();
+    } else {
+      reset();
+    }
+  }, [isVisible, animateModalIn, reset]);
 
   return (
     <Modal visible={isVisible} transparent animationType="slide">
       <View className="flex-1 bg-zinc-950">
         <VictoryOverlay visible={showVictory} onComplete={() => setShowVictory(false)} />
 
+        {/* ✅ Use Reanimated's Animated.View and apply modalAnimatedStyle */}
         <Animated.View
-          style={{ flex: 1, transform: [{ scale: scaleAnim }] }}
+          style={[{ flex: 1 }, modalAnimatedStyle]}
           className="items-center justify-between pb-12 pt-16"
         >
           {/* Header */}

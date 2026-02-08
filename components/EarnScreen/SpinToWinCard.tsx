@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { RotateCcw, Zap, Lock } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
@@ -9,7 +9,6 @@ interface SpinCardProps {
   formattedTime: string;
   onPress: () => void;
 }
-
 
 export const SpinToWinCard = ({
   isLocked,
@@ -23,6 +22,7 @@ export const SpinToWinCard = ({
       onPress={onPress}
       disabled={isLocked}
       activeOpacity={0.85}
+      // Cleaned up logic for class names
       className={`relative mt-4 mb-10 overflow-hidden rounded-[40px] border-2 ${
         isEnabled
           ? "bg-slate-900 border-indigo-500/30"
@@ -35,14 +35,14 @@ export const SpinToWinCard = ({
               shadowOffset: { width: 0, height: 12 },
               shadowOpacity: 0.4,
               shadowRadius: 25,
-              elevation: 15,
+              elevation: 15, // Essential for Android
             }
           : {}
       }
     >
       {/* LOCK OVERLAY */}
       {isLocked && (
-        <View className="absolute inset-0 z-40 items-center justify-center bg-slate-900/80 backdrop-blur-xl">
+        <View className="absolute inset-0 z-40 items-center justify-center bg-slate-900/90">
           <Lock size={18} color="#94a3b8" />
           <Text className="mt-2 text-[10px] uppercase tracking-[3px] text-slate-400 font-main-bold">
             Unlocks In
@@ -66,8 +66,9 @@ export const SpinToWinCard = ({
         <View className="z-10 flex-1 pr-4">
           <View className="flex-row items-center mb-1">
             <View
+              // Removed animate-pulse (use Reanimated if animation is needed)
               className={`h-2 w-2 rounded-full mr-2 ${
-                isEnabled ? "bg-indigo-400 animate-pulse" : "bg-slate-500"
+                isEnabled ? "bg-indigo-400" : "bg-slate-500"
               }`}
             />
             <Text
@@ -85,21 +86,21 @@ export const SpinToWinCard = ({
               isEnabled ? "text-white" : "text-slate-400"
             }`}
           >
-           Coin Carnival
+            Coin Carnival
           </Text>
 
           {/* Button */}
           <View
             className={`mt-4 flex-row items-center self-start rounded-2xl px-5 py-2.5 ${
               isEnabled
-                ? "bg-indigo-500 shadow-xl shadow-indigo-500/40"
+                ? "bg-indigo-500" 
                 : "bg-slate-700"
             }`}
           >
             {isEnabled ? (
-              <Zap size={14} color="white" fill="white" className="mr-2" />
+              <Zap size={14} color="white" fill="white" style={{ marginRight: 8 }} />
             ) : (
-              <Lock size={14} color="#94a3b8" className="mr-2" />
+              <Lock size={14} color="#94a3b8" style={{ marginRight: 8 }} />
             )}
             <Text
               className={`text-[11px] font-main-bold uppercase tracking-wider ${
@@ -111,22 +112,23 @@ export const SpinToWinCard = ({
           </View>
         </View>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT SIDE (Visual Wheel Representation) */}
         <View className="relative items-center justify-center">
+          {/* Static dashed border (Removed animate-spin) */}
           <View
             className={`absolute h-40 w-40 rounded-full border border-dashed ${
-              isEnabled ? "border-indigo-500/20 animate-spin" : "border-slate-700"
+              isEnabled ? "border-indigo-500/20" : "border-slate-700"
             }`}
-            style={{ animationDuration: "12s" }}
           />
 
           <View
             className={`h-32 w-32 items-center justify-center rounded-full border-[4px] ${
               isEnabled
-                ? "bg-indigo-950 border-slate-900 shadow-2xl"
+                ? "bg-indigo-950 border-slate-900"
                 : "bg-slate-700 border-slate-800"
             }`}
           >
+            {/* Gradient Border Simulation */}
             <View
               className={`absolute inset-0 rounded-full border-[10px] opacity-60 ${
                 isEnabled
@@ -144,10 +146,12 @@ export const SpinToWinCard = ({
             </View>
           </View>
 
+          {/* Wheel Pointer */}
           <View
             className={`absolute -top-2 z-30 h-5 w-[6px] rounded-full ${
-              isEnabled ? "bg-indigo-400 shadow-sm shadow-white" : "bg-slate-600"
+              isEnabled ? "bg-indigo-400" : "bg-slate-600"
             }`}
+            style={isEnabled ? { shadowColor: 'white', shadowRadius: 4, shadowOpacity: 0.5 } : {}}
           />
         </View>
       </View>
