@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { Alert, Button, ScrollView, useWindowDimensions } from "react-native";
+import { Alert, ScrollView, useWindowDimensions } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 
 import ScreenWrapper from "@/components/screenwrapper";
@@ -9,12 +9,9 @@ import { MilestonesSection } from "@/components/EarnScreen/MilestonesSection";
 import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
 
 import { RootState } from "@/redux/store";
-import { debitCoins } from "@/features/wallet/walletSlice";
+import { applyTransaction } from "@/features/wallet/walletSlice";
 import { REWARD_TIERS } from "@/constants/RewardsConst";
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
-import { notificationService } from "@/notification/notifications";
-
-// Types
 
 export default function EarnScreen() {
   const { width } = useWindowDimensions();
@@ -36,7 +33,7 @@ export default function EarnScreen() {
       if (coins < cost) {
         Alert.alert(
           "Insufficient Balance",
-          `You need ${(cost - coins).toLocaleString()} more coins to claim this reward.`,
+          `You need ${(cost - coins).toLocaleString()} more coins to claim this reward.`
         );
         return;
       }
@@ -50,22 +47,23 @@ export default function EarnScreen() {
             text: "Redeem",
             onPress: () => {
               try {
+                // Apply transaction using your slice
                 dispatch(
-                  debitCoins({
-                    amount: cost,
+                  applyTransaction({
+                    amount: -cost, // debit coins
                     reason: `Reward: ${rewardName}`,
                     source: "rewards_claim",
                     metadata: {
                       rewardName,
                       timestamp: new Date().toISOString(),
                     },
-                  }),
+                  })
                 );
 
                 Alert.alert(
                   "Success! 🎉",
                   `Your ${rewardName} is on the way. Our team will contact you shortly.`,
-                  [{ text: "Great!" }],
+                  [{ text: "Great!" }]
                 );
               } catch (error) {
                 console.error("Redemption Error:", error);
@@ -74,10 +72,10 @@ export default function EarnScreen() {
             },
           },
         ],
-        { cancelable: true },
+        { cancelable: true }
       );
     },
-    [coins, dispatch],
+    [coins, dispatch]
   );
 
   const toggleSpinModal = useCallback(() => {
@@ -92,7 +90,6 @@ export default function EarnScreen() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        // NativeWind 4+ uses className, ensure your setup matches
         className="flex-1 bg-slate-950"
         contentContainerClassName="pb-12 pt-4 px-5"
       >
@@ -110,13 +107,6 @@ export default function EarnScreen() {
           formattedTime={formattedTime}
           onPress={() => {
             if (!isLocked) toggleSpinModal();
-          }}
-        />
-
-        <Button
-          title="Test Notification"
-          onPress={async () => {
-            await notificationService.scheduleSpinUnlock(5); // 5 sec for test
           }}
         />
 

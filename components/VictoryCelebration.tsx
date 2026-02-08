@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useMemo, useState, useRef } from "react";
-import { View, StyleSheet, Dimensions } from "react-native";
+import { View, Dimensions, StyleSheet } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
 import { wp, hp } from "@/utils/responsive";
 
@@ -10,40 +10,38 @@ interface VictoryProps {
   onComplete?: () => void;
 }
 
-// ⚙️ Robust Configuration
+// ✅ Predefined intensity config for all layers
 const INTENSITY_CONFIG = {
-  LOW: { side: 30, top: 60, surprise: 30 },
+  LOW: { side: 30, top: 0, surprise: 20 },
   MEDIUM: { side: 50, top: 100, surprise: 60 },
   HIGH: { side: 80, top: 150, surprise: 90 },
 };
 
-// Fallback dimensions if utils fail
-const SCREEN_WIDTH = Dimensions.get("window").width;
-const SCREEN_HEIGHT = Dimensions.get("window").height;
+// Fallback dimensions
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const VictoryCelebrationComponent: React.FC<VictoryProps> = ({
   type = "THEME",
-  duration = 5000, // Increased slightly for better visual tail-off
+  duration = 5000,
   intensity = "MEDIUM",
   onComplete,
 }) => {
   const [active, setActive] = useState(true);
   const timerRef = useRef<number | null>(null);
 
-  // 🎨 Palette - Production Tip: Use consistent hex codes from your theme
+  // 🎨 Memoized colors
   const colors = useMemo(() => {
     return type === "GOLD"
       ? ["#FACC15", "#EAB308", "#FFFFFF", "#CA8A04", "#FFD700", "#B45309"]
       : ["#4f46e5", "#9333ea", "#818cf8", "#c084fc", "#ffffff", "#3b82f6"];
   }, [type]);
 
-  const counts = INTENSITY_CONFIG[intensity];
+  const counts = useMemo(() => INTENSITY_CONFIG[intensity], [intensity]);
 
-  // 🧹 Robust Lifecycle Management
+  // 🧹 Timer & cleanup
   useEffect(() => {
     timerRef.current = setTimeout(() => {
       setActive(false);
-      // Execute onComplete in the next tick to ensure state is settled
       setTimeout(() => onComplete?.(), 0);
     }, duration);
 
@@ -54,12 +52,23 @@ const VictoryCelebrationComponent: React.FC<VictoryProps> = ({
 
   if (!active) return null;
 
+  // Memoized origin points
+  const origins = useMemo(
+    () => ({
+      leftSide: { x: -30, y: hp?.(80) ?? SCREEN_HEIGHT * 0.8 },
+      rightSide: { x: (wp?.(100) ?? SCREEN_WIDTH) + 30, y: hp?.(80) ?? SCREEN_HEIGHT * 0.8 },
+      topCenter: { x: wp?.(50) ?? SCREEN_WIDTH / 2, y: -50 },
+      centerSurprise: { x: wp?.(50) ?? SCREEN_WIDTH / 2, y: hp?.(40) ?? SCREEN_HEIGHT * 0.4 },
+    }),
+    []
+  );
+
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-      {/* 🚀 Layer 1: The Side Cannons (Burst Upwards) */}
+    <View pointerEvents="none" style={styles.container}>
+      {/* Side Cannons */}
       <ConfettiCannon
         count={counts.side}
-        origin={{ x: -30, y: hp?.(80) ?? SCREEN_HEIGHT * 0.8 }}
+        origin={origins.leftSide}
         fadeOut
         explosionSpeed={400}
         fallSpeed={2500}
@@ -67,30 +76,30 @@ const VictoryCelebrationComponent: React.FC<VictoryProps> = ({
       />
       <ConfettiCannon
         count={counts.side}
-        origin={{ x: (wp?.(100) ?? SCREEN_WIDTH) + 30, y: hp?.(80) ?? SCREEN_HEIGHT * 0.8 }}
+        origin={origins.rightSide}
         fadeOut
         explosionSpeed={400}
         fallSpeed={2500}
         colors={colors}
       />
 
-      {/* 🚀 Layer 2: The Rainfall (Continuous feel) */}
-      {intensity !== "LOW" && (
+      {/* Top Rainfall */}
+      {intensity !== "LOW" && counts.top > 0 && (
         <ConfettiCannon
           count={counts.top}
-          origin={{ x: wp?.(50) ?? SCREEN_WIDTH / 2, y: -50 }}
+          origin={origins.topCenter}
           fadeOut
-          fallSpeed={3500}
           explosionSpeed={350}
+          fallSpeed={3500}
           colors={colors}
         />
       )}
 
-      {/* 🚀 Layer 3: The Center Surprise (Delayed) */}
+      {/* Center Surprise */}
       <ConfettiCannon
         count={counts.surprise}
-        origin={{ x: wp?.(50) ?? SCREEN_WIDTH / 2, y: hp?.(40) ?? SCREEN_HEIGHT * 0.4 }}
-        autoStartDelay={800} // Shorter delay for tighter feel
+        origin={origins.centerSurprise}
+        autoStartDelay={800}
         fadeOut
         fallSpeed={2200}
         colors={colors}
@@ -99,13 +108,19 @@ const VictoryCelebrationComponent: React.FC<VictoryProps> = ({
   );
 };
 
-// Use memo with a custom comparison if props change frequently
-export const VictoryCelebration = memo(VictoryCelebrationComponent);
+// Custom memoization: only re-render if relevant props change
+export const VictoryCelebration = memo(
+  VictoryCelebrationComponent,
+  (prev, next) =>
+    prev.type === next.type &&
+    prev.duration === next.duration &&
+    prev.intensity === next.intensity &&
+    prev.onComplete === next.onComplete
+);
 
 const styles = StyleSheet.create({
-    // Using StyleSheet instead of raw objects is slightly more performant in RN
-    container: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 999,
-    }
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999,
+  },
 });

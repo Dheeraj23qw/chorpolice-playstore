@@ -58,14 +58,31 @@ function AppLayout() {
    * --------------------------------------------
    */
 useEffect(() => {
-  notificationService.registerPermissions();
-  notificationService.listen();
-  notificationService.handleInitialNotification();
+  let mounted = true;
+
+  const setupNotifications = async () => {
+    try {
+      const granted = await notificationService.registerPermissions();
+
+      if (!mounted) return;
+
+      if (granted) {
+        notificationService.listen();
+        await notificationService.handleInitialNotification();
+      }
+    } catch (error) {
+      console.log("Notification setup error:", error);
+    }
+  };
+
+  setupNotifications();
 
   return () => {
+    mounted = false;
     notificationService.cleanup();
   };
 }, []);
+
 
 
   const renderScreenLayout = useCallback(

@@ -11,17 +11,6 @@ import { formatTime } from "@/utils/TimeFormat";
 import { notificationService } from "@/notification/notifications";
 
 export const useSpinWheel = () => {
-  const dispatch = useDispatch();
-
-  const COOLDOWN = 60 * 1000;
-
-  const [remainingTime, setRemainingTime] = useState(0);
-
-  // 1. Get the lock data from the Wallet Slice
-  const spinLock = useSelector(
-    (state: RootState) =>
-      state.wallet.locks.spin ?? { lastUsedTimestamp: null },
-  );
   // UI STATES
   const [status, setStatus] = useState<SpinStatus>("IDLE");
   const [result, setResult] = useState<SpinSegment | null>(null);
@@ -30,6 +19,19 @@ export const useSpinWheel = () => {
   const { safeSetTimeout, clearAllTimeouts } = useTimeoutManager(
     status === "IDLE",
   );
+
+  const [remainingTime, setRemainingTime] = useState(0);
+
+  const dispatch = useDispatch();
+  const spinLock = useSelector(
+    (state: RootState) =>
+      state.wallet.locks.spin ?? { lastUsedTimestamp: null },
+  );
+  const COOLDOWN = 12 * 60 * 60 * 1000;
+
+  const lastUsed = spinLock.lastUsedTimestamp;
+
+  const isLocked = remainingTime > 0;
 
   // ANIMATION VALUES
   const currentRotation = useRef(0);
@@ -60,8 +62,6 @@ export const useSpinWheel = () => {
     };
   }, [spinLock.lastUsedTimestamp]);
 
-  const isLocked = remainingTime > 0;
-
   useEffect(() => {
     return () => {
       spinAnim.stopAnimation();
@@ -70,20 +70,12 @@ export const useSpinWheel = () => {
     };
   }, []);
 
-useEffect(() => {
-  if (!isLocked && spinLock.lastUsedTimestamp) {
-    const remainingCooldown = COOLDOWN;
-    const lastUsed = spinLock.lastUsedTimestamp;
-    const timeUntilUnlock = remainingCooldown - (Date.now() - lastUsed);
+  useEffect(() => {
+    if (remainingTime <= 0) return;
 
-    console.log("Scheduling unlock notification in", timeUntilUnlock, "ms");
-
-    if (timeUntilUnlock > 0) {
-      notificationService.scheduleSpinUnlock(Math.ceil(timeUntilUnlock / 1000));
-    }
-  }
-}, [isLocked, spinLock.lastUsedTimestamp]);
-
+    notificationService.cancelNotificationById("spin-unlock-reminder");
+    notificationService.scheduleSpinUnlock(Math.ceil(remainingTime / 1000));
+  }, [remainingTime]);
 
   const reset = useCallback(() => {
     spinAnim.stopAnimation();
@@ -107,20 +99,12 @@ useEffect(() => {
     }).start();
   }, [scaleAnim]);
 
-  /**
-   * HANDLE SPIN
-   */
-
-
   const handleSpin = useCallback(() => {
-    const lastUsed = spinLock.lastUsedTimestamp;
-
-    const isLocked = lastUsed !== null && Date.now() - lastUsed < COOLDOWN;
-
     if (status !== "IDLE" || isLocked) return;
 
-    AudioEngine.play("spin");
     setStatus("SPINNING");
+
+    AudioEngine.play("spin");
 
     const randomIndex = Math.floor(Math.random() * segments.length);
     const selected = segments[randomIndex];
@@ -140,22 +124,23 @@ useEffect(() => {
       duration: spinDuration,
       easing: Easing.bezier(0.12, 0.8, 0.1, 1),
       useNativeDriver: true,
-    }).start(async ({ finished }) => {
+    }).start(({ finished }) => {
       if (!finished) return;
 
       currentRotation.current = finalValue;
       setResult(selected);
       setStatus("DONE");
 
-      // Using claimSpinReward to credit coins AND set the lock timestamp
-      if (selected.value > 0) {
+      if (selected.value) {
         dispatch(
           claimSpinReward({
             amount: selected.value,
             reason: `Spin Reward - ${selected.label}`,
           }),
         );
+
         setShowVictory(true);
+
         Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
       }
 
@@ -173,9 +158,10 @@ useEffect(() => {
           }),
         ]),
       );
+
       pulseLoopRef.current.start();
     });
-  }, [status, spinAnim, pulseAnim, dispatch, spinLock]);
+  }, [status, isLocked, dispatch]);
 
   return {
     status,

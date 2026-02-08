@@ -1,7 +1,8 @@
 // walletSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { WalletState, Transaction, WalletSource } from "./walletTypes";
-import { saveWalletToStorage } from "./walletStorage";
+
+const MAX_TRANSACTIONS = 100;
 
 const initialState: WalletState = {
   coins: 0,
@@ -24,133 +25,98 @@ const initialState: WalletState = {
   },
 };
 
+type CoinPayload = {
+  amount: number;
+  reason: string;
+  source?: WalletSource;
+  metadata?: Record<string, any>;
+};
+
 const walletSlice = createSlice({
   name: "wallet",
   initialState,
   reducers: {
-    // Replace entire wallet state
     setWallet: (_, action: PayloadAction<WalletState>) => action.payload,
 
-    // Mark wallet as initialized
     markInitialized: (state) => {
       state.initialized = true;
     },
 
-    // Credit coins to wallet
-    creditCoins: (
-      state,
-      action: PayloadAction<{
-        amount: number;
-        reason: string;
-        source?: WalletSource;
-        metadata?: Record<string, any>;
-      }>,
-    ) => {
-      const { amount, reason, source = "other", metadata } = action.payload;
+    applyTransaction: (state, action: PayloadAction<CoinPayload>) => {
+      const { amount, reason, source = "other", metadata } =
+        action.payload;
 
-      if (amount <= 0) return;
+      if (amount === 0) return;
+
+      const timestamp = Date.now();
 
       state.coins += amount;
 
       const transaction: Transaction = {
-        id: Date.now().toString(),
-        type: "CREDIT",
-        amount,
+        id: timestamp.toString(),
+        type: amount >= 0 ? "CREDIT" : "DEBIT",
+        amount: Math.abs(amount),
         reason,
         source,
         metadata,
-        timestamp: Date.now(),
+        timestamp,
       };
 
       state.transactions.unshift(transaction);
 
-      // Update totals by source
-      if (!state.totalBySource[source]) state.totalBySource[source] = 0;
+      if (state.transactions.length > MAX_TRANSACTIONS) {
+        state.transactions.pop();
+      }
+
+      if (!state.totalBySource[source]) {
+        state.totalBySource[source] = 0;
+      }
+
       state.totalBySource[source] += amount;
-
-      saveWalletToStorage(state);
     },
 
-    // Debit coins from wallet
-    debitCoins: (
+    claimSpinReward: (
       state,
-      action: PayloadAction<{
-        amount: number;
-        reason: string;
-        source?: WalletSource;
-        metadata?: Record<string, any>;
-      }>,
+      action: PayloadAction<{ amount: number; reason: string }>
     ) => {
-      const { amount, reason, source = "other", metadata } = action.payload;
+      const { amount, reason } = action.payload;
 
-      if (amount <= 0 || state.coins < amount) return;
+      if (amount === 0) return;
 
-      state.coins -= amount;
+      const timestamp = Date.now();
 
-      const transaction: Transaction = {
-        id: Date.now().toString(),
-        type: "DEBIT",
-        amount,
+      state.coins += amount;
+
+      state.transactions.unshift({
+        id: timestamp.toString(),
+        type: amount >= 0 ? "CREDIT" : "DEBIT",
+        amount: Math.abs(amount),
         reason,
-        source,
-        metadata,
-        timestamp: Date.now(),
-      };
+        source: "spin_reward",
+        timestamp,
+      });
 
-      state.transactions.unshift(transaction);
+      if (state.transactions.length > MAX_TRANSACTIONS) {
+        state.transactions.pop();
+      }
 
-      saveWalletToStorage(state);
+      state.totalBySource.spin_reward += amount;
+
+      state.locks.spin.lastUsedTimestamp = timestamp;
     },
 
-    // Reset wallet completely
-    resetWallet: (state) => {
-      state.coins = 0;
-      state.transactions = [];
-      state.totalBySource = { ...initialState.totalBySource };
-      saveWalletToStorage(state);
+    resetWallet: () => {
+      return { ...initialState };
     },
-
-  claimSpinReward: (
-  state,
-  action: PayloadAction<{ amount: number; reason: string }>
-) => {
-  const { amount, reason } = action.payload;
-  const timestamp = Date.now();
-
-  if (amount === 0) return;
-
-  // Allow negative balance
-  state.coins += amount;
-
-  state.transactions.unshift({
-    id: timestamp.toString(),
-    type: amount >= 0 ? "CREDIT" : "DEBIT",
-    amount: Math.abs(amount),
-    reason,
-    source: "spin_reward",
-    timestamp,
-  });
-
-  // Track net spin earnings (can go negative)
-  state.totalBySource.spin_reward += amount;
-
-  // Lock spin cooldown
-  state.locks.spin.lastUsedTimestamp = timestamp;
-
-  saveWalletToStorage(state);
-},
-
-
   },
 });
 
 export const {
   setWallet,
   markInitialized,
-  creditCoins,
-  debitCoins,
+  applyTransaction,
+  claimSpinReward,
   resetWallet,
-  claimSpinReward
 } = walletSlice.actions;
 
 export default walletSlice.reducer;

@@ -1,18 +1,21 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
-import { useNavigation } from "expo-router";
-import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
+import React, { useState, useEffect, useLayoutEffect, useCallback } from "react";
+import { router, useNavigation } from "expo-router";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import VideoPlayerComponent from "@/components/IntroVideo";
-import { AudioEngine } from "@/audio/audioEngine";
-import { loadSounds } from "@/redux/reducers/soundReducer";
-import RoundStartLoader from "@/components/RoundStartLoader";
 import { View } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
-import { initializeWallet } from "@/features/wallet/walletThunks";
 
-// ✅ NEW
+import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
+import VideoPlayerComponent from "@/components/IntroVideo";
+import RoundStartLoader from "@/components/RoundStartLoader";
+import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
+
+import { AudioEngine } from "@/audio/audioEngine";
+import { loadSounds } from "@/redux/reducers/soundReducer";
+import { initializeWallet } from "@/features/wallet/walletThunks";
+import { applyTransaction } from "@/features/wallet/walletSlice";
+
+const WELCOME_KEY = "welcome_bonus_v1";
 
 export default function Index() {
   const navigation = useNavigation();
@@ -20,12 +23,12 @@ export default function Index() {
 
   const [stage, setStage] = useState<"splash" | "video" | "game">("splash");
   const [showWelcome, setShowWelcome] = useState(false);
+  const [claiming, setClaiming] = useState(false);
 
   /* ---------------- INIT ---------------- */
   useEffect(() => {
     const initApp = async () => {
       await dispatch(initializeWallet());
-
       dispatch(loadSounds());
     };
 
@@ -39,41 +42,62 @@ export default function Index() {
 
   /* ---------------- SPLASH FLOW ---------------- */
   useEffect(() => {
-    const runSplashFlow = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    const timer = setTimeout(() => {
       setStage("video");
-    };
+    }, 3000);
 
-    runSplashFlow();
+    return () => clearTimeout(timer);
   }, []);
 
   /* ---------------- VIDEO END ---------------- */
-  const handleIntroEnd = async () => {
+  const handleIntroEnd = useCallback(async () => {
     setStage("game");
+
     AudioEngine.play("quiz", "background");
 
-    // Show welcome popup only first time
-    const firstLaunch = await SecureStore.getItemAsync(
-      "welcome_popup_shown"
-    );
+    try {
+      const rewardStatus = await SecureStore.getItemAsync(WELCOME_KEY);
 
-    if (!firstLaunch) {
-      setShowWelcome(true);
-      await SecureStore.setItemAsync(
-        "welcome_popup_shown",
-        "true"
-      );
+      if (!rewardStatus) {
+        setShowWelcome(true);
+      }
+    } catch (err) {
+      console.warn("Welcome check failed:", err);
     }
-  };
+  }, []);
 
-  /* ---------------- MODAL ACTIONS ---------------- */
-  const handleClaim = () => {
-    setShowWelcome(false);
-  };
+  /* ---------------- CLAIM BONUS ---------------- */
+  const handleClaim = useCallback(async () => {
+    if (claiming) return;
 
-  const handleGoToSpin = () => {
-    setShowWelcome(false);
-  };
+    try {
+      setClaiming(true);
+
+      // 🔥 Universal transaction system
+      dispatch(
+        applyTransaction({
+          amount: 1000,
+          reason: "Welcome Bonus Reward",
+          source: "rewards_claim",
+          metadata: {
+            rewardType: "welcome_bonus",
+            version: "v1",
+            triggeredFrom: "first_launch",
+          },
+        })
+      );
+
+      await SecureStore.setItemAsync(WELCOME_KEY, "claimed");
+
+      setShowWelcome(false);
+
+      router.push("/earn");
+    } catch (err) {
+      console.warn("Welcome claim failed:", err);
+    } finally {
+      setClaiming(false);
+    }
+  }, [dispatch, claiming]);
 
   /* ---------------- UI ---------------- */
 
@@ -101,7 +125,6 @@ export default function Index() {
       <WelcomeBonusModal
         isVisible={showWelcome}
         onClaim={handleClaim}
-        onGoToSpin={handleGoToSpin}
       />
     </View>
   );

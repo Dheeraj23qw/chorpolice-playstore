@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import AwardSection from '@/screens/AwardSceen/award1';
+import AwardSection from '@/screens/AwardSceen/award';
 
 export default function AwardRoute() {
 return (

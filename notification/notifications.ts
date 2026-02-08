@@ -1,28 +1,8 @@
-import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import * as Device from "expo-device";
 import { router } from "expo-router";
 
-/**
- * ------------------------------------------------
- * SDK 54+ Notification Handler
- * ------------------------------------------------
- */
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
-/**
- * ------------------------------------------------
- * STRICTLY TYPED ROUTES
- * ------------------------------------------------
- */
-type AppRoute = "/earn" | "/"; // Add more routes if needed
+type AppRoute = "/earn" | "/";
 
 type AppNotificationData = {
   screen?: AppRoute;
@@ -31,38 +11,57 @@ type AppNotificationData = {
 const SPIN_NOTIFICATION_ID = "spin-unlock-reminder";
 
 class NotificationService {
-  private responseListener: Notifications.Subscription | null = null;
+  private _Notifications: typeof import("expo-notifications") | null = null;
+  private responseListener: any = null;
+
+ constructor() {
+  if (Platform.OS !== "web") {
+    const Notifications = require("expo-notifications");
+    
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+
+    this._Notifications = Notifications;
+  }
+}
+
 
   /**
-   * ------------------------------------------------
-   * Register Permissions (Web-safe)
-   * ------------------------------------------------
+   * ✅ Safe accessor
    */
-  async registerPermissions(): Promise<boolean> {
-    // Push notifications only work on physical devices
-    if (Platform.OS === "web" || !Device.isDevice) {
-      console.log("Push notifications are only supported on physical devices");
-      return false;
+  private get Notifications() {
+    if (!this._Notifications) {
+      throw new Error("Notifications not available on web");
     }
+    return this._Notifications;
+  }
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  async registerPermissions(): Promise<boolean> {
+    if (Platform.OS === "web" || !Device.isDevice) return false;
+
+    const { status: existingStatus } =
+      await this.Notifications.getPermissionsAsync();
 
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
+      const { status } =
+        await this.Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
 
-    if (finalStatus !== "granted") {
-      console.log("Notification permission denied");
-      return false;
-    }
+    if (finalStatus !== "granted") return false;
 
     if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
+      await this.Notifications.setNotificationChannelAsync("default", {
         name: "default",
-        importance: Notifications.AndroidImportance.MAX,
+        importance: this.Notifications.AndroidImportance.MAX,
         sound: "default",
       });
     }
@@ -70,11 +69,6 @@ class NotificationService {
     return true;
   }
 
-  /**
-   * ------------------------------------------------
-   * Generic Scheduler
-   * ------------------------------------------------
-   */
   async scheduleLocalNotification(params: {
     id: string;
     title: string;
@@ -82,35 +76,27 @@ class NotificationService {
     seconds: number;
     data?: AppNotificationData;
   }): Promise<void> {
-    if (Platform.OS === "web") return; // Skip on web
+    if (Platform.OS === "web") return;
 
-    try {
-      await this.cancelNotificationById(params.id);
+    await this.cancelNotificationById(params.id);
 
-      await Notifications.scheduleNotificationAsync({
-        identifier: params.id,
-        content: {
-          title: params.title,
-          body: params.body,
-          data: params.data,
-          sound: true,
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: Math.max(1, Math.floor(params.seconds)), // Avoid zero
-          repeats: false,
-        },
-      });
-    } catch (error) {
-      console.log("Schedule error:", error);
-    }
+    await this.Notifications.scheduleNotificationAsync({
+      identifier: params.id,
+      content: {
+        title: params.title,
+        body: params.body,
+        data: params.data,
+        sound: true,
+      },
+      trigger: {
+        type:
+          this.Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, Math.floor(params.seconds)),
+        repeats: false,
+      },
+    });
   }
 
-  /**
-   * ------------------------------------------------
-   * Spin Unlock Reminder
-   * ------------------------------------------------
-   */
   async scheduleSpinUnlock(seconds: number): Promise<void> {
     return this.scheduleLocalNotification({
       id: SPIN_NOTIFICATION_ID,
@@ -121,70 +107,56 @@ class NotificationService {
     });
   }
 
-  /**
-   * ------------------------------------------------
-   * Cancel Specific Notification
-   * ------------------------------------------------
-   */
   async cancelNotificationById(id: string): Promise<void> {
     if (Platform.OS === "web") return;
 
-    try {
-      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const scheduled =
+      await this.Notifications.getAllScheduledNotificationsAsync();
 
-      const match = scheduled.find((n) => n.identifier === id);
+    const match = scheduled.find((n: any) => n.identifier === id);
 
-      if (match) {
-        await Notifications.cancelScheduledNotificationAsync(match.identifier);
-      }
-    } catch (error) {
-      console.log("Cancel error:", error);
+    if (match) {
+      await this.Notifications.cancelScheduledNotificationAsync(
+        match.identifier
+      );
     }
   }
 
-  /**
-   * ------------------------------------------------
-   * Handle Notification Tap (Foreground & Background)
-   * ------------------------------------------------
-   */
   listen(): void {
-    if (Platform.OS === "web") return; // Skip web
+    if (Platform.OS === "web") return;
     if (this.responseListener) return;
 
-    this.responseListener = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const data = response.notification.request.content.data as AppNotificationData;
-        if (data?.screen) {
-          router.push(data.screen);
+    this.responseListener =
+      this.Notifications.addNotificationResponseReceivedListener(
+        (response: any) => {
+          const data =
+            response.notification.request.content
+              .data as AppNotificationData;
+
+          if (data?.screen) {
+            router.push(data.screen);
+          }
         }
-      }
-    );
+      );
   }
 
-  /**
-   * ------------------------------------------------
-   * Handle Cold Start
-   * ------------------------------------------------
-   */
   async handleInitialNotification(): Promise<void> {
     if (Platform.OS === "web") return;
 
-    const response = await Notifications.getLastNotificationResponseAsync();
+    const response =
+      await this.Notifications.getLastNotificationResponseAsync();
 
     if (!response) return;
 
-    const data = response.notification.request.content.data as AppNotificationData;
+    const data =
+      response.notification.request.content
+        .data as AppNotificationData;
 
     if (data?.screen) {
       router.push(data.screen);
     }
   }
 
-  /**
-   * ------------------------------------------------
-   * Cleanup
-   * ------------------------------------------------
-   */
   cleanup(): void {
     if (this.responseListener) {
       this.responseListener.remove();

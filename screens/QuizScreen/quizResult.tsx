@@ -13,7 +13,7 @@ import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
 import { handleShare } from "@/utils/share";
 import { AudioEngine } from "@/audio/audioEngine";
-import { creditCoins } from "@/features/wallet/walletSlice";
+import { applyTransaction } from "@/features/wallet/walletSlice";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,54 +32,50 @@ export default function QuizResult() {
   const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
 
   /* ------------------ COIN REWARD ------------------ */
+  useEffect(() => {
+    if (!level) return;
 
- useEffect(() => {
-  if (!level) return;
+    const coinValues = {
+      easy: isWinner ? 250 : 50,
+      medium: isWinner ? 1000 : 100,
+      hard: isWinner ? 2000 : 200,
+    } as const;
 
-  const coinValues = {
-    easy: isWinner ? 250 : 40,
-    medium: isWinner ? 800 : 100,
-    hard: isWinner ? 2000 : 200,
-  } as const;
+    const reward = coinValues[level];
 
-  const reward = coinValues[level];
+    dispatch(
+      applyTransaction({
+        amount: reward,
+        reason: isWinner ? "Quiz Win" : "Quiz Participation",
+        source: "quiz_reward",
+        metadata: {
+          level, // easy/medium/hard
+          isWinner,
+          correctQuestions: Correct,
+          totalQuestions: Total,
+        },
+      }),
+    );
 
-  // ✅ Credit to wallet instead of old coins store
-  dispatch(
-    creditCoins({
-      amount: reward,
-      reason: isWinner ? "Quiz Win" : "Quiz Participation",
-      source: "quiz_reward",
-      metadata: {
-        level,               // easy/medium/hard
-        isWinner,            // true/false
-        correctQuestions: Correct,
-        totalQuestions: Total,
-      },
-    })
-  );
+    setCoinsAwarded(
+      isWinner
+        ? `You won ${reward} coins!`
+        : `Participation Reward: ${reward} coins`,
+    );
+  }, [level, isWinner, Correct, Total, dispatch]);
 
-  setCoinsAwarded(
-    isWinner
-      ? `You won ${reward} coins!`
-      : `Participation Reward: ${reward} coins`,
-  );
-}, [level, isWinner, Correct, Total, dispatch]);
-
-
+  /* ------------------ STOP AUDIO ------------------ */
   useEffect(() => {
     AudioEngine.stop("timer");
   }, []);
 
   /* ------------------ QUIT HANDLER ------------------ */
-
   const handleQuit = useCallback(() => {
     dispatch(resetDifficulty());
     router.replace("/modeselect");
   }, [dispatch, router]);
 
   /* ------------------ BACK HANDLER ------------------ */
-
   useEffect(() => {
     const backAction = () => {
       Alert.alert(
@@ -91,7 +87,6 @@ export default function QuizResult() {
         ],
         { cancelable: true },
       );
-
       return true;
     };
 
@@ -104,7 +99,6 @@ export default function QuizResult() {
   }, [handleQuit]);
 
   /* ------------------ BUTTON HANDLERS ------------------ */
-
   const handleHome = useCallback(() => {
     handleQuit();
   }, [handleQuit]);
@@ -114,8 +108,6 @@ export default function QuizResult() {
   }, []);
 
   /* ------------------ RENDER ------------------ */
-
-
   return (
     <View className="flex-1 bg-[#09090b]">
       <StatusBar
