@@ -17,6 +17,11 @@ const initialState: WalletState = {
     other: 0,
     rewards_claim: 0,
   },
+  locks: {
+    spin: { lastUsedTimestamp: null, countToday: 0 },
+    daily_bonus: { lastUsedTimestamp: null, countToday: 0 },
+    rate_us: { hasRated: false, lastPrompted: null },
+  },
 };
 
 const walletSlice = createSlice({
@@ -39,7 +44,7 @@ const walletSlice = createSlice({
         reason: string;
         source?: WalletSource;
         metadata?: Record<string, any>;
-      }>
+      }>,
     ) => {
       const { amount, reason, source = "other", metadata } = action.payload;
 
@@ -74,7 +79,7 @@ const walletSlice = createSlice({
         reason: string;
         source?: WalletSource;
         metadata?: Record<string, any>;
-      }>
+      }>,
     ) => {
       const { amount, reason, source = "other", metadata } = action.payload;
 
@@ -104,6 +109,31 @@ const walletSlice = createSlice({
       state.totalBySource = { ...initialState.totalBySource };
       saveWalletToStorage(state);
     },
+
+    claimSpinReward: (
+      state,
+      action: PayloadAction<{ amount: number; reason: string }>,
+    ) => {
+      const { amount, reason } = action.payload;
+
+      state.coins += amount;
+      state.totalBySource["spin_reward"] +=
+        (state.totalBySource["spin_reward"] || 0) + amount;
+
+      state.transactions.unshift({
+        id: Date.now().toString(),
+        type: "CREDIT",
+        amount,
+        reason,
+        source: "spin_reward",
+        timestamp: Date.now(),
+      });
+
+
+      state.locks.spin.lastUsedTimestamp = Date.now();
+
+      saveWalletToStorage(state);
+    },
   },
 });
 
@@ -113,6 +143,7 @@ export const {
   creditCoins,
   debitCoins,
   resetWallet,
+  claimSpinReward
 } = walletSlice.actions;
 
 export default walletSlice.reducer;

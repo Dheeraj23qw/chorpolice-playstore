@@ -18,7 +18,6 @@ export const initializeWallet = () => async (dispatch: AppDispatch) => {
       metadata: { event: "first_launch" },
       timestamp: Date.now(),
     };
-
     const newWallet: WalletState = {
       coins: welcomeBonus,
       transactions: [welcomeTransaction],
@@ -32,6 +31,11 @@ export const initializeWallet = () => async (dispatch: AppDispatch) => {
         chor_police: 0,
         other: 0,
         rewards_claim: 0,
+      },
+      locks: {
+        spin: { lastUsedTimestamp: null, countToday: 0 },
+        daily_bonus: { lastUsedTimestamp: null, countToday: 0 },
+        rate_us: { hasRated: false, lastPrompted: null },
       },
     };
 
@@ -50,6 +54,11 @@ export const initializeWallet = () => async (dispatch: AppDispatch) => {
         chor_police: storedWallet.totalBySource?.chor_police || 0,
         other: storedWallet.totalBySource?.other || 0,
         rewards_claim: storedWallet.totalBySource?.rewards_claim || 0,
+      },
+      locks: storedWallet.locks ?? {
+        spin: { lastUsedTimestamp: null, countToday: 0 },
+        daily_bonus: { lastUsedTimestamp: null, countToday: 0 },
+        rate_us: { hasRated: false, lastPrompted: null },
       },
     };
 

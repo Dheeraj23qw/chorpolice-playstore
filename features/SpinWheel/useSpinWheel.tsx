@@ -1,34 +1,66 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Animated, Easing, Vibration, Platform } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux"; // Added useSelector
 import { SpinSegment, SpinStatus } from "./types";
 import { segments } from "@/constants/spinwheel";
 import { AudioEngine } from "@/audio/audioEngine";
-import { creditCoins } from "../wallet/walletSlice";
+import { claimSpinReward } from "../wallet/walletSlice"; // Changed to claimSpinReward
 import { useTimeoutManager } from "@/hooks/useTimeOutManager";
+import { RootState } from "@/redux/store"; // Adjust path to your store
+import { formatTime } from "@/utils/TimeFormat";
 
 export const useSpinWheel = () => {
   const dispatch = useDispatch();
 
-  // --- UI STATES ---
+  const COOLDOWN = 12 * 60 * 60 * 1000;
+
+  const [remainingTime, setRemainingTime] = useState(0);
+
+  // 1. Get the lock data from the Wallet Slice
+  const spinLock = useSelector(
+    (state: RootState) =>
+      state.wallet.locks.spin ?? { lastUsedTimestamp: null },
+  );
+  // UI STATES
   const [status, setStatus] = useState<SpinStatus>("IDLE");
   const [result, setResult] = useState<SpinSegment | null>(null);
   const [showVictory, setShowVictory] = useState(false);
 
-  // --- TIMEOUT MANAGER ---
-  // We lock timeouts if status is IDLE to ensure a clean slate
-  const { safeSetTimeout, clearAllTimeouts } = useTimeoutManager(status === "IDLE");
+  const { safeSetTimeout, clearAllTimeouts } = useTimeoutManager(
+    status === "IDLE",
+  );
 
-  // --- ANIMATION VALUES ---
+  // ANIMATION VALUES
   const currentRotation = useRef(0);
   const spinAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  // --- REFS FOR CLEANUP ---
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Robust cleanup on unmount
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const lastUsed = spinLock.lastUsedTimestamp;
+
+    if (lastUsed !== null) {
+      const updateRemaining = () => {
+        const diff = COOLDOWN - (Date.now() - lastUsed);
+        setRemainingTime(diff > 0 ? diff : 0);
+      };
+
+      updateRemaining();
+      interval = setInterval(updateRemaining, 1000);
+    } else {
+      setRemainingTime(0);
+    }
+
+    return () => {
+      if (interval !== null) clearInterval(interval);
+    };
+  }, [spinLock.lastUsedTimestamp]);
+
+  const isLocked = remainingTime > 0;
+
   useEffect(() => {
     return () => {
       spinAnim.stopAnimation();
@@ -37,28 +69,19 @@ export const useSpinWheel = () => {
     };
   }, []);
 
-  /**
-   * RESET: Cleans up all animations and timers
-   * Used when modal closes or before a fresh start
-   */
   const reset = useCallback(() => {
     spinAnim.stopAnimation();
     pulseLoopRef.current?.stop();
     clearAllTimeouts();
-
     currentRotation.current = 0;
     spinAnim.setValue(0);
     scaleAnim.setValue(0);
     pulseAnim.setValue(1);
-
     setStatus("IDLE");
     setResult(null);
     setShowVictory(false);
   }, [spinAnim, scaleAnim, pulseAnim, clearAllTimeouts]);
 
-  /**
-   * MODAL ENTRY: Springs the UI into view
-   */
   const animateModalIn = useCallback(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
@@ -69,10 +92,14 @@ export const useSpinWheel = () => {
   }, [scaleAnim]);
 
   /**
-   * HANDLE SPIN: The core logic
+   * HANDLE SPIN
    */
   const handleSpin = useCallback(() => {
-    if (status === "SPINNING") return;
+    const lastUsed = spinLock.lastUsedTimestamp;
+
+    const isLocked = lastUsed !== null && Date.now() - lastUsed < COOLDOWN;
+
+    if (status !== "IDLE" || isLocked) return;
 
     AudioEngine.play("spin");
     setStatus("SPINNING");
@@ -80,14 +107,12 @@ export const useSpinWheel = () => {
     const randomIndex = Math.floor(Math.random() * segments.length);
     const selected = segments[randomIndex];
 
-    // --- CRAZY IMPERIAL CONFIG ---
-    const fullSpins = 25;      // High velocity
-    const spinDuration = 8000; // 8 seconds of suspense
+    const fullSpins = 25;
+    const spinDuration = 8000;
     const centers = [315, 45, 225, 135];
     const targetCenter = centers[randomIndex];
 
-    // Calculate rotation to land exactly in the center of the quadrant
-    const extraRotation = (fullSpins * 360) + (360 - targetCenter);
+    const extraRotation = fullSpins * 360 + (360 - targetCenter);
     const finalValue = currentRotation.current + extraRotation;
 
     spinAnim.setValue(currentRotation.current);
@@ -95,8 +120,7 @@ export const useSpinWheel = () => {
     Animated.timing(spinAnim, {
       toValue: finalValue,
       duration: spinDuration,
-      // Aggressive start, very slow creep at the end
-      easing: Easing.bezier(0.12, 0.8, 0.1, 1), 
+      easing: Easing.bezier(0.12, 0.8, 0.1, 1),
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (!finished) return;
@@ -105,20 +129,18 @@ export const useSpinWheel = () => {
       setResult(selected);
       setStatus("DONE");
 
-      // 1. Reward Logic
+      // Using claimSpinReward to credit coins AND set the lock timestamp
       if (selected.value > 0) {
         dispatch(
-          creditCoins({
+          claimSpinReward({
             amount: selected.value,
             reason: `Spin Reward - ${selected.label}`,
-          })
+          }),
         );
         setShowVictory(true);
         Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
       }
 
-
-      // 3. Victory Pulse Animation
       pulseLoopRef.current = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -131,11 +153,11 @@ export const useSpinWheel = () => {
             duration: 500,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       pulseLoopRef.current.start();
     });
-  }, [status, spinAnim, pulseAnim, dispatch, safeSetTimeout]);
+  }, [status, spinAnim, pulseAnim, dispatch, spinLock]);
 
   return {
     status,
@@ -149,5 +171,8 @@ export const useSpinWheel = () => {
     handleSpin,
     reset,
     animateModalIn,
+    isLocked,
+    remainingTime,
+    formattedTime: formatTime(remainingTime),
   };
 };

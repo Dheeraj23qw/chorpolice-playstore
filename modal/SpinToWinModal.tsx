@@ -43,11 +43,11 @@ const SpinController: React.FC<SpinControllerProps> = ({
     <Modal visible={isVisible} transparent animationType="slide"> 
       {/* 1. Use bg-zinc-950 or black to fill the entire screen */}
       <View className="flex-1 bg-zinc-950">
-        
+{/*         
         <VictoryOverlay
           visible={showVictory}
           onComplete={() => setShowVictory(false)}
-        />
+        /> */}
 
         {/* 2. Remove max-w-sm, rounded edges, and border for full screen immersion */}
         <Animated.View

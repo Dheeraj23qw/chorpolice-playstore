@@ -10,6 +10,11 @@ export type WalletSource =
   |"rewards_claim"
   | "other";
 
+  export interface FeatureLock {
+  lastUsedTimestamp: number | null;
+  countToday: number;
+}
+
 // Each transaction in the wallet
 export interface Transaction {
   id: string;
@@ -27,4 +32,9 @@ export interface WalletState {
   transactions: Transaction[]; // history of all credits/debits
   initialized: boolean; // flag for first-time initialization
   totalBySource: Record<WalletSource, number>; // cumulative coins per source
+  locks: {
+    spin: FeatureLock;
+    daily_bonus: FeatureLock;
+    rate_us: { hasRated: boolean; lastPrompted: number | null };
+  };
 }

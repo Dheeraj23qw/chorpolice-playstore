@@ -11,17 +11,17 @@ import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
 import { RootState } from "@/redux/store";
 import { debitCoins } from "@/features/wallet/walletSlice";
 import { REWARD_TIERS } from "@/constants/RewardsConst";
+import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
 
 // Types
-
 
 export default function EarnScreen() {
   const { width } = useWindowDimensions();
   const dispatch = useDispatch();
-  
+  const { isLocked, formattedTime } = useSpinWheel();
+
   // State
   const [isSpinModalVisible, setIsSpinModalVisible] = useState(false);
-  const [hasSpunToday, setHasSpunToday] = useState(false);
 
   // Redux Selectors
   const coins = useSelector((state: RootState) => state.wallet.coins);
@@ -30,51 +30,57 @@ export default function EarnScreen() {
   const cardWidth = useMemo(() => Math.min(width * 0.78, 300), [width]);
 
   // Handlers
-  const handleClaim = useCallback((rewardName: string, cost: number) => {
-    if (coins < cost) {
+  const handleClaim = useCallback(
+    (rewardName: string, cost: number) => {
+      if (coins < cost) {
+        Alert.alert(
+          "Insufficient Balance",
+          `You need ${(cost - coins).toLocaleString()} more coins to claim this reward.`,
+        );
+        return;
+      }
+
       Alert.alert(
-        "Insufficient Balance", 
-        `You need ${ (cost - coins).toLocaleString() } more coins to claim this reward.`
-      );
-      return;
-    }
+        "Confirm Redemption",
+        `Spend ${cost.toLocaleString()} 🪙 for ${rewardName}?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Redeem",
+            onPress: () => {
+              try {
+                dispatch(
+                  debitCoins({
+                    amount: cost,
+                    reason: `Reward: ${rewardName}`,
+                    source: "rewards_claim",
+                    metadata: {
+                      rewardName,
+                      timestamp: new Date().toISOString(),
+                    },
+                  }),
+                );
 
-    Alert.alert(
-      "Confirm Redemption",
-      `Spend ${cost.toLocaleString()} 🪙 for ${rewardName}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Redeem",
-          onPress: () => {
-            try {
-              dispatch(
-                debitCoins({
-                  amount: cost,
-                  reason: `Reward: ${rewardName}`,
-                  source: "rewards_claim",
-                  metadata: { rewardName, timestamp: new Date().toISOString() },
-                })
-              );
-
-              Alert.alert(
-                "Success! 🎉",
-                `Your ${rewardName} is on the way. Our team will contact you shortly.`,
-                [{ text: "Great!" }]
-              );
-            } catch (error) {
-              console.error("Redemption Error:", error);
-              Alert.alert("Error", "Something went wrong. Please try again.");
-            }
+                Alert.alert(
+                  "Success! 🎉",
+                  `Your ${rewardName} is on the way. Our team will contact you shortly.`,
+                  [{ text: "Great!" }],
+                );
+              } catch (error) {
+                console.error("Redemption Error:", error);
+                Alert.alert("Error", "Something went wrong. Please try again.");
+              }
+            },
           },
-        },
-      ],
-      { cancelable: true }
-    );
-  }, [coins, dispatch]);
+        ],
+        { cancelable: true },
+      );
+    },
+    [coins, dispatch],
+  );
 
   const toggleSpinModal = useCallback(() => {
-    setIsSpinModalVisible(prev => !prev);
+    setIsSpinModalVisible((prev) => !prev);
   }, []);
 
   return (
@@ -99,14 +105,16 @@ export default function EarnScreen() {
         />
 
         <SpinToWinCard
-          isEnabled={!hasSpunToday}
-          onPress={toggleSpinModal}
+          isLocked={isLocked}
+          formattedTime={formattedTime}
+          onPress={() => {
+            if (!isLocked) toggleSpinModal();
+          }}
         />
 
         <SpinToWinModal
           isVisible={isSpinModalVisible}
           onClose={toggleSpinModal}
-          // Assuming SpinToWinModal handles the 'hasSpunToday' update via Redux or Callback
         />
       </ScrollView>
     </ScreenWrapper>
