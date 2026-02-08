@@ -4,50 +4,22 @@
     "slug": "chorpolice",
     "version": "1.0.2",
     "orientation": "portrait",
+    "icon": "./assets/images/adaptive-icon.png",
     "scheme": "chorpolice",
     "userInterfaceStyle": "light",
+    "runtimeVersion": "1.0.2",
+
     "backgroundColor": "#050508",
 
-    "icon": "./assets/images/adaptive-icon.png",
-
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-
-    "assetBundlePatterns": [
-      "assets/images/*",
-      "assets/audio/*",
-      "assets/gif/*"
-    ],
-
-    "updates": {
-      "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241",
-      "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "ON_LOAD"
-    },
+    "assetBundlePatterns": ["**/*"],
 
     "android": {
       "package": "com.dheeraj.chorpolice",
-      "versionCode": 3,
       "userInterfaceStyle": "light",
       "edgeToEdgeEnabled": true,
-      "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050508"
-      }
-    },
-
-    "experiments": {
-      "typedRoutes": true
-    },
-
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
     },
 
@@ -62,10 +34,10 @@
         "expo-build-properties",
         {
           "android": {
-            "enableHermes": true,
+            "enablePngCrunchInReleaseBuilds": false,
             "enableProguardInReleaseBuilds": true,
-            "enableMinifyInReleaseBuilds": true,
-            "enablePngCrunchInReleaseBuilds": false
+            "enableHermes": true,
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ],
@@ -77,6 +49,21 @@
         }
       ]
     ],
+
+    "experiments": {
+      "typedRoutes": true
+    },
+
+    "extra": {
+      "router": { "origin": false },
+      "eas": {
+        "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
+      }
+    },
+
+    "updates": {
+      "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241"
+    },
 
     "web": {
       "bundler": "metro",
