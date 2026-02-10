@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { ScrollView, View, Pressable } from "react-native";
+import { ScrollView, View, Pressable, Modal } from "react-native"; // Added Modal
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,7 +8,7 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from "react-native-reanimated";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -30,8 +30,27 @@ import { Text } from "@/components/Text";
 const PlayerNameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const router = useRouter();
   const [showRoundTable, setShowRoundTable] = useState(false);
+
+  const {
+    selectedImages,
+    imageNames,
+    handleImageSelect,
+    handleNameChange,
+    handleStartAdventure,
+    isButtonDisabled,
+    handleSelectedImageClick,
+  } = usePlayerNameScreen();
+
+  // Pulling state from our gallery hook
+  const { 
+    pickImage, 
+    loading: pickerLoading, 
+    isModalVisible, 
+    setIsModalVisible, 
+    modalTitle, 
+    modalContent 
+  } = useGalleryPicker();
 
   /* -------------------- 🎬 Entrance Animation -------------------- */
   const translateY = useSharedValue(40);
@@ -46,26 +65,10 @@ const PlayerNameScreen: React.FC = () => {
     useCallback(() => {
       translateY.value = 40;
       opacity.value = 0;
-
-      translateY.value = withTiming(0, {
-        duration: 700,
-        easing: Easing.out(Easing.cubic),
-      });
+      translateY.value = withTiming(0, { duration: 700, easing: Easing.out(Easing.cubic) });
       opacity.value = withTiming(1, { duration: 600 });
-    }, [translateY, opacity]),
+    }, [translateY, opacity])
   );
-
-  const {
-    selectedImages,
-    imageNames,
-    handleImageSelect,
-    handleNameChange,
-    handleStartAdventure,
-    isButtonDisabled,
-    handleSelectedImageClick,
-  } = usePlayerNameScreen();
-
-  const { pickImage, loading: pickerLoading } = useGalleryPicker();
 
   return (
     <View className="flex-1 bg-[#020205]">
@@ -78,7 +81,7 @@ const PlayerNameScreen: React.FC = () => {
       {/* 📍 FIXED HEADER AREA */}
       <View
         style={{ paddingTop: insets.top + 70 }}
-        className="px-6 pb-4 bg-[#020205]/80 backdrop-blur-md z-40"
+        className="px-6 pb-4 bg-[#020205]/80 z-40"
       >
         <Animated.View style={animatedStyle}>
           <OptionHeader />
@@ -86,7 +89,12 @@ const PlayerNameScreen: React.FC = () => {
         </Animated.View>
       </View>
 
-      <LoadingIndicator loading={pickerLoading} message="Processing Image..." />
+      {/* 🏎️ Picker Loading State */}
+      {pickerLoading && (
+        <View className="absolute inset-0 z-50 items-center justify-center bg-black/60">
+           <LoadingIndicator loading={true} message="Processing Image..." />
+        </View>
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -96,7 +104,7 @@ const PlayerNameScreen: React.FC = () => {
         {/* --- 1. AVATAR SELECTION PHASE --- */}
         {selectedImages.length < 4 && (
           <Animated.View entering={FadeIn} exiting={FadeOut}>
-            <View className="bg-white/[0.03] border border-white/10 rounded-[32px] p-4 mb-6 shadow-2xl">
+            <View className="bg-white/[0.03] border border-white/10 rounded-[32px] p-4 mb-6">
               <AvatarSelectionMemo
                 selectedOption={selectedOption}
                 setSelectedOption={setSelectedOption}
@@ -106,23 +114,15 @@ const PlayerNameScreen: React.FC = () => {
             </View>
 
             <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-4 px-5 mb-6">
-              {/* Swapped font-bold for font-main-bold */}
               <Text className="text-indigo-200 font-main-bold text-xs uppercase tracking-widest mb-2">
                 Best Experience
               </Text>
-
               <Text className="text-white/80 font-main-md text-sm leading-5">
-                For the most fun experience, play with 4 real players 👑
-                {"\n\n"}
-                Upload your own images and use your real names to make the game
-                more exciting and personal!
+                For the most fun experience, play with 4 real players 👑{"\n\n"}
+                Upload your own images and use your real names!
               </Text>
             </View>
-            <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-3 px-4 mb-4 items-center">
-              <Text className="text-indigo-200 font-main-bold uppercase tracking-wider text-xs">
-                Select {4 - selectedImages.length} Players to Begin
-              </Text>
-            </View>
+            
             <ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
@@ -154,20 +154,13 @@ const PlayerNameScreen: React.FC = () => {
                   <Ionicons name="timer-outline" size={20} color="#818cf8" />
                 </View>
                 <View>
-                  <Text className="text-white/40 text-[10px] uppercase font-main-bold tracking-widest">
-                    Game Duration
-                  </Text>
-                  {/* Swapped font-black for font-main-bold italic */}
-                  <Text className="text-white text-base font-main-bold ">
+                  <Text className="text-white/40 text-[10px] uppercase font-main-bold tracking-widest">Game Duration</Text>
+                  <Text className="text-white text-base font-main-bold">
                     {showRoundTable ? "CLOSE SELECTOR" : "SELECT ROUNDS"}
                   </Text>
                 </View>
               </View>
-              <Ionicons
-                name={showRoundTable ? "chevron-up" : "chevron-down"}
-                size={24}
-                color="white"
-              />
+              <Ionicons name={showRoundTable ? "chevron-up" : "chevron-down"} size={24} color="white" />
             </Pressable>
 
             {showRoundTable && (
@@ -185,12 +178,25 @@ const PlayerNameScreen: React.FC = () => {
               handleStartAdventure={handleStartAdventure}
               disabled={isButtonDisabled}
             />
-            <Text className="text-white/20 text-center mt-4 uppercase font-main-bold tracking-[4px] text-[8px]">
-              Ready for Fun
-            </Text>
           </Animated.View>
         )}
       </ScrollView>
+
+      {/* 🔔 Alert Modal (From Hook) */}
+      <Modal visible={isModalVisible} transparent animationType="fade">
+        <View className="flex-1 items-center justify-center bg-black/80 px-10">
+          <View className="bg-[#1a1a2e] border border-white/10 p-6 rounded-3xl w-full items-center">
+            <Text className="text-white font-main-bold text-lg mb-2">{modalTitle}</Text>
+            <Text className="text-white/60 text-center mb-6">{modalContent}</Text>
+            <Pressable 
+              onPress={() => setIsModalVisible(false)}
+              className="bg-indigo-600 px-8 py-3 rounded-full"
+            >
+              <Text className="text-white font-main-bold">Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

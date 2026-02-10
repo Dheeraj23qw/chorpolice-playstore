@@ -14,7 +14,7 @@ import { useSelector } from "react-redux";
 
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
-import ScoreTable from "@/modal/ShowTableModal";
+// import ScoreTable from "@/modal/ShowTableModal";
 
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
@@ -75,12 +75,12 @@ const ChorPoliceQuiz: React.FC = () => {
   return (
     <View className="flex-1 bg-[#020205]">
       {/* --- LAYER 1: VIRTUAL SPACE --- */}
-      <ScoreTable
+      {/* <ScoreTable
         playerNames={playerNames}
         playerScores={playerScores}
         popupTable={popupTable}
         onClose={() => setPopupTable(false)}
-      />
+      /> */}
       <View
         style={{
           width: wp(120),
@@ -162,12 +162,12 @@ const ChorPoliceQuiz: React.FC = () => {
                     isOptionDisabled={isOptionDisabled}
                   />
                 </View>
-                <PlayButton
+                {/* <PlayButton
                   disabled={false}
                   onPress={toggleModal}
                   buttonText="Show Score Table"
                   variant="secondary" // 👈 important
-                />
+                /> */}
               </View>
             </View>
           </ScrollView>

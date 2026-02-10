@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { File, Paths } from "expo-file-system"; 
+import * as FileSystem from "expo-file-system"; // Use the main module for operations
+import { Paths } from "expo-file-system"; 
 import { useDispatch } from "react-redux";
 import { addImage } from "@/redux/reducers/dynamicImagesReducer";
 
@@ -20,48 +21,44 @@ const useGalleryPicker = () => {
   const pickImage = useCallback(async () => {
     setLoading(true);
 
-    // 1. Permissions check
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      showAlert("Permission Required", "Gallery access is needed to pick an image.");
-      setLoading(false);
-      return;
-    }
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        showAlert("Permission Required", "Gallery access is needed.");
+        return;
+      }
 
-    // 2. Launch Picker (Updated MediaType syntax for 2026)
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], // Array syntax is now preferred over MediaTypeOptions
-      allowsEditing: false,
-      quality: 1,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 1,
+      });
 
-    if (!result.canceled && result.assets?.[0]) {
+      if (result.canceled || !result.assets?.[0]) {
+        return;
+      }
+
       const selectedAsset = result.assets[0];
       const fileName = selectedAsset.fileName ?? `img_${Date.now()}.jpg`;
+      
+      // Define the destination path string using the modern Paths utility
+      const destinationUri = `${Paths.document}/${fileName}`;
 
-      try {
-        // 3. Modern File System usage
-        // Paths.document points to the app's persistent document directory
-        const destinationFile = new File(Paths.document, fileName);
-        
-        // The source is the temporary URI from the picker
-        const sourceFile = new File(selectedAsset.uri);
+      // Use the standard FileSystem.copyAsync which is the most compatible
+      await FileSystem.copyAsync({
+        from: selectedAsset.uri,
+        to: destinationUri,
+      });
 
-        // Copy using the modern .copy() method
-        await sourceFile.copy(destinationFile);
+      // Update Redux
+      dispatch(addImage({ type: "gallery", src: destinationUri }));
+      showAlert("Success", "Image saved!");
 
-        // 4. Update Redux with the permanent URI
-        dispatch(addImage({ type: "gallery", src: destinationFile.uri }));
-        showAlert("Success", "Image has been saved to your gallery.");
-      } catch (error) {
-        console.error("Modern FS Error:", error);
-        showAlert("Error", "Failed to save the image locally.");
-      }
-    } else {
-      showAlert("No Image Selected", "Selection was cancelled.");
+    } catch (error) {
+      console.error("Gallery Picker Error:", error);
+      showAlert("Error", "Failed to save the image locally.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, [dispatch]);
 
   return {

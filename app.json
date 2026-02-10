@@ -7,28 +7,22 @@
     "scheme": "chorpolice",
     "userInterfaceStyle": "light",
     "backgroundColor": "#050508",
-
     "icon": "./assets/images/adaptive-icon.png",
-
     "runtimeVersion": {
       "policy": "appVersion"
     },
-
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/audio/*",
       "assets/gif/*"
     ],
-
     "updates": {
       "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241",
       "fallbackToCacheTimeout": 0,
       "checkAutomatically": "ON_LOAD"
     },
-
     "android": {
       "package": "com.dheeraj.chorpolice",
-      "versionCode": 3,
       "userInterfaceStyle": "light",
       "edgeToEdgeEnabled": true,
       "allowBackup": false,
@@ -37,11 +31,9 @@
         "backgroundColor": "#050508"
       }
     },
-
     "experiments": {
       "typedRoutes": true
     },
-
     "extra": {
       "router": {
         "origin": false
@@ -50,7 +42,6 @@
         "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
     },
-
     "plugins": [
       "expo-router",
       "expo-asset",
@@ -58,14 +49,19 @@
       "expo-font",
       "expo-web-browser",
       "expo-audio",
-
+      "expo-file-system",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you set custom player avatars."
+        }
+      ],
       [
         "expo-notifications",
         {
           "enableBackgroundRemoteNotifications": false
         }
       ],
-
       [
         "expo-build-properties",
         {
@@ -85,7 +81,6 @@
         }
       ]
     ],
-
     "web": {
       "bundler": "metro",
       "output": "static"
