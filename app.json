@@ -30,6 +30,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050508"
       }
+       
     },
     "experiments": {
       "typedRoutes": true
@@ -59,6 +60,9 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/images/adaptive-icon.png",
+          "color": "#050508",
+          "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": false
         }
       ],

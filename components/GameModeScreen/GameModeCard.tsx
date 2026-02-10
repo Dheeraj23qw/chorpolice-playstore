@@ -20,18 +20,14 @@ interface Props {
 
 export const GameModeCard = ({ item, index }: Props) => {
   const scale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.6);
+  const glow = useSharedValue(0.5);
 
-  const pressStyle = useAnimatedStyle(() => ({
+  const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-    shadowColor: item.accentColor,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: glowOpacity.value,
-    shadowRadius: 25,
+    opacity: glow.value,
   }));
 
   return (
@@ -39,38 +35,49 @@ export const GameModeCard = ({ item, index }: Props) => {
       entering={FadeInDown.delay(200 + index * 120).springify()}
       className="mb-8"
     >
-      <Animated.View style={pressStyle}>
+      <Animated.View style={animatedStyle}>
         <Pressable
           onPressIn={() => {
-            scale.value = withSpring(0.97);
-            glowOpacity.value = withTiming(0.9);
+            scale.value = withSpring(0.96);
+            glow.value = withTiming(0.9);
           }}
           onPressOut={() => {
             scale.value = withSpring(1);
-            glowOpacity.value = withTiming(0.4);
+            glow.value = withTiming(0.5);
           }}
           onPress={() => router.push(item.route)}
           style={{ height: hp(28) }}
-          className="rounded-[32px] overflow-hidden"
+          className="rounded-[34px] overflow-hidden"
         >
-          {/* Glow */}
+          {/* Neon Glow Background */}
           <Animated.View
-            style={[glowStyle, { backgroundColor: item.accentColor }]}
-            className="absolute inset-6 rounded-full"
+            style={[
+              glowStyle,
+              {
+                backgroundColor: item.accentColor,
+                shadowColor: item.accentColor,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.8,
+                shadowRadius: 40,
+              },
+            ]}
+            className="absolute inset-4 rounded-[40px]"
           />
 
-          {/* Card */}
-          <View className="flex-1 rounded-[32px] bg-[#0F0F18] border border-white/10 overflow-hidden">
+          {/* Main Card */}
+          <View className="flex-1 rounded-[34px] bg-[#12121C]/90 border border-white/10 overflow-hidden">
             <ImageBackground source={item.image} className="flex-1">
-              <View className="absolute inset-0 bg-black/70" />
+              {/* Dark glass overlay */}
+              <View className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
               <View className="flex-1 p-6 justify-between">
-                {/* Top */}
+                {/* Top Section */}
                 <View className="flex-row justify-between items-center">
+                  {/* Difficulty Badge */}
                   <View
                     style={{
-                      borderColor: `${item.accentColor}50`,
-                      backgroundColor: "rgba(0,0,0,0.6)",
+                      borderColor: item.accentColor,
+                      backgroundColor: `${item.accentColor}20`,
                     }}
                     className="px-4 py-1.5 rounded-full border"
                   >
@@ -78,7 +85,7 @@ export const GameModeCard = ({ item, index }: Props) => {
                       style={{
                         fontSize: rf(1.1),
                         color: item.accentColor,
-                        letterSpacing: 1.5,
+                        letterSpacing: 1.2,
                       }}
                       className="font-main-bold uppercase"
                     >
@@ -86,7 +93,14 @@ export const GameModeCard = ({ item, index }: Props) => {
                     </Text>
                   </View>
 
-                  <View className="w-12 h-12 rounded-2xl bg-black/40 items-center justify-center border border-white/10">
+                  {/* Icon Box */}
+                  <View
+                    style={{
+                      backgroundColor: `${item.accentColor}20`,
+                      borderColor: `${item.accentColor}40`,
+                    }}
+                    className="w-12 h-12 rounded-2xl items-center justify-center border"
+                  >
                     <Ionicons
                       name={item.icon as any}
                       size={rf(2.4)}
@@ -95,31 +109,32 @@ export const GameModeCard = ({ item, index }: Props) => {
                   </View>
                 </View>
 
-                {/* Bottom */}
+                {/* Bottom Section */}
                 <View>
                   <Text
-                    style={{ fontSize: rf(3.5), lineHeight: rf(4) }}
+                    style={{ fontSize: rf(3.3), lineHeight: rf(3.8) }}
                     className="text-white font-main-bold"
                   >
                     {item.title}
                   </Text>
 
                   <Text
-                    className="text-white/50 mt-1 mb-4 font-main-md"
+                    className="text-white/60 mt-1 mb-5 font-main-md"
                     style={{ fontSize: rf(1.4) }}
                   >
                     {item.subtitle}
                   </Text>
 
+                  {/* CTA Button */}
                   <View
                     style={{ backgroundColor: item.accentColor }}
-                    className="h-12 px-8 rounded-2xl flex-row items-center justify-center"
+                    className="h-12 rounded-2xl flex-row items-center justify-center"
                   >
-                    <Text className=" font-main-bold mr-2 uppercase text-xs tracking-widest">
+                    <Text className="font-main-bold uppercase text-white tracking-wider mr-2 text-xs">
                       {item.buttonText}
                     </Text>
                     <Ionicons
-                      name="chevron-forward"
+                      name="arrow-forward"
                       size={rf(2)}
                       color="white"
                     />

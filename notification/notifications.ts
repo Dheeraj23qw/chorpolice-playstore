@@ -14,23 +14,22 @@ class NotificationService {
   private _Notifications: typeof import("expo-notifications") | null = null;
   private responseListener: any = null;
 
- constructor() {
-  if (Platform.OS !== "web") {
-    const Notifications = require("expo-notifications");
-    
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
-    });
+  constructor() {
+    if (Platform.OS !== "web") {
+      const Notifications = require("expo-notifications");
 
-    this._Notifications = Notifications;
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        }),
+      });
+
+      this._Notifications = Notifications;
+    }
   }
-}
-
 
   /**
    * ✅ Safe accessor
@@ -51,8 +50,7 @@ class NotificationService {
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
-      const { status } =
-        await this.Notifications.requestPermissionsAsync();
+      const { status } = await this.Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
 
@@ -89,8 +87,7 @@ class NotificationService {
         sound: true,
       },
       trigger: {
-        type:
-          this.Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        type: this.Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: Math.max(1, Math.floor(params.seconds)),
         repeats: false,
       },
@@ -98,10 +95,34 @@ class NotificationService {
   }
 
   async scheduleSpinUnlock(seconds: number): Promise<void> {
+    const titles = [
+      "🔥 BOOM! Spin is LIVE!",
+      "🎉 Jackpot Time!",
+      "🎡 Your Luck is Calling!",
+      "💰 Rewards Waiting for You!",
+      "💰 MONEY MODE ON!",
+      "🚀 Ready to Win Big?",
+      "🎯 HIT THE SPIN NOW!",
+    ];
+
+    const bodies = [
+      "Your Lucky Spin is unlocked! Tap now and grab your reward!",
+      "The wheel is on fire 🔥 Spin now before luck changes!",
+      "Don't miss it! Rewards are spinning your way!",
+      "Your bonus is waiting... Go spin and win BIG!",
+      "Time to test your luck 😎 Hit the spin now!",
+      "Coins. Rewards. Glory. Everything is waiting inside!",
+      "One tap = Surprise reward 🎁 Go now!",
+    ];
+
+    const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+
+    const randomBody = bodies[Math.floor(Math.random() * bodies.length)];
+
     return this.scheduleLocalNotification({
       id: SPIN_NOTIFICATION_ID,
-      title: "🎡 Spin is Ready!",
-      body: "Your Lucky Spin is unlocked. Come win rewards!",
+      title: randomTitle,
+      body: randomBody,
       seconds,
       data: { screen: "/earn" },
     });
@@ -117,7 +138,7 @@ class NotificationService {
 
     if (match) {
       await this.Notifications.cancelScheduledNotificationAsync(
-        match.identifier
+        match.identifier,
       );
     }
   }
@@ -129,14 +150,13 @@ class NotificationService {
     this.responseListener =
       this.Notifications.addNotificationResponseReceivedListener(
         (response: any) => {
-          const data =
-            response.notification.request.content
-              .data as AppNotificationData;
+          const data = response.notification.request.content
+            .data as AppNotificationData;
 
           if (data?.screen) {
             router.push(data.screen);
           }
-        }
+        },
       );
   }
 
@@ -148,9 +168,8 @@ class NotificationService {
 
     if (!response) return;
 
-    const data =
-      response.notification.request.content
-        .data as AppNotificationData;
+    const data = response.notification.request.content
+      .data as AppNotificationData;
 
     if (data?.screen) {
       router.push(data.screen);

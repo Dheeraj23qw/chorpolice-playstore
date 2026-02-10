@@ -4,7 +4,6 @@ import { Modal, View } from "react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated"; 
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
 import SpinHeader from "@/features/SpinWheel/SpinHeader";
-import VictoryOverlay from "@/features/SpinWheel/VictoryOverlay";
 import SpinWheelView from "@/features/SpinWheel/SpinWheelView";
 import SpinResult from "@/features/SpinWheel/SpinResult";
 import SpinButton from "@/features/SpinWheel/SpinButton";
@@ -56,7 +55,7 @@ const SpinController: React.FC<SpinControllerProps> = ({ isVisible, onClose }) =
   return (
     <Modal visible={isVisible} transparent animationType="slide">
       <View className="flex-1 bg-zinc-950">
-        <VictoryOverlay visible={showVictory} onComplete={() => setShowVictory(false)} />
+        {/* <VictoryOverlay visible={showVictory} onComplete={() => setShowVictory(false)} /> */}
 
         {/* ✅ Use Reanimated's Animated.View and apply modalAnimatedStyle */}
         <Animated.View

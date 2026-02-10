@@ -10,15 +10,15 @@ import { formatTime } from "@/utils/TimeFormat";
 import { notificationService } from "@/notification/notifications";
 import { Vibration, Platform } from "react-native";
 // ✅ Import all Reanimated tools
-import { 
-  useSharedValue, 
-  withTiming, 
-  withSpring, 
-  withRepeat, 
-  withSequence, 
-  Easing, 
+import {
+  useSharedValue,
+  withTiming,
+  withSpring,
+  withRepeat,
+  withSequence,
+  Easing,
   runOnJS,
-  cancelAnimation 
+  cancelAnimation,
 } from "react-native-reanimated";
 
 export const useSpinWheel = () => {
@@ -29,11 +29,12 @@ export const useSpinWheel = () => {
 
   const { clearAllTimeouts } = useTimeoutManager(status === "IDLE");
   const dispatch = useDispatch();
-  
+
   const spinLock = useSelector(
-    (state: RootState) => state.wallet.locks.spin ?? { lastUsedTimestamp: null }
+    (state: RootState) =>
+      state.wallet.locks.spin ?? { lastUsedTimestamp: null },
   );
-  const COOLDOWN =  60 * 1000;
+  const COOLDOWN = 6 * 60 * 60 * 1000;
   const isLocked = remainingTime > 0;
 
   // ✅ REANIMATED VALUES
@@ -56,7 +57,9 @@ export const useSpinWheel = () => {
     } else {
       setRemainingTime(0);
     }
-    return () => { if (interval) clearInterval(interval); };
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [spinLock.lastUsedTimestamp]);
 
   // 2. Notification Logic
@@ -82,11 +85,11 @@ export const useSpinWheel = () => {
     cancelAnimation(scaleAnim);
     cancelAnimation(pulseAnim);
     clearAllTimeouts();
-    
+
     spinAnim.value = 0;
     scaleAnim.value = 0;
     pulseAnim.value = 1;
-    
+
     setStatus("IDLE");
     setResult(null);
     setShowVictory(false);
@@ -101,29 +104,34 @@ export const useSpinWheel = () => {
   }, []);
 
   // Helper for things that must run on the Main JS Thread
-  const handleSpinEnd = useCallback((selected: SpinSegment, finalRotation: number) => {
-    setResult(selected);
-    setStatus("DONE");
+  const handleSpinEnd = useCallback(
+    (selected: SpinSegment, finalRotation: number) => {
+      setResult(selected);
+      setStatus("DONE");
 
-    if (selected.value) {
-      dispatch(claimSpinReward({
-        amount: selected.value,
-        reason: `Spin Reward - ${selected.label}`,
-      }));
-      setShowVictory(true);
-      Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
-    }
+      if (selected.value) {
+        dispatch(
+          claimSpinReward({
+            amount: selected.value,
+            reason: `Spin Reward - ${selected.label}`,
+          }),
+        );
+        setShowVictory(true);
+        Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
+      }
 
-    // ✅ REANIMATED PULSE LOOP (much cleaner)
-    pulseAnim.value = withRepeat(
-      withSequence(
-        withTiming(1.1, { duration: 500 }),
-        withTiming(1, { duration: 500 })
-      ),
-      -1,
-      true
-    );
-  }, [dispatch]);
+      // ✅ REANIMATED PULSE LOOP (much cleaner)
+      pulseAnim.value = withRepeat(
+        withSequence(
+          withTiming(1.1, { duration: 500 }),
+          withTiming(1, { duration: 500 }),
+        ),
+        -1,
+        true,
+      );
+    },
+    [dispatch],
+  );
 
   // ✅ CORRECTED HANDLE SPIN
   const handleSpin = useCallback(() => {
@@ -143,15 +151,19 @@ export const useSpinWheel = () => {
     const extraRotation = fullSpins * 360 + (360 - targetCenter);
     const finalValue = spinAnim.value + extraRotation;
 
-    spinAnim.value = withTiming(finalValue, {
-      duration: spinDuration,
-      easing: Easing.bezier(0.12, 0.8, 0.1, 1),
-    }, (finished) => {
-      if (finished) {
-        // We must bridge back to the JS thread to update React state
-        runOnJS(handleSpinEnd)(selected, finalValue);
-      }
-    });
+    spinAnim.value = withTiming(
+      finalValue,
+      {
+        duration: spinDuration,
+        easing: Easing.bezier(0.12, 0.8, 0.1, 1),
+      },
+      (finished) => {
+        if (finished) {
+          // We must bridge back to the JS thread to update React state
+          runOnJS(handleSpinEnd)(selected, finalValue);
+        }
+      },
+    );
   }, [status, isLocked, handleSpinEnd]);
 
   return {
