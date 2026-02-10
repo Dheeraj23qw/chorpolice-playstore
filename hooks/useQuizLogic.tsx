@@ -41,6 +41,17 @@ const useQuizLogic = (router: any) => {
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
   const winMessage = useRandomMessage(currentPlayerName, "win");
   const loseMessage = useRandomMessage(currentPlayerName, "lose");
+  const [isGameFinished, setIsGameFinished] = useState(false);
+
+
+
+
+
+useEffect(() => {
+  if (isGameFinished && !isGameReset) {
+    router.replace("/chorpoliceResult");
+  }
+}, [isGameFinished, isGameReset, router]);
 
   // Generate options whenever the current player changes
   useEffect(() => {
@@ -141,31 +152,24 @@ const useQuizLogic = (router: any) => {
   };
 
   const moveToNextPlayer = () => {
-    if (isGameReset) return;
+  if (isGameReset) return;
 
-    setSelectedOption(null);
-    setIsCorrect(false);
-    setFeedbackMessage("");
-    setIsContentVisible(true);
-    setIsOptionDisabled(false);
-    setIsPopUp(false);
-    setMediaId(1);
-    setMediaType("image");
+  // Reset all UI states for the next turn
+  setSelectedOption(null);
+  setIsCorrect(false);
+  setFeedbackMessage("");
+  setIsContentVisible(true);
+  setIsOptionDisabled(false);
+  setIsPopUp(false);
+  setMediaId(1);
+  setMediaType("image");
 
-    setCurrentPlayerIndex((prevIndex) => {
-      const nextIndex = prevIndex + 1;
-      if (nextIndex < playerNames.length) {
-        return nextIndex;
-      } else {
-        setTimeout(() => {
-          if (!isGameReset) {
-            router.replace("/chorpoliceResult");
-          }
-        }, 1);
-        return prevIndex;
-      }
-    });
-  };
+if (currentPlayerIndex + 1 < playerNames.length) {
+    setCurrentPlayerIndex((prevIndex) => prevIndex + 1);
+  } else {
+    setIsGameFinished(true); 
+  }
+};
 
   const currentPlayer = playerNames[currentPlayerIndex] || {};
   const playerImage =
