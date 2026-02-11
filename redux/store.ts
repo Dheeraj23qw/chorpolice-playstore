@@ -6,6 +6,7 @@ import difficultyReducer from "@/redux/reducers/quiz";
 import loaderReducer from "./reducers/loaderReducer";
 import popupReducer from "./reducers/popupReducer";
 import walletReducer from "@/features/wallet/walletSlice";
+import quizStatsReducer from "@/features/quizStats/quizStatsSlice";
 
 const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ const store = configureStore({
     loader: loaderReducer,
     popup: popupReducer,
     wallet: walletReducer,
+    quizStats: quizStatsReducer, 
   },
 });
 
