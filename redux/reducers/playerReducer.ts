@@ -31,7 +31,6 @@ const playerSlice = createSlice({
 
     // -------------------- Player Names --------------------
     setPlayerNames(state, action: PayloadAction<PlayerName[]>) {
-      // ✅ Removed bot logic completely
       state.playerNames = action.payload.filter(
         (player) =>
           player.id >= 0 &&

@@ -39,7 +39,7 @@ export const generateScoreQuestion = (
   } while (!scoresAreUnique); // Regenerate round if scores are not unique
 
   // Shuffle the player options for multiple-choice answers
-  const shuffledPlayers = players.sort(() => Math.random() - 0.5);
+const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
 
   // Calculate the total score at the end of the round for all players
   const totalScores = players

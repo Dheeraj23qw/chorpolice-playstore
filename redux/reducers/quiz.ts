@@ -7,6 +7,7 @@ interface DifficultyState {
   totalQuestions: number;
   correctQuestions: number;
   isWinner: boolean;
+  didQuit: boolean; // ✅ added
 }
 
 const initialState: DifficultyState = {
@@ -16,6 +17,7 @@ const initialState: DifficultyState = {
   totalQuestions: 7,
   correctQuestions: 0,
   isWinner: false,
+  didQuit: false, // ✅ added
 };
 
 const difficultySlice = createSlice({
@@ -24,7 +26,7 @@ const difficultySlice = createSlice({
   reducers: {
     setDifficulty: (
       state,
-      action: PayloadAction<"easy" | "medium" | "hard">
+      action: PayloadAction<"easy" | "medium" | "hard">,
     ) => {
       state.level = action.payload;
       state.table = generateTable(action.payload);
@@ -32,12 +34,17 @@ const difficultySlice = createSlice({
       state.correctQuestions = 0;
       state.isWinner = false;
     },
+    setQuit: (state) => {
+      state.didQuit = true;
+    },
+
     resetDifficulty: (state) => {
       state.level = null;
       state.table = [["Round", "Police", "Thief", "King", "Advisor"]];
       state.totalScores = { Police: 0, Thief: 0, King: 0, Advisor: 0 };
       state.correctQuestions = 0;
       state.isWinner = false;
+      state.didQuit = false;
     },
     setCorrectAnswers: (state, action: PayloadAction<number>) => {
       state.correctQuestions = action.payload;
@@ -53,7 +60,7 @@ const difficultySlice = createSlice({
 });
 
 const generateRandomNumber = (
-  difficulty: "easy" | "medium" | "hard" | null
+  difficulty: "easy" | "medium" | "hard" | null,
 ): number => {
   if (difficulty === "easy") return Math.floor(Math.random() * 9) + 1;
   if (difficulty === "medium") return Math.floor(Math.random() * 90) + 10;
@@ -91,7 +98,7 @@ const generateTotalScores = (table: (number | string)[][]) => {
       acc.Advisor += row[4] as number;
       return acc;
     },
-    { Police: 0, Thief: 0, King: 0, Advisor: 0 }
+    { Police: 0, Thief: 0, King: 0, Advisor: 0 },
   );
 };
 
@@ -99,7 +106,7 @@ const generateTotalScores = (table: (number | string)[][]) => {
 const getSpecificRoundScore = (
   state: DifficultyState,
   roundIndex: number,
-  player: "Police" | "Thief" | "King" | "Advisor"
+  player: "Police" | "Thief" | "King" | "Advisor",
 ): number => {
   const playerColumnMap = { Police: 1, Thief: 2, King: 3, Advisor: 4 };
   const columnIndex = playerColumnMap[player];
@@ -113,7 +120,7 @@ const getSpecificRoundScore = (
 const getTotalScoreUpToRound = (
   state: DifficultyState,
   roundIndex: number,
-  player: "Police" | "Thief" | "King" | "Advisor"
+  player: "Police" | "Thief" | "King" | "Advisor",
 ): number => {
   const playerColumnMap = { Police: 1, Thief: 2, King: 3, Advisor: 4 };
   const columnIndex = playerColumnMap[player];
@@ -131,7 +138,7 @@ const getTotalScoreUpToRound = (
   return total;
 };
 
-export const { setDifficulty, resetDifficulty, setCorrectAnswers } =
+export const { setDifficulty, resetDifficulty, setCorrectAnswers, setQuit } =
   difficultySlice.actions;
 
 export default difficultySlice.reducer;

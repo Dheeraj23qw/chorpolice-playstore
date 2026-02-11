@@ -14,7 +14,6 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
 import { BackHandler } from "react-native";
-import { AudioEngine } from "@/audio/audioEngine";
 import { Text } from "@/components/Text";
 
 const QuizScreen = () => {
@@ -42,6 +41,14 @@ const QuizScreen = () => {
     isHintButtonVisible,
     setIsHintButtonVisible,
   } = useQuizGameLogic();
+
+useEffect(() => {
+  if (question?.correctAnswer) {
+    console.log("🟢 New Question Started");
+    console.log("✅ Correct Answer:", question.correctAnswer);
+  }
+}, [question]);
+
 
   useEffect(() => {
     const backAction = () => {
@@ -198,7 +205,7 @@ const QuizScreen = () => {
               className="mt-8 flex-row items-center justify-center bg-indigo-500/10 border border-indigo-500/30 py-4 rounded-2xl"
             >
               <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
-              <Text 
+              <Text
                 // Swapped font-bold for font-main-bold
                 className="ml-3 text-indigo-400 font-main-bold uppercase tracking-[2px] text-[12px]"
               >

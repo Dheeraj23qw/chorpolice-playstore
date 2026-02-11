@@ -62,6 +62,7 @@ export const useQuizGameLogic = () => {
   const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
   const [isHintButtonVisible, setIsHintButtonVisible] = useState(false);
 
+
   const [question, setQuestion] = useState(() => getRandomQuestion());
 
   const randomWin = useRandomMessage("a", "winwithoutname");
@@ -143,8 +144,10 @@ export const useQuizGameLogic = () => {
     setIsDynamicPopUp(true);
 
     const correct = answer === question?.correctAnswer;
-    setIsCorrect(correct);
 
+    setIsCorrect(correct);
+    console.log("✅ Correct Answer:", question?.correctAnswer);
+    console.log("👆 Selected Answer:", answer);
     if (correct) {
       setCorrectAnswer((p) => p + 1);
       setMediaId(MEDIA.CORRECT);

@@ -13,11 +13,10 @@ import { ResultInfo } from "./components/reseltInfo";
 import { RenderButtons } from "./components/renderButtons";
 import { handleShare } from "@/utils/share";
 import { AudioEngine } from "@/audio/audioEngine";
-import { applyTransaction } from "@/features/wallet/walletSlice";
+import { useQuizReward } from "@/hooks/useQuizRewards";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [coinsAwarded, setCoinsAwarded] = useState("");
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -31,38 +30,7 @@ export default function QuizResult() {
 
   const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
 
-  /* ------------------ COIN REWARD ------------------ */
-  useEffect(() => {
-    if (!level) return;
 
-    const coinValues = {
-      easy: isWinner ? 250 : 50,
-      medium: isWinner ? 1000 : 100,
-      hard: isWinner ? 2000 : 200,
-    } as const;
-
-    const reward = coinValues[level];
-
-    dispatch(
-      applyTransaction({
-        amount: reward,
-        reason: isWinner ? "Quiz Win" : "Quiz Participation",
-        source: "quiz_reward",
-        metadata: {
-          level, // easy/medium/hard
-          isWinner,
-          correctQuestions: Correct,
-          totalQuestions: Total,
-        },
-      }),
-    );
-
-    setCoinsAwarded(
-      isWinner
-        ? `You won ${reward} coins!`
-        : `Participation Reward: ${reward} coins`,
-    );
-  }, [level, isWinner, Correct, Total, dispatch]);
 
   /* ------------------ STOP AUDIO ------------------ */
   useEffect(() => {
@@ -107,6 +75,11 @@ export default function QuizResult() {
     setModalVisible((prev) => !prev);
   }, []);
 
+  const { reward, message: coinsAwarded } = useQuizReward();
+  const accuracy =
+  Total > 0 ? Math.round((Correct / Total) * 100) : 0;
+
+
   /* ------------------ RENDER ------------------ */
   return (
     <View className="flex-1 bg-[#09090b]">
@@ -147,6 +120,8 @@ export default function QuizResult() {
             Message={Message}
             coinsMessage={coinsAwarded}
             isWinner={isWinner}
+              accuracy={accuracy}   // 👈 add this
+
           />
         </View>
 

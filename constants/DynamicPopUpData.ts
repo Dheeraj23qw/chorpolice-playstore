@@ -44,11 +44,7 @@ export const gifData: MediaItem[] = [
     url: require("@/assets/gif/quiz/laugh.gif"),
     description: "you got 500 points!",
   },
-  {
-    id: 5,
-    url: require("@/assets/gif/quiz/bot.gif"),
-    description: "please wait...",
-  },
+
   {
     id: 6,
     url: require("@/assets/gif/quiz/weep.gif"),
@@ -64,27 +60,7 @@ export const gifData: MediaItem[] = [
     url: require("@/assets/gif/quiz/timesup.gif"),
     description: "Time's Up",
   },
-  {
-    id: 9,
-    url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 100 Coins!\n Answer 7/7 Correctly.",
-  },
 
-  {
-    id: 10,
-    url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 500 Coins!\n Answer 7/7 Correctly.",
-  },
-  {
-    id: 11,
-    url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Win 2000 Coins! \n Answer 7/7 Correctly.",
-  },
-  {
-    id: 12,
-    url: require("@/assets/gif/quiz/chest.gif"),
-    description: "Your treasure sparkles with victory!",
-  },
 
 ];
 
