@@ -16,7 +16,7 @@ export const data: DataItem[] = [
   },
   {
     id: 2,
-    image: require("@/assets/modalImages/police.png"),
+    image: require("@/assets/images/chorsipahi/police.png"),
     message: "You are the Police! Find the thief.",
     point: "",
   },

@@ -148,19 +148,13 @@ const RajaMantriGameScreen: React.FC = () => {
       {isRoundStartPopupVisible && <RoundStartLoader />}
 
       {isDynamicPopUp && mediaId != null && mediaType != null && (
-        <ImageBackground
-          source={require("../../assets/images/bg/quiz.png")}
-          style={[chorPoliceQuizstyles.imageBackground, { flex: 1 }]}
-          resizeMode="cover"
-        >
-          <DynamicOverlayPopUp
-            isPopUp={isDynamicPopUp}
-            mediaId={mediaId}
-            mediaType={mediaType}
-            closeVisibleDelay={3000}
-            playerData={playerData}
-          />
-        </ImageBackground>
+        <DynamicOverlayPopUp
+          isPopUp={isDynamicPopUp}
+          mediaId={mediaId}
+          mediaType={mediaType}
+          closeVisibleDelay={3000}
+          playerData={playerData}
+        />
       )}
 
       {!isDynamicPopUp && (

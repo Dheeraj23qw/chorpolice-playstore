@@ -22,6 +22,7 @@ interface PlayerData {
   image?: string | null;
   message?: string | null;
   imageType?: string | null;
+  name?: string | null;
 }
 const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   const initialFlippedStates = [false, false, false, false];
@@ -76,6 +77,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     image: null,
     message: null,
     imageType: null,
+    name:null,
   });
   const [isRoundStartPopupVisible, setIsRoundStartPopupVisible] =
     useState(false);
@@ -268,8 +270,8 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     ) {
       const playerRole = roles[index];
       const currentPlayerImage = playerImages[selectedImages[policeIndex]]?.src;
-      const currentPlayerImageType =
-        playerImages[selectedImages[policeIndex]]?.type;
+      const currentPlayerImageType =playerImages[selectedImages[policeIndex]]?.type;
+      const currentPlayerName = playerNamesRedux[policeIndex]?.name || "";
 
       if (playerRole === "Thief" && thiefIndex !== null) {
         if (isLocked) return;
@@ -288,6 +290,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
             image: currentPlayerImage,
             message: randomMessageWin,
             imageType: currentPlayerImageType,
+            name: currentPlayerName,
           });
         }, 5000);
 
@@ -312,6 +315,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
             image: currentPlayerImage,
             message: randomMessageLose,
             imageType: currentPlayerImageType,
+            name: currentPlayerName,
           });
         }, 5000);
 
@@ -485,6 +489,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     isGameReset,
     showTableButton,
     setShowTableButton,
+    
   };
 };
 
