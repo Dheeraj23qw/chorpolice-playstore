@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import * as SecureStore from "expo-secure-store";
 import { useDispatch } from "react-redux";
+import { router } from "expo-router";
 import { AppDispatch } from "@/redux/store";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 
@@ -48,7 +49,11 @@ export const useWelcomeBonus = () => {
       // Mark permanently claimed
       await SecureStore.setItemAsync(WELCOME_KEY, "claimed");
 
+      // Hide modal
       setShowModal(false);
+
+      // ✅ Redirect to /earn automatically
+      router.push("/earn");
     } catch (err) {
       console.warn("Welcome bonus claim failed:", err);
     } finally {
