@@ -17,9 +17,11 @@ const store = configureStore({
     loader: loaderReducer,
     popup: popupReducer,
     wallet: walletReducer,
-    quizStats: quizStatsReducer, 
+    quizStats: quizStatsReducer,
   },
 });
+
+
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

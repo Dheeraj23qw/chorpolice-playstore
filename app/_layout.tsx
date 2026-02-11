@@ -1,6 +1,6 @@
 import "../global.css";
-import React, { useEffect, useCallback } from "react";
-import { Provider, useSelector } from "react-redux";
+import React, { useEffect, useCallback, useState } from "react";
+import { Provider, useDispatch, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import store, { RootState } from "@/redux/store";
@@ -15,24 +15,35 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, StyleSheet, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { notificationService } from "@/notification/notifications";
+import { AppDispatch } from "@/redux/store";
+import { initializeWallet } from "@/features/wallet/walletThunks";
+import { useQuizStatsPersistence } from "@/service/useQuizStatsPersistence";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
-  const loaderVisible = useSelector(
-    (state: RootState) => state.loader.visible
-  );
-  const loaderMessage = useSelector(
-    (state: RootState) => state.loader.message
-  );
+  const dispatch = useDispatch<AppDispatch>();
+
+  const loaderVisible = useSelector((state: RootState) => state.loader.visible);
+  const loaderMessage = useSelector((state: RootState) => state.loader.message);
 
   useAppExit();
 
-  /**
-   * --------------------------------------------
+  /* --------------------------------------------
+   * Restore Persisted State (Wallet + Quiz)
+   * -------------------------------------------- */
+  useQuizStatsPersistence();
+  useEffect(() => {
+    const restoreAppState = async () => {
+      await dispatch(initializeWallet());
+    };
+
+    restoreAppState();
+  }, [dispatch]);
+
+  /* --------------------------------------------
    * Audio Restore On Foreground
-   * --------------------------------------------
-   */
+   * -------------------------------------------- */
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === "active" && !AudioEngine.isMuted()) {
@@ -40,10 +51,7 @@ function AppLayout() {
       }
     };
 
-    const sub = AppState.addEventListener(
-      "change",
-      handleAppStateChange
-    );
+    const sub = AppState.addEventListener("change", handleAppStateChange);
 
     if (!AudioEngine.isMuted()) {
       AudioEngine.ensureQuizGlobal?.();
@@ -52,38 +60,34 @@ function AppLayout() {
     return () => sub.remove();
   }, []);
 
-  /**
-   * --------------------------------------------
-   * Notifications Setup (Production Safe)
-   * --------------------------------------------
-   */
-useEffect(() => {
-  let mounted = true;
+  /* --------------------------------------------
+   * Notifications Setup
+   * -------------------------------------------- */
+  useEffect(() => {
+    let mounted = true;
 
-  const setupNotifications = async () => {
-    try {
-      const granted = await notificationService.registerPermissions();
+    const setupNotifications = async () => {
+      try {
+        const granted = await notificationService.registerPermissions();
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      if (granted) {
-        notificationService.listen();
-        await notificationService.handleInitialNotification();
+        if (granted) {
+          notificationService.listen();
+          await notificationService.handleInitialNotification();
+        }
+      } catch (error) {
+        console.log("Notification setup error:", error);
       }
-    } catch (error) {
-      console.log("Notification setup error:", error);
-    }
-  };
+    };
 
-  setupNotifications();
+    setupNotifications();
 
-  return () => {
-    mounted = false;
-    notificationService.cleanup();
-  };
-}, []);
-
-
+    return () => {
+      mounted = false;
+      notificationService.cleanup();
+    };
+  }, []);
 
   const renderScreenLayout = useCallback(
     ({ children }: { children: React.ReactNode }) => (
@@ -91,7 +95,7 @@ useEffect(() => {
         {children}
       </ScreenWrapper>
     ),
-    []
+    [],
   );
 
   return (
@@ -108,10 +112,7 @@ useEffect(() => {
       </Stack>
 
       <RouteLoader />
-      <GlobalLoader
-        visible={loaderVisible}
-        message={loaderMessage}
-      />
+      <GlobalLoader visible={loaderVisible} message={loaderMessage} />
     </View>
   );
 }

@@ -11,12 +11,13 @@ export interface QuizStatsEntry {
 }
 
 export interface QuizStatsState {
-  currentStreak: number; // consecutive days played
+  currentStreak: number;       // consecutive days played
+  highestStreak: number;       // all-time highest streak
   totalWins: number;
   totalQuizzes: number;
   averageAccuracy: number;
   monthlyActivity: Record<string, boolean>; // yyyy-mm-dd => played or not
-  history: QuizStatsEntry[]; // like wallet transactions
+  history: QuizStatsEntry[];   // all quiz entries
 
   // Wins per difficulty
   easyWins: number;
@@ -33,4 +34,5 @@ export interface QuizStatsState {
   mediumTotal: number;
   hardTotal: number;
 }
+
 

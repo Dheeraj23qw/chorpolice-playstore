@@ -13,6 +13,10 @@ export const selectQuizWinRate = (state: RootState) =>
 export const selectCurrentStreak = (state: RootState) =>
   state.quizStats.currentStreak;
 
+// Highest streak
+export const selectHighestStreak = (state: RootState) =>
+  state.quizStats.highestStreak;
+
 // Average accuracy
 export const selectAverageAccuracy = (state: RootState) =>
   state.quizStats.averageAccuracy;
@@ -26,12 +30,12 @@ export const selectEasyWins = (state: RootState) => state.quizStats.easyWins;
 export const selectMediumWins = (state: RootState) => state.quizStats.mediumWins;
 export const selectHardWins = (state: RootState) => state.quizStats.hardWins;
 
-// Difficulty-specific losses (optional)
+// Difficulty-specific losses
 export const selectEasyLosses = (state: RootState) => state.quizStats.easyLosses;
 export const selectMediumLosses = (state: RootState) => state.quizStats.mediumLosses;
 export const selectHardLosses = (state: RootState) => state.quizStats.hardLosses;
 
-// Optional: Total quizzes per difficulty
+// Total quizzes per difficulty
 export const selectTotalEasyQuizzes = (state: RootState) =>
   state.quizStats.easyWins + state.quizStats.easyLosses;
 export const selectTotalMediumQuizzes = (state: RootState) =>

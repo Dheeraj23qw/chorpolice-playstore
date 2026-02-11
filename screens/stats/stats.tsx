@@ -14,29 +14,39 @@ import {
   Star,
   Activity,
 } from "lucide-react-native";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 export default function StatsScreen() {
+  
+  const quizStats = useSelector((state: RootState) => state.quizStats);
+
   const USER_STATS = {
     username: "PlayerOne",
     level: 12,
     xp: 3480,
     nextLevelXp: 4000,
-    matches: 284,
-    quizzes: 96,
-    wins: 172,
-    losses: 112,
-    currentStreak: 6,
-    highestStreak: 21,
-    easyWins: 40,
-    mediumWins: 25,
-    hardWins: 10,
-    easyPlayed: 60,
-    mediumPlayed: 45,
-    hardPlayed: 20,
+
+    total_quizzes: quizStats.totalQuizzes,
+    wins: quizStats.totalWins,
+    losses: quizStats.totalQuizzes - quizStats.totalWins,
+
+    currentStreak: quizStats.currentStreak,
+    highestStreak: quizStats.highestStreak,
+
+    easyWins: quizStats.easyWins,
+    mediumWins: quizStats.mediumWins,
+    hardWins: quizStats.hardWins,
+
+    easyPlayed: quizStats.easyTotal,
+    mediumPlayed: quizStats.mediumTotal,
+    hardPlayed: quizStats.hardTotal,
   };
 
-  const winRate = Math.round((USER_STATS.wins / USER_STATS.matches) * 100);
-  const levelProgress = (USER_STATS.xp / USER_STATS.nextLevelXp) * 100;
+  const winRate = Math.round(
+    (USER_STATS.wins / (USER_STATS.total_quizzes || 1)) * 100,
+  );
+  const levelProgress = (USER_STATS.xp / (USER_STATS.nextLevelXp || 1)) * 100;
 
   return (
     <ScreenWrapper
@@ -53,11 +63,15 @@ export default function StatsScreen() {
 
         {/* ================= Quick Stats Section ================= */}
         <Section title="Quick Stats">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 5 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 5 }}
+          >
             <View className="flex-row space-x-4">
               <StatCard
                 label="Matches"
-                value={USER_STATS.matches}
+                value={USER_STATS.total_quizzes}
                 icon={<Gamepad2 size={20} color="#818cf8" />}
               />
               <StatCard
@@ -81,7 +95,11 @@ export default function StatsScreen() {
 
         {/* ================= Played by Difficulty Section ================= */}
         <Section title="Played by Difficulty">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 5 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 5 }}
+          >
             <View className="flex-row space-x-4">
               <StatCard
                 label="Easy Played"

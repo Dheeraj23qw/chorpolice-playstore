@@ -3,7 +3,6 @@ import { router, useNavigation } from "expo-router";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { View } from "react-native";
-import * as SecureStore from "expo-secure-store";
 
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import VideoPlayerComponent from "@/components/IntroVideo";
@@ -12,10 +11,8 @@ import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
 
 import { AudioEngine } from "@/audio/audioEngine";
 import { loadSounds } from "@/redux/reducers/soundReducer";
-import { initializeWallet } from "@/features/wallet/walletThunks";
 import { applyTransaction } from "@/features/wallet/walletSlice";
-
-const WELCOME_KEY = "welcome_bonus_v1";
+import { welcomeService } from "@/service/welcomeService";
 
 export default function Index() {
   const navigation = useNavigation();
@@ -27,12 +24,7 @@ export default function Index() {
 
   /* ---------------- INIT ---------------- */
   useEffect(() => {
-    const initApp = async () => {
-      await dispatch(initializeWallet());
-      dispatch(loadSounds());
-    };
-
-    initApp();
+    dispatch(loadSounds());
   }, [dispatch]);
 
   /* ---------------- HIDE HEADER ---------------- */
@@ -56,9 +48,9 @@ export default function Index() {
     AudioEngine.play("quiz", "background");
 
     try {
-      const rewardStatus = await SecureStore.getItemAsync(WELCOME_KEY);
+      const alreadyClaimed = await welcomeService.hasClaimed();
 
-      if (!rewardStatus) {
+      if (!alreadyClaimed) {
         setShowWelcome(true);
       }
     } catch (err) {
@@ -73,7 +65,7 @@ export default function Index() {
     try {
       setClaiming(true);
 
-      // 🔥 Universal transaction system
+      // Add coins
       dispatch(
         applyTransaction({
           amount: 1000,
@@ -87,7 +79,8 @@ export default function Index() {
         })
       );
 
-      await SecureStore.setItemAsync(WELCOME_KEY, "claimed");
+      // Mark permanently claimed
+      await welcomeService.markClaimed();
 
       setShowWelcome(false);
 
