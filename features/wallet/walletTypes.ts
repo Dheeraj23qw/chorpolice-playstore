@@ -2,15 +2,16 @@
 
 export type WalletSource =
   | "quiz_reward"
+  | "quiz_penalty"       // ✅ New source for quitting mid-quiz or penalties
   | "spin_reward"
   | "game_reward"
   | "app_share"
   | "daily_bonus"
   | "chor_police"
-  |"rewards_claim"
+  | "rewards_claim"
   | "other";
 
-  export interface FeatureLock {
+export interface FeatureLock {
   lastUsedTimestamp: number | null;
   countToday: number;
 }

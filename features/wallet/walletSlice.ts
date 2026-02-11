@@ -3,13 +3,13 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { WalletState, Transaction, WalletSource } from "./walletTypes";
 
 const MAX_TRANSACTIONS = 100;
-
 const initialState: WalletState = {
   coins: 0,
   transactions: [],
   initialized: false,
   totalBySource: {
     quiz_reward: 0,
+    quiz_penalty: 0, // ✅ New source for penalties
     spin_reward: 0,
     game_reward: 0,
     app_share: 0,
@@ -24,6 +24,7 @@ const initialState: WalletState = {
     rate_us: { hasRated: false, lastPrompted: null },
   },
 };
+
 
 type CoinPayload = {
   amount: number;

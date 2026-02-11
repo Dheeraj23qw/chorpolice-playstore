@@ -40,45 +40,47 @@ const QuizScreen = () => {
     setShowHint,
     isHintButtonVisible,
     setIsHintButtonVisible,
+    handleQuitInMiddle
   } = useQuizGameLogic();
 
+// useEffect(() => {
+//   if (question?.correctAnswer) {
+//     console.log("🟢 New Question Started");
+//     console.log("✅ Correct Answer:", question.correctAnswer);
+//   }
+// }, [question]);
+
+
 useEffect(() => {
-  if (question?.correctAnswer) {
-    console.log("🟢 New Question Started");
-    console.log("✅ Correct Answer:", question.correctAnswer);
-  }
-}, [question]);
-
-
-  useEffect(() => {
-    const backAction = () => {
-      Alert.alert(
-        "Hold on!",
-        "Are you sure you want to go back?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => {},
-          },
-          {
-            text: "YES",
-            onPress: () => handleQuit(),
-          },
-        ],
-        { cancelable: true },
-      );
-
-      return true;
-    };
-
-    const subscription = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction,
+  const backAction = () => {
+    Alert.alert(
+      "Quit Quiz?",
+      "If you go back now, you will lose 500 coins.\n\nDo you want to continue?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Quit (-500 Coins)",
+          style: "destructive",
+          onPress: () => handleQuitInMiddle(),
+        },
+      ],
+      { cancelable: true }
     );
 
-    return () => subscription.remove();
-  }, []);
+    return true; // prevent default back behavior
+  };
+
+  const subscription = BackHandler.addEventListener(
+    "hardwareBackPress",
+    backAction
+  );
+
+  return () => subscription.remove();
+}, []);
+
 
   const onOptionPress = useCallback(
     (value: string) => {

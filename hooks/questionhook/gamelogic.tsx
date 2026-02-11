@@ -6,8 +6,12 @@ import { RootState } from "@/redux/store";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
-import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
+import {
+  resetDifficulty,
+  setCorrectAnswers,
+} from "@/redux/reducers/quiz";
 import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
+import { applyTransaction } from "@/features/wallet/walletSlice";
 
 interface PlayerMessage {
   message?: string | null;
@@ -61,7 +65,6 @@ export const useQuizGameLogic = () => {
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
   const [isHintButtonVisible, setIsHintButtonVisible] = useState(false);
-
 
   const [question, setQuestion] = useState(() => getRandomQuestion());
 
@@ -269,6 +272,31 @@ export const useQuizGameLogic = () => {
     router.replace("/modeselect");
   };
 
+const handleQuitInMiddle = async () => {
+  try {
+
+    const penaltyAmount = -500;
+    dispatch(
+      applyTransaction({
+        amount: penaltyAmount,
+        reason: "Quit Quiz Penalty",
+        source: "quiz_penalty",
+        metadata: {
+          round: questionIndex + 1,
+          difficulty: difficulty ?? "easy",
+          timestamp: Date.now(),
+        },
+      })
+    );
+    resetGame();
+    dispatch(resetDifficulty());
+    router.replace("/modeselect");
+  } catch (error) {
+    console.error("Error during quit-in-middle workflow:", error);
+  }
+};
+
+
   return {
     question,
     difficulty,
@@ -297,5 +325,6 @@ export const useQuizGameLogic = () => {
     setShowHint,
     isHintButtonVisible,
     setIsHintButtonVisible,
+    handleQuitInMiddle
   };
 };

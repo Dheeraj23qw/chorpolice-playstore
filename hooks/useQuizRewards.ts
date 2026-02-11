@@ -6,12 +6,9 @@ import { applyTransaction } from "@/features/wallet/walletSlice";
 export function useQuizReward() {
   const dispatch = useDispatch();
 
-  const {
-    level,
-    correctQuestions,
-    totalQuestions,
-    didQuit,
-  } = useSelector((state: RootState) => state.difficulty);
+  const { level, correctQuestions, totalQuestions } = useSelector(
+    (state: RootState) => state.difficulty
+  );
 
   const rewardData = useMemo(() => {
     if (!level || totalQuestions === 0) {
@@ -19,15 +16,6 @@ export function useQuizReward() {
     }
 
     const accuracy = correctQuestions / totalQuestions;
-
-    /* ------------------ QUIT PENALTY ------------------ */
-    if (didQuit) {
-      return {
-        totalReward: -500,
-        baseReward: -500,
-        bonus: 0,
-      };
-    }
 
     /* ------------------ BASE TABLE ------------------ */
     const baseTable = {
@@ -38,17 +26,12 @@ export function useQuizReward() {
 
     let baseReward = 0;
 
-    if (accuracy === 1) {
-      baseReward = baseTable[level].full;
-    } else if (accuracy >= 0.5) {
-      baseReward = baseTable[level].half;
-    } else {
-      baseReward = baseTable[level].fail;
-    }
+    if (accuracy === 1) baseReward = baseTable[level].full;
+    else if (accuracy >= 0.5) baseReward = baseTable[level].half;
+    else baseReward = baseTable[level].fail;
 
     /* ------------------ ACCURACY BONUS ------------------ */
     let bonus = 0;
-
     if (accuracy === 1) bonus = 500;
     else if (accuracy >= 0.9) bonus = 300;
     else if (accuracy >= 0.8) bonus = 150;
@@ -56,7 +39,7 @@ export function useQuizReward() {
     const totalReward = baseReward + bonus;
 
     return { totalReward, baseReward, bonus };
-  }, [level, correctQuestions, totalQuestions, didQuit]);
+  }, [level, correctQuestions, totalQuestions]);
 
   /* ------------------ APPLY TRANSACTION (ONCE) ------------------ */
   useEffect(() => {
@@ -74,27 +57,22 @@ export function useQuizReward() {
           level,
           correctQuestions,
           totalQuestions,
-          didQuit,
           baseReward: rewardData.baseReward,
           bonus: rewardData.bonus,
         },
       })
     );
-  }, [rewardData, level, correctQuestions, totalQuestions, didQuit, dispatch]);
+  }, [rewardData, level, correctQuestions, totalQuestions, dispatch]);
 
   const message = useMemo(() => {
     const { totalReward, bonus } = rewardData;
 
     if (totalReward > 0) {
-      if (bonus > 0) {
-        return `You earned ${totalReward} coins 🎉 (+${bonus} bonus)`;
-      }
+      if (bonus > 0) return `You earned ${totalReward} coins 🎉 (+${bonus} bonus)`;
       return `You earned ${totalReward} coins 🎉`;
     }
 
-    if (totalReward < 0) {
-      return `Penalty: ${totalReward} coins ⚠️`;
-    }
+    if (totalReward < 0) return `Penalty: ${totalReward} coins ⚠️`;
 
     return "";
   }, [rewardData]);

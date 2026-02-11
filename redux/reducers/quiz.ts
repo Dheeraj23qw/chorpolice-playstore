@@ -7,7 +7,6 @@ interface DifficultyState {
   totalQuestions: number;
   correctQuestions: number;
   isWinner: boolean;
-  didQuit: boolean; // ✅ added
 }
 
 const initialState: DifficultyState = {
@@ -17,7 +16,6 @@ const initialState: DifficultyState = {
   totalQuestions: 7,
   correctQuestions: 0,
   isWinner: false,
-  didQuit: false, // ✅ added
 };
 
 const difficultySlice = createSlice({
@@ -34,9 +32,7 @@ const difficultySlice = createSlice({
       state.correctQuestions = 0;
       state.isWinner = false;
     },
-    setQuit: (state) => {
-      state.didQuit = true;
-    },
+  
 
     resetDifficulty: (state) => {
       state.level = null;
@@ -44,7 +40,6 @@ const difficultySlice = createSlice({
       state.totalScores = { Police: 0, Thief: 0, King: 0, Advisor: 0 };
       state.correctQuestions = 0;
       state.isWinner = false;
-      state.didQuit = false;
     },
     setCorrectAnswers: (state, action: PayloadAction<number>) => {
       state.correctQuestions = action.payload;
@@ -138,7 +133,7 @@ const getTotalScoreUpToRound = (
   return total;
 };
 
-export const { setDifficulty, resetDifficulty, setCorrectAnswers, setQuit } =
+export const { setDifficulty, resetDifficulty, setCorrectAnswers } =
   difficultySlice.actions;
 
 export default difficultySlice.reducer;

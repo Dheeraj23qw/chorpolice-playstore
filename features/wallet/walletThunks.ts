@@ -24,6 +24,7 @@ export const initializeWallet = () => async (dispatch: AppDispatch) => {
       initialized: true,
       totalBySource: {
         quiz_reward: 0,
+        quiz_penalty: 0,
         spin_reward: 0,
         game_reward: 0,
         app_share: 0,
@@ -50,6 +51,7 @@ export const initializeWallet = () => async (dispatch: AppDispatch) => {
         spin_reward: storedWallet.totalBySource?.spin_reward || 0,
         game_reward: storedWallet.totalBySource?.game_reward || 0,
         app_share: storedWallet.totalBySource?.app_share || 0,
+         quiz_penalty: storedWallet.totalBySource?.quiz_penalty || 0,
         daily_bonus: storedWallet.totalBySource?.daily_bonus || 0,
         chor_police: storedWallet.totalBySource?.chor_police || 0,
         other: storedWallet.totalBySource?.other || 0,
