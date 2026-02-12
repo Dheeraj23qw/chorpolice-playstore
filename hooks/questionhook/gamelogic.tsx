@@ -12,6 +12,7 @@ import {
 } from "@/redux/reducers/quiz";
 import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
 import { applyTransaction } from "@/features/wallet/walletSlice";
+import { handleShare } from '@/utils/share';
 
 interface PlayerMessage {
   message?: string | null;
@@ -67,10 +68,11 @@ export const useQuizGameLogic = () => {
   const [isHintButtonVisible, setIsHintButtonVisible] = useState(false);
 
   const [question, setQuestion] = useState(() => getRandomQuestion());
+  
+    const randomWin = useRandomMessage("winwithoutname");
+    const randomLose = useRandomMessage("loserwithoutname");
+    const randomTimeUp = useRandomMessage("timesup");
 
-  const randomWin = useRandomMessage("a", "winwithoutname");
-  const randomLose = useRandomMessage("b", "loserwithoutname");
-  const randomTimeUp = useRandomMessage("c", "timesup");
 
   /* ---------------- TIMER ---------------- */
 
@@ -266,11 +268,23 @@ export const useQuizGameLogic = () => {
     setQuestion(getNextQuestion());
   };
 
-  const handleQuit = () => {
-    resetGame();
-    dispatch(resetDifficulty());
-    router.replace("/modeselect");
-  };
+type Routes = "/modeselect" | "/stats" | "/earn";
+
+const handleNavigation = (targetRoute: Routes) => {
+  try {
+    resetGame?.();
+    dispatch(resetDifficulty?.());
+    router.replace(targetRoute);
+  } catch (err) {
+    console.error("Navigation failed:", err);
+  }
+};
+
+const handleQuit = () => handleNavigation("/modeselect");
+const handleStats = () => handleNavigation("/stats");
+const handleEarn = () => handleNavigation("/earn");
+
+
 
 const handleQuitInMiddle = async () => {
   try {
@@ -325,6 +339,8 @@ const handleQuitInMiddle = async () => {
     setShowHint,
     isHintButtonVisible,
     setIsHintButtonVisible,
-    handleQuitInMiddle
+    handleQuitInMiddle,
+    handleStats,
+    handleEarn,
   };
 };

@@ -5,43 +5,30 @@ import { useRouter } from "expo-router";
 
 import { hp, wp } from "@/utils/responsive";
 import useRandomMessage from "@/hooks/useRandomMessage";
-import CustomRatingModal from "@/modal/RatingModal";
 import { RootState } from "@/redux/store";
-import { resetDifficulty } from "@/redux/reducers/quiz";
 
 import { ResultInfo } from "./components/reseltInfo";
-import { RenderButtons } from "./components/renderButtons";
-import { handleShare } from "@/utils/share";
 import { AudioEngine } from "@/audio/audioEngine";
 import { useQuizReward } from "@/hooks/useQuizRewards";
+import { ActionButtons } from "./components/renderButtons";
+import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 export default function QuizResult() {
   const [modalVisible, setModalVisible] = useState(false);
-
-  const dispatch = useDispatch();
-  const router = useRouter();
 
   const {
     correctQuestions: Correct,
     totalQuestions: Total,
     isWinner,
-    level,
   } = useSelector((state: RootState) => state.difficulty);
 
-  const Message = useRandomMessage("a", isWinner ? "winner" : "loser");
+  const { handleQuit, handleStats, handleEarn } = useQuizGameLogic();
 
-
-
+  const Message = useRandomMessage(isWinner ? "winner" : "loser");
   /* ------------------ STOP AUDIO ------------------ */
   useEffect(() => {
     AudioEngine.stop("timer");
   }, []);
-
-  /* ------------------ QUIT HANDLER ------------------ */
-  const handleQuit = useCallback(() => {
-    dispatch(resetDifficulty());
-    router.replace("/modeselect");
-  }, [dispatch, router]);
 
   /* ------------------ BACK HANDLER ------------------ */
   useEffect(() => {
@@ -76,9 +63,7 @@ export default function QuizResult() {
   }, []);
 
   const { reward, message: coinsAwarded } = useQuizReward();
-  const accuracy =
-  Total > 0 ? Math.round((Correct / Total) * 100) : 0;
-
+  const accuracy = Total > 0 ? Math.round((Correct / Total) * 100) : 0;
 
   /* ------------------ RENDER ------------------ */
   return (
@@ -120,23 +105,16 @@ export default function QuizResult() {
             Message={Message}
             coinsMessage={coinsAwarded}
             isWinner={isWinner}
-              accuracy={accuracy}   // 👈 add this
-
+            accuracy={accuracy} // 👈 add this
           />
         </View>
 
-        <RenderButtons
-          handleShare={handleShare}
-          handleHome={handleHome}
-          toggleModal={toggleModal}
+        <ActionButtons
+          onStatsPress={handleStats}
+          onEarnPress={handleEarn}
+          onHomePress={handleHome}
         />
       </View>
-
-      <CustomRatingModal
-        visible={modalVisible}
-        onClose={toggleModal}
-        title="Enjoying the Journey?"
-      />
     </View>
   );
 }

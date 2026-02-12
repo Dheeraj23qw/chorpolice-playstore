@@ -39,8 +39,9 @@ const useQuizLogic = (router: any) => {
   );
 
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
-  const winMessage = useRandomMessage(currentPlayerName, "win");
-  const loseMessage = useRandomMessage(currentPlayerName, "lose");
+const winMessage = useRandomMessage("win", currentPlayerName);
+const loseMessage = useRandomMessage("lose", currentPlayerName);
+
   const [isGameFinished, setIsGameFinished] = useState(false);
 
 

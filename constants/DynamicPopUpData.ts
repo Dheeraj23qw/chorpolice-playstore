@@ -1,12 +1,8 @@
 export type MediaItem = {
   id: number;
-  url: string; // URL can be a string (remote) or require (local assets)
+  url: any; // require() returns number in RN
   description: string;
 };
-
-import useRandomMessage from "@/hooks/useRandomMessage";
-
-const random = useRandomMessage("", "winwithoutname");
 
 export const videoData: MediaItem[] = [
   {
@@ -21,7 +17,6 @@ export const videoData: MediaItem[] = [
   },
 ];
 
-// GIF data (with IDs and URLs)
 export const gifData: MediaItem[] = [
   {
     id: 1,
@@ -33,7 +28,6 @@ export const gifData: MediaItem[] = [
     url: require("@/assets/gif/quiz/laugh.gif"),
     description: "+ 2000 points!",
   },
-
   {
     id: 3,
     url: require("@/assets/gif/quiz/weep.gif"),
@@ -44,7 +38,6 @@ export const gifData: MediaItem[] = [
     url: require("@/assets/gif/quiz/laugh.gif"),
     description: "you got 500 points!",
   },
-
   {
     id: 6,
     url: require("@/assets/gif/quiz/weep.gif"),
@@ -60,11 +53,8 @@ export const gifData: MediaItem[] = [
     url: require("@/assets/gif/quiz/timesup.gif"),
     description: "Time's Up",
   },
-
-
 ];
 
-// Image data (with IDs and URLs)
 export const imageData: MediaItem[] = [
   {
     id: 1,

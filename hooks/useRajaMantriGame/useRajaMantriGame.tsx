@@ -177,18 +177,14 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     );
   };
 
-  const randomMessageWin = useRandomMessage(
-    policeIndex !== null && policeIndex >= 0
-      ? playerNamesRedux[policeIndex]?.name || ""
-      : "",
-    "win",
-  );
-  const randomMessageLose = useRandomMessage(
-    policeIndex !== null && policeIndex >= 0
-      ? playerNamesRedux[policeIndex]?.name || ""
-      : "",
-    "lose",
-  );
+const policeName =
+  policeIndex !== null && policeIndex >= 0
+    ? playerNamesRedux[policeIndex]?.name || ""
+    : "";
+
+const randomMessageWin = useRandomMessage("win", policeName);
+const randomMessageLose = useRandomMessage("lose", policeName);
+
 
   const handlesetRoundStartMessage = () => {
     if (isLocked) return;
