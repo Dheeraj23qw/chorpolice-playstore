@@ -6,7 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const QUIZ_STATS_KEY = "QuizStats";
 const MAX_HISTORY = 200;
 
-// Default state
+// -------------------- DEFAULT STATE --------------------
 export const defaultQuizStats: QuizStatsState = {
   currentStreak: 0,
   highestStreak: 0,
@@ -26,7 +26,7 @@ export const defaultQuizStats: QuizStatsState = {
   hardTotal: 0,
 };
 
-// AsyncStorage helpers
+// -------------------- ASYNC STORAGE HELPERS --------------------
 export const saveQuizStats = async (stats: QuizStatsState) => {
   try {
     await AsyncStorage.setItem(QUIZ_STATS_KEY, JSON.stringify(stats));
@@ -51,7 +51,7 @@ export const loadQuizStats = async (): Promise<QuizStatsState> => {
   }
 };
 
-// Slice
+// -------------------- SLICE --------------------
 const quizStatsSlice = createSlice({
   name: "quizStats",
   initialState: defaultQuizStats,
@@ -61,50 +61,42 @@ const quizStatsSlice = createSlice({
       const difficulty = entry.metadata?.difficulty;
       const dateKey = entry.date;
 
-      /* -------------------- HISTORY -------------------- */
+      // -------------------- HISTORY --------------------
       state.history.unshift(entry);
       if (state.history.length > MAX_HISTORY) state.history.pop();
 
-      /* -------------------- TOTALS -------------------- */
+      // -------------------- TOTALS --------------------
       state.totalQuizzes += 1;
       if (difficulty === "easy") state.easyTotal += 1;
       else if (difficulty === "medium") state.mediumTotal += 1;
       else if (difficulty === "hard") state.hardTotal += 1;
 
-      /* -------------------- WIN / LOSS -------------------- */
+      // -------------------- WIN / LOSS --------------------
       if (entry.result === "win") {
         state.totalWins += 1;
+
         if (difficulty === "easy") state.easyWins += 1;
         else if (difficulty === "medium") state.mediumWins += 1;
         else if (difficulty === "hard") state.hardWins += 1;
 
-        // Streak calculation (by consecutive days)
-        const lastEntry = state.history[1]; // previous quiz
-        if (
-          lastEntry &&
-          new Date(lastEntry.date).getTime() ===
-            new Date(entry.date).getTime() - 24 * 60 * 60 * 1000
-        ) {
-          state.currentStreak += 1;
-        } else {
-          state.currentStreak = 1; // new streak
+        // ✅ Consecutive win streak (day not relevant)
+        state.currentStreak += 1;
+        if (state.currentStreak > state.highestStreak) {
+          state.highestStreak = state.currentStreak;
         }
       } else {
         if (difficulty === "easy") state.easyLosses += 1;
         else if (difficulty === "medium") state.mediumLosses += 1;
         else if (difficulty === "hard") state.hardLosses += 1;
 
-        state.currentStreak = 0; // loss resets streak
+        state.currentStreak = 0; // reset streak on loss
       }
 
-      // Update highest streak
-      if (state.currentStreak > state.highestStreak) state.highestStreak = state.currentStreak;
-
-      /* -------------------- AVERAGE ACCURACY -------------------- */
+      // -------------------- AVERAGE ACCURACY --------------------
       state.averageAccuracy =
         (state.averageAccuracy * (state.totalQuizzes - 1) + entry.accuracy) / state.totalQuizzes;
 
-      /* -------------------- DAILY ACTIVITY -------------------- */
+      // -------------------- DAILY ACTIVITY --------------------
       state.monthlyActivity[dateKey] = true;
     },
 
