@@ -3,79 +3,105 @@ import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { hp, wp, rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 
-interface RenderButtonsProps {
-  handleShare: () => void;
-  handleHome: () => void;
-  toggleModal: () => void;
+interface ActionButtonsProps {
+  onStatsPress: () => void;
+  onEarnPress: () => void;
+  onHomePress: () => void;
 }
 
-export const RenderButtons: React.FC<RenderButtonsProps> = memo(({
-  handleShare,
-  handleHome,
-  toggleModal,
+export const ActionButtons: React.FC<ActionButtonsProps> = memo(({
+  onStatsPress,
+  onEarnPress,
+  onHomePress,
 }) => {
   return (
-    <View style={{ marginTop: hp(4), paddingHorizontal: wp(4) }} className="flex-row justify-between">
+    // Replaced hp(4) with NativeWind mt-8 and wp(4) with px-4
+    <View className="flex-row justify-between mt-8 px-4 w-full">
       
-      {/* --- Share Button (Indigo) --- */}
-      <ActionButton 
-        onPress={handleShare}
-        label="Share"
-        icon="share-social-outline"
-        baseColor="bg-indigo-600"
-        borderColor="border-indigo-800"
+      <CustomButton 
+        onPress={onStatsPress}
+        label="Stats"
+        icon="stats-chart"
+        colors={['#6366f1', '#4338ca']} // Indigo
       />
 
-      {/* --- Home Button (Emerald) --- */}
-      <ActionButton 
-        onPress={handleHome}
+      <CustomButton 
+        onPress={onEarnPress}
+        label="Earn"
+        icon="sparkles"
+        colors={['#10b981', '#047857']} // Emerald
+      />
+
+      <CustomButton 
+        onPress={onHomePress}
         label="Home"
-        icon="home-outline"
-        baseColor="bg-emerald-600"
-        borderColor="border-emerald-800"
+        icon="grid"
+        colors={['#f59e0b', '#b45309']} // Amber
       />
 
-      {/* --- Rate Button (Amber) --- */}
-      <ActionButton 
-        onPress={toggleModal}
-        label="Rate"
-        icon="star-outline"
-        baseColor="bg-amber-500"
-        borderColor="border-amber-700"
-      />
-      
     </View>
   );
 });
 
 /* ======================================================
-    Reusable Aesthetic Button Sub-Component
+    New Minimalist Glass-UI Button
 ====================================================== */
+interface CustomButtonProps {
+  onPress: () => void;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  colors: string[];
+}
 
-const ActionButton = ({ onPress, label, icon, baseColor, borderColor }: any) => (
+const CustomButton: React.FC<CustomButtonProps> = ({
+  onPress,
+  label,
+  icon,
+  colors,
+}) => (
   <Pressable
     onPress={onPress}
-    style={{ height: hp(10), marginHorizontal: wp(1.5) }}
-    className={`flex-1 rounded-2xl ${baseColor} ${borderColor} border-b-4 active:border-b-0 active:translate-y-[2px] active:scale-95 transition-all overflow-hidden`}
+    style={{ height: hp(10) }}
+    className="flex-1 mx-1.5 active:scale-90 transition-all duration-200"
   >
-    <View className="flex-1 items-center justify-center relative">
-      {/* Top Shine Reflection */}
-      <View className="absolute top-0 left-0 right-0 h-[1px] bg-white/30" />
-      
-      {/* Icon Area */}
-      <View className="mb-1 bg-white/10 p-2 rounded-full border border-white/10">
-        <Ionicons name={icon} size={rf(2.2)} color="white" />
-      </View>
+    <BlurView
+      intensity={25}
+      tint="dark"
+      className="flex-1 rounded-3xl overflow-hidden border border-white/10 bg-black/20"
+    >
+      <View className="flex-1 items-center justify-center">
+        
+        {/* Glowing Background Accent */}
+        <LinearGradient
+          colors={[colors[0] + '40', 'transparent']}
+          className="absolute inset-0 opacity-40"
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
 
-      {/* Label */}
-      <Text 
-        style={{ fontSize: rf(1.4) }} 
-        // Swapped font-black for font-main-bold
-        className="text-white font-main-bold tracking-[2px] uppercase"
-      >
-        {label}
-      </Text>
-    </View>
+        {/* Minimal Icon */}
+        <View className="mb-1">
+          <Ionicons name={icon} size={rf(2.8)} color={colors[0]} />
+        </View>
+
+        {/* Label with dynamic color shadow */}
+        <Text
+          style={{ fontSize: rf(1.4) }}
+          className="text-white font-main-bold tracking-widest uppercase"
+        >
+          {label}
+        </Text>
+
+        {/* Bottom indicator dot */}
+        <View 
+          style={{ backgroundColor: colors[0] }} 
+          className="h-1 w-4 rounded-full mt-1 opacity-60" 
+        />
+        
+      </View>
+    </BlurView>
   </Pressable>
 );
