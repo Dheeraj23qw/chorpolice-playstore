@@ -16,16 +16,20 @@ import {
 } from "lucide-react-native";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { usePlayerLevel } from "@/service/usePlayerLevel";
 
 export default function StatsScreen() {
   
   const quizStats = useSelector((state: RootState) => state.quizStats);
 
+  const { level, xp, nextLevelXp } = usePlayerLevel();
+
+
   const USER_STATS = {
     username: "PlayerOne",
-    level: 12,
-    xp: 3480,
-    nextLevelXp: 4000,
+    level: level,
+    xp: xp,
+    nextLevelXp: nextLevelXp,
 
     total_quizzes: quizStats.totalQuizzes,
     wins: quizStats.totalWins,
