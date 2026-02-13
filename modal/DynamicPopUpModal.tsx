@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Image,
-  Modal,
   TouchableWithoutFeedback,
   useWindowDimensions,
+  StyleSheet,
 } from "react-native";
 import { gifData, imageData } from "@/constants/DynamicPopUpData";
 import {
@@ -23,38 +23,36 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   closeVisibleDelay,
 }) => {
   const { width, height } = useWindowDimensions();
+
   const isGameReset = useSelector(
     (state: RootState) => state.player.isGameReset,
   );
-  const [modalVisible, setModalVisible] = useState(false);
+
   const [showCloseText, setShowCloseText] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
-  // Memoize media data
   const mediaData = useMemo(() => {
     if (!mediaType) return null;
 
-    // Handle each type separately
     if (mediaType === "image") {
       return imageData.find((item) => item.id === mediaId);
-    } else if (mediaType === "gif") {
-      return gifData.find((item) => item.id === mediaId);
-    } else {
-      return null; // video is ignored
     }
+
+    if (mediaType === "gif") {
+      return gifData.find((item) => item.id === mediaId);
+    }
+
+    return null;
   }, [mediaType, mediaId]);
 
   useEffect(() => {
     if (isGameReset) {
-      setModalVisible(false);
       setIsReady(false);
       setShowCloseText(false);
       return;
     }
 
     if (isPopUp && mediaData) {
-      setModalVisible(true);
-
       const readyTimer = setTimeout(() => setIsReady(true), 100);
       const closeTimer = setTimeout(
         () => setShowCloseText(true),
@@ -68,86 +66,170 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
     } else {
       setIsReady(false);
       setShowCloseText(false);
-      setModalVisible(false);
     }
   }, [isPopUp, isGameReset, mediaData]);
 
-  if (isGameReset || !modalVisible || !mediaData) return null;
+  if (isGameReset || !isPopUp || !mediaData) return null;
 
   return (
-    <Modal
-      visible={modalVisible}
-      transparent
-      statusBarTranslucent
-      animationType="fade"
-    >
-      <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-        <View className="flex-1 bg-white items-center justify-center overflow-hidden">
-          {/* Glass Shine Decorative Elements */}
-          <View className="absolute -top-[10%] -left-[10%] w-[120%] h-[40%] bg-zinc-50 opacity-50 rotate-[-15deg] rounded-[100px]" />
-          <View className="absolute top-[20%] -right-[20%] w-[100%] h-[30%] bg-zinc-100/40 rotate-[10deg] rounded-[100px]" />
+    <TouchableWithoutFeedback>
+      <View style={styles.container}>
+        {/* Decorative Elements */}
+        <View style={styles.topGlass} />
+        <View style={styles.rightGlass} />
 
-          {/* Header */}
-          <View
-            className={`absolute top-24 z-50 flex-row items-center bg-white/90 px-8 py-4 rounded-full border border-zinc-100 shadow-md
-              transition-all duration-500 ${isReady ? "translate-y-0 opacity-100" : "-translate-y-5 opacity-0"}`}
-          >
-            {playerData.image && (
-              <Image
-                source={
-                  typeof playerData.image === "string"
-                    ? { uri: playerData.image }
-                    : playerData.image
-                }
-                className="w-12 h-12 rounded-full border border-zinc-200"
-              />
-            )}
-            <Text className="ml-4 text-zinc-600 font-main-bold text-[16px] uppercase tracking-[1px]">
-              {playerData.message}
-            </Text>
-          </View>
+        {/* Header */}
+        <View
+          style={[
+            styles.header,
+            {
+              opacity: isReady ? 1 : 0,
+              transform: [{ translateY: isReady ? 0 : -20 }],
+            },
+          ]}
+        >
+          {playerData.image && (
+            <Image
+              source={
+                typeof playerData.image === "string"
+                  ? { uri: playerData.image }
+                  : playerData.image
+              }
+              style={styles.avatar}
+            />
+          )}
+          <Text style={styles.headerText} className="font-main-bold">{playerData.message}</Text>
+        </View>
 
-          {/* Media & Description */}
-          <View
-            className={`items-center justify-center w-full transition-all duration-700 
-              ${isReady ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
-          >
-            <View className="shadow-2xl shadow-zinc-200">
-              <Image
-                source={
-                  typeof mediaData.url === "string"
-                    ? { uri: mediaData.url }
-                    : mediaData.url
-                }
-                style={{ width: width * 0.9, height: height * 0.4 }}
-                resizeMode="contain"
-              />
-            </View>
+        {/* Media Section */}
+        <View
+          style={[
+            styles.mediaContainer,
+            {
+              opacity: isReady ? 1 : 0,
+              transform: [{ scale: isReady ? 1 : 0.95 }],
+            },
+          ]}
+        >
+          <Image
+            source={
+              typeof mediaData.url === "string"
+                ? { uri: mediaData.url }
+                : mediaData.url
+            }
+            style={{ width: width * 0.9, height: height * 0.4 }}
+            resizeMode="contain"
+          />
 
-            <View
-              className="mt-4 mx-6 px-6 py-4 bg-white/95 rounded-2xl shadow-md"
-              style={{
-                elevation: 6, // Android shadow
-              }}
-            >
-              <Text className="text-zinc-900 text-center text-lg font-main-bold uppercase leading-7">
-                {mediaData.description}
-              </Text>
-            </View>
-          </View>
-
-          {/* Tap Hint */}
-          <View
-            className={`absolute bottom-16 transition-opacity duration-1000 ${showCloseText ? "opacity-40" : "opacity-0"}`}
-          >
-            <Text className="text-zinc-400 font-main-bold tracking-[8px] uppercase text-[9px]">
-              Tap to continue
-            </Text>
+          <View style={styles.descriptionBox}>
+            <Text style={styles.descriptionText} className="font-main-bold">{mediaData.description}</Text>
           </View>
         </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+
+        {/* Tap Hint */}
+        <View style={[styles.tapHint, { opacity: showCloseText ? 0.4 : 0 }]}>
+          <Text style={styles.tapText} className="font-main-bold">TAP TO CONTINUE</Text>
+        </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
 export default DynamicOverlayPopUp;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+
+  topGlass: {
+    position: "absolute",
+    top: "-10%",
+    left: "-10%",
+    width: "120%",
+    height: "40%",
+    backgroundColor: "#f4f4f5",
+    opacity: 0.5,
+    transform: [{ rotate: "-15deg" }],
+    borderRadius: 100,
+  },
+
+  rightGlass: {
+    position: "absolute",
+    top: "20%",
+    right: "-20%",
+    width: "100%",
+    height: "30%",
+    backgroundColor: "rgba(244,244,245,0.4)",
+    transform: [{ rotate: "10deg" }],
+    borderRadius: 100,
+  },
+
+  header: {
+    position: "absolute",
+    top: 80,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: "#f4f4f5",
+    elevation: 5,
+  },
+
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#e4e4e7",
+  },
+
+  headerText: {
+    marginLeft: 16,
+    color: "#52525b",
+    fontSize: 16,
+    textTransform: "uppercase",
+
+  },
+
+  mediaContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  descriptionBox: {
+    marginTop: 16,
+    marginHorizontal: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 20,
+    elevation: 6,
+  },
+
+  descriptionText: {
+    color: "#18181b",
+    textAlign: "center",
+    fontSize: 18,
+    textTransform: "uppercase",
+    lineHeight: 26,
+  },
+
+  tapHint: {
+    position: "absolute",
+    bottom: 60,
+  },
+
+  tapText: {
+    color: "#a1a1aa",
+    fontSize: 10,
+    letterSpacing: 4,
+  },
+});

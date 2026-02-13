@@ -2,6 +2,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { QuizStatsState, QuizStatsEntry } from "./quizStatsTypes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  cancelDailyStreakReminder,
+  scheduleDailyStreakReminder,
+} from "@/service/notification/quiz.daily_streak.notifications";
 
 const QUIZ_STATS_KEY = "QuizStats";
 const MAX_HISTORY = 200;
@@ -24,6 +28,9 @@ export const defaultQuizStats: QuizStatsState = {
   easyTotal: 0,
   mediumTotal: 0,
   hardTotal: 0,
+  dailyStreak: 0,
+  highestDailyStreak: 0,
+  lastPlayedDate: null,
 };
 
 // -------------------- ASYNC STORAGE HELPERS --------------------
@@ -61,6 +68,41 @@ const quizStatsSlice = createSlice({
       const difficulty = entry.metadata?.difficulty;
       const dateKey = entry.date;
 
+      // -------------------- DAILY STREAK --------------------
+      const today = entry.date; // "YYYY-MM-DD"
+      const lastDate = state.lastPlayedDate;
+
+      if (!lastDate) {
+        state.dailyStreak = 1;
+      } else if (lastDate === today) {
+        // already counted today → do nothing
+      } else {
+        const todayDate = new Date(today + "T00:00:00");
+        const lastPlayed = new Date(lastDate + "T00:00:00");
+
+        const diffTime = todayDate.getTime() - lastPlayed.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+        if (diffDays === 1) {
+          state.dailyStreak += 1;
+        } else {
+          state.dailyStreak = 1;
+        }
+      }
+
+      state.lastPlayedDate = today;
+
+      if (state.dailyStreak > state.highestDailyStreak) {
+        state.highestDailyStreak = state.dailyStreak;
+      }
+
+      // ✅ Schedule / cancel notifications
+      if (state.dailyStreak > 0) {
+        scheduleDailyStreakReminder(state.dailyStreak);
+      } else {
+        cancelDailyStreakReminder();
+      }
+
       // -------------------- HISTORY --------------------
       state.history.unshift(entry);
       if (state.history.length > MAX_HISTORY) state.history.pop();
@@ -94,20 +136,27 @@ const quizStatsSlice = createSlice({
 
       // -------------------- AVERAGE ACCURACY --------------------
       state.averageAccuracy =
-        (state.averageAccuracy * (state.totalQuizzes - 1) + entry.accuracy) / state.totalQuizzes;
+        (state.averageAccuracy * (state.totalQuizzes - 1) + entry.accuracy) /
+        state.totalQuizzes;
 
       // -------------------- DAILY ACTIVITY --------------------
       state.monthlyActivity[dateKey] = true;
     },
 
-    resetQuizStats: () => ({ ...defaultQuizStats, history: [], monthlyActivity: {} }),
+    resetQuizStats: () => ({
+      ...defaultQuizStats,
+      history: [],
+      monthlyActivity: {},
+    }),
 
     setQuizStats: (_, action: PayloadAction<QuizStatsState>) => {
-      if (__DEV__) console.log("🟢 [QuizStats] Hydrating from storage:", action.payload);
+      if (__DEV__)
+        console.log("🟢 [QuizStats] Hydrating from storage:", action.payload);
       return { ...defaultQuizStats, ...action.payload };
     },
   },
 });
 
-export const { addQuizEntry, resetQuizStats, setQuizStats } = quizStatsSlice.actions;
+export const { addQuizEntry, resetQuizStats, setQuizStats } =
+  quizStatsSlice.actions;
 export default quizStatsSlice.reducer;

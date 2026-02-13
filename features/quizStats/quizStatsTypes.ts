@@ -33,6 +33,10 @@ export interface QuizStatsState {
   easyTotal: number;
   mediumTotal: number;
   hardTotal: number;
+
+dailyStreak: number;
+highestDailyStreak: number;
+lastPlayedDate: string | null;
 }
 
 

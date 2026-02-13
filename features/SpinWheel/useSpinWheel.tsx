@@ -7,9 +7,7 @@ import { claimSpinReward } from "../wallet/walletSlice";
 import { useTimeoutManager } from "@/hooks/useTimeOutManager";
 import { RootState } from "@/redux/store";
 import { formatTime } from "@/utils/TimeFormat";
-import { notificationService } from "@/notification/notifications";
 import { Vibration, Platform } from "react-native";
-// ✅ Import all Reanimated tools
 import {
   useSharedValue,
   withTiming,
@@ -20,6 +18,7 @@ import {
   runOnJS,
   cancelAnimation,
 } from "react-native-reanimated";
+import { cancelSpinNotification, scheduleSpinUnlock } from "@/service/notification/spin.notification";
 
 export const useSpinWheel = () => {
   const [status, setStatus] = useState<SpinStatus>("IDLE");
@@ -34,7 +33,7 @@ export const useSpinWheel = () => {
     (state: RootState) =>
       state.wallet.locks.spin ?? { lastUsedTimestamp: null },
   );
-  const COOLDOWN = 6 * 60 * 60 * 1000;
+  const COOLDOWN =  60 * 1000;
   const isLocked = remainingTime > 0;
 
   // ✅ REANIMATED VALUES
@@ -65,8 +64,8 @@ export const useSpinWheel = () => {
   // 2. Notification Logic
   useEffect(() => {
     if (remainingTime <= 0) return;
-    notificationService.cancelNotificationById("spin-unlock-reminder");
-    notificationService.scheduleSpinUnlock(Math.ceil(remainingTime / 1000));
+    cancelSpinNotification();
+    scheduleSpinUnlock(Math.ceil(remainingTime / 1000));
   }, [remainingTime]);
 
   // 3. Cleanup on Unmount

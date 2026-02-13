@@ -14,7 +14,7 @@ import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, StyleSheet, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
-import { notificationService } from "@/notification/notifications";
+import { notificationService } from "@/service/notification/NotificationService";
 import { AppDispatch } from "@/redux/store";
 import { useQuizStatsPersistence } from "@/service/useQuizStatsPersistence";
 import { useWalletPersistence } from "@/service/useWalletPersistence";
