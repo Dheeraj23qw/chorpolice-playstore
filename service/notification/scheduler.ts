@@ -1,5 +1,5 @@
 import { notificationService } from "./NotificationService";
-import { NotificationTemplate } from "./templates";
+import { NotificationTemplate } from "./types";
 
 function getRandomItem(arr: string[]) {
   return arr[Math.floor(Math.random() * arr.length)];

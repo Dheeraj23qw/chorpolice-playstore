@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   cancelDailyStreakReminder,
   scheduleDailyStreakReminder,
-} from "@/service/notification/quiz.daily_streak.notifications";
+} from "@/service/notification/notication_types/quiz.daily_streak.notifications";
 
 const QUIZ_STATS_KEY = "QuizStats";
 const MAX_HISTORY = 200;
