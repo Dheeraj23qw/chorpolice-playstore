@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
-  ImageBackground,
   Animated,
   BackHandler,
   Alert,
@@ -126,61 +125,62 @@ const RajaMantriGameScreen: React.FC = () => {
         paddingBottom: insets.bottom,
       }}
     >
-      <ScoreTable
-        playerNames={playerNames}
-        playerScores={playerScores}
-        popupTable={popupTable}
-        onClose={() => setPopupTable(false)}
-      />
+      {isDynamicPopUp && mediaId != null && mediaType != null ? (
+      
+          <DynamicOverlayPopUp
+            isPopUp={isDynamicPopUp}
+            mediaId={mediaId}
+            mediaType={mediaType}
+            closeVisibleDelay={3000}
+            playerData={playerData}
+          />
+      ) : (
+        <>
+          <ScoreTable
+            playerNames={playerNames}
+            playerScores={playerScores}
+            popupTable={popupTable}
+            onClose={() => setPopupTable(false)}
+          />
 
-      {popupIndex && (
-        <OverlayPopUp
-          index={popupIndex}
-          policeIndex={policeIndex}
-          kingIndex={kingIndex}
-          advisorIndex={advisorIndex}
-          thiefIndex={thiefIndex}
-          displayDuration={3000}
-        />
-      )}
-
-      {isRoundStartPopupVisible && <RoundStartLoader />}
-
-      {isDynamicPopUp && mediaId != null && mediaType != null && (
-        <DynamicOverlayPopUp
-          isPopUp={isDynamicPopUp}
-          mediaId={mediaId}
-          mediaType={mediaType}
-          closeVisibleDelay={3000}
-          playerData={playerData}
-        />
-      )}
-
-      {!isDynamicPopUp && (
-        <View className="flex-1">
-          {isPlaying ? (
-            <VideoPlayerComponent
-              videoIndex={videoIndex}
-              onVideoEnd={() => setIsPlaying(false)}
-            />
-          ) : (
-            <GamePlaySection
-              isPlayButtonDisabled={isPlayButtonDisabled}
-              handlePlay={handlePlay}
-              roles={roles}
-              playerNames={playerNames}
-              flippedStates={flippedStates}
-              clickedCards={clickedCards}
-              handleCardClick={handleCardClick}
-              handleCardClickWithBounce={handleCardClickWithBounce}
-              toggleModal={toggleModal}
-              round={round}
-              message={message}
-              getCardStyle={getCardStyle}
-              showTableButton={showTableButton}
+          {popupIndex && (
+            <OverlayPopUp
+              index={popupIndex}
+              policeIndex={policeIndex}
+              kingIndex={kingIndex}
+              advisorIndex={advisorIndex}
+              thiefIndex={thiefIndex}
+              displayDuration={3000}
             />
           )}
-        </View>
+
+          {isRoundStartPopupVisible && <RoundStartLoader />}
+
+          <View className="flex-1">
+            {isPlaying ? (
+              <VideoPlayerComponent
+                videoIndex={videoIndex}
+                onVideoEnd={() => setIsPlaying(false)}
+              />
+            ) : (
+              <GamePlaySection
+                isPlayButtonDisabled={isPlayButtonDisabled}
+                handlePlay={handlePlay}
+                roles={roles}
+                playerNames={playerNames}
+                flippedStates={flippedStates}
+                clickedCards={clickedCards}
+                handleCardClick={handleCardClick}
+                handleCardClickWithBounce={handleCardClickWithBounce}
+                toggleModal={toggleModal}
+                round={round}
+                message={message}
+                getCardStyle={getCardStyle}
+                showTableButton={showTableButton}
+              />
+            )}
+          </View>
+        </>
       )}
     </View>
   );

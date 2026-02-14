@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { View, Pressable } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { setGameRound } from "@/redux/reducers/playerReducer";
 import { rf } from "@/utils/responsive";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
@@ -9,7 +9,7 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { Text } from "@/components/Text";
 
 const RoundSelector: React.FC = () => {
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
   const selectedRounds = useSelector(
     (state: RootState) => state.player.gameRound,
   );

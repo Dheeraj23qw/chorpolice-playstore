@@ -1,20 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { View, ScrollView, Alert, BackHandler } from "react-native";
+import React, { useEffect } from "react";
+import { View, ScrollView, Alert, BackHandler, } from "react-native";
+import {  useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { wp, hp, rf } from "@/utils/responsive";
+import { wp, hp } from "@/utils/responsive";
 
-// Logic & Components
+// Hooks & Redux
 import useQuizLogic from "@/hooks/useQuizLogic";
+import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
+import { useSelector } from "react-redux";
+import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
+
+// Components
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import PlayerInfo from "@/components/chorPoliceQuiz/playerInfo";
 import QuizOptions from "@/components/chorPoliceQuiz/option";
-import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
-import { useSelector } from "react-redux";
-
-import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
-import PlayButton from "@/components/RajamantriGameScreen/playButton";
-// import ScoreTable from "@/modal/ShowTableModal";
 
 const ChorPoliceQuiz: React.FC = () => {
   const router = useRouter();
@@ -33,54 +32,34 @@ const ChorPoliceQuiz: React.FC = () => {
     feedbackMessage,
   } = useQuizLogic(router);
 
-  const playerNames = useSelector(selectPlayerNames).map(
-    (player) => player.name,
-  );
-  const [popupTable, setPopupTable] = useState(false);
+  const playerNames = useSelector(selectPlayerNames).map((p) => p.name);
+  const { handleExitGame } = useRajaMantriGame({ playerNames });
 
-  const { handleExitGame, playerScores } = useRajaMantriGame({ playerNames });
-
-  const toggleModal = () => setPopupTable(!popupTable);
-
+  // Handle back press
   useEffect(() => {
     const backAction = () => {
-      Alert.alert(
-        "Hold on!",
-        "Are you sure you want to go back?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "YES",
-            onPress: () => handleExitGame(),
-          },
-        ],
-        { cancelable: true },
-      );
-
-      return true; // prevent default back behavior
+      Alert.alert("Hold on!", "Are you sure you want to go back?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "YES", onPress: handleExitGame },
+      ]);
+      return true;
     };
 
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       backAction,
     );
-
     return () => subscription.remove();
   }, []);
-
-
+  const insets = useSafeAreaInsets();
   return (
-    <View className="flex-1 bg-[#020205]">
-      {/* --- LAYER 1: VIRTUAL SPACE --- */}
-      {/* <ScoreTable
-        playerNames={playerNames}
-        playerScores={playerScores}
-        popupTable={popupTable}
-        onClose={() => setPopupTable(false)}
-      /> */}
+    <View
+      className="flex-1 bg-[#020205] relative"
+      style={{
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
       <View
         style={{
           width: wp(120),
@@ -102,30 +81,28 @@ const ChorPoliceQuiz: React.FC = () => {
         className="bg-purple-900/10 rounded-full blur-[90px]"
       />
 
-      {isPopUp ? (
-        <View className="flex-1 items-center justify-center">
-          <DynamicOverlayPopUp
-            isPopUp={isPopUp}
-            mediaId={mediaId}
-            mediaType={mediaType}
-            closeVisibleDelay={3000}
-            playerData={{
-              image: currentPlayerImage,
-              message: feedbackMessage,
-              imageType: currentPlayerImageType,
-            }}
-          />
-        </View>
+      {isPopUp && mediaId && mediaType ? (
+        <DynamicOverlayPopUp
+          isPopUp={isPopUp}
+          mediaId={mediaId}
+          mediaType={mediaType}
+          closeVisibleDelay={3000}
+          playerData={{
+            image: currentPlayerImage,
+            message: feedbackMessage,
+            imageType: currentPlayerImageType,
+          }}
+        />
       ) : (
-        <SafeAreaView style={{ flex: 1 }}>
+        // QUIZ LAYOUT
+        <View className="flex-1 ">
           <ScrollView
             contentContainerStyle={{ flexGrow: 1, paddingBottom: hp(5) }}
             showsVerticalScrollIndicator={false}
           >
-            <View className="flex-1 px-6">
-              {/* --- LAYER 3: PLAYER STAGE --- */}
-              <View className="items-center justify-center mb-10">
-                {/* A light-beam effect behind the player */}
+            <View className="flex-1 px-6 pt-5">
+              {/* Player Stage */}
+              <View className="items-center justify-center mb-10  relative">
                 <View
                   style={{
                     width: wp(60),
@@ -138,13 +115,12 @@ const ChorPoliceQuiz: React.FC = () => {
                 <PlayerInfo playerImage={playerImage} />
               </View>
 
-              {/* --- LAYER 4: GLASS INTERFACE --- */}
+              {/* Glass Interface */}
               <View
-                className="w-full rounded-[40px] bg-white/[0.04] border border-white/10 overflow-hidden"
+                className="w-full rounded-[40px] bg-white/[0.04] border border-white/10 overflow-hidden relative"
                 style={{
                   paddingVertical: hp(4),
                   paddingHorizontal: wp(2),
-                  // Using inline styles to avoid NativeWind TS issues with complex shadows
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 20 },
                   shadowOpacity: 0.4,
@@ -152,26 +128,17 @@ const ChorPoliceQuiz: React.FC = () => {
                   elevation: 10,
                 }}
               >
-                {/* The "Frosted" Bevel */}
                 <View className="absolute top-0 left-0 right-0 h-[1px] bg-white/20" />
-                <View className="w-full">
-                  <QuizOptions
-                    playerName={currentPlayer.name}
-                    options={options}
-                    onOptionPress={handleOptionPress}
-                    isOptionDisabled={isOptionDisabled}
-                  />
-                </View>
-                {/* <PlayButton
-                  disabled={false}
-                  onPress={toggleModal}
-                  buttonText="Show Score Table"
-                  variant="secondary" // 👈 important
-                /> */}
+                <QuizOptions
+                  playerName={currentPlayer.name}
+                  options={options}
+                  onOptionPress={handleOptionPress}
+                  isOptionDisabled={isOptionDisabled}
+                />
               </View>
             </View>
           </ScrollView>
-        </SafeAreaView>
+        </View>
       )}
     </View>
   );

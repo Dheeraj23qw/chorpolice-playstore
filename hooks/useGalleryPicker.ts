@@ -2,9 +2,10 @@ import { useDispatch } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { addImage } from "@/redux/reducers/dynamicImagesReducer";
+import { AppDispatch } from "@/redux/store";
 
 const useGalleryPicker = () => {
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();

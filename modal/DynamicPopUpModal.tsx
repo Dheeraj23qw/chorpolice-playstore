@@ -72,7 +72,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   if (isGameReset || !isPopUp || !mediaData) return null;
 
   return (
-    <TouchableWithoutFeedback>
+        <View className="absolute top-0 left-0 right-0 bottom-0 bg-white flex-1">
       <View style={styles.container}>
         {/* Decorative Elements */}
         <View style={styles.topGlass} />
@@ -131,7 +131,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
           <Text style={styles.tapText} className="font-main-bold">TAP TO CONTINUE</Text>
         </View>
       </View>
-    </TouchableWithoutFeedback>
+    </View>
   );
 };
 

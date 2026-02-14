@@ -5,7 +5,7 @@ import { segments } from "@/constants/spinwheel";
 import { AudioEngine } from "@/audio/audioEngine";
 import { claimSpinReward } from "../wallet/walletSlice";
 import { useTimeoutManager } from "@/hooks/useTimeOutManager";
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { formatTime } from "@/utils/TimeFormat";
 import { Vibration, Platform } from "react-native";
 // ✅ Import all Reanimated tools
@@ -31,7 +31,7 @@ export const useSpinWheel = () => {
   const [remainingTime, setRemainingTime] = useState(0);
 
   const { clearAllTimeouts } = useTimeoutManager(status === "IDLE");
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
 
   const spinLock = useSelector(
     (state: RootState) =>

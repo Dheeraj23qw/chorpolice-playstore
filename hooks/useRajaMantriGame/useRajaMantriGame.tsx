@@ -8,7 +8,7 @@ import { revealAllCards } from "./utils/revealAllCardsUtils";
 import { resetForNextRound } from "./utils/resetForNextRound";
 import { handlePlayHelper } from "./gameHelper/handleplay";
 import { updateScoreUtil } from "./utils/updateScoreUtil";
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import useRandomMessage from "../useRandomMessage";
 import { updatePlayerScores } from "@/redux/reducers/playerReducer";
 import { resetGamefromRedux } from "@/redux/reducers/playerReducer";
@@ -99,8 +99,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
   );
 
   const router = useRouter();
-  const dispatch = useDispatch();
-
+const dispatch = useDispatch<AppDispatch>();
   const isGameReset = useSelector(
     (state: RootState) => state.player.isGameReset,
   );

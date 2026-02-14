@@ -14,7 +14,7 @@ import {
   responsiveFontSize,
 } from "react-native-responsive-dimensions";
 
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { handleShare } from "@/utils/share";
 import { FullScreenMenu } from "@/components/sidebar";
 import CustomRatingModal from "@/modal/RatingModal";
@@ -83,7 +83,7 @@ const OptionHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const router = useRouter();
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
   const isMuted = useSelector((state: RootState) => state.sound.isMuted);
 
   // COLORS

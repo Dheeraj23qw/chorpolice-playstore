@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AudioEngine } from "@/audio/audioEngine";
 
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
@@ -40,7 +40,7 @@ const POPUP_DELAY = 3000;
 
 export const useQuizGameLogic = () => {
   const { table, getRandomQuestion } = useGameTableAndScores();
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
 

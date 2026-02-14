@@ -6,7 +6,7 @@ import {
   setSelectedImages,
   setGameMode,
 } from "@/redux/reducers/playerReducer";
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { GameMode } from "@/types/redux/reducers";
 import { generateRandomName } from "@/utils/generateRandomnames";
 import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
@@ -27,7 +27,7 @@ export const usePlayerNameScreen = () => {
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [playerNames, setPlayerNamesState] = useState<PlayerName[]>([]);
 
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
   const playerImages = useSelector(

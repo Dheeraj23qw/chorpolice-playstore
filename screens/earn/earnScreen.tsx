@@ -8,14 +8,14 @@ import { WalletCard } from "@/components/EarnScreen/WalletCard";
 import { MilestonesSection } from "@/components/EarnScreen/MilestonesSection";
 import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
 
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 import { REWARD_TIERS } from "@/constants/RewardsConst";
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
 
 export default function EarnScreen() {
   const { width } = useWindowDimensions();
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
   const { isLocked, formattedTime } = useSpinWheel();
 
   // State

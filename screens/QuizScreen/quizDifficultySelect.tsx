@@ -16,10 +16,11 @@ import {
 import DifficultyCard from "@/components/difficultySelectScreen/DifficultyCard";
 import StartButton from "@/components/difficultySelectScreen/StartButton";
 import { Text } from "@/components/Text";
+import { AppDispatch } from "@/redux/store";
 
 const QuizDifficultyScreen = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
+const dispatch = useDispatch<AppDispatch>();
   const isReady = useIsRouterReady();
 
   const [selected, setSelected] = useState<DifficultyOption | null>(null);
