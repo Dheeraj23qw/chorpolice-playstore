@@ -1,6 +1,5 @@
 import React, { memo } from "react";
 import { View, Pressable } from "react-native";
-import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -33,7 +32,6 @@ const RulesControls = memo(({ step, total, onNext, onBack }: Props) => {
 
   // Optimized Press Handler with Haptics
   const handlePress = (type: "next" | "back") => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (type === "next") onNext();
     else onBack();
   };

@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Modal,
-  View,
-  TouchableOpacity,
-  Pressable,
-  Platform,
-} from "react-native";
+import { Modal, View, TouchableOpacity, Pressable } from "react-native";
 import Animated, {
   FadeInDown,
   FadeIn,
@@ -13,12 +7,14 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   LinearTransition,
+  withRepeat,
+  useSharedValue,
 } from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
 import { CustomRatingModalProps } from "@/types/models/RatingModal";
 import { handleAppReview } from "@/utils/reviewHelper";
 import { TextInput } from "@/components/Input";
 import { Text } from "@/components/Text";
+import { generateSmartReview } from "@/utils/handleAppReview";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -30,11 +26,7 @@ interface StarButtonProps {
   onPress: (value: number) => void;
 }
 
-const StarButton: React.FC<StarButtonProps> = ({
-  index,
-  rating,
-  onPress,
-}) => {
+const StarButton: React.FC<StarButtonProps> = ({ index, rating, onPress }) => {
   const isActive = index <= rating;
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -58,9 +50,7 @@ const StarButton: React.FC<StarButtonProps> = ({
         className="text-5xl"
         style={{
           color: isActive ? "#6366f1" : "#1e293b", // indigo-500 / slate-800
-          textShadowColor: isActive
-            ? "rgba(99, 102, 241, 0.9)"
-            : "transparent",
+          textShadowColor: isActive ? "rgba(99, 102, 241, 0.9)" : "transparent",
           textShadowRadius: isActive ? 18 : 0,
         }}
       >
@@ -80,6 +70,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
 }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!visible) {
@@ -88,29 +79,48 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
     }
   }, [visible]);
 
+  const floating = useSharedValue(0);
+
+  useEffect(() => {
+    floating.value = withRepeat(withSpring(-6, { damping: 5 }), -1, true);
+  }, []);
+
+  const floatingStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floating.value }],
+  }));
+
   const handleSubmit = async () => {
-    if (rating === 0) return;
+    if (rating === 0 || isSubmitting) return;
 
-    if (Platform.OS !== "web") {
-      Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success
-      );
+    try {
+      setIsSubmitting(true);
+
+      await handleAppReview({
+        rating,
+        comment,
+        onComplete: () => {
+          setIsSubmitting(false);
+          onClose();
+        },
+      });
+    } catch (error) {
+      console.warn("Submit failed:", error);
+      setIsSubmitting(false);
     }
-
-    await handleAppReview({
-      rating,
-      comment,
-      onComplete: onClose,
-    });
   };
+  const handleStarPress = async (value: number) => {
+    setRating((prev) => {
+      const newRating = prev === value ? 0 : value;
 
-  const handleStarPress = (value: number) => {
-    if (Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+      // 🔥 Auto-fill suggestion only for 4 or 5 stars
+      if (newRating === 4 || newRating === 5) {
+        setComment(generateSmartReview(newRating));
+      } else {
+        setComment("");
+      }
 
-    // Reset if same star tapped
-    setRating((prev) => (prev === value ? 0 : value));
+      return newRating;
+    });
   };
 
   return (
@@ -168,44 +178,78 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
               {rating === 5
                 ? "LEGENDARY! 🌟"
                 : rating >= 4
-                ? "AWESOME! 🔥"
-                : rating >= 3
-                ? "GOOD 🙂"
-                : "WE’LL IMPROVE 💪"}
+                  ? "AWESOME! 🔥"
+                  : rating >= 3
+                    ? "GOOD 🙂"
+                    : "WE’LL IMPROVE 💪"}
             </Animated.Text>
           )}
 
           {/* Comment Input */}
-          <View className="w-full mb-8">
-            <TextInput
-              placeholder="Tell us more (Optional)..."
-              placeholderTextColor="#475569"
-              value={comment}
-              onChangeText={setComment}
-              className="bg-white/[0.03] border border-white/10 rounded-3xl p-4 text-white font-main-regular min-h-[100px]"
-              multiline
-              textAlignVertical="top"
-            />
-          </View>
+          {rating > 0 && (
+            <Animated.View
+              entering={FadeInDown.duration(300)}
+              className="w-full mb-8"
+            >
+              <TextInput
+                placeholder={
+                  rating <= 2
+                    ? "Tell us what went wrong..."
+                    : rating === 3
+                      ? "How can we improve?"
+                      : "Want to add something extra?"
+                }
+                placeholderTextColor="#475569"
+                value={comment}
+                onChangeText={setComment}
+                className="bg-white/[0.03] border border-white/10 rounded-3xl p-4 text-white font-main-regular min-h-[100px]"
+                multiline
+                textAlignVertical="top"
+              />
+              {rating >= 4 && (
+                <Animated.View
+                  entering={FadeIn.duration(300)}
+                  className="items-center mt-4"
+                >
+                  <Animated.Text style={floatingStyle} className="text-lg mb-1">
+                    👇
+                  </Animated.Text>
+
+                  <Pressable
+                    onPress={() => setComment(generateSmartReview(rating))}
+                    className="bg-indigo-500/10 border border-indigo-500/30 rounded-full px-5 py-2 flex-row items-center gap-1"
+                  >
+                    <Text className="text-indigo-400 text-xs font-main-bold tracking-widest uppercase">
+                      ✨ Shuffle Suggestion
+                    </Text>
+                  </Pressable>
+
+                  <Text className="text-[10px] text-indigo-300/60 mt-1">
+                    Tap to generate a new review
+                  </Text>
+                </Animated.View>
+              )}
+            </Animated.View>
+          )}
 
           {/* Submit Button */}
           <View className="w-full gap-y-3">
             <TouchableOpacity
               onPress={handleSubmit}
-              disabled={rating === 0}
+              disabled={rating === 0 || isSubmitting}
               activeOpacity={0.8}
               className={`h-16 rounded-[22px] items-center justify-center shadow-lg ${
-                rating === 0
+                rating === 0 || isSubmitting
                   ? "bg-slate-900/50 border border-white/5 opacity-60"
                   : "bg-indigo-600 shadow-indigo-500/30"
               }`}
             >
               <Text
                 className={`text-lg font-main-bold tracking-widest uppercase ${
-                  rating === 0 ? "text-slate-500" : "text-white"
+                  rating === 0 || isSubmitting ? "text-slate-500" : "text-white"
                 }`}
               >
-                Submit Rating
+                {isSubmitting ? "Submitting..." : "Submit Rating"}
               </Text>
             </TouchableOpacity>
 
@@ -215,7 +259,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
               className="h-12 items-center justify-center"
             >
               <Text className="text-slate-500 text-sm font-main-bold uppercase opacity-80">
-                Maybe  Later
+                Maybe Later
               </Text>
             </TouchableOpacity>
           </View>

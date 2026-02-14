@@ -10,9 +10,8 @@ import {
   resetDifficulty,
   setCorrectAnswers,
 } from "@/redux/reducers/quiz";
-import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
+import { ALERT_TYPE,Toast } from "react-native-alert-notification";
 import { applyTransaction } from "@/features/wallet/walletSlice";
-import { handleShare } from '@/utils/share';
 
 interface PlayerMessage {
   message?: string | null;
@@ -20,7 +19,7 @@ interface PlayerMessage {
 
 /* ------------------ CONSTANTS ------------------ */
 
-const NUM_QUESTIONS = 1;
+const NUM_QUESTIONS = 7;
 
 const MEDIA = {
   CORRECT: 7,
@@ -40,7 +39,7 @@ const POPUP_DELAY = 3000;
 
 export const useQuizGameLogic = () => {
   const { table, getRandomQuestion } = useGameTableAndScores();
-const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
 
