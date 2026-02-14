@@ -22,7 +22,6 @@ import { GamePlaySection } from "./GameplaySection";
 
 // Animation imports
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
-import { chorPoliceQuizstyles } from "../chorPoliceQuizScreen/qiuzStyle";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import { router } from "expo-router";
@@ -71,7 +70,7 @@ const RajaMantriGameScreen: React.FC = () => {
 
     handleResetgame();
 
-    router.replace("/modeselect");
+    router.replace("/mode-select");
   }, [isGameReset]);
 
   useEffect(() => {

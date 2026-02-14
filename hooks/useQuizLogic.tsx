@@ -46,13 +46,14 @@ const loseMessage = useRandomMessage("lose", currentPlayerName);
 
 
 
-
-
 useEffect(() => {
-  if (isGameFinished && !isGameReset) {
-    router.replace("/chorpoliceResult");
+  if (isGameFinished) {
+    if (!isGameReset) {
+      console.log("🎯 Game Finished - Navigating to Result");
+      router.replace("/chor-result");
+    }
   }
-}, [isGameFinished, isGameReset, router]);
+}, [isGameFinished, isGameReset]);
 
   // Generate options whenever the current player changes
   useEffect(() => {
@@ -62,7 +63,7 @@ useEffect(() => {
   useEffect(() => {
     if (isGameReset) {
       AudioEngine.stopAllExceptQuiz();
-      router.replace("/modeselect");
+      router.replace("/mode-select");
     }
   }, [isGameReset]);
 
@@ -152,22 +153,21 @@ useEffect(() => {
     }, 4000);
   };
 
-  const moveToNextPlayer = () => {
+const moveToNextPlayer = () => {
   if (isGameReset) return;
-
-  // Reset all UI states for the next turn
-  setSelectedOption(null);
-  setIsCorrect(false);
-  setFeedbackMessage("");
-  setIsContentVisible(true);
-  setIsOptionDisabled(false);
-  setIsPopUp(false);
-  setMediaId(1);
-  setMediaType("image");
-
-if (currentPlayerIndex + 1 < playerNames.length) {
-    setCurrentPlayerIndex((prevIndex) => prevIndex + 1);
+  const nextIndex = currentPlayerIndex + 1;
+  if (nextIndex < playerNames.length) {
+    setSelectedOption(null);
+    setIsCorrect(false);
+    setFeedbackMessage("");
+    setIsContentVisible(true);
+    setIsOptionDisabled(false);
+    setIsPopUp(false);
+    setMediaId(1);
+    setMediaType("image");
+    setCurrentPlayerIndex(nextIndex);
   } else {
+    console.log("Game ending at index:", currentPlayerIndex);
     setIsGameFinished(true); 
   }
 };

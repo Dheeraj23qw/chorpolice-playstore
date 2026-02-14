@@ -41,7 +41,7 @@ const QuizDifficultyScreen = () => {
     AudioEngine.play("quiz", "ui");
 
     setTimeout(() => {
-      router.replace("/quiz");
+      router.replace("/think-count-quiz");
     }, 120);
   }, [selected, isReady, isNavigating, router]);
 

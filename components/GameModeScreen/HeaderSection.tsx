@@ -16,7 +16,7 @@ const HeaderSection = () => {
         entering={FadeInDown.delay(200).springify().damping(15)}
         className="mt-6"
       >
-        <RulesButton onPress={() => router.push("/rulehome")} />
+        <RulesButton onPress={() => router.push("/rules-home")} />
       </Animated.View>
     </View>
   );

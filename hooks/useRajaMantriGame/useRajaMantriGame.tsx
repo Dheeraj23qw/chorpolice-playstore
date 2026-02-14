@@ -115,7 +115,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
     clearAllTimeouts();
     AudioEngine.stopAllExceptQuiz();
     handleResetgame();
-    router.replace("/modeselect");
+    router.replace("/mode-select");
   }, [isGameReset]);
 
   useEffect(() => {
@@ -136,7 +136,7 @@ const useRajaMantriGame = ({ playerNames }: UseRajaMantriGameOptions) => {
       }
 
       safeSetTimeout(() => {
-        router.replace("/modeselect");
+        router.replace("/mode-select");
       }, 500);
     } catch (error) {
       console.error("Exit failed:", error);

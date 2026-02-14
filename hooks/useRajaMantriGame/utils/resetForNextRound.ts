@@ -38,7 +38,7 @@ export const resetForNextRound = (
     AudioEngine.play("next", "ui");
     calculateTotalScores();
     setTimeout(() => {
-     router.replace("/chorPoliceQuiz");
+     router.replace("/chor-quiz");
     }, 3000);
 
     return;

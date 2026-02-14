@@ -244,7 +244,7 @@ export const useQuizGameLogic = () => {
     if (questionIndex + 1 >= NUM_QUESTIONS) {
       dispatch(setCorrectAnswers(correctAnswer));
       AudioEngine.stop("timer");
-      router.push("/quizresult");
+      router.push("/quiz-result");
       return;
     }
     setIsHintButtonVisible(false);
@@ -268,7 +268,7 @@ export const useQuizGameLogic = () => {
     setQuestion(getNextQuestion());
   };
 
-type Routes = "/modeselect" | "/stats" | "/earn";
+type Routes = "/mode-select" | "/stats" | "/earn";
 
 const handleNavigation = (targetRoute: Routes) => {
   try {
@@ -280,7 +280,7 @@ const handleNavigation = (targetRoute: Routes) => {
   }
 };
 
-const handleQuit = () => handleNavigation("/modeselect");
+const handleQuit = () => handleNavigation("/mode-select");
 const handleStats = () => handleNavigation("/stats");
 const handleEarn = () => handleNavigation("/earn");
 
@@ -304,7 +304,7 @@ const handleQuitInMiddle = async () => {
     );
     resetGame();
     dispatch(resetDifficulty());
-    router.replace("/modeselect");
+    router.replace("/mode-select");
   } catch (error) {
     console.error("Error during quit-in-middle workflow:", error);
   }

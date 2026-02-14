@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from "react";
 import { useSelector, useDispatch, shallowEqual } from "react-redux";
-import { InteractionManager, type ImageSourcePropType } from "react-native";
+import {  type ImageSourcePropType } from "react-native";
 import { useRouter } from "expo-router";
 import { captureScreen } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
@@ -123,7 +123,7 @@ const safeNavigate = useCallback(
  const handlePlayAgain = useCallback(() => {
   try {
     dispatch(playAgain());
-    safeNavigate("/chorpolicegame");
+    safeNavigate("/chor-police");
   } catch (error) {
     console.error("handlePlayAgain error:", error);
   }
@@ -132,7 +132,7 @@ const safeNavigate = useCallback(
 const handleBack = useCallback(() => {
   try {
     dispatch(resetGamefromRedux());
-    safeNavigate("/modeselect");
+    safeNavigate("/mode-select");
   } catch (error) {
     console.error("handleBack error:", error);
   }

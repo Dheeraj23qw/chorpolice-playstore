@@ -5,8 +5,15 @@ import playerImagesReducer from "./reducers/dynamicImagesReducer";
 import difficultyReducer from "@/redux/reducers/quiz";
 import loaderReducer from "./reducers/loaderReducer";
 import popupReducer from "./reducers/popupReducer";
-import walletReducer from "@/features/wallet/walletSlice";
-import quizStatsReducer from "@/features/quizStats/quizStatsSlice";
+
+import walletReducer, { loadWallet, WalletState } from "@/features/wallet/walletSlice";
+import quizStatsReducer, { loadQuizStats } from "@/features/quizStats/quizStatsSlice";
+import { QuizStatsState } from "@/features/quizStats/quizStatsTypes";
+
+import { listenerMiddleware } from "./middleware"; 
+
+const preloadedWallet = loadWallet();
+const preloadedQuizStats = loadQuizStats();
 
 const store = configureStore({
   reducer: {
@@ -19,9 +26,14 @@ const store = configureStore({
     wallet: walletReducer,
     quizStats: quizStatsReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().prepend(listenerMiddleware.middleware),
+  
+  preloadedState: {
+    wallet: preloadedWallet as WalletState,
+    quizStats: preloadedQuizStats as QuizStatsState,
+  },
 });
-
-
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

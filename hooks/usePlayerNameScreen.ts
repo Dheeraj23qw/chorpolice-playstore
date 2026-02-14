@@ -159,7 +159,7 @@ export const usePlayerNameScreen = () => {
       await dispatch(setSelectedImages(selectedImages));
       await dispatch(setPlayerNames(imagesWithDetails));
 
-      router.push("/chorpolicegame");
+      router.push("/chor-police");
     } catch (error) {
       console.error("Failed to start adventure:", error);
 

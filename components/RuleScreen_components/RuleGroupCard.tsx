@@ -30,7 +30,7 @@ export const RuleGroupCard = memo(({ group, index }: { group: any; index: number
         style={animatedStyle}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        onPress={() => router.push({ pathname: "/rule", params: { id: group.id } })}
+        onPress={() => router.push({ pathname: "/rules", params: { id: group.id } })}
         className="rounded-[32px] overflow-hidden bg-[#1A1A2E] border border-white/10"
       >
         <ImageBackground source={group.image} className="min-h-[130px] justify-center px-8 py-6">

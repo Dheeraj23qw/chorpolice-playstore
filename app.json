@@ -8,9 +8,7 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#050508",
     "icon": "./assets/images/adaptive-icon.png",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.2",
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/audio/*",
@@ -46,11 +44,11 @@
     "plugins": [
       "expo-router",
       "expo-asset",
-      "expo-secure-store",
       "expo-font",
       "expo-web-browser",
       "expo-audio",
       "expo-file-system",
+      
       [
         "expo-image-picker",
         {

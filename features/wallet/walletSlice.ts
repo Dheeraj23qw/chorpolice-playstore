@@ -1,6 +1,5 @@
-// walletSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storage } from "@/storage/mmkv";
 
 export type WalletSource =
   | "quiz_reward"
@@ -70,19 +69,21 @@ type CoinPayload = {
 };
 
 // ------------------ STORAGE HELPERS ------------------
-export const loadWallet = async (): Promise<WalletState | null> => {
+
+
+export const loadWallet = (): WalletState | undefined => {
   try {
-    const json = await AsyncStorage.getItem(STORAGE_KEY);
-    if (json) return JSON.parse(json);
+    const json = storage.getString(STORAGE_KEY);
+    return json ? JSON.parse(json) : undefined; 
   } catch (e) {
     console.error("❌ [Wallet] Load failed", e);
+    return undefined;
   }
-  return null;
 };
 
-export const saveWallet = async (wallet: WalletState) => {
+export const saveWallet = (wallet: WalletState) => {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(wallet));
+    storage.set(STORAGE_KEY, JSON.stringify(wallet));
     if (__DEV__) console.log("💾 [Wallet] Saved successfully");
   } catch (e) {
     console.error("❌ [Wallet] Save failed", e);
@@ -90,11 +91,12 @@ export const saveWallet = async (wallet: WalletState) => {
 };
 
 // ------------------ SLICE ------------------
+
 const walletSlice = createSlice({
   name: "wallet",
   initialState,
   reducers: {
-    setWallet: (state, action: PayloadAction<WalletState>) => {
+    setWallet: (_, action: PayloadAction<WalletState>) => {
       return action.payload;
     },
 
@@ -120,7 +122,8 @@ const walletSlice = createSlice({
       };
 
       state.transactions.unshift(transaction);
-      if (state.transactions.length > MAX_TRANSACTIONS) state.transactions.pop();
+      if (state.transactions.length > MAX_TRANSACTIONS)
+        state.transactions.pop();
 
       if (!state.totalBySource[source]) state.totalBySource[source] = 0;
       state.totalBySource[source] += amount;
@@ -128,7 +131,7 @@ const walletSlice = createSlice({
 
     claimSpinReward: (
       state,
-      action: PayloadAction<{ amount: number; reason: string }>
+      action: PayloadAction<{ amount: number; reason: string }>,
     ) => {
       const { amount, reason } = action.payload;
       if (amount === 0) return;
@@ -145,19 +148,20 @@ const walletSlice = createSlice({
         timestamp,
       });
 
-      if (state.transactions.length > MAX_TRANSACTIONS) state.transactions.pop();
+      if (state.transactions.length > MAX_TRANSACTIONS)
+        state.transactions.pop();
 
       state.totalBySource.spin_reward += amount;
       state.locks.spin.lastUsedTimestamp = timestamp;
     },
 
     resetWallet: () => {
-      return { ...initialState };
+      // ✅ Corrected to .remove() as per V4 Nitro Docs
+      storage.remove(STORAGE_KEY);
+      return initialState;
     },
   },
 });
-
-
 
 export const {
   setWallet,

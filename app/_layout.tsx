@@ -16,8 +16,7 @@ import { AppState, StyleSheet, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { notificationService } from "@/service/notification/NotificationService";
 import { AppDispatch } from "@/redux/store";
-import { useQuizStatsPersistence } from "@/service/useQuizStatsPersistence";
-import { useWalletPersistence } from "@/service/useWalletPersistence";
+
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -29,11 +28,8 @@ function AppLayout() {
 
   useAppExit();
 
-  /* --------------------------------------------
-   * Restore Persisted State (Wallet + Quiz)
-   * -------------------------------------------- */
-  useQuizStatsPersistence();
-  useWalletPersistence();
+
+
 
   /* --------------------------------------------
    * Audio Restore On Foreground
@@ -103,6 +99,9 @@ function AppLayout() {
         screenLayout={renderScreenLayout}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="(game)" />
+        <Stack.Screen name="(social)" />
+        <Stack.Screen name="(info)" />
       </Stack>
 
       <RouteLoader />
