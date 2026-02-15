@@ -9,13 +9,15 @@ import GameModeList from "@/components/GameModeScreen/GameModeList";
 import { AudioEngine } from "@/audio/audioEngine";
 import { AppDispatch, RootState } from "@/redux/store";
 import { setIsGameReset } from "@/redux/reducers/playerReducer";
+import UnlockedAwardModal from "@/modal/AchievmentModal";
+import { hasUnclaimedAwards } from "@/features/awards/awardsSlice";
 
 const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
 
   const isGameReset = useSelector(
-    (state: RootState) => state.player.isGameReset
+    (state: RootState) => state.player.isGameReset,
   );
 
   useEffect(() => {
@@ -30,6 +32,9 @@ const GameModeScreen: React.FC = () => {
     }
   }, [dispatch, isGameReset]);
 
+  const unclaimedExists = useSelector(hasUnclaimedAwards);
+
+
   return (
     <View className="flex-1 bg-[#050508]">
       <BackgroundOrbs />
@@ -38,6 +43,7 @@ const GameModeScreen: React.FC = () => {
         <HeaderSection />
         <GameModeList />
       </View>
+    {unclaimedExists && <UnlockedAwardModal />}
     </View>
   );
 };
