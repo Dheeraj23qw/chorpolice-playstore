@@ -25,6 +25,8 @@ import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionBut
 import RoundSelector from "../RoundSelector";
 import { Text } from "@/components/Text";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
+import { hp, wp } from "@/utils/responsive";
+import InfoTooltip from "@/components/InfoTooltip";
 
 
 const PlayerNameScreen: React.FC = () => {
@@ -103,19 +105,16 @@ const PlayerNameScreen: React.FC = () => {
               />
             </View>
 
-            <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-4 px-5 mb-6">
-              <Text className="text-indigo-200 font-main-bold text-xs uppercase tracking-widest mb-2">
-                Best Experience
-              </Text>
-
-              <Text className="text-white/80 text-sm leading-5">
-                For the most fun experience, play with 4 real players 👑
-                {"\n\n"}
-                Upload your own images and use your real names to make the game
-                more exciting and personal!
-              </Text>
-            </View>
-            <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-3 px-4 mb-4 items-center">
+               <View
+                   style={{
+                     top: insets.top + hp(25), 
+                     right: wp(1), 
+                   }}
+                   className="absolute z-50"
+                 >
+                   <InfoTooltip text="For the best experience, play with 4 real players using their own images — or choose any image you like, whether it’s a cartoon or a famous character from your gallary." />
+                 </View>
+            <View className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl py-3 px-4 mb-4  items-center">
               <Text className="text-indigo-200 font-main-bold uppercase tracking-wider text-xs">
                 Select {4 - selectedImages.length} Players to Begin
               </Text>

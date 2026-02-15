@@ -49,7 +49,6 @@ const loseMessage = useRandomMessage("lose", currentPlayerName);
 useEffect(() => {
   if (isGameFinished) {
     if (!isGameReset) {
-      console.log("🎯 Game Finished - Navigating to Result");
       router.replace("/chor-result");
     }
   }
@@ -167,7 +166,6 @@ const moveToNextPlayer = () => {
     setMediaType("image");
     setCurrentPlayerIndex(nextIndex);
   } else {
-    console.log("Game ending at index:", currentPlayerIndex);
     setIsGameFinished(true); 
   }
 };

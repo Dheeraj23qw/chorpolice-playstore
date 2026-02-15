@@ -6,11 +6,8 @@ import { AppDispatch, RootState } from "@/redux/store";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
-import {
-  resetDifficulty,
-  setCorrectAnswers,
-} from "@/redux/reducers/quiz";
-import { ALERT_TYPE,Toast } from "react-native-alert-notification";
+import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
+import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 
 interface PlayerMessage {
@@ -19,7 +16,7 @@ interface PlayerMessage {
 
 /* ------------------ CONSTANTS ------------------ */
 
-const NUM_QUESTIONS = 7;
+const NUM_QUESTIONS = 1;
 
 const MEDIA = {
   CORRECT: 7,
@@ -67,11 +64,10 @@ export const useQuizGameLogic = () => {
   const [isHintButtonVisible, setIsHintButtonVisible] = useState(false);
 
   const [question, setQuestion] = useState(() => getRandomQuestion());
-  
-    const randomWin = useRandomMessage("winwithoutname");
-    const randomLose = useRandomMessage("loserwithoutname");
-    const randomTimeUp = useRandomMessage("timesup");
 
+  const randomWin = useRandomMessage("winwithoutname");
+  const randomLose = useRandomMessage("loserwithoutname");
+  const randomTimeUp = useRandomMessage("timesup");
 
   /* ---------------- TIMER ---------------- */
 
@@ -150,8 +146,7 @@ export const useQuizGameLogic = () => {
     const correct = answer === question?.correctAnswer;
 
     setIsCorrect(correct);
-    console.log("✅ Correct Answer:", question?.correctAnswer);
-    console.log("👆 Selected Answer:", answer);
+
     if (correct) {
       setCorrectAnswer((p) => p + 1);
       setMediaId(MEDIA.CORRECT);
@@ -267,48 +262,66 @@ export const useQuizGameLogic = () => {
     setQuestion(getNextQuestion());
   };
 
-type Routes = "/mode-select" | "/stats" | "/earn";
+  type Routes = "/mode-select" | "/stats" | "/earn";
 
 const handleNavigation = (targetRoute: Routes) => {
   try {
-    resetGame?.();
-    dispatch(resetDifficulty?.());
-    router.replace(targetRoute);
+    resetGame();
+    dispatch(resetDifficulty());
+
+    requestAnimationFrame(() => {
+      router.dismissAll();  
+      router.replace(targetRoute);
+    });
   } catch (err) {
     console.error("Navigation failed:", err);
   }
 };
 
-const handleQuit = () => handleNavigation("/mode-select");
-const handleStats = () => handleNavigation("/stats");
-const handleEarn = () => handleNavigation("/earn");
+  const handleQuit = () => handleNavigation("/mode-select");
+  const handleStats = () => handleNavigation("/stats");
+  const handleEarn = () => handleNavigation("/earn");
 
+  const isQuittingRef = useRef(false);
 
+  const handleQuitInMiddle = async () => {
+    if (isQuittingRef.current) return;
+    isQuittingRef.current = true;
 
-const handleQuitInMiddle = async () => {
-  try {
+    try {
+      clearTimer();
+      AudioEngine.stop("timer");
 
-    const penaltyAmount = -500;
-    dispatch(
-      applyTransaction({
-        amount: penaltyAmount,
-        reason: "Quit Quiz Penalty",
-        source: "quiz_penalty",
-        metadata: {
-          round: questionIndex + 1,
-          difficulty: difficulty ?? "easy",
-          timestamp: Date.now(),
-        },
-      })
-    );
-    resetGame();
-    dispatch(resetDifficulty());
-    router.replace("/mode-select");
-  } catch (error) {
-    console.error("Error during quit-in-middle workflow:", error);
-  }
-};
+      const penaltyAmount = 500;
 
+      await dispatch(
+        applyTransaction({
+          amount: -penaltyAmount,
+          reason: "Quit Quiz Penalty",
+          source: "quiz_penalty",
+          metadata: {
+            round: questionIndex + 1,
+            difficulty: difficulty ?? "easy",
+            timestamp: Date.now(),
+            gameId: "quiz_think_count",
+          },
+        }),
+      );
+
+      resetGame();
+      dispatch(resetDifficulty());
+
+      requestAnimationFrame(() => {
+          router.dismissAll();  
+
+        router.replace("/level-select");
+      });
+    } catch (error) {
+      console.error("Error during quit-in-middle workflow:", error);
+    } finally {
+      isQuittingRef.current = false;
+    }
+  };
 
   return {
     question,

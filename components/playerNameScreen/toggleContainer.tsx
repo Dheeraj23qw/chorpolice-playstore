@@ -12,7 +12,7 @@ interface ButtonOption {
 interface AvatarSelectionProps {
   selectedOption: string | null;
   setSelectedOption: (option: string | null) => void;
-  pickImage: () => Promise<void>;
+  pickImage: () => Promise<string | null>;
   options: ButtonOption[];
 }
 

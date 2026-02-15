@@ -15,6 +15,7 @@ import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
 import { BackHandler } from "react-native";
 import { Text } from "@/components/Text";
+import QuitQuizModal from "@/modal/ExitConfirmationModal";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -40,47 +41,24 @@ const QuizScreen = () => {
     setShowHint,
     isHintButtonVisible,
     setIsHintButtonVisible,
-    handleQuitInMiddle
+    handleQuitInMiddle,
   } = useQuizGameLogic();
 
-// useEffect(() => {
-//   if (question?.correctAnswer) {
-//     console.log("🟢 New Question Started");
-//     console.log("✅ Correct Answer:", question.correctAnswer);
-//   }
-// }, [question]);
+  const [showQuitModal, setShowQuitModal] = useState(false);
 
+  useEffect(() => {
+    const backAction = () => {
+      setShowQuitModal(true);
+      return true;
+    };
 
-useEffect(() => {
-  const backAction = () => {
-    Alert.alert(
-      "Quit Quiz?",
-      "If you go back now, you will lose 500 coins.\n\nDo you want to continue?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Quit (-500 Coins)",
-          style: "destructive",
-          onPress: () => handleQuitInMiddle(),
-        },
-      ],
-      { cancelable: true }
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction,
     );
 
-    return true; // prevent default back behavior
-  };
-
-  const subscription = BackHandler.addEventListener(
-    "hardwareBackPress",
-    backAction
-  );
-
-  return () => subscription.remove();
-}, []);
-
+    return () => subscription.remove();
+  }, []);
 
   const onOptionPress = useCallback(
     (value: string) => {
@@ -225,6 +203,15 @@ useEffect(() => {
             />
           </View>
         </ScrollView>
+        <QuitQuizModal
+          visible={showQuitModal}
+          penalty={500}
+          onCancel={() => setShowQuitModal(false)}
+          onConfirm={() => {
+            setShowQuitModal(false);
+            handleQuitInMiddle();
+          }}
+        />
       </View>
     </View>
   );

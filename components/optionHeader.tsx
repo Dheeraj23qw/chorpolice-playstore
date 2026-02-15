@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { View, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -22,7 +22,7 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { setMuted } from "@/redux/reducers/soundReducer";
 
 /* ---------------------------------------------------
-   ✅ Animated Button Component (MUST be outside)
+   ✅ Animated Button Component (Memoized)
 --------------------------------------------------- */
 
 type CircleBtnProps = {
@@ -33,49 +33,59 @@ type CircleBtnProps = {
   backgroundColor: string;
 };
 
-const AnimatedCircleBtn = ({
-  children,
-  onPress,
-  btnDim,
-  marginBetween,
-  backgroundColor,
-}: CircleBtnProps) => {
-  const scale = useSharedValue(1);
+const AnimatedCircleBtn = memo(
+  ({
+    children,
+    onPress,
+    btnDim,
+    marginBetween,
+    backgroundColor,
+  }: CircleBtnProps) => {
+    const scale = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
 
-  return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => (scale.value = withSpring(0.85))}
-      onPressOut={() => (scale.value = withSpring(1))}
-      style={{ marginLeft: marginBetween }}
-    >
-      <Animated.View
-        style={[
-          animatedStyle,
-          {
-            backgroundColor,
-            width: btnDim,
-            height: btnDim,
-            borderRadius: btnDim / 2,
-            alignItems: "center",
-            justifyContent: "center",
-            borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.1)",
-          },
-        ]}
+    const handlePressIn = useCallback(() => {
+      scale.value = withSpring(0.85);
+    }, []);
+
+    const handlePressOut = useCallback(() => {
+      scale.value = withSpring(1);
+    }, []);
+
+    return (
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={{ marginLeft: marginBetween }}
       >
-        {children}
-      </Animated.View>
-    </Pressable>
-  );
-};
+        <Animated.View
+          style={[
+            animatedStyle,
+            {
+              backgroundColor,
+              width: btnDim,
+              height: btnDim,
+              borderRadius: btnDim / 2,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.1)",
+            },
+          ]}
+        >
+          {children}
+        </Animated.View>
+      </Pressable>
+    );
+  }
+);
 
 /* ---------------------------------------------------
-   ✅ OptionHeader Component
+   ✅ OptionHeader (Optimized)
 --------------------------------------------------- */
 
 const OptionHeader = () => {
@@ -84,30 +94,58 @@ const OptionHeader = () => {
 
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const isMuted = useSelector((state: RootState) => state.sound.isMuted);
 
-  // COLORS
+  const isMuted = useSelector(
+    (state: RootState) => state.sound.isMuted,
+    shallowEqual
+  );
+
+  // CONSTANTS
   const SLATE_TRANSPARENT = "rgba(118, 83, 236, 0.2)";
   const ICON_COLOR = "#FFFFFF";
 
-  // RESPONSIVE MEASUREMENTS
+  // Responsive (calculated once per render)
   const btnDim = responsiveWidth(11);
   const iconSize = responsiveFontSize(2.8);
   const marginBetween = responsiveWidth(3);
 
-  const handleSoundToggle = () => {
+  /* -----------------------------
+     🔊 Sound Toggle (Memoized)
+  ------------------------------ */
+  const handleSoundToggle = useCallback(() => {
     const newMutedState = !isMuted;
 
     dispatch(setMuted(newMutedState));
 
     if (!newMutedState) {
-      // Restart background sound when unmuted
       AudioEngine.play("quiz", "background");
     } else {
-      // Stop all sounds when muted
       AudioEngine.forceStopAll();
     }
-  };
+  }, [isMuted, dispatch]);
+
+  /* -----------------------------
+     🔥 Navigation Handlers
+  ------------------------------ */
+  const handleEarnPress = useCallback(() => {
+    router.push("/earn");
+  }, [router]);
+
+  const handleRateOpen = useCallback(() => {
+    setModalVisible(true);
+  }, []);
+
+  const handleMenuOpen = useCallback(() => {
+    setMenuOpen(true);
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+    setModalVisible(false);
+  }, []);
+
+  const handleMenuClose = useCallback(() => {
+    setMenuOpen(false);
+  }, []);
 
   return (
     <View
@@ -117,7 +155,7 @@ const OptionHeader = () => {
       }}
       className="flex-row items-center justify-end"
     >
-      {/* 🔊 Sound Toggle */}
+      {/* 🔊 Sound */}
       <AnimatedCircleBtn
         btnDim={btnDim}
         marginBetween={marginBetween}
@@ -136,7 +174,7 @@ const OptionHeader = () => {
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={() => router.push("./earn")}
+        onPress={handleEarnPress}
       >
         <Ionicons name="flash" size={iconSize} color={ICON_COLOR} />
       </AnimatedCircleBtn>
@@ -156,7 +194,7 @@ const OptionHeader = () => {
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={() => setModalVisible(true)}
+        onPress={handleRateOpen}
       >
         <MaterialIcons name="star" size={iconSize} color={ICON_COLOR} />
       </AnimatedCircleBtn>
@@ -166,27 +204,27 @@ const OptionHeader = () => {
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={() => setMenuOpen(true)}
+        onPress={handleMenuOpen}
       >
         <Ionicons name="settings" size={iconSize} color={ICON_COLOR} />
       </AnimatedCircleBtn>
 
-      {/* 🪟 Modals */}
+      {/* Modals */}
       <CustomRatingModal
         title="Rate Chor Police"
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={handleModalClose}
       />
 
       <FullScreenMenu
         visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        onClose={handleMenuClose}
         router={router}
-        onRatePress={() => setModalVisible(true)}
+        onRatePress={handleRateOpen}
         onSharePress={handleShare}
       />
     </View>
   );
 };
 
-export default OptionHeader;
+export default memo(OptionHeader);

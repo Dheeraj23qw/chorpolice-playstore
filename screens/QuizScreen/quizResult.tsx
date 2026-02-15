@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, StatusBar, BackHandler, Alert } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { useRouter } from "expo-router";
+import { View, BackHandler } from "react-native";
+import { useSelector } from "react-redux";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { hp, wp } from "@/utils/responsive";
 import useRandomMessage from "@/hooks/useRandomMessage";
@@ -12,9 +12,12 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { useQuizReward } from "@/hooks/useQuizRewards";
 import { ActionButtons } from "./components/renderButtons";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
+import CoinsRewardModal from "@/modal/CoinPopup";
+import ExitConfirmationModal from "@/modal/ExitModal";
+import InfoTooltip from "@/components/InfoTooltip";
 
 export default function QuizResult() {
-  const [modalVisible, setModalVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const {
     correctQuestions: Correct,
@@ -24,24 +27,30 @@ export default function QuizResult() {
 
   const { handleQuit, handleStats, handleEarn } = useQuizGameLogic();
 
+  const [showCoins, setShowCoins] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
+
   const Message = useRandomMessage(isWinner ? "winner" : "loser");
-  /* ------------------ STOP AUDIO ------------------ */
+  const { reward, message: coinsAwarded } = useQuizReward();
+
+  const accuracy = Total > 0 ? Math.round((Correct / Total) * 100) : 0;
+
+  /* ---------------- STOP AUDIO ---------------- */
   useEffect(() => {
     AudioEngine.stop("timer");
   }, []);
 
-  /* ------------------ BACK HANDLER ------------------ */
+  /* ---------------- SHOW COINS MODAL ---------------- */
+  useEffect(() => {
+    if (reward !== undefined && reward !== null) {
+      setShowCoins(true);
+    }
+  }, [reward]);
+
+  /* ---------------- BACK HANDLER ---------------- */
   useEffect(() => {
     const backAction = () => {
-      Alert.alert(
-        "Hold on!",
-        "Are you sure you want to go back?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "YES", onPress: handleQuit },
-        ],
-        { cancelable: true },
-      );
+      setShowExitModal(true);
       return true;
     };
 
@@ -53,26 +62,22 @@ export default function QuizResult() {
     return () => subscription.remove();
   }, [handleQuit]);
 
-  /* ------------------ BUTTON HANDLERS ------------------ */
   const handleHome = useCallback(() => {
     handleQuit();
   }, [handleQuit]);
 
-  const toggleModal = useCallback(() => {
-    setModalVisible((prev) => !prev);
-  }, []);
-
-  const { reward, message: coinsAwarded } = useQuizReward();
-  const accuracy = Total > 0 ? Math.round((Correct / Total) * 100) : 0;
-
-  /* ------------------ RENDER ------------------ */
   return (
-    <View className="flex-1 bg-[#09090b]">
-      <StatusBar
-        barStyle="light-content"
-        translucent
-        backgroundColor="transparent"
-      />
+    <View className="flex-1 bg-[#09090b] relative">
+      {/* 🔥 Top Right Info Button */}
+      <View
+        style={{
+          top: insets.top + hp(2.5), // responsive top spacing
+          right: wp(14), // responsive right spacing
+        }}
+        className="absolute z-50"
+      >
+        <InfoTooltip text="To win any quiz match, you must answer all 7 questions correctly." />
+      </View>
 
       {/* Background Glows */}
       <View
@@ -105,7 +110,7 @@ export default function QuizResult() {
             Message={Message}
             coinsMessage={coinsAwarded}
             isWinner={isWinner}
-            accuracy={accuracy} // 👈 add this
+            accuracy={accuracy}
           />
         </View>
 
@@ -114,7 +119,22 @@ export default function QuizResult() {
           onEarnPress={handleEarn}
           onHomePress={handleHome}
         />
+
+        <CoinsRewardModal
+          visible={showCoins}
+          amount={reward}
+          onClaim={() => setShowCoins(false)}
+        />
       </View>
+
+      <ExitConfirmationModal
+        visible={showExitModal}
+        onCancel={() => setShowExitModal(false)}
+        onConfirm={() => {
+          setShowExitModal(false);
+          handleQuit();
+        }}
+      />
     </View>
   );
 }

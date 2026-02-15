@@ -40,6 +40,5 @@ listenerMiddleware.startListening({
     saveWallet(state.wallet);
     saveQuizStats(state.quizStats);
     
-    console.log("💾 [Storage] Auto-saved via Middleware");
   },
 });

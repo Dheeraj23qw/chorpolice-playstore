@@ -1,6 +1,6 @@
 import "../global.css";
 import React, { useEffect, useCallback, useState } from "react";
-import { Provider, useDispatch, useSelector } from "react-redux";
+import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import store, { RootState } from "@/redux/store";
@@ -15,33 +15,21 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, StyleSheet, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { notificationService } from "@/service/notification/NotificationService";
-import { AppDispatch } from "@/redux/store";
-
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
-  const dispatch = useDispatch<AppDispatch>();
-
-  const loaderVisible = useSelector((state: RootState) => state.loader.visible);
-  const loaderMessage = useSelector((state: RootState) => state.loader.message);
+  const { visible, message } = useSelector((state: RootState) => state.loader);
 
   useAppExit();
 
-
-
-
-  /* --------------------------------------------
-   * Audio Restore On Foreground
-   * -------------------------------------------- */
+  /* ---------------- Audio Restore ---------------- */
   useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === "active" && !AudioEngine.isMuted()) {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active" && !AudioEngine.isMuted()) {
         AudioEngine.ensureQuizGlobal?.();
       }
-    };
-
-    const sub = AppState.addEventListener("change", handleAppStateChange);
+    });
 
     if (!AudioEngine.isMuted()) {
       AudioEngine.ensureQuizGlobal?.();
@@ -50,28 +38,21 @@ function AppLayout() {
     return () => sub.remove();
   }, []);
 
-  /* --------------------------------------------
-   * Notifications Setup
-   * -------------------------------------------- */
+  /* ---------------- Notifications ---------------- */
   useEffect(() => {
     let mounted = true;
 
-    const setupNotifications = async () => {
+    (async () => {
       try {
         const granted = await notificationService.registerPermissions();
+        if (!mounted || !granted) return;
 
-        if (!mounted) return;
-
-        if (granted) {
-          notificationService.listen();
-          await notificationService.handleInitialNotification();
-        }
-      } catch (error) {
-        console.log("Notification setup error:", error);
+        notificationService.listen();
+        await notificationService.handleInitialNotification();
+      } catch (e) {
+        console.log("Notification setup error:", e);
       }
-    };
-
-    setupNotifications();
+    })();
 
     return () => {
       mounted = false;
@@ -79,13 +60,14 @@ function AppLayout() {
     };
   }, []);
 
-  const renderScreenLayout = useCallback(
+  /* ---------------- Screen Wrapper ---------------- */
+  const screenLayout = useCallback(
     ({ children }: { children: React.ReactNode }) => (
       <ScreenWrapper variant="default" breathing>
         {children}
       </ScreenWrapper>
     ),
-    [],
+    []
   );
 
   return (
@@ -96,7 +78,7 @@ function AppLayout() {
           animation: "none",
           contentStyle: { backgroundColor: "#050508" },
         }}
-        screenLayout={renderScreenLayout}
+        screenLayout={screenLayout}
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="(game)" />
@@ -105,11 +87,14 @@ function AppLayout() {
       </Stack>
 
       <RouteLoader />
-      <GlobalLoader visible={loaderVisible} message={loaderMessage} />
+      <GlobalLoader visible={visible} message={message} />
     </View>
   );
 }
 
+/* =======================================================
+   🔹 Root Layout
+======================================================= */
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     "outfit-bold": require("../assets/fonts/Outfit-Bold.ttf"),
@@ -122,16 +107,9 @@ export default function RootLayout() {
   useSystemUI();
 
   useEffect(() => {
-    async function prepare() {
-      try {
-        if (fontsLoaded || fontError) {
-          await SplashScreen.hideAsync();
-        }
-      } catch (e) {
-        console.warn("Splash screen error:", e);
-      }
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync().catch(() => {});
     }
-    prepare();
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
@@ -147,6 +125,8 @@ export default function RootLayout() {
     </Provider>
   );
 }
+
+/* ======================================================= */
 
 const styles = StyleSheet.create({
   container: {
