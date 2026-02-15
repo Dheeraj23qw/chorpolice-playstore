@@ -17,7 +17,6 @@ const SpinController: React.FC<SpinControllerProps> = ({ isVisible, onClose }) =
   const {
     status,
     result,
-    showVictory,
     spinAnim,
     scaleAnim,
     pulseAnim,
@@ -55,9 +54,7 @@ const SpinController: React.FC<SpinControllerProps> = ({ isVisible, onClose }) =
   return (
     <Modal visible={isVisible} transparent animationType="slide">
       <View className="flex-1 bg-zinc-950">
-        {/* <VictoryOverlay visible={showVictory} onComplete={() => setShowVictory(false)} /> */}
 
-        {/* ✅ Use Reanimated's Animated.View and apply modalAnimatedStyle */}
         <Animated.View
           style={[{ flex: 1 }, modalAnimatedStyle]}
           className="items-center justify-between pb-12 pt-16"

@@ -31,7 +31,7 @@ export const useSpinWheel = () => {
   const [remainingTime, setRemainingTime] = useState(0);
 
   const { clearAllTimeouts } = useTimeoutManager(status === "IDLE");
-const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
 
   const spinLock = useSelector(
     (state: RootState) =>
@@ -101,8 +101,9 @@ const dispatch = useDispatch<AppDispatch>();
   // ✅ CORRECTED ANIMATE IN (Uses withSpring)
   const animateModalIn = useCallback(() => {
     scaleAnim.value = withSpring(1, {
-      damping: 12,
-      stiffness: 90,
+      damping: 18, // 🟢 Increased: Stops the "shaking" faster
+      stiffness: 120, // 🟢 Increased: Makes the initial move snappier
+      mass: 0.8, // 🟢 Added: Makes the modal feel "lighter" and more responsive
     });
   }, []);
 

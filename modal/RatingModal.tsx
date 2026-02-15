@@ -259,7 +259,7 @@ layout={LinearTransition.duration(200)}
               className="h-12 items-center justify-center"
             >
               <Text className="text-slate-500 text-sm font-main-bold uppercase opacity-80">
-                Maybe Later
+                Maybe  Later
               </Text>
             </TouchableOpacity>
           </View>

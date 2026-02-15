@@ -5,9 +5,9 @@ import { addImage } from "@/redux/reducers/dynamicImagesReducer";
 import { AppDispatch } from "@/redux/store";
 
 const useGalleryPicker = () => {
-const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const pickImage = async () => {
+  const pickImage = async (): Promise<string | null> => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permissionResult.granted) {
@@ -15,19 +15,27 @@ const dispatch = useDispatch<AppDispatch>();
         "Permission required",
         "Permission to access the media library is required."
       );
-      return;
+      return null;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ["images"], // ✅ just use a string array
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
 
-    if (!result.canceled) {
-      dispatch(addImage({ type: "gallery", src: result.assets[0].uri }));
+    if (!result.canceled && result.assets[0]?.uri) {
+      const uri = result.assets[0].uri;
+
+      // Dispatch to Redux (existing functionality)
+      dispatch(addImage({ type: "gallery", src: uri }));
+
+      // Return URI for avatar or other uses
+      return uri;
     }
+
+    return null;
   };
 
   return { pickImage };

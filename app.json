@@ -2,13 +2,18 @@
   "expo": {
     "name": "Chor Police",
     "slug": "chorpolice",
-    "version": "1.0.2",
+    "version": "2.0.0", // 🟢 Users see this as a Major Upgrade
     "orientation": "portrait",
     "scheme": "chorpolice",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "backgroundColor": "#050508",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050508"
+    },
     "icon": "./assets/images/adaptive-icon.png",
-    "runtimeVersion": "1.0.2",
+    "runtimeVersion": "2.0.0", // 🟢 Keep this synced with your version
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/audio/*",
@@ -21,14 +26,13 @@
     },
     "android": {
       "package": "com.dheeraj.chorpolice",
-      "userInterfaceStyle": "light",
+      "userInterfaceStyle": "dark",
       "edgeToEdgeEnabled": true,
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050508"
       }
-       
     },
     "experiments": {
       "typedRoutes": true
@@ -48,22 +52,13 @@
       "expo-web-browser",
       "expo-audio",
       "expo-file-system",
-      
       [
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you set custom player avatars."
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/adaptive-icon.png",
-          "color": "#050508",
-          "defaultChannel": "default",
-          "enableBackgroundRemoteNotifications": false
-        }
-      ],
+    ["expo-notifications", { "icon": "./assets/images/notification-icon.png", "color": "#050508" }],
       [
         "expo-build-properties",
         {
@@ -82,10 +77,6 @@
           "supportsPictureInPicture": true
         }
       ]
-    ],
-    "web": {
-      "bundler": "metro",
-      "output": "static"
-    }
+    ]
   }
 }
