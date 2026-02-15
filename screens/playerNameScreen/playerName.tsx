@@ -26,8 +26,6 @@ import RoundSelector from "../RoundSelector";
 import { Text } from "@/components/Text";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
 
-// Move static options outside to prevent NativeWind re-processing loops
-const AVATAR_OPTIONS = [{ label: "Upload from Gallery", value: "gallery" }];
 
 const PlayerNameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();

@@ -1,4 +1,3 @@
-// features/awards/awardsSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { storage } from "@/storage/mmkv";
 import { RootState } from "@/redux/store";
@@ -6,28 +5,35 @@ import { RootState } from "@/redux/store";
 const STORAGE_KEY = "AwardsState";
 
 export interface AwardsState {
-  unlocked: number[]; // IDs of awards unlocked but not yet claimed
+  unlocked: number[]; // IDs in the POPUP QUEUE (not yet claimed)
+  earned: number[];   // IDs in the PERMANENT COLLECTION (already claimed)
 }
 
 const initialState: AwardsState = {
   unlocked: [],
+  earned: [],
 };
 
 // ------------------ STORAGE HELPERS ------------------
 export const loadAwards = (): AwardsState | undefined => {
   try {
     const json = storage.getString(STORAGE_KEY);
-    return json ? JSON.parse(json) : undefined;
+    if (!json) return undefined;
+    
+    const parsed = JSON.parse(json);
+    // Ensure both arrays exist in the parsed object to prevent crashes
+    return {
+      unlocked: parsed.unlocked || [],
+      earned: parsed.earned || [],
+    };
   } catch (e) {
-    console.error("❌ [Awards] Load failed", e);
     return undefined;
   }
 };
 
-export const saveAwards = (state: AwardsState) => {
+const saveAwards = (state: AwardsState) => {
   try {
     storage.set(STORAGE_KEY, JSON.stringify(state));
-    if (__DEV__) console.log("💾 [Awards] Saved successfully");
   } catch (e) {
     console.error("❌ [Awards] Save failed", e);
   }
@@ -36,22 +42,40 @@ export const saveAwards = (state: AwardsState) => {
 // ------------------ SLICE ------------------
 const awardsSlice = createSlice({
   name: "awards",
-  initialState,
+  initialState: loadAwards() || initialState, 
   reducers: {
-    setAwards: (_, action: PayloadAction<AwardsState>) => {
-      saveAwards(action.payload);
-      return action.payload;
-    },
-
     addUnlocked: (state, action: PayloadAction<number[]>) => {
+      // Defensive: Ensure arrays exist before we loop
+      if (!state.earned) state.earned = [];
+      if (!state.unlocked) state.unlocked = [];
+
       action.payload.forEach((id) => {
-        if (!state.unlocked.includes(id)) state.unlocked.push(id);
+        // ONLY add to popup queue if it's NOT already earned and NOT already in queue
+        const isEarned = state.earned.includes(id);
+        const isUnlocked = state.unlocked.includes(id);
+
+        if (!isEarned && !isUnlocked) {
+          state.unlocked.push(id);
+        }
       });
       saveAwards(state);
     },
 
     claimAward: (state, action: PayloadAction<number>) => {
-      state.unlocked = state.unlocked.filter((id) => id !== action.payload);
+      const id = action.payload;
+      
+      // Defensive: Ensure arrays exist
+      if (!state.earned) state.earned = [];
+      if (!state.unlocked) state.unlocked = [];
+
+      // 1. Remove from the "To be Shown" popup queue
+      state.unlocked = state.unlocked.filter((item) => item !== id);
+      
+      // 2. Add to permanent collection if not already there
+      if (!state.earned.includes(id)) {
+        state.earned.push(id);
+      }
+      
       saveAwards(state);
     },
 
@@ -59,17 +83,25 @@ const awardsSlice = createSlice({
       state.unlocked = [];
       saveAwards(state);
     },
+    
+    // Helpful for testing - Reset everything
+    resetAwards: (state) => {
+        state.unlocked = [];
+        state.earned = [];
+        saveAwards(state);
+    }
   },
 });
 
-export const selectUnclaimedAwards = (state: RootState) => state.awards.unlocked;
+// ------------------ SELECTORS ------------------
+
+// Use a fallback empty array in selectors for extra safety
+export const selectEarnedAwards = (state: RootState) => state.awards?.earned || [];
+export const selectUnclaimedAwards = (state: RootState) => state.awards?.unlocked || [];
 
 export const hasUnclaimedAwards = (state: RootState) => {
-  const remaining = state.awards.unlocked.length;
-  console.log("🎯 [Awards Debug] Unclaimed awards left:", remaining, state.awards.unlocked);
-  return remaining > 0;
+  return (state.awards?.unlocked?.length || 0) > 0;
 };
 
-export const { setAwards, addUnlocked, claimAward, clearUnlocked } = awardsSlice.actions;
-
+export const { addUnlocked, claimAward, clearUnlocked, resetAwards } = awardsSlice.actions;
 export default awardsSlice.reducer;
