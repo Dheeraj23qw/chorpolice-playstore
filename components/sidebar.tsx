@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, Modal, useWindowDimensions, TouchableOpacity } from "react-native";
+import {
+  View,
+  Pressable,
+  Modal,
+  useWindowDimensions,
+  TouchableOpacity,
+} from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -12,28 +18,36 @@ import Animated, {
   useAnimatedScrollHandler,
   FadeInDown,
 } from "react-native-reanimated";
-import { 
-  Flashlight, 
-  User, 
-  Users, 
-  Trophy, 
-  Medal, 
-  BarChart3, 
-  Bug, 
-  HelpCircle, 
-  X, 
-  ChevronDown 
+import {
+  Flashlight,
+  User,
+  Users,
+  Trophy,
+  Medal,
+  BarChart3,
+  Bug,
+  HelpCircle,
+  X,
+  ChevronDown,
+  Star,
+  Share2,
 } from "lucide-react-native";
 import { rf } from "@/utils/responsive";
 import { Text } from "./Text";
 
-export const FullScreenMenu = ({ visible, onClose, router }: any) => {
+export const FullScreenMenu = ({
+  visible,
+  onClose,
+  router,
+  onRatePress,
+  onSharePress,
+}: any) => {
   const { width, height } = useWindowDimensions();
   const [canScroll, setCanScroll] = useState(false);
 
   const isTablet = width > 768;
   const CARD_WIDTH = isTablet ? 550 : width * 0.92;
-  const CARD_HEIGHT = isTablet ? 650 : height * 0.70;
+  const CARD_HEIGHT = isTablet ? 650 : height * 0.7;
 
   const showIndicator = useSharedValue(1);
   const arrowY = useSharedValue(0);
@@ -64,6 +78,8 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
     { label: "Friends", icon: Users, path: "/friends/b" },
     { label: "Ranks", icon: Trophy, path: "/leaderboard" },
     { label: "Awards", icon: Medal, path: "/awards" },
+    { label: "Rate Us", icon: Star, action: onRatePress },
+    { label: "Share", icon: Share2, action: onSharePress },
     { label: "Bugs", icon: Bug, path: "/report-bug" },
     { label: "Help", icon: HelpCircle, path: "/support" },
   ];
@@ -89,7 +105,10 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
           {/* Header Section */}
           <View className="px-8 py-7 border-b border-white/5 flex-row items-center justify-between bg-slate-900/50">
             <View>
-              <Text style={{ fontSize: rf(1.8) }} className="text-white font-main-bold uppercase tracking-[2px]">
+              <Text
+                style={{ fontSize: rf(1.8) }}
+                className="text-white font-main-bold uppercase tracking-[2px]"
+              >
                 Navigation
               </Text>
               <Text className="text-[10px] text-indigo-400 font-main-md uppercase tracking-widest mt-0.5">
@@ -114,15 +133,25 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
           >
             <View className="flex-row flex-wrap justify-between">
               {menuItems.map((item, index) => (
-                <Animated.View 
-                  key={index} 
-                  entering={FadeInDown.delay(index * 50).springify().damping(20)}
+                <Animated.View
+                  key={index}
+                  entering={FadeInDown.delay(index * 50)
+                    .springify()
+                    .damping(20)}
                   className="w-[30%] aspect-square mb-5"
                 >
                   <Pressable
                     onPress={() => {
-                      router.push(item.path);
-                      onClose();
+                      if (item.action) {
+                        // 1. Execute the special action (onRatePress or onSharePress)
+                        item.action();
+                        // 2. Close the menu so the user can see the Share sheet or Rating Modal
+                        onClose();
+                      } else if (item.path) {
+                        // 3. Normal navigation for items with paths
+                        router.push(item.path);
+                        onClose();
+                      }
                     }}
                     className="flex-1 bg-slate-800/40 active:bg-indigo-600 rounded-[32px] items-center justify-center border border-white/5"
                   >
@@ -142,7 +171,7 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
                   </Pressable>
                 </Animated.View>
               ))}
-              
+
               {/* Spacer for grid alignment if items are not multiple of 3 */}
               <View className="w-[30%] aspect-square mb-5 invisible" />
             </View>
@@ -156,7 +185,7 @@ export const FullScreenMenu = ({ visible, onClose, router }: any) => {
               className="absolute bottom-6 w-full items-center"
             >
               <View className="bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-500/30 blur-sm">
-                 <ChevronDown size={16} color="#818cf8" />
+                <ChevronDown size={16} color="#818cf8" />
               </View>
             </Animated.View>
           )}

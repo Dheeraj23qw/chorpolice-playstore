@@ -83,7 +83,7 @@ const OptionHeader = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const router = useRouter();
-const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
   const isMuted = useSelector((state: RootState) => state.sound.isMuted);
 
   // COLORS
@@ -182,6 +182,8 @@ const dispatch = useDispatch<AppDispatch>();
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         router={router}
+        onRatePress={() => setModalVisible(true)}
+        onSharePress={handleShare}
       />
     </View>
   );
