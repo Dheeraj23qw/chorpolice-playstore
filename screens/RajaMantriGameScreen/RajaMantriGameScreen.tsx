@@ -22,7 +22,6 @@ import { GamePlaySection } from "./GameplaySection";
 // Animation imports
 import { bounceAnimation, flipAndBounceStyle } from "@/Animations/animation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import VideoPlayerComponent from "@/components/IntroVideo";
 import { router } from "expo-router";
 import { AudioEngine } from "@/audio/audioEngine";
 import RoundStartLoader from "@/components/RoundStartLoader";
@@ -41,10 +40,7 @@ const RajaMantriGameScreen: React.FC = () => {
     isPlayButtonDisabled,
     playerScores,
     round,
-    videoIndex,
-    isPlaying,
     handlePlay,
-    setIsPlaying,
     handleCardClick,
     policeIndex,
     kingIndex,
@@ -62,35 +58,29 @@ const RajaMantriGameScreen: React.FC = () => {
     showTableButton,
   } = useRajaMantriGame({ playerNames });
 
+  /* ---------------- RESET GAME ---------------- */
   useEffect(() => {
     if (!isGameReset) return;
 
     AudioEngine.stopAllExceptQuiz();
-
     handleResetgame();
-
     router.replace("/mode-select");
   }, [isGameReset]);
 
+  /* ---------------- HARDWARE BACK ---------------- */
   useEffect(() => {
     const backAction = () => {
       Alert.alert(
         "Hold on!",
         "Are you sure you want to go back?",
         [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "YES",
-            onPress: () => handleExitGame(),
-          },
+          { text: "Cancel", style: "cancel" },
+          { text: "YES", onPress: () => handleExitGame() },
         ],
         { cancelable: true },
       );
 
-      return true; // prevent default back behavior
+      return true;
     };
 
     const subscription = BackHandler.addEventListener(
@@ -104,10 +94,8 @@ const RajaMantriGameScreen: React.FC = () => {
   const [popupTable, setPopupTable] = useState(false);
   const [bounceAnims] = useState(playerNames.map(() => new Animated.Value(1)));
 
-  // Toggle modal visibility
   const toggleModal = () => setPopupTable(!popupTable);
 
-  // Function to handle card click with bounce animation
   const handleCardClickWithBounce = (index: number) => {
     bounceAnimation(bounceAnims[index]).start();
   };
@@ -119,21 +107,20 @@ const RajaMantriGameScreen: React.FC = () => {
 
   return (
     <View
-      className={`flex-1 ${isPlaying ? "bg-white" : "bg-[#020205]"}`}
+      className="flex-1 bg-[#050508]"
       style={{
         paddingTop: insets.top,
         paddingBottom: insets.bottom,
       }}
     >
       {isDynamicPopUp && mediaId != null && mediaType != null ? (
-      
-          <DynamicOverlayPopUp
-            isPopUp={isDynamicPopUp}
-            mediaId={mediaId}
-            mediaType={mediaType}
-            closeVisibleDelay={3000}
-            playerData={playerData}
-          />
+        <DynamicOverlayPopUp
+          isPopUp={isDynamicPopUp}
+          mediaId={mediaId}
+          mediaType={mediaType}
+          closeVisibleDelay={3000}
+          playerData={playerData}
+        />
       ) : (
         <>
           <ScoreTable
@@ -157,28 +144,21 @@ const RajaMantriGameScreen: React.FC = () => {
           {isRoundStartPopupVisible && <RoundStartLoader />}
 
           <View className="flex-1">
-            {isPlaying ? (
-              <VideoPlayerComponent
-                videoIndex={videoIndex}
-                onVideoEnd={() => setIsPlaying(false)}
-              />
-            ) : (
-              <GamePlaySection
-                isPlayButtonDisabled={isPlayButtonDisabled}
-                handlePlay={handlePlay}
-                roles={roles}
-                playerNames={playerNames}
-                flippedStates={flippedStates}
-                clickedCards={clickedCards}
-                handleCardClick={handleCardClick}
-                handleCardClickWithBounce={handleCardClickWithBounce}
-                toggleModal={toggleModal}
-                round={round}
-                message={message}
-                getCardStyle={getCardStyle}
-                showTableButton={showTableButton}
-              />
-            )}
+            <GamePlaySection
+              isPlayButtonDisabled={isPlayButtonDisabled}
+              handlePlay={handlePlay}
+              roles={roles}
+              playerNames={playerNames}
+              flippedStates={flippedStates}
+              clickedCards={clickedCards}
+              handleCardClick={handleCardClick}
+              handleCardClickWithBounce={handleCardClickWithBounce}
+              toggleModal={toggleModal}
+              round={round}
+              message={message}
+              getCardStyle={getCardStyle}
+              showTableButton={showTableButton}
+            />
           </View>
         </>
       )}

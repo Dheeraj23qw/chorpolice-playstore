@@ -50,7 +50,7 @@ export const gifData: MediaItem[] = [
   },
   {
     id: 8,
-    url: require("@/assets/gif/quiz/timesup.gif"),
+    url: require("@/assets/gif/quiz/weep.gif"),
     description: "Time's Up",
   },
 ];
@@ -58,12 +58,12 @@ export const gifData: MediaItem[] = [
 export const imageData: MediaItem[] = [
   {
     id: 1,
-    url: require("@/assets/modalImages/king.png"),
+    url: require("@/assets/images/chorsipahi/king.png"),
     description: "Great job! You earned points!",
   },
   {
     id: 2,
-    url: require("@/assets/modalImages/king.png"),
+    url: require("@/assets/images/chorsipahi/king.png"),
     description: "Well done! Keep it up!",
   },
 ];

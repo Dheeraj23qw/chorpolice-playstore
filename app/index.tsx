@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback } from "react";
-import { router, useNavigation } from "expo-router";
+import { useNavigation } from "expo-router";
 import { View } from "react-native";
 
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
-import VideoPlayerComponent from "@/components/IntroVideo";
 import RoundStartLoader from "@/components/RoundStartLoader";
 import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
 
@@ -13,7 +12,7 @@ import { useWelcomeBonus } from "@/service/useWelcomeBonus";
 
 export default function Index() {
   const navigation = useNavigation();
-  const [stage, setStage] = useState<"splash" | "video" | "game">("splash");
+  const [stage, setStage] = useState<"splash" | "game">("splash");
 
   const { showModal, claimBonus } = useWelcomeBonus();
 
@@ -29,29 +28,26 @@ export default function Index() {
 
   /* ---------------- SPLASH FLOW ---------------- */
   useEffect(() => {
-    const timer = setTimeout(() => setStage("video"), 3000);
-    return () => clearTimeout(timer);
-  }, []);
+    const timer = setTimeout(() => {
+      setStage("game");
+      AudioEngine.play("quiz", "background");
+    }, 3000);
 
-  /* ---------------- VIDEO END ---------------- */
-  const handleIntroEnd = useCallback(() => {
-    setStage("game");
-    AudioEngine.play("quiz", "background");
+    return () => clearTimeout(timer);
   }, []);
 
   /* ---------------- UI ---------------- */
   if (stage === "splash") {
-    return <View style={{ flex: 1, backgroundColor: "#050508" }}><RoundStartLoader /></View>;
-  }
-
-  if (stage === "video") {
-    return <VideoPlayerComponent videoIndex={1} onVideoEnd={handleIntroEnd} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: "#050508" }}>
+        <RoundStartLoader />
+      </View>
+    );
   }
 
   return (
     <View style={{ flex: 1 }}>
       <GameModeScreen />
-
       <WelcomeBonusModal isVisible={showModal} onClaim={claimBonus} />
     </View>
   );

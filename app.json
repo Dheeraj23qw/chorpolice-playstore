@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chor Police",
     "slug": "chorpolice",
-    "version": "2.0.0", // 🟢 Users see this as a Major Upgrade
+    "version": "2.0.0",
     "orientation": "portrait",
     "scheme": "chorpolice",
     "userInterfaceStyle": "dark",
@@ -13,7 +13,7 @@
       "backgroundColor": "#050508"
     },
     "icon": "./assets/images/adaptive-icon.png",
-    "runtimeVersion": "2.0.0", // 🟢 Keep this synced with your version
+    "runtimeVersion": "2.0.0",
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/audio/*",
@@ -21,7 +21,7 @@
     ],
     "updates": {
       "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241",
-      "fallbackToCacheTimeout": 0,
+      "fallbackToCacheTimeout": 5000,
       "checkAutomatically": "ON_LOAD"
     },
     "android": {
@@ -49,7 +49,6 @@
       "expo-router",
       "expo-asset",
       "expo-font",
-      "expo-web-browser",
       "expo-audio",
       "expo-file-system",
       [
@@ -58,7 +57,13 @@
           "photosPermission": "The app accesses your photos to let you set custom player avatars."
         }
       ],
-    ["expo-notifications", { "icon": "./assets/images/notification-icon.png", "color": "#050508" }],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#050508"
+        }
+      ],
       [
         "expo-build-properties",
         {
@@ -66,15 +71,22 @@
             "enableHermes": true,
             "enableProguardInReleaseBuilds": true,
             "enableMinifyInReleaseBuilds": true,
-            "enablePngCrunchInReleaseBuilds": false
+            "shrinkResources": true,
+            "extraCompilerArgs": [
+              "-Xjvm-default=all"
+            ],
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libc++_shared.so"
+              ],
+              "exclude": [
+                "**/LICENSE.txt",
+                "**/NOTICE",
+                "**/META-INF/*.{py,txt}",
+                "**/META-INF/DEPENDENCIES"
+              ]
+            }
           }
-        }
-      ],
-      [
-        "expo-video",
-        {
-          "supportsBackgroundPlayback": true,
-          "supportsPictureInPicture": true
         }
       ]
     ]
