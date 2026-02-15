@@ -75,7 +75,6 @@ export const FullScreenMenu = ({
     { label: "Earn", icon: Flashlight, path: "/earn" },
     { label: "Stats", icon: BarChart3, path: "/stats" },
     { label: "Profile", icon: User, path: "/profile" },
-    { label: "Friends", icon: Users, path: "/friends/b" },
     { label: "Ranks", icon: Trophy, path: "/leaderboard" },
     { label: "Awards", icon: Medal, path: "/awards" },
     { label: "Rate Us", icon: Star, action: onRatePress },
