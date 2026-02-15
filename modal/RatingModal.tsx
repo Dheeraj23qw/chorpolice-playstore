@@ -132,8 +132,8 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
     >
       <View className="flex-1 bg-black/85 items-center justify-center px-[6%]">
         <Animated.View
-          entering={FadeInDown.springify().damping(15)}
-          layout={LinearTransition.springify().damping(15)}
+         entering={FadeInDown.duration(200)}
+layout={LinearTransition.duration(200)}
           className="w-full max-w-[400px] bg-[#0a0a0f] rounded-[40px] border-[1.5px] border-white/10 p-8 items-center overflow-hidden"
         >
           {/* Decorative Glow */}
