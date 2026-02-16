@@ -4,23 +4,24 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
-      },
-      "channel": "development"
-    },
-    "preview": {
-      "channel": "preview",
-      "distribution": "internal"
-    },
     "production": {
       "channel": "production",
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle" 
+      }
+    },
+    "preview": {
+      "channel": "production",
+      "android": {
+        "buildType": "apk" 
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "production"
       }
     }
   }

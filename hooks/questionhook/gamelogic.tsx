@@ -16,7 +16,7 @@ interface PlayerMessage {
 
 /* ------------------ CONSTANTS ------------------ */
 
-const NUM_QUESTIONS = 1;
+const NUM_QUESTIONS = 7;
 
 const MEDIA = {
   CORRECT: 7,
