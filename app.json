@@ -3,6 +3,7 @@
     "name": "Chor Police",
     "slug": "chorpolice",
     "version": "2.0.0",
+    "platforms": ["android", "ios"],
     "orientation": "portrait",
     "scheme": "chorpolice",
     "userInterfaceStyle": "dark",
@@ -60,7 +61,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#050508"
+          "color": "#DFDFDF"
         }
       ],
       [
