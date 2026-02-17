@@ -21,7 +21,6 @@
     ],
     "updates": {
       "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241",
-      "fallbackToCacheTimeout": 5000,
       "checkAutomatically": "ON_LOAD"
     },
     "android": {
