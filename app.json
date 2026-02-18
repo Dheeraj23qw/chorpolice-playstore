@@ -3,7 +3,7 @@
     "name": "Chor Police",
     "slug": "chorpolice",
     "version": "2.0.0",
-    "platforms": ["android", "ios"],
+    "platforms": ["android"],
     "orientation": "portrait",
     "scheme": "chorpolice",
     "userInterfaceStyle": "dark",
@@ -29,6 +29,7 @@
       "userInterfaceStyle": "dark",
       "edgeToEdgeEnabled": true,
       "allowBackup": false,
+      "newArchEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050508"

@@ -1,5 +1,5 @@
 import "../global.css";
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback } from "react";
 import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
@@ -12,7 +12,7 @@ import { AlertNotificationRoot } from "react-native-alert-notification";
 import { useAppExit } from "@/hooks/useAppExit";
 import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
-import { AppState, StyleSheet, View } from "react-native";
+import { AppState, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { notificationService } from "@/service/notification/NotificationService";
 
@@ -41,19 +41,16 @@ function AppLayout() {
   /* ---------------- Notifications ---------------- */
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
         const granted = await notificationService.registerPermissions();
         if (!mounted || !granted) return;
-
         notificationService.listen();
         await notificationService.handleInitialNotification();
       } catch (e) {
         console.log("Notification setup error:", e);
       }
     })();
-
     return () => {
       mounted = false;
       notificationService.cleanup();
@@ -71,7 +68,7 @@ function AppLayout() {
   );
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-background">
       <Stack
         screenOptions={{
           headerShown: false,
@@ -92,9 +89,6 @@ function AppLayout() {
   );
 }
 
-/* =======================================================
-   🔹 Root Layout
-======================================================= */
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     "outfit-bold": require("../assets/fonts/Outfit-Bold.ttf"),
@@ -125,12 +119,3 @@ export default function RootLayout() {
     </Provider>
   );
 }
-
-/* ======================================================= */
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#050508",
-  },
-});

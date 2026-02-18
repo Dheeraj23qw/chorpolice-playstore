@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { Text } from "@/components/Text";
 import { FontAwesome5 } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
 interface WelcomeProps {
   isVisible: boolean;
@@ -93,10 +92,7 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
           }}
           className="w-full max-w-sm overflow-hidden rounded-[48px] border border-white/10"
         >
-          <LinearGradient
-            colors={["#111827", "#09090b"]}
-            className="p-8 items-center"
-          >
+      
             {/* Crown Section */}
             <Animated.View
               style={{ transform: [{ translateY: floatAnim }] }}
@@ -153,19 +149,12 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
                 onPressOut={handlePressOut}
                 className="overflow-hidden rounded-2xl"
               >
-                <LinearGradient
-                  colors={["#6366f1", "#4f46e5"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  className="py-5 items-center"
-                >
+             
                   <Text className="text-white font-main-bold text-lg tracking-widest">
                     CLAIM REWARD
                   </Text>
-                </LinearGradient>
               </TouchableOpacity>
             </Animated.View>
-          </LinearGradient>
         </Animated.View>
       </View>
     </Modal>

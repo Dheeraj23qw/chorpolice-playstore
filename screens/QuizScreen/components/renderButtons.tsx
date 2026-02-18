@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { hp, wp, rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 
 interface ActionButtonsProps {
   onStatsPress: () => void;
@@ -74,13 +73,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
         className="flex-1 rounded-3xl overflow-hidden border border-white/10 bg-black/20"
       >
         <View className="flex-1 items-center justify-center">
-          
-          <LinearGradient
-            colors={[colors[0] + '40', 'transparent']}
-            className="absolute inset-0 opacity-40"
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
+    
 
           <View className="mb-1">
             <Ionicons name={icon} size={rf(2.8)} color={colors[0]} />
@@ -107,7 +100,6 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 const styles = StyleSheet.create({
   buttonBase: {
     height: hp(10),
-    // Standard JS-based transition (Not Reanimated)
   },
   buttonActive: {
     transform: [{ scale: 0.92 }],

@@ -1,4 +1,4 @@
-// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
@@ -8,34 +8,33 @@ module.exports = {
     "./hooks/**/*.{js,jsx,ts,tsx}",
     "./features/**/*.{js,jsx,ts,tsx}",
     "./utils/**/*.{js,jsx,ts,tsx}",
-  
-
   ],
   presets: [require("nativewind/preset")],
   darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Custom Branding for your Rate Us/Spin components
         primary: {
-          DEFAULT: "#6366f1", // indigo-500
-          dark: "#4338ca",    // indigo-700
+          DEFAULT: "#6366f1", 
+          dark: "#4338ca",    
         },
         success: {
-          DEFAULT: "#22c55e", // green-500
-          dark: "#15803d",    // green-700
-          muted: "#14532d",   // green-950
+          DEFAULT: "#22c55e", 
+          dark: "#15803d",    
+          muted: "#14532d",   
         },
-        background: "#09090b", // zinc-950
+        background: "#09090b", 
       },
       fontFamily: {
+        // Ensure these strings match your useFonts hook keys exactly!
         'main': ['outfit'],
         'main-md': ['outfit-medium'],
         'main-bold': ['outfit-bold'],
         'game': ['myfont'],
         'game-bold': ['myfont-bold'],
       },
-      // Added Animation features for your Spin Button
+      // Note: These will work on Web immediately. 
+      // For Android, ensure you are using NativeWind v4.1+
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'wiggle': 'wiggle 0.3s ease-in-out infinite',

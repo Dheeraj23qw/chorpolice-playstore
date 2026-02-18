@@ -1,19 +1,34 @@
 import { useEffect } from "react";
-import { Appearance, Platform } from "react-native";
+import { Appearance, Platform, AppState, AppStateStatus } from "react-native";
 import * as NavigationBar from "expo-navigation-bar";
+import * as SystemUI from "expo-system-ui";
 
 export const useSystemUI = () => {
   useEffect(() => {
-    const setup = async () => {
+    const applySystemStyles = async () => {
       if (Platform.OS === "android") {
-        // 1. Hide the bar for immersion
+        await SystemUI.setBackgroundColorAsync("#050508");
+
+       
         await NavigationBar.setVisibilityAsync("hidden");
         
-        // Force app theme to dark
-        Appearance.setColorScheme("dark"); 
+        await NavigationBar.setBackgroundColorAsync("#050508");
+        await NavigationBar.setButtonStyleAsync("light");
+
+        Appearance.setColorScheme("dark");
       }
     };
 
-    setup();
+    applySystemStyles();
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        applySystemStyles();
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    return () => subscription.remove();
   }, []);
 };
