@@ -13,7 +13,7 @@
     "build:ios:debug": "npx expo run:ios --configuration Debug",
     "build:prod": "eas build --platform android --profile production",
     "build:dev": "eas build --platform android --profile development",
-    "preview": "eas build --profile preview",
+    "preview": "eas build --platform android --profile preview",
     "test": "jest",
     "test:watch": "jest --watchAll",
     "update:prod": "eas update --branch production --message 'Quick fix'",
