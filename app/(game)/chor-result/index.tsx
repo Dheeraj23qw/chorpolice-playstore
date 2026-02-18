@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { router } from "expo-router";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import ChorPoliceResult from "@/screens/ResultScreen/chorPoliceResult";

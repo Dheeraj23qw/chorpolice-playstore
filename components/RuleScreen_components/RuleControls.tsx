@@ -16,7 +16,7 @@ interface Props {
   onBack: () => void;
 }
 
-const RulesControls = memo(({ step, total, onNext, onBack }: Props) => {
+const RulesControls = memo(function RulesControls({ step, total, onNext, onBack }: Props) {
   const nextScale = useSharedValue(1);
   const backScale = useSharedValue(1);
 
@@ -30,7 +30,6 @@ const RulesControls = memo(({ step, total, onNext, onBack }: Props) => {
 
   const isLast = step === total - 1;
 
-  // Optimized Press Handler with Haptics
   const handlePress = (type: "next" | "back") => {
     if (type === "next") onNext();
     else onBack();
@@ -69,5 +68,7 @@ const RulesControls = memo(({ step, total, onNext, onBack }: Props) => {
     </View>
   );
 });
+
+RulesControls.displayName = "RulesControls";
 
 export default RulesControls;

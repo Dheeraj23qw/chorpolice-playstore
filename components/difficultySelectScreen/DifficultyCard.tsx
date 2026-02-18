@@ -29,8 +29,7 @@ const DifficultyCard = ({ option, selected, onSelect }: Props) => {
   useEffect(() => {
     scale.value = withSpring(selected ? 1.02 : 1, { damping: 12 });
     activeProgress.value = withTiming(selected ? 1 : 0, { duration: 250 });
-  }, [selected]);
-
+}, [selected, activeProgress, scale]);
   const animatedContainerStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     borderColor: interpolateColor(

@@ -1,10 +1,9 @@
 import React, { memo, useMemo } from "react";
-import { View, StyleSheet } from "react-native";
-import * as LucideIcons from "lucide-react-native"; // Import all icons for lookup
+import { View } from "react-native";
+import * as LucideIcons from "lucide-react-native";
 import { Lock, Shield, Star } from "lucide-react-native";
 import { Text } from "@/components/Text";
 
-// Updated to match the high-performance AwardItem structure
 interface AwardItem {
   id: number;
   status: string;
@@ -21,12 +20,14 @@ interface AwardCardProps {
   rarityStyles: string;
 }
 
-const AwardCard = memo(({ award, cardWidth, rarityStyles }: AwardCardProps) => {
+/* ---------------------------------------------------
+    ✅ Named Component + NativeWind Migration
+--------------------------------------------------- */
+const AwardCard = memo(function AwardCard({ award, cardWidth, rarityStyles }: AwardCardProps) {
   const isLocked = award.status === "locked";
   const isUnlocked = award.status === "unlocked";
   const isCompleted = award.percent === 100;
 
-  // Theme color based on rarity
   const themeColor = useMemo(() => {
     switch (award.rarity) {
       case "Legendary": return "#fbbf24";
@@ -38,19 +39,28 @@ const AwardCard = memo(({ award, cardWidth, rarityStyles }: AwardCardProps) => {
 
   const IconComponent = (LucideIcons as any)[award.iconName] || LucideIcons.Trophy;
 
-  // Card background changes if completed
-  const cardBgColor = isCompleted ? "#1e293b" : isUnlocked ? "#0f172a" : "rgba(15, 23, 42, 0.6)";
-  const borderColor = isCompleted ? "border-yellow-400/40" : isUnlocked ? "border-white/10" : "border-white/5";
+  // Background and Shadow Logic moved to inline style for dynamic values
+  const cardStyle = {
+    width: cardWidth,
+    backgroundColor: isCompleted ? "#1e293b" : isUnlocked ? "#0f172a" : "rgba(15, 23, 42, 0.6)",
+    shadowColor: isCompleted ? themeColor : "transparent",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 5,
+  };
+
+  const borderClass = isCompleted ? "border-yellow-400/40" : isUnlocked ? "border-white/10" : "border-white/5";
 
   return (
     <View
-      style={[styles.card, { width: cardWidth, backgroundColor: cardBgColor, shadowColor: isCompleted ? themeColor : "transparent" }]}
-      className={`mr-4 rounded-[40px] border p-6 overflow-hidden ${borderColor}`}
+      style={cardStyle}
+      className={`mr-4 rounded-[40px] border p-6 overflow-hidden ${borderClass}`}
     >
-      {/* Completed Glow */}
+      {/* Completed Glow Effect */}
       {isCompleted && (
         <View 
-          className="absolute -right-5 -top-5 h-36 w-36 rounded-full opacity-40 animate-pulse" 
+          className="absolute -right-5 -top-5 h-36 w-36 rounded-full opacity-40" 
           style={{ backgroundColor: themeColor }} 
         />
       )}
@@ -79,9 +89,9 @@ const AwardCard = memo(({ award, cardWidth, rarityStyles }: AwardCardProps) => {
       <View className="relative mb-8 h-20 w-20 items-center justify-center self-center">
         {isUnlocked && (
           <>
-            <View className="absolute h-16 w-16 rounded-3xl blur-2xl opacity-40" style={{ backgroundColor: themeColor }} />
+            <View className="absolute h-16 w-16 rounded-3xl opacity-40 blur-2xl" style={{ backgroundColor: themeColor }} />
             {isCompleted && (
-              <View className="absolute h-20 w-20 rounded-full border-2 border-yellow-400 animate-pulse" />
+              <View className="absolute h-20 w-20 rounded-full border-2 border-yellow-400" />
             )}
           </>
         )}
@@ -115,21 +125,19 @@ const AwardCard = memo(({ award, cardWidth, rarityStyles }: AwardCardProps) => {
           <Text className="text-[9px] font-main-bold uppercase tracking-widest text-slate-500">
             {isCompleted ? "Completed" : isUnlocked ? "In Progress" : "Locked"}
           </Text>
-          <View className="px-2 py-0.5 rounded-md" style={{ backgroundColor: isCompleted ? "#fbbf24/20" : `${themeColor}20` }}>
+          <View className="px-2 py-0.5 rounded-md" style={{ backgroundColor: `${themeColor}20` }}>
             <Text className="text-[10px] font-main-bold" style={{ color: isCompleted ? "#fbbf24" : themeColor }}>
               {award.percent}%
             </Text>
           </View>
         </View>
 
+        {/* Progress Bar */}
         <View className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
           <View
             style={{
               width: `${award.percent}%`,
               backgroundColor: isCompleted ? "#fbbf24" : themeColor,
-              shadowColor: isCompleted ? "#fbbf24" : themeColor,
-              shadowRadius: 5,
-              shadowOpacity: 0.5
             }}
             className="h-full rounded-full"
           />
@@ -139,14 +147,6 @@ const AwardCard = memo(({ award, cardWidth, rarityStyles }: AwardCardProps) => {
   );
 });
 
+AwardCard.displayName = "AwardCard";
 
 export default AwardCard;
-
-const styles = StyleSheet.create({
-  card: {
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 5, // for Android shadow performance
-  },
-});

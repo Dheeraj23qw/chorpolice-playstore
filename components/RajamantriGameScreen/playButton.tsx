@@ -71,7 +71,7 @@ const PlayButton: React.FC<PlayButtonProps> = ({
       loop.start();
       return () => loop.stop();
     }
-  }, [disabled, variant]);
+  }, [disabled, variant,config.showGlow,glowAnim]);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {

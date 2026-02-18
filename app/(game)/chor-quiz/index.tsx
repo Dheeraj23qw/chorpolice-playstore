@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import {  router } from "expo-router";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import ChorPoliceQuiz from "@/screens/chorPoliceQuizScreen/Rajamantriquizscreen";

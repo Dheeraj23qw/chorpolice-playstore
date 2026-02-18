@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { router, Stack } from "expo-router";
 import RajaMantriGameScreen from "@/screens/RajaMantriGameScreen/RajaMantriGameScreen";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";

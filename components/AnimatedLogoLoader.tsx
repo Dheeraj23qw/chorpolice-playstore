@@ -40,7 +40,7 @@ export default function AnimatedLogoLoader() {
       -1,
       true
     );
-  }, []);
+  }, [bounce, rotate, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [

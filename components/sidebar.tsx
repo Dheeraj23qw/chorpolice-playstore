@@ -21,7 +21,6 @@ import Animated, {
 import {
   Flashlight,
   User,
-  Users,
   Trophy,
   Medal,
   BarChart3,
@@ -56,7 +55,7 @@ export const FullScreenMenu = ({
     if (visible) {
       arrowY.value = withRepeat(withTiming(-6, { duration: 1000 }), -1, true);
     }
-  }, [visible]);
+  }, [visible,arrowY]);
 
   const arrowStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: arrowY.value }],

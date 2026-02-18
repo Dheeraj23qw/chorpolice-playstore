@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedStyle, 
   useSharedValue, 
   withSpring, 
-  withSequence 
 } from "react-native-reanimated";
 import { hp, wp, rf } from "@/utils/responsive";
 import { Text } from "../Text";

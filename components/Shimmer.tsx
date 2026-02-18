@@ -14,7 +14,7 @@ export default function Shimmer({ className }: { className?: string }) {
       withTiming(150, { duration: 1200 }),
       -1
     );
-  }, []);
+  }, [translateX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],

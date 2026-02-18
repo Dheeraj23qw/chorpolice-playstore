@@ -21,8 +21,10 @@ interface Props {
   image: any;
 }
 
-// Memoize to prevent unnecessary re-renders during parent state changes
-const RuleCard = memo(({ step, title, desc, image }: Props) => {
+/* ---------------------------------------------------
+    ✅ Named Component (Fixes Display Name Error)
+--------------------------------------------------- */
+const RuleCard = memo(function RuleCard({ step, title, desc, image }: Props) {
   return (
     <Animated.View
       key={step}
@@ -90,5 +92,8 @@ const RuleCard = memo(({ step, title, desc, image }: Props) => {
     </Animated.View>
   );
 });
+
+// Explicitly set displayName for lint compliance
+RuleCard.displayName = "RuleCard";
 
 export default RuleCard;

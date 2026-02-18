@@ -6,7 +6,6 @@ import difficultyReducer from "@/redux/reducers/quiz";
 import loaderReducer from "./reducers/loaderReducer";
 import popupReducer from "./reducers/popupReducer";
 import awardsReducer from "@/features/awards/awardsSlice";
-// import alertsReducer from "@/features/alerts/alertSlice"
 import walletReducer, { loadWallet, WalletState } from "@/features/wallet/walletSlice";
 import quizStatsReducer, { loadQuizStats } from "@/features/quizStats/quizStatsSlice";
 import { QuizStatsState } from "@/features/quizStats/quizStatsTypes";
@@ -26,7 +25,6 @@ const store = configureStore({
     wallet: walletReducer,
     quizStats: quizStatsReducer,
     awards: awardsReducer,
-    // alerts: alertsReducer, 
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(listenerMiddleware.middleware),

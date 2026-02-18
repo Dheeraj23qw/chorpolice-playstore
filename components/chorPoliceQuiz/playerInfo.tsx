@@ -11,7 +11,8 @@ const getImageSource = (imageData?: { type: string; src: any }) => {
   return imageData.type === "local" ? imageData.src : { uri: imageData.src };
 };
 
-const PlayerInfo: React.FC<PlayerInfoProps> = memo(({ playerImage }) => {
+// ✅ Fix: Named the function 'PlayerInfo' inside memo to provide a Display Name
+const PlayerInfo = memo(function PlayerInfo({ playerImage }: PlayerInfoProps) {
   const imageSource = getImageSource(playerImage);
   if (!imageSource) return null;
 
@@ -71,5 +72,8 @@ const PlayerInfo: React.FC<PlayerInfoProps> = memo(({ playerImage }) => {
     </View>
   );
 });
+
+// ✅ Explicitly set displayName for clarity
+PlayerInfo.displayName = "PlayerInfo";
 
 export default PlayerInfo;

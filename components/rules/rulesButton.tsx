@@ -8,7 +8,7 @@ import Animated, {
 import { Ionicons } from "@expo/vector-icons";
 
 // Utils
-import { rf, hp, wp } from "@/utils/responsive";
+import { rf, hp} from "@/utils/responsive";
 import { Text } from "../Text";
 
 interface RulesButtonProps {

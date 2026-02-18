@@ -11,13 +11,15 @@ import { Text } from "../Text";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const RuleGroupCard = memo(({ group, index }: { group: any; index: number }) => {
+
+export const RuleGroupCard = memo(function RuleGroupCard({ group, index }: { group: any; index: number }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  // Logic for scaling interactions
   const handlePressIn = () => { scale.value = withSpring(0.97, { damping: 15 }); };
   const handlePressOut = () => { scale.value = withSpring(1); };
 
@@ -38,7 +40,6 @@ export const RuleGroupCard = memo(({ group, index }: { group: any; index: number
           
           <View>
             <Text 
-              // Changed font-black to font-main-bold
               className="text-white text-[22px] font-main-bold tracking-tight"
             >
               {group.title}
@@ -47,7 +48,6 @@ export const RuleGroupCard = memo(({ group, index }: { group: any; index: number
             <View className="h-1 w-8 bg-amber-500 rounded-full my-1.5" />
             
             <Text 
-              // Changed font-medium to font-main-md
               className="text-gray-300 text-[14px] font-main-md"
             >
               {group.subtitle}
@@ -58,3 +58,5 @@ export const RuleGroupCard = memo(({ group, index }: { group: any; index: number
     </Animated.View>
   );
 });
+
+RuleGroupCard.displayName = "RuleGroupCard";

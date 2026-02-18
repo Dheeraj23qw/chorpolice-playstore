@@ -12,7 +12,7 @@ interface ButtonProps {
 }
 
 const ActionButton = memo(
-  ({
+  function ActionButton({
     label,
     onPress,
     variant = "primary",
@@ -22,7 +22,7 @@ const ActionButton = memo(
     onPress: () => void;
     variant?: "primary" | "secondary" | "accent";
     icon?: any;
-  }) => {
+  }) {
     const handlePress = () => {
       AudioEngine.play("select", "ui");
       onPress();
@@ -64,25 +64,24 @@ const ActionButton = memo(
       >
         {Icon && <Icon size={18} color={current.icon} strokeWidth={2.5} />}
         <Text
-          // Swapped font-black for font-main-bold
           className={`ml-2 text-[11px] font-main-bold uppercase tracking-[2px] ${current.text}`}
         >
           {label}
         </Text>
       </Pressable>
     );
-  },
+  }
 );
 
+ActionButton.displayName = "ActionButton";
+
 export const QuizButton: React.FC<ButtonProps> = memo(
-  ({ showHint, setIsTableOpen, handleNextQuestion, handleFiftyFifty }) => {
+  function QuizButton({ showHint, setIsTableOpen, handleNextQuestion, handleFiftyFifty }) {
     return (
       <View className="mt-4 px-4 py-6 rounded-[32px] bg-white/[0.03] border border-white/[0.05] backdrop-blur-xl">
-        {/* Label for the action section */}
         <View className="flex-row items-center mb-4 px-2">
           <Zap size={12} color="#6366f1" fill="#6366f1" />
           <Text 
-            // Swapped font-bold for font-main-bold
             className="ml-2 text-[10px] font-main-bold text-indigo-500/60 uppercase tracking-[3px]"
           >
             Available Lifelines
@@ -117,5 +116,7 @@ export const QuizButton: React.FC<ButtonProps> = memo(
         </View>
       </View>
     );
-  },
+  }
 );
+
+QuizButton.displayName = "QuizButton";

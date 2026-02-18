@@ -2,17 +2,15 @@ import React, { memo } from "react";
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   View,
   Image,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { GameMode } from "@/types/redux/reducers";
-import { rf, wp } from "@/utils/responsive";
+import { wp } from "@/utils/responsive";
 
-// 🚨 IMPORTANT: Ensure PulsatingImage is imported or defined!
-// If you don't have it yet, use a standard Image or define it below.
+
 
 interface ImageGridProps {
   selectedImages: number[];

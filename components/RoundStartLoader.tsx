@@ -15,7 +15,7 @@ const RoundStartLoader = () => {
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 800 });
     scale.value = withTiming(1, { duration: 1000 });
-  }, []);
+  }, [opacity,scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

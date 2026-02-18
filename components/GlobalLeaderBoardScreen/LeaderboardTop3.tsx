@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import React, { memo } from "react";
+import { View } from "react-native";
 import { Crown, Coins } from "lucide-react-native";
 import { Text } from "@/components/Text";
 
@@ -14,93 +14,74 @@ interface Props {
   getTier: (coins: number) => string;
 }
 
-// Single player card component
-const TopPlayerCard = React.memo(
-  ({ player, isFirst, getTier }: { player: Player; isFirst: boolean; getTier: (coins: number) => string }) => {
-    return (
-      <View style={[styles.cardContainer, { width: isFirst ? "36%" : "30%" }]}>
-        <View style={[styles.avatarContainer, isFirst ? styles.firstAvatar : styles.otherAvatar]}>
-          {isFirst ? <Crown size={30} color="white" /> : <Text style={styles.trophyIcon}>🏆</Text>}
-        </View>
-
-        <Text numberOfLines={1} style={styles.playerName}>
-          {player.name}
-        </Text>
-
-        <View style={styles.coinsRow}>
-          <Coins size={12} color="#facc15" />
-          <Text style={styles.coinsText}>{player.coins.toLocaleString()}</Text>
-        </View>
-
-        <Text style={styles.tierText}>{getTier(player.coins)}</Text>
-      </View>
-    );
-  }
-);
-
-export default React.memo(function LeaderboardTop3({ topPlayers, getTier }: Props) {
+/* ---------------------------------------------------
+    ✅ Named Sub-component + NativeWind Migration
+--------------------------------------------------- */
+const TopPlayerCard = memo(function TopPlayerCard({ 
+  player, 
+  isFirst, 
+  getTier 
+}: { 
+  player: Player; 
+  isFirst: boolean; 
+  getTier: (coins: number) => string 
+}) {
   return (
-    <View style={styles.container}>
+    <View className={`items-center ${isFirst ? "w-[36%]" : "w-[30%]"}`}>
+      {/* Avatar Container */}
+      <View 
+        className={`mb-3 items-center justify-center rounded-full border ${
+          isFirst 
+            ? "h-20 w-20 bg-indigo-600 border-indigo-400 border-2" 
+            : "h-16 w-16 bg-slate-800 border-white/10 border"
+        }`}
+      >
+        {isFirst ? (
+          <Crown size={30} color="white" />
+        ) : (
+          <Text className="text-[20px]">🏆</Text>
+        )}
+      </View>
+
+      <Text numberOfLines={1} className="text-white text-[12px] font-main-bold">
+        {player.name}
+      </Text>
+
+      {/* Coins Row */}
+      <View className="flex-row items-center mt-1">
+        <Coins size={12} color="#facc15" />
+        <Text className="ml-1 text-[10px] font-main-bold text-yellow-400">
+          {player.coins.toLocaleString()}
+        </Text>
+      </View>
+
+      <Text className="mt-1 text-[10px] text-slate-400">
+        {getTier(player.coins)}
+      </Text>
+    </View>
+  );
+});
+
+TopPlayerCard.displayName = "TopPlayerCard";
+
+/* ---------------------------------------------------
+    ✅ Main Export Component
+--------------------------------------------------- */
+const LeaderboardTop3 = memo(function LeaderboardTop3({ topPlayers, getTier }: Props) {
+  return (
+    <View className="flex-row justify-between items-end mt-8 mb-10">
       {topPlayers.map((player, index) => (
-        <TopPlayerCard key={player.id} player={player} isFirst={index === 0} getTier={getTier} />
+        <TopPlayerCard 
+          key={player.id} 
+          player={player} 
+          isFirst={index === 0} 
+          getTier={getTier} 
+        />
       ))}
     </View>
   );
 });
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginTop: 32,
-    marginBottom: 40,
-  },
-  cardContainer: {
-    alignItems: "center",
-  },
-  avatarContainer: {
-    marginBottom: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 28,
-  },
-  firstAvatar: {
-    height: 80,
-    width: 80,
-    backgroundColor: "#4f46e5", // Indigo-600
-    borderWidth: 2,
-    borderColor: "#818cf8", // Indigo-400
-  },
-  otherAvatar: {
-    height: 64,
-    width: 64,
-    backgroundColor: "#1e293b", // Slate-800
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  trophyIcon: {
-    fontSize: 20,
-  },
-  playerName: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  coinsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  coinsText: {
-    marginLeft: 4,
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#facc15",
-  },
-  tierText: {
-    marginTop: 4,
-    fontSize: 10,
-    color: "#94a3b8", // Slate-500
-  },
-});
+LeaderboardTop3.displayName = "LeaderboardTop3";
+
+export default LeaderboardTop3;

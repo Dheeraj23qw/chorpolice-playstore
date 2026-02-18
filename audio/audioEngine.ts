@@ -110,6 +110,16 @@ const restoreQuizVolumeIfNeeded = () => {
 /* ---------------- ENGINE ---------------- */
 
 export const AudioEngine = {
+
+
+  /* ---------- GLOBAL LOAD ---------- */
+  loadAll() {
+    // This pre-creates the players for all sounds so there's no lag when playing
+    (Object.keys(soundPaths) as SoundName[]).forEach((name) => {
+      createIfMissing(name);
+    });
+    log("All sounds pre-loaded");
+  },
   /* ---------- GLOBAL QUIZ ---------- */
 
   ensureQuizGlobal() {

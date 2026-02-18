@@ -3,7 +3,6 @@ import { View } from "react-native";
 import Animated, { 
   useAnimatedStyle, 
   withSpring, 
-  interpolateColor 
 } from "react-native-reanimated";
 
 interface Props {
@@ -11,7 +10,10 @@ interface Props {
   activeIndex: number;
 }
 
-const Dot = memo(({ index, activeIndex }: { index: number; activeIndex: number }) => {
+/* ---------------------------------------------------
+    ✅ Named Sub-component (Fixes Display Name Error)
+--------------------------------------------------- */
+const Dot = memo(function Dot({ index, activeIndex }: { index: number; activeIndex: number }) {
   const isActive = index === activeIndex;
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -30,7 +32,7 @@ const Dot = memo(({ index, activeIndex }: { index: number; activeIndex: number }
       width,
       backgroundColor,
     };
-  });
+  }, [isActive]); // Added dependency to ensure the worklet updates correctly
 
   return (
     <View className="relative items-center justify-center">
@@ -49,6 +51,11 @@ const Dot = memo(({ index, activeIndex }: { index: number; activeIndex: number }
   );
 });
 
+Dot.displayName = "Dot";
+
+/* ---------------------------------------------------
+    ✅ Main Component
+--------------------------------------------------- */
 export default function StepDots({ total, activeIndex }: Props) {
   return (
     <View className="flex-row justify-center items-center my-8">

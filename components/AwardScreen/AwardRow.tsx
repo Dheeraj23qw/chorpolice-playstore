@@ -4,10 +4,10 @@ import { Text } from "@/components/Text";
 import AwardCard from "./AwardCard";
 
 interface AwardItem {
-  id: number ; 
-  status: string; 
+  id: number;
+  status: string;
   rarity: string;
-  iconName: string; 
+  iconName: string;
   percent: number;
   title: string;
   desc: string;
@@ -21,8 +21,12 @@ interface AwardRowProps {
   getRarityStyles: (rarity: string) => string;
 }
 
+/* ---------------------------------------------------
+    ✅ Named Component (Fixes Display Name Error)
+--------------------------------------------------- */
 export const AwardRow = memo(
-  ({ title, subtitle, data, cardWidth, getRarityStyles }: AwardRowProps) => {
+  function AwardRow({ title, subtitle, data, cardWidth, getRarityStyles }: AwardRowProps) {
+    
     const renderItem = useCallback(
       ({ item }: ListRenderItemInfo<AwardItem>) => (
         <AwardCard
@@ -78,3 +82,6 @@ export const AwardRow = memo(
     );
   },
 );
+
+// Explicitly set displayName for lint compliance
+AwardRow.displayName = "AwardRow";

@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { View, TouchableOpacity, Platform } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -12,7 +12,7 @@ type ScreenWrapperProps = {
   subtitle?: string;
   rightAction?: ReactNode;
   onBackPress?: () => void;
-  variant?: "dark" | "light"; // Toggle between themes
+  variant?: "dark" | "light"; 
 };
 
 const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
@@ -30,8 +30,14 @@ const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   const isDark = variant === "dark";
 
   const handleBack = () => {
-    if (onBackPress) return onBackPress();
-    router.canGoBack() ? router.back() : router.replace("/");
+    if (onBackPress) {
+      return onBackPress();
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/");
+    }
   };
 
   return (
@@ -101,5 +107,7 @@ const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     </View>
   );
 };
+
+ScreenWrapper.displayName = "ScreenWrapper";
 
 export default ScreenWrapper;
