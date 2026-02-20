@@ -14,7 +14,9 @@
       "backgroundColor": "#050508"
     },
     "icon": "./assets/images/adaptive-icon.png",
-    "runtimeVersion": "2.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/audio/*",
@@ -22,7 +24,8 @@
     ],
     "updates": {
       "url": "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241",
-      "checkAutomatically": "ON_LOAD"
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     },
     "android": {
       "package": "com.dheeraj.chorpolice",
@@ -34,9 +37,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050508"
       }
-    },
-    "experiments": {
-      "typedRoutes": true
     },
     "extra": {
       "eas": {
