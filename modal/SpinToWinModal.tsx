@@ -33,7 +33,7 @@ const SpinController: React.FC<SpinControllerProps> = ({ isVisible, onClose }) =
   }));
 
   useEffect(() => {
-    let timer: number;
+    let timer:ReturnType<typeof setTimeout>;
     if (status === "DONE") {
       timer = setTimeout(() => {
         setShowVictory(false);

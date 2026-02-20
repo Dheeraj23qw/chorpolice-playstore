@@ -35,7 +35,7 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const rayRotation = useRef(new Animated.Value(0)).current;
 
-  const autoCloseTimer = useRef<number | null>(null);
+  const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const playerNames = useSelector(selectPlayerNames).map((p) => p.name);
 

@@ -52,7 +52,7 @@ const ScoreTable: React.FC<Props> = ({
 
   const scrollY = useSharedValue(0);
 const scrollRef = useRef<Animated.ScrollView>(null);
-  const autoScrollRef = useRef<number | null>(null);
+  const autoScrollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
 

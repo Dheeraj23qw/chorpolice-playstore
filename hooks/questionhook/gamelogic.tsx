@@ -40,7 +40,7 @@ export const useQuizGameLogic = () => {
   const router = useRouter();
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
 
-  const timerRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQuestionRef = useRef<any>(null);
 
   const [countdown, setCountdown] = useState(0);

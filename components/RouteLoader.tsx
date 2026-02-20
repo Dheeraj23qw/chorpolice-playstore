@@ -7,7 +7,7 @@ import { AppDispatch } from "@/redux/store";
 export default function RouteLoader() {
   const pathname = usePathname();
   const dispatch = useDispatch<AppDispatch>();
-  const timeoutRef = useRef<number | null>(null);
+  const timeoutRef =useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Clear previous timer if route changes quickly
