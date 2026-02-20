@@ -1,11 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import {
-  Modal,
-  View,
-  TouchableOpacity,
-  Animated,
-  Easing,
-} from "react-native";
+import { Modal, View, TouchableOpacity, Animated, Easing } from "react-native";
 import { Text } from "@/components/Text";
 import { FontAwesome5 } from "@expo/vector-icons";
 
@@ -59,7 +53,7 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
             duration: 1200,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start();
     }
   }, [isVisible]);
@@ -80,10 +74,9 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
 
   return (
     <Modal visible={isVisible} transparent statusBarTranslucent>
-      <View className="flex-1 bg-black/85 justify-center items-center px-6">
-
+      <View className="flex-1 items-center justify-center bg-black/85 px-6">
         {/* Glow Background */}
-        <View className="absolute w-72 h-72 bg-indigo-600/20 rounded-full" />
+        <View className="absolute h-72 w-72 rounded-full bg-indigo-600/20" />
 
         <Animated.View
           style={{
@@ -92,69 +85,65 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
           }}
           className="w-full max-w-sm overflow-hidden rounded-[48px] border border-white/10"
         >
-      
-            {/* Crown Section */}
-            <Animated.View
-              style={{ transform: [{ translateY: floatAnim }] }}
-              className="relative mb-8"
-            >
-              <View className="absolute -inset-6 bg-indigo-500/20 rounded-full blur-xl" />
-              <View className="bg-zinc-800/60 border border-white/10 p-6 rounded-full">
-                <FontAwesome5 name="crown" size={44} color="#818cf8" />
-              </View>
-            </Animated.View>
-
-            {/* Title */}
-            <View className="items-center mb-6">
-              <Text className="text-white text-3xl font-main-bold tracking-tight">
-                CHOR POLICE
-              </Text>
-              <Text className="text-indigo-400 text-sm mt-1 tracking-widest">
-                WELCOME REWARD
-              </Text>
+          {/* Crown Section */}
+          <Animated.View
+            style={{ transform: [{ translateY: floatAnim }] }}
+            className="relative mb-8"
+          >
+            <View className="absolute -inset-6 rounded-full bg-indigo-500/20 blur-xl" />
+            <View className="rounded-full border border-white/10 bg-zinc-800/60 p-6">
+              <FontAwesome5 name="crown" size={44} color="#818cf8" />
             </View>
+          </Animated.View>
 
-            {/* Points */}
-            <Animated.View
-              style={{
-                transform: [
-                  {
-                    scale: pointsAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.6, 1],
-                    }),
-                  },
-                ],
-                opacity: pointsAnim,
-              }}
-              className="flex-row items-end justify-center mb-10"
-            >
-              <Text className="text-white text-6xl font-main-bold">
-                1,000
-              </Text>
-              <Text className="text-indigo-400 text-2xl font-main-bold ml-2 mb-2">
-                pts
-              </Text>
-            </Animated.View>
+          {/* Title */}
+          <View className="mb-6 items-center">
+            <Text className="font-main-bold text-3xl tracking-tight text-white">
+              CHOR POLICE
+            </Text>
+            <Text className="mt-1 text-sm tracking-widest text-indigo-400">
+              WELCOME REWARD
+            </Text>
+          </View>
 
-            {/* Claim Button */}
-            <Animated.View
-              style={{ transform: [{ scale: buttonScale }] }}
-              className="w-full"
+          {/* Points */}
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  scale: pointsAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.6, 1],
+                  }),
+                },
+              ],
+              opacity: pointsAnim,
+            }}
+            className="mb-10 flex-row items-end justify-center"
+          >
+            <Text className="font-main-bold text-6xl text-white">1,000</Text>
+            <Text className="mb-2 ml-2 font-main-bold text-2xl text-indigo-400">
+              pts
+            </Text>
+          </Animated.View>
+
+          {/* Claim Button */}
+          <Animated.View
+            style={{ transform: [{ scale: buttonScale }] }}
+            className="w-full"
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={onClaim}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              className="overflow-hidden rounded-2xl"
             >
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={onClaim}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                className="overflow-hidden rounded-2xl"
-              >
-             
-                  <Text className="text-white font-main-bold text-lg tracking-widest">
-                    CLAIM REWARD
-                  </Text>
-              </TouchableOpacity>
-            </Animated.View>
+              <Text className="font-main-bold text-lg tracking-widest text-white">
+                CLAIM REWARD
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
         </Animated.View>
       </View>
     </Modal>
