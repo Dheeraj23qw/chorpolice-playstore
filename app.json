@@ -39,9 +39,6 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
         "projectId": "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
       }
@@ -71,19 +68,14 @@
           "android": {
             "enableHermes": true,
             "enableProguardInReleaseBuilds": true,
-            "enableMinifyInReleaseBuilds": true,
-            "shrinkResources": true,
-            "extraCompilerArgs": [
-              "-Xjvm-default=all"
-            ],
+            "extraCompilerArgs": ["-Xjvm-default=all"],
             "packagingOptions": {
-              "pickFirst": [
-                "**/libc++_shared.so"
-              ],
+              "pickFirst": ["**/libc++_shared.so"],
               "exclude": [
                 "**/LICENSE.txt",
                 "**/NOTICE",
-                "**/META-INF/*.{py,txt}",
+                "**/META-INF/*.py",
+                "**/META-INF/*.txt",
                 "**/META-INF/DEPENDENCIES"
               ]
             }
