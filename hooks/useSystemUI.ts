@@ -7,12 +7,8 @@ export const useSystemUI = () => {
   useEffect(() => {
     const applySystemStyles = async () => {
       if (Platform.OS === "android") {
-        await SystemUI.setBackgroundColorAsync("#050508");
-
-       
         await NavigationBar.setVisibilityAsync("hidden");
-        
-        await NavigationBar.setBackgroundColorAsync("#050508");
+
         await NavigationBar.setButtonStyleAsync("light");
 
         Appearance.setColorScheme("dark");
@@ -27,7 +23,10 @@ export const useSystemUI = () => {
       }
     };
 
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
 
     return () => subscription.remove();
   }, []);
