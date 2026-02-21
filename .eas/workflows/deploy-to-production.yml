@@ -1,0 +1,47 @@
+name: Deploy to production
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  fingerprint:
+    name: Fingerprint
+    type: fingerprint
+    environment: production
+
+  get_android_build:
+    name: Check for existing android build
+    needs: [fingerprint]
+    type: get-build
+    params:
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+      profile: production
+
+  build_android:
+    name: Build Android
+    needs: [get_android_build]
+    # Only runs if a matching build with this fingerprint doesn't exist
+    if: ${{ !needs.get_android_build.outputs.build_id }}
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  submit_android_build:
+    name: Submit Android Build
+    # Run this if we just built a new version
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+
+  publish_android_update:
+    name: Publish Android update
+    # Only runs if a compatible build ALREADY exists (no native changes)
+    needs: [get_android_build]
+    if: ${{ needs.get_android_build.outputs.build_id }}
+    type: update
+    params:
+      branch: production
+      platform: android
