@@ -1,6 +1,5 @@
 import React, { useEffect, memo } from "react";
-import { Modal, View } from "react-native";
-// ✅ Import Reanimated components and hooks
+import { Modal, View, ScrollView } from "react-native"; // Added ScrollView
 import Animated, { useAnimatedStyle } from "react-native-reanimated"; 
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
 import SpinHeader from "@/features/SpinWheel/SpinHeader";
@@ -27,13 +26,12 @@ const SpinController: React.FC<SpinControllerProps> = ({ isVisible, onClose }) =
     animateModalIn,
   } = useSpinWheel();
 
-
   const modalAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scaleAnim.value }],
   }));
 
   useEffect(() => {
-    let timer:ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout>;
     if (status === "DONE") {
       timer = setTimeout(() => {
         setShowVictory(false);
@@ -54,29 +52,36 @@ const SpinController: React.FC<SpinControllerProps> = ({ isVisible, onClose }) =
   return (
     <Modal visible={isVisible} transparent animationType="slide">
       <View className="flex-1 bg-zinc-950">
-
-        <Animated.View
-          style={[{ flex: 1 }, modalAnimatedStyle]}
-          className="items-center justify-between pb-12 pt-16"
+        <ScrollView 
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          // Prevents the modal from scrolling horizontally if the wheel is wide
+          bounces={false} 
         >
-          {/* Header */}
-          <View className="w-full px-8 items-center">
-            <SpinHeader status={status} result={result} />
-          </View>
-
-          {/* Wheel */}
-          <View className="w-full items-center justify-center">
-            <SpinWheelView spinAnim={spinAnim} segments={segments} />
-          </View>
-
-          {/* Result & Button */}
-          <View className="w-full px-8 items-center">
-            <SpinResult status={status} result={result} pulseAnim={pulseAnim} />
-            <View className="w-full mt-6">
-              <SpinButton status={status} onSpin={handleSpin} onClose={onClose} />
+          <Animated.View
+            style={[{ flex: 1 }, modalAnimatedStyle]}
+            className="items-center justify-between pb-12 pt-16"
+          >
+            {/* Header */}
+            <View className="w-full px-8 items-center">
+              <SpinHeader status={status} result={result} />
             </View>
-          </View>
-        </Animated.View>
+
+            {/* Wheel */}
+            <View className="w-full items-center justify-center py-8">
+              <SpinWheelView spinAnim={spinAnim} segments={segments} />
+            </View>
+
+            {/* Result & Button */}
+            <View className="w-full px-8 items-center">
+              <SpinResult status={status} result={result} pulseAnim={pulseAnim} />
+              <View className="w-full mt-6">
+                <SpinButton status={status} onSpin={handleSpin} onClose={onClose} />
+              </View>
+            </View>
+          </Animated.View>
+        </ScrollView>
       </View>
     </Modal>
   );

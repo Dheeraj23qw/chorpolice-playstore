@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, BackHandler } from "react-native";
+import { View, BackHandler, ScrollView } from "react-native"; // Added ScrollView
 import { useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -68,18 +68,18 @@ export default function QuizResult() {
 
   return (
     <View className="flex-1 bg-[#09090b] relative">
-      {/* 🔥 Top Right Info Button */}
+      {/* 🔥 Top Right Info Button - Fixed Position */}
       <View
         style={{
-          top: insets.top + hp(2.5), // responsive top spacing
-          right: wp(14), // responsive right spacing
+          top: insets.top + hp(2.5),
+          right: wp(14),
         }}
         className="absolute z-50"
       >
         <InfoTooltip text="To win any quiz match, you must answer all 7 questions correctly." />
       </View>
 
-      {/* Background Glows */}
+      {/* Background Glows - Fixed Position */}
       <View
         style={{ width: wp(120), height: wp(120), top: -hp(15), left: -wp(30) }}
         className={`absolute rounded-full opacity-20 blur-[100px] ${
@@ -99,9 +99,16 @@ export default function QuizResult() {
         }`}
       />
 
-      {/* Main Content */}
-      <View
-        style={{ flex: 1, justifyContent: "center", paddingHorizontal: wp(4) }}
+      {/* --- SCROLLABLE CONTENT --- */}
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ 
+          flexGrow: 1, 
+          justifyContent: "center", 
+          paddingHorizontal: wp(4),
+          paddingTop: insets.top + hp(8), // Avoid overlapping with InfoTooltip
+          paddingBottom: hp(4) 
+        }}
       >
         <View style={{ marginBottom: hp(2) }}>
           <ResultInfo
@@ -119,13 +126,14 @@ export default function QuizResult() {
           onEarnPress={handleEarn}
           onHomePress={handleHome}
         />
+      </ScrollView>
 
-        <CoinsRewardModal
-          visible={showCoins}
-          amount={reward}
-          onClaim={() => setShowCoins(false)}
-        />
-      </View>
+      {/* Modals remain outside ScrollView */}
+      <CoinsRewardModal
+        visible={showCoins}
+        amount={reward}
+        onClaim={() => setShowCoins(false)}
+      />
 
       <ExitConfirmationModal
         visible={showExitModal}
