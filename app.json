@@ -3,7 +3,9 @@
     "name": "Chor Police",
     "slug": "chorpolice",
     "version": "2.0.0",
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "orientation": "portrait",
     "scheme": "chorpolice",
     "userInterfaceStyle": "dark",
@@ -68,9 +70,13 @@
           "android": {
             "enableHermes": true,
             "enableProguardInReleaseBuilds": true,
-            "extraCompilerArgs": ["-Xjvm-default=all"],
+            "extraCompilerArgs": [
+              "-Xjvm-default=all"
+            ],
             "packagingOptions": {
-              "pickFirst": ["**/libc++_shared.so"],
+              "pickFirst": [
+                "**/libc++_shared.so"
+              ],
               "exclude": [
                 "**/LICENSE.txt",
                 "**/NOTICE",
@@ -81,7 +87,8 @@
             }
           }
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }

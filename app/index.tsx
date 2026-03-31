@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useNavigation } from "expo-router";
 import { View } from "react-native";
 
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
-import RoundStartLoader from "@/components/RoundStartLoader";
+import VideoPlayerComponent from "@/components/IntroVideo";
 import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
 
 import { AudioEngine } from "@/audio/audioEngine";
@@ -12,9 +12,14 @@ import { useWelcomeBonus } from "@/service/useWelcomeBonus";
 
 export default function Index() {
   const navigation = useNavigation();
-  const [stage, setStage] = useState<"splash" | "game">("splash");
+
+  // 👇 only 2 stages now
+  const [stage, setStage] = useState<"video" | "game">("video");
 
   const { showModal, claimBonus } = useWelcomeBonus();
+
+  // ✅ prevent multiple triggers (robust)
+  const hasNavigated = useRef(false);
 
   /* ---------------- INIT ---------------- */
   useEffect(() => {
@@ -26,25 +31,41 @@ export default function Index() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  /* ---------------- SPLASH FLOW ---------------- */
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setStage("game");
-      AudioEngine.play("quiz", "background");
-    }, 3000);
+  /* ---------------- SAFE TRANSITION ---------------- */
+  const goToGame = () => {
+    if (hasNavigated.current) return; // prevent double call
+    hasNavigated.current = true;
 
-    return () => clearTimeout(timer);
-  }, []);
+    setStage("game");
+    AudioEngine.play("quiz", "background");
+  };
+
+  /* ---------------- FALLBACK (IMPORTANT) ---------------- */
+  useEffect(() => {
+    if (stage === "video") {
+      const fallback = setTimeout(() => {
+        goToGame(); // if video fails
+      }, 4000); // slightly more than 2s video
+
+      return () => clearTimeout(fallback);
+    }
+  }, [stage]);
 
   /* ---------------- UI ---------------- */
-  if (stage === "splash") {
+
+  // 🎬 VIDEO
+  if (stage === "video") {
     return (
       <View style={{ flex: 1, backgroundColor: "#050508" }}>
-        <RoundStartLoader />
+        <VideoPlayerComponent
+          videoIndex={1}
+          onVideoEnd={goToGame} // 👈 direct transition
+        />
       </View>
     );
   }
 
+  // 🎮 GAME
   return (
     <View style={{ flex: 1 }}>
       <GameModeScreen />
