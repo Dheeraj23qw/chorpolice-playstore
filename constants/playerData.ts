@@ -9,5 +9,9 @@ export const playerImages: {
   6: { type: "local", src: require("@/assets/images/chorsipahi/kid6.png") },
   7: { type: "local", src: require("@/assets/images/chorsipahi/kid7.png") },
   8: { type: "local", src: require("@/assets/images/chorsipahi/kid8.png") },
-  
+  9: { type: "local", src: require("@/assets/images/chorsipahi/kid9.png") },
+  10: { type: "local", src: require("@/assets/images/chorsipahi/kid10.png") },
+  11: { type: "local", src: require("@/assets/images/chorsipahi/kid11.png") },
+  12: { type: "local", src: require("@/assets/images/chorsipahi/kid12.png") },
+  13: { type: "local", src: require("@/assets/images/chorsipahi/kid13.png") },
 };

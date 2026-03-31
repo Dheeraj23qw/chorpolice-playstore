@@ -5,24 +5,13 @@ export interface GameModeType {
   title: string;
   subtitle: string;
   difficulty: string;
-  route: Href;   // ✅ FIXED
+  route: Href; // ✅ FIXED
   image: any;
   accentColor: string;
   icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
   buttonText: string;
 }
 export const optionsGameMode: GameModeType[] = [
-  {
-    id: "think",
-    title: "Think & Count",
-    subtitle: "Train your brain with smart calculations",
-    difficulty: "SMART",
-    route: "/level-select",
-    image: require("@/assets/images/bg/gamemode/1.png"),
-    accentColor: "#6366F1",
-    icon: "infinite",
-    buttonText: "Start Thinking",
-  },
   {
     id: "chor",
     title: "Chor Police",
@@ -33,5 +22,16 @@ export const optionsGameMode: GameModeType[] = [
     accentColor: "#EF4444",
     icon: "trophy",
     buttonText: "Catch Now",
+  },
+  {
+    id: "think",
+    title: "Think & Count",
+    subtitle: "Train your brain with smart calculations",
+    difficulty: "SMART",
+    route: "/level-select",
+    image: require("@/assets/images/bg/gamemode/1.png"),
+    accentColor: "#6366F1",
+    icon: "infinite",
+    buttonText: "Start Thinking",
   },
 ];
