@@ -46,3 +46,6 @@ Thumbs.db
 
 # --- Expo CLI Sync ---
 expo-env.d.ts
+
+# Firebase Admin SDK credentials
+chor-police-playstore-7d7f6-firebase-adminsdk-fbsvc-e948242158.json

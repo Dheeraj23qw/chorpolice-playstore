@@ -3,9 +3,7 @@
     "name": "Chor Police",
     "slug": "chorpolice",
     "version": "2.0.0",
-    "platforms": [
-      "android"
-    ],
+    "platforms": ["android"],
     "orientation": "portrait",
     "scheme": "chorpolice",
     "userInterfaceStyle": "dark",
@@ -32,9 +30,7 @@
     "android": {
       "package": "com.dheeraj.chorpolice",
       "userInterfaceStyle": "dark",
-      "edgeToEdgeEnabled": true,
       "allowBackup": false,
-      "newArchEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050508"
@@ -70,13 +66,9 @@
           "android": {
             "enableHermes": true,
             "enableProguardInReleaseBuilds": true,
-            "extraCompilerArgs": [
-              "-Xjvm-default=all"
-            ],
+            "extraCompilerArgs": ["-Xjvm-default=all"],
             "packagingOptions": {
-              "pickFirst": [
-                "**/libc++_shared.so"
-              ],
+              "pickFirst": ["**/libc++_shared.so"],
               "exclude": [
                 "**/LICENSE.txt",
                 "**/NOTICE",
