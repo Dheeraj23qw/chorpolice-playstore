@@ -1,8 +1,9 @@
 export const generateOperationQuestion = (
+  roundIndex: number,
   getSpecificRoundScore: (
     roundIndex: number,
-    player: "Police" | "Thief" | "King" | "Advisor"
-  ) => number
+    player: "Police" | "Thief" | "King" | "Advisor",
+  ) => number,
 ) => {
   const players: ("Police" | "Thief" | "King" | "Advisor")[] = [
     "Police",
@@ -20,9 +21,6 @@ export const generateOperationQuestion = (
     player2 = players[Math.floor(Math.random() * players.length)];
   }
 
-  // Randomly select a round between 0-9
-  const roundIndex = Math.floor(Math.random() * 10);
-
   // Fetch scores for the selected players from the provided function
   const score1 = getSpecificRoundScore(roundIndex, player1);
   const score2 = getSpecificRoundScore(roundIndex, player2);
@@ -30,7 +28,7 @@ export const generateOperationQuestion = (
   // If either score is NaN or undefined, throw an error
   if (isNaN(score1) || isNaN(score2)) {
     throw new Error(
-      `Invalid score returned for players: ${player1}, ${player2}`
+      `Invalid score returned for players: ${player1}, ${player2}`,
     );
   }
 
@@ -98,7 +96,7 @@ export const generateOperationQuestion = (
   while (optionsSet.size < 4) {
     // Generate a new option using the buffer
     const randomOption = Math.abs(
-      correctAnswer + Math.floor(Math.random() * 6) - 3
+      correctAnswer + Math.floor(Math.random() * 6) - 3,
     );
     optionsSet.add(randomOption); // Add it to the set
   }
@@ -113,7 +111,6 @@ export const generateOperationQuestion = (
     correctAnswer: correctAnswer.toString(),
     options,
     hint,
-    boolean: false
-
+    boolean: false,
   };
 };

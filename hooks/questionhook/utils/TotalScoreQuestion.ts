@@ -1,10 +1,10 @@
 export const generateTotalScoreQuestion = (
+  roundIndex: number,
   getTotalScoreUpToRound: (
     roundIndex: number,
-    player: "Police" | "Thief" | "King" | "Advisor"
-  ) => number
+    player: "Police" | "Thief" | "King" | "Advisor",
+  ) => number,
 ) => {
-  // Define possible players
   const players: ("Police" | "Thief" | "King" | "Advisor")[] = [
     "Police",
     "Thief",
@@ -12,39 +12,34 @@ export const generateTotalScoreQuestion = (
     "Advisor",
   ];
 
-  const roundIndex = Math.floor(Math.random() * 3) + 7;
+  // 1. Pick the player and get the REAL score from the central roundIndex
   const selectedPlayer = players[Math.floor(Math.random() * players.length)];
-
   const totalScore = getTotalScoreUpToRound(roundIndex, selectedPlayer);
 
-  const hint = `To find the correct answer, you need to add up all the points ${selectedPlayer} has collected Up to Round ${roundIndex+1}\n
-  the total score of the ${selectedPlayer} at the end of round ${roundIndex + 1} is ${totalScore}`;
+  // 2. Generate Options (Wrong Answers)
+  const optionsSet = new Set<string>();
+  optionsSet.add(totalScore.toString());
 
-  const optionsSet = new Set<number>();
-
-  // Add the correct answer first
-  optionsSet.add(totalScore);
-
-  // Generate unique options
   while (optionsSet.size < 4) {
-    const buffer = Math.floor(Math.random() * 3) + 1; // Random adjustment
-    const option = totalScore + Math.floor(Math.random() * 7) - 3; // Create a random offset
-    optionsSet.add(option); // Only adds unique values
+    const offset =
+      (Math.floor(Math.random() * 10) + 1) * (Math.random() > 0.5 ? 1 : -1);
+    const fakeOption = Math.abs(totalScore + offset);
+
+    optionsSet.add(fakeOption.toString());
   }
 
-  // Convert the set to an array and shuffle
-  const options = Array.from(optionsSet)
-    .map((option) => Math.abs(option).toString()) // Convert to string and ensure all are positive
-    .sort(() => Math.random() - 0.5);
+  // 3. Shuffle
+  const shuffledOptions = Array.from(optionsSet).sort(
+    () => Math.random() - 0.5,
+  );
+
+  const hint = `To find the correct answer, add up all the points ${selectedPlayer} collected up to the end of Round ${roundIndex + 1}. The sum is ${totalScore}.`;
 
   return {
-    question: `What is the total score of the ${selectedPlayer} at the end of round ${
-      roundIndex + 1
-    }?`,
-    options,
+    question: `What is the total score of the ${selectedPlayer} at the end of round ${roundIndex + 1}?`,
+    options: shuffledOptions,
     correctAnswer: totalScore.toString(),
     hint,
-    boolean: false
-
+    boolean: false,
   };
 };

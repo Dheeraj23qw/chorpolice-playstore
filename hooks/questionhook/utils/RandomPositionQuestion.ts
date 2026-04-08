@@ -1,8 +1,10 @@
 export const generateRandomPositionQuestion = (
+  roundIndex: number,
+
   getTotalScoreUpToRound: (
     roundIndex: number,
-    player: "Police" | "Thief" | "King" | "Advisor"
-  ) => number
+    player: "Police" | "Thief" | "King" | "Advisor",
+  ) => number,
 ) => {
   const players: ("Police" | "Thief" | "King" | "Advisor")[] = [
     "Police",
@@ -11,7 +13,6 @@ export const generateRandomPositionQuestion = (
     "Advisor",
   ];
 
-  const roundIndex = Math.floor(Math.random() * (7 - 3 + 1)) + 3; // Random round index between 3 and 7
   const rank = Math.floor(Math.random() * 4) + 1; // Random rank (1 to 4)
 
   const rankWord = ["first", "second", "third", "fourth"][rank - 1];
@@ -23,12 +24,13 @@ export const generateRandomPositionQuestion = (
   }));
 
   // Tie-breaking rule: King > Advisor > Police > Thief
-  const rolePriority: Record<"Police" | "Thief" | "King" | "Advisor", number> = {
-    King: 1,
-    Advisor: 2,
-    Police: 3,
-    Thief: 4,
-  };
+  const rolePriority: Record<"Police" | "Thief" | "King" | "Advisor", number> =
+    {
+      King: 1,
+      Advisor: 2,
+      Police: 3,
+      Thief: 4,
+    };
 
   // Sort players by score (descending), then by role priority (ascending)
   playerScores.sort((a, b) => {
@@ -60,7 +62,7 @@ export const generateRandomPositionQuestion = (
   const hint = playerScores
     .map(
       (entry, index) =>
-        `${index + 1}. ${entry.player}: ${entry.totalScore} points`
+        `${index + 1}. ${entry.player}: ${entry.totalScore} points`,
     )
     .join("\n");
 
@@ -69,7 +71,7 @@ export const generateRandomPositionQuestion = (
     question: `Who was at ${rankWord} position at the end of round ${roundIndex + 1}?(In case of a tie, King > Advisor > Police > Thief)`,
     options: shuffledPlayers,
     correctAnswer: playerAtRank.player,
-    hint: `Scores and Rankings at the end of Round ${roundIndex+1}:\n${hint}`,
-    boolean:false
+    hint: `Scores and Rankings at the end of Round ${roundIndex + 1}:\n${hint}`,
+    boolean: false,
   };
 };

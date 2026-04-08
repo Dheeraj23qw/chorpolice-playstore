@@ -16,7 +16,7 @@ interface PlayerMessage {
 
 /* ------------------ CONSTANTS ------------------ */
 
-const NUM_QUESTIONS = 7;
+const NUM_QUESTIONS = 1;
 
 const MEDIA = {
   CORRECT: 7,
@@ -264,19 +264,19 @@ export const useQuizGameLogic = () => {
 
   type Routes = "/mode-select" | "/stats" | "/earn";
 
-const handleNavigation = (targetRoute: Routes) => {
-  try {
-    resetGame();
-    dispatch(resetDifficulty());
+  const handleNavigation = (targetRoute: Routes) => {
+    try {
+      resetGame();
+      dispatch(resetDifficulty());
 
-    requestAnimationFrame(() => {
-      router.dismissAll();  
-      router.replace(targetRoute);
-    });
-  } catch (err) {
-    console.error("Navigation failed:", err);
-  }
-};
+      requestAnimationFrame(() => {
+        router.dismissAll();
+        router.replace(targetRoute);
+      });
+    } catch (err) {
+      console.error("Navigation failed:", err);
+    }
+  };
 
   const handleQuit = () => handleNavigation("/mode-select");
   const handleStats = () => handleNavigation("/stats");
@@ -312,7 +312,7 @@ const handleNavigation = (targetRoute: Routes) => {
       dispatch(resetDifficulty());
 
       requestAnimationFrame(() => {
-          router.dismissAll();  
+        router.dismissAll();
 
         router.replace("/level-select");
       });

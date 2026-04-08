@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Image, StyleSheet } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { hp, wp, rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 
@@ -14,6 +14,11 @@ interface ResultInfoProps {
   bonus?: number;
 }
 
+const CHARACTER_IMAGES = {
+  king: require("@/assets/images/chorsipahi/king.png"),
+  thief: require("@/assets/images/chorsipahi/thief.png"),
+};
+
 export const ResultInfo: React.FC<ResultInfoProps> = memo(
   ({
     Correct,
@@ -24,169 +29,124 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
     accuracy = 0,
     bonus = 0,
   }) => {
+    const themeColor = isWinner ? "#10b981" : "#ef4444";
+    const heroImage = isWinner ? CHARACTER_IMAGES.king : CHARACTER_IMAGES.thief;
+
     return (
-      <View className="items-center px-8 pt-6">
-        {/* --- 1. Top Achievement Badge --- */}
-        <View
-          style={{ marginBottom: hp(4) }}
-          className="items-center justify-center"
-        >
-          {/* Outer Glow Orb */}
+      <View className="w-full items-center py-6">
+        {/* --- HERO SECTION: CHARACTER SPOTLIGHT --- */}
+        <View className="items-center justify-center py-8">
+          {/* External Ambient Halo */}
           <View
             style={{
-              width: wp(45),
-              height: wp(45),
-              backgroundColor: isWinner ? "#10b981" : "#ef4444",
-              opacity: 0.15,
+              width: wp(70),
+              height: wp(70),
+              backgroundColor: themeColor,
             }}
-            className="absolute rounded-full blur-3xl"
+            className="absolute rounded-full opacity-[0.05] blur-[100px]"
           />
 
-          {/* Decorative Ring */}
+          {/* Core Glow */}
           <View
-            style={{ width: wp(35), height: wp(35) }}
-            className={`rounded-full border-2 items-center justify-center ${
-              isWinner
-                ? "border-emerald-500/30"
-                : "border-red-500/30"
-            }`}
-          >
-            {/* Inner Solid Circle */}
-            <View
-              style={{ width: wp(28), height: wp(28) }}
-              className="rounded-full items-center justify-center bg-[#121212] border border-white/10 shadow-2xl"
-            >
-              <Ionicons
-                name={
-                  isWinner
-                    ? "trophy-outline"
-                    : "close-circle-outline"
-                }
-                size={rf(8)}
-                color={isWinner ? "#10b981" : "#ef4444"}
-              />
-            </View>
-          </View>
+            style={{
+              width: wp(40),
+              height: wp(40),
+              backgroundColor: themeColor,
+            }}
+            className="absolute rounded-full opacity-[0.15] blur-[40px]"
+          />
+
+          <Image
+            source={heroImage}
+            style={{
+              width: wp(50),
+              height: wp(50),
+              resizeMode: "contain",
+              transform: [{ translateY: -10 }],
+            }}
+          />
         </View>
 
-        {/* --- 2. Title Section --- */}
-        <Text
-          style={{ fontSize: rf(1.4) }}
-          className="text-white/40 font-main-bold tracking-[4px] uppercase mb-1"
-        >
-          Session Ended
-        </Text>
-
-        <Text
-          style={{ fontSize: rf(4.8) }}
-          className={`font-main-bold tracking-tighter text-center ${
-            isWinner ? "text-emerald-400" : "text-red-500"
-          }`}
-        >
-          {isWinner ? "VICTORY" : "DEFEAT"}
-        </Text>
-
-        {/* --- 3. Glassmorphism Score Card --- */}
-        <View
-          style={{
-            marginTop: hp(3),
-            width: wp(86),
-            padding: wp(1),
-          }}
-          className="rounded-[32px] bg-white/5 border border-white/10"
-        >
-          <View
-            style={{ padding: wp(6) }}
-            className="bg-[#121212]/50 rounded-[30px] items-center"
-          >
-            <View className="flex-row items-center justify-center w-full">
-              <View className="h-[1px] flex-1 bg-white/10" />
-              <Text
-                style={{ fontSize: rf(1.4) }}
-                className="mx-4 text-white/30 font-main-bold tracking-widest uppercase"
-              >
-                Scorecard
-              </Text>
-              <View className="h-[1px] flex-1 bg-white/10" />
-            </View>
-
-            {/* Score Numbers */}
-            <View className="flex-row items-baseline mt-4">
-              <Text
-                style={{ fontSize: rf(7) }}
-                className="font-main-bold text-white"
-              >
+        {/* --- SCOREBOARD: HIGH-CONTRAST DATA --- */}
+        <View className="mb-12 w-full flex-row items-center justify-between px-10">
+          <View>
+            <Text className="mb-1 font-main-bold text-[10px] uppercase tracking-[4px] text-white/20">
+              Score
+            </Text>
+            <View className="flex-row items-baseline">
+              <Text className="font-main-bold text-[48px] leading-[52px] text-white">
                 {Correct}
               </Text>
-              <Text
-                style={{ fontSize: rf(3) }}
-                className="font-main-bold text-white/20 ml-2"
-              >
-                / {Total}
+              <Text className="ml-1 font-main-bold text-[18px] text-white/10">
+                /{Total}
               </Text>
             </View>
+          </View>
 
-            {/* Accuracy */}
-            <View className="flex-row items-center mt-2">
-              <Ionicons
-                name="analytics-outline"
-                size={rf(1.6)}
-                color="#94a3b8"
-              />
-              <Text
-                style={{ fontSize: rf(1.6) }}
-                className="ml-2 text-slate-400 font-main-md"
-              >
-                Accuracy: {accuracy}%
-              </Text>
-            </View>
+          {/* Vertical Kinetic Divider */}
+          <View className="h-14 w-[2px] overflow-hidden rounded-full bg-white/5">
+            <View
+              style={{ backgroundColor: themeColor }}
+              className="absolute top-0 h-1/2 w-full shadow-lg"
+            />
+          </View>
 
-            {/* Motivational Message */}
+          <View className="items-end">
+            <Text className="mb-1 font-main-bold text-[10px] uppercase tracking-[4px] text-white/20">
+              Accuracy
+            </Text>
             <Text
-              style={{ fontSize: rf(1.8) }}
-              className="text-center text-slate-400 font-main-md mt-3"
+              className="font-main-bold text-[48px] leading-[52px]"
+              style={{
+                color: themeColor,
+                textShadowColor: themeColor + "44",
+                textShadowRadius: 15,
+              }}
             >
-              "{Message}"
+              {accuracy}%
             </Text>
           </View>
         </View>
 
-        {/* --- 4. Reward Card --- */}
+        {/* --- THE REWARD TICKET: UNBOUNDED & CLEAN --- */}
         {!!coinsMessage && (
           <View
-            style={{
-              marginTop: hp(3),
-              paddingHorizontal: wp(6),
-              paddingVertical: hp(1.6),
-            }}
-            className="rounded-2xl bg-yellow-400/10 border border-yellow-400/30 items-center"
+            className="flex-row items-center justify-between px-8 py-4"
+            style={{ width: wp(95) }}
           >
-            <View className="flex-row items-center">
-              <Ionicons
-                name="sparkles"
-                size={rf(1.8)}
-                color="#facc15"
+            {/* Left Side: Coin Info */}
+            <View className="flex-1 flex-row items-center">
+              <MaterialCommunityIcons
+                name="poker-chip"
+                size={rf(3)}
+                color={isWinner ? "#f59e0b" : "#4b5563"}
+                style={{
+                  textShadowColor: isWinner
+                    ? "rgba(245, 158, 11, 0.5)"
+                    : "transparent",
+                  textShadowRadius: 12,
+                }}
               />
-              <Text
-                style={{ fontSize: rf(1.8) }}
-                className="font-main-bold text-yellow-400 ml-2 uppercase tracking-wider text-center"
-              >
-                {coinsMessage}
-              </Text>
+              <View className="ml-5 flex-1">
+                <Text
+                  numberOfLines={1}
+                  className="font-main-bold text-[18px] uppercase tracking-[1px] text-white"
+                >
+                  {coinsMessage}
+                </Text>
+              </View>
             </View>
-
-            {/* Accuracy Bonus */}
-            {bonus > 0 && (
-              <Text
-                style={{ fontSize: rf(1.5) }}
-                className="text-emerald-400 font-main-md mt-1"
-              >
-                +{bonus} Accuracy Bonus 🎯
-              </Text>
-            )}
           </View>
         )}
+
+        {/* --- MINIMALIST FOOTER MESSAGE --- */}
+        <View className="mt-8 items-center opacity-40">
+          <View className="mb-4 h-[1px] w-12 bg-white/20" />
+          <Text className="font-main-medium px-10 text-center text-[13px] italic leading-5 text-white">
+            {Message}
+          </Text>
+        </View>
       </View>
     );
-  }
+  },
 );

@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, BackHandler, ScrollView } from "react-native"; // Added ScrollView
+import React, { useEffect, useState } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { hp, wp } from "@/utils/responsive";
+import { hp, wp, rf } from "@/utils/responsive";
+import { Text } from "@/components/Text";
 import useRandomMessage from "@/hooks/useRandomMessage";
 import { RootState } from "@/redux/store";
 
@@ -12,19 +13,15 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { useQuizReward } from "@/hooks/useQuizRewards";
 import { ActionButtons } from "./components/renderButtons";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
-import CoinsRewardModal from "@/modal/CoinPopup";
 import ExitConfirmationModal from "@/modal/ExitModal";
-import InfoTooltip from "@/components/InfoTooltip";
 
 export default function QuizResult() {
   const insets = useSafeAreaInsets();
-
   const {
     correctQuestions: Correct,
     totalQuestions: Total,
     isWinner,
   } = useSelector((state: RootState) => state.difficulty);
-
   const { handleQuit, handleStats, handleEarn } = useQuizGameLogic();
 
   const [showCoins, setShowCoins] = useState(false);
@@ -32,85 +29,45 @@ export default function QuizResult() {
 
   const Message = useRandomMessage(isWinner ? "winner" : "loser");
   const { reward, message: coinsAwarded } = useQuizReward();
-
   const accuracy = Total > 0 ? Math.round((Correct / Total) * 100) : 0;
 
-  /* ---------------- STOP AUDIO ---------------- */
   useEffect(() => {
     AudioEngine.stop("timer");
-  }, []);
+  }, [isWinner]);
 
-  /* ---------------- SHOW COINS MODAL ---------------- */
   useEffect(() => {
-    if (reward !== undefined && reward !== null) {
-      setShowCoins(true);
-    }
+    if (reward) setShowCoins(true);
   }, [reward]);
 
-  /* ---------------- BACK HANDLER ---------------- */
-  useEffect(() => {
-    const backAction = () => {
-      setShowExitModal(true);
-      return true;
-    };
-
-    const subscription = BackHandler.addEventListener(
-      "hardwareBackPress",
-      backAction,
-    );
-
-    return () => subscription.remove();
-  }, [handleQuit]);
-
-  const handleHome = useCallback(() => {
-    handleQuit();
-  }, [handleQuit]);
+  const accentColor = isWinner ? "#10b981" : "#ef4444";
 
   return (
-    <View className="flex-1 bg-[#09090b] relative">
-      {/* 🔥 Top Right Info Button - Fixed Position */}
-      <View
-        style={{
-          top: insets.top + hp(2.5),
-          right: wp(14),
-        }}
-        className="absolute z-50"
-      >
-        <InfoTooltip text="To win any quiz match, you must answer all 7 questions correctly." />
-      </View>
+    <View className="flex-1 bg-[#050505]">
+      {/* Premium Ambient Background */}
 
-      {/* Background Glows - Fixed Position */}
-      <View
-        style={{ width: wp(120), height: wp(120), top: -hp(15), left: -wp(30) }}
-        className={`absolute rounded-full opacity-20 blur-[100px] ${
-          isWinner ? "bg-emerald-500" : "bg-indigo-600"
-        }`}
-      />
-
-      <View
-        style={{
-          width: wp(100),
-          height: wp(100),
-          bottom: -hp(10),
-          right: -wp(20),
-        }}
-        className={`absolute rounded-full opacity-10 blur-[100px] ${
-          isWinner ? "bg-emerald-600" : "bg-purple-600"
-        }`}
-      />
-
-      {/* --- SCROLLABLE CONTENT --- */}
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ 
-          flexGrow: 1, 
-          justifyContent: "center", 
-          paddingHorizontal: wp(4),
-          paddingTop: insets.top + hp(8), // Avoid overlapping with InfoTooltip
-          paddingBottom: hp(4) 
+        contentContainerStyle={{
+          paddingHorizontal: wp(5),
+          paddingTop: insets.top + hp(2),
+          paddingBottom: hp(5),
         }}
       >
-        <View style={{ marginBottom: hp(2) }}>
+        {/* Header Section */}
+        <View className="items-center py-4">
+          <Text
+            className="font-main-bold text-[48px] tracking-tighter text-white"
+            style={{
+              textShadowColor: "rgba(255,255,255,0.1)",
+              textShadowRadius: 20,
+            }}
+          >
+            {isWinner ? "VICTORY" : "DEFEAT"}
+          </Text>
+        </View>
+
+        {/* Main Result Card */}
+        <View className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-xl">
           <ResultInfo
             Correct={Correct}
             Total={Total}
@@ -121,27 +78,20 @@ export default function QuizResult() {
           />
         </View>
 
-        <ActionButtons
-          onStatsPress={handleStats}
-          onEarnPress={handleEarn}
-          onHomePress={handleHome}
-        />
+        {/* Action Section */}
+        <View className="mt-12">
+          <ActionButtons
+            onStatsPress={handleStats}
+            onEarnPress={handleEarn}
+            onHomePress={() => handleQuit()}
+          />
+        </View>
       </ScrollView>
-
-      {/* Modals remain outside ScrollView */}
-      <CoinsRewardModal
-        visible={showCoins}
-        amount={reward}
-        onClaim={() => setShowCoins(false)}
-      />
 
       <ExitConfirmationModal
         visible={showExitModal}
         onCancel={() => setShowExitModal(false)}
-        onConfirm={() => {
-          setShowExitModal(false);
-          handleQuit();
-        }}
+        onConfirm={handleQuit}
       />
     </View>
   );

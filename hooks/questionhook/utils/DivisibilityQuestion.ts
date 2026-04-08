@@ -18,10 +18,11 @@ Hard Example: For 1,001:\n
 };
 
 export const generateDivisibilityQuestion = (
+  roundIndex: number,
   getSpecificRoundScore: (
     roundIndex: number,
-    player: "Police" | "Thief" | "King" | "Advisor"
-  ) => number
+    player: "Police" | "Thief" | "King" | "Advisor",
+  ) => number,
 ) => {
   const players: ("Police" | "Thief" | "King" | "Advisor")[] = [
     "Police",
@@ -31,7 +32,6 @@ export const generateDivisibilityQuestion = (
   ];
 
   // Select a random player and round
-  const roundIndex = Math.floor(Math.random() * 10); // Assuming 10 rounds
   const selectedPlayer = players[Math.floor(Math.random() * players.length)];
 
   // Get the player's score for the selected round
@@ -50,21 +50,16 @@ export const generateDivisibilityQuestion = (
 
   // Provide the hint for the divisor with an additional explanation of divisibility
   const hint = `${divisibilityHints[divisor] || "No hint available for this divisor."}\n\n
- in Round ${roundIndex+1} ${selectedPlayer}'s score is ${playerScore} :\n
- ${playerScore} ÷ ${divisor} = ${(
-    playerScore / divisor
-  ).toFixed(1)}.\n
- Remainder: ${(playerScore /divisor).toFixed(1)}.\n
-${playerScore} is ${
-    isDivisible ? "" : "not "
-  }divisible by ${divisor}.`;
+ in Round ${roundIndex + 1} ${selectedPlayer}'s score is ${playerScore} :\n
+ ${playerScore} ÷ ${divisor} = ${(playerScore / divisor).toFixed(1)}.\n
+ Remainder: ${(playerScore / divisor).toFixed(1)}.\n
+${playerScore} is ${isDivisible ? "" : "not "}divisible by ${divisor}.`;
 
   return {
     question,
-    options: ["True", "False"], 
+    options: ["True", "False"],
     correctAnswer: isDivisible ? "True" : "False",
-    hint, 
-    boolean: true
-
+    hint,
+    boolean: true,
   };
 };

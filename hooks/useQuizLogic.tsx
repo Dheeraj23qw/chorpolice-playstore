@@ -39,20 +39,18 @@ const useQuizLogic = (router: any) => {
   );
 
   const currentPlayerName = playerNames[currentPlayerIndex]?.name;
-const winMessage = useRandomMessage("win", currentPlayerName);
-const loseMessage = useRandomMessage("lose", currentPlayerName);
+  const winMessage = useRandomMessage("win", currentPlayerName);
+  const loseMessage = useRandomMessage("lose", currentPlayerName);
 
   const [isGameFinished, setIsGameFinished] = useState(false);
 
-
-
-useEffect(() => {
-  if (isGameFinished) {
-    if (!isGameReset) {
-      router.replace("/chor-result");
+  useEffect(() => {
+    if (isGameFinished) {
+      if (!isGameReset) {
+        router.replace("/chor-result");
+      }
     }
-  }
-}, [isGameFinished, isGameReset]);
+  }, [isGameFinished, isGameReset]);
 
   // Generate options whenever the current player changes
   useEffect(() => {
@@ -152,23 +150,23 @@ useEffect(() => {
     }, 4000);
   };
 
-const moveToNextPlayer = () => {
-  if (isGameReset) return;
-  const nextIndex = currentPlayerIndex + 1;
-  if (nextIndex < playerNames.length) {
-    setSelectedOption(null);
-    setIsCorrect(false);
-    setFeedbackMessage("");
-    setIsContentVisible(true);
-    setIsOptionDisabled(false);
-    setIsPopUp(false);
-    setMediaId(1);
-    setMediaType("image");
-    setCurrentPlayerIndex(nextIndex);
-  } else {
-    setIsGameFinished(true); 
-  }
-};
+  const moveToNextPlayer = () => {
+    if (isGameReset) return;
+    const nextIndex = currentPlayerIndex + 1;
+    if (nextIndex < playerNames.length) {
+      setSelectedOption(null);
+      setIsCorrect(false);
+      setFeedbackMessage("");
+      setIsContentVisible(true);
+      setIsOptionDisabled(false);
+      setIsPopUp(false);
+      setMediaId(1);
+      setMediaType("image");
+      setCurrentPlayerIndex(nextIndex);
+    } else {
+      setIsGameFinished(true);
+    }
+  };
 
   const currentPlayer = playerNames[currentPlayerIndex] || {};
   const playerImage =

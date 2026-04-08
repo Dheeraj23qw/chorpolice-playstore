@@ -21,12 +21,12 @@ const findFactors = (num: number): number[] => {
 };
 
 export const generateTrueFalseQuestion = (
+  roundIndex: number,
   getTotalScoreUpToRound: (
     roundIndex: number,
     player: "Police" | "Thief" | "King" | "Advisor"
   ) => number
 ) => {
-  const roundIndex = Math.floor(Math.random() * 10); // Random round index
   const players: ("Police" | "Thief" | "King" | "Advisor")[] = [
     "Police",
     "Thief",

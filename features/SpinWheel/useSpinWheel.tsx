@@ -37,7 +37,7 @@ export const useSpinWheel = () => {
     (state: RootState) =>
       state.wallet.locks.spin ?? { lastUsedTimestamp: null },
   );
-  const COOLDOWN = 6 * 60 * 60 * 1000;
+  const COOLDOWN = 60 * 1000;
   const isLocked = remainingTime > 0;
 
   // ✅ REANIMATED VALUES

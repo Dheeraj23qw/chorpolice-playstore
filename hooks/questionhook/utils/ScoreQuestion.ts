@@ -1,10 +1,11 @@
 export const generateScoreQuestion = (
+  roundIndex: number,
   getTotalScoreUpToRound: (
     roundIndex: number,
     player: "Police" | "Thief" | "King" | "Advisor"
   ) => number
 ) => {
-  // Define possible players
+  
   const players: ("Police" | "Thief" | "King" | "Advisor")[] = [
     "Police",
     "Thief",
@@ -12,8 +13,7 @@ export const generateScoreQuestion = (
     "Advisor",
   ];
 
-  let roundIndex: number;
-  let targetScore = 0; // Initialize with a default value
+  let targetScore = 0; 
   let selectedPlayer: "Police" | "Thief" | "King" | "Advisor" = "Police"; // Default initialization
   let scoresAreUnique: boolean;
 

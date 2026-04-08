@@ -8,41 +8,57 @@ import { generateTrueFalseQuestion } from "./utils/TrueFalseQuestion";
 import { generateOperationQuestion } from "./utils/OperationQuestion";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { getSpecificRoundScore, getTotalScoreUpToRound } from "@/redux/reducers/quiz"; // Import the functions
-
+import {
+  getSpecificRoundScore,
+  getTotalScoreUpToRound,
+} from "@/redux/reducers/quiz"; // Import the functions
+import { useMemo } from "react";
 
 export const useGameTableAndScores = () => {
-
-
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
   const table = useSelector((state: RootState) => state.difficulty.table);
-  const totalScores = useSelector((state: RootState) => state.difficulty.totalScores);
-  const state = useSelector((state: RootState) => state.difficulty); // Getting the full state
+  const totalScores = useSelector(
+    (state: RootState) => state.difficulty.totalScores,
+  );
+  const state = useSelector((state: RootState) => state.difficulty);
 
-  
+  const roundIndex = useMemo(() => Math.floor(Math.random() * 5), []);
 
   const getScoreQuestion = () => {
-    return generateScoreQuestion((roundIndex, player) => getTotalScoreUpToRound(state, roundIndex, player));
+    return generateScoreQuestion(roundIndex, (roundIndex, player) =>
+      getTotalScoreUpToRound(state, roundIndex, player),
+    );
   };
 
   const getTotalScoreQuestion = () => {
-    return generateTotalScoreQuestion((roundIndex, player) => getTotalScoreUpToRound(state, roundIndex, player));
+    return generateTotalScoreQuestion(roundIndex, (roundIndex, player) =>
+      getTotalScoreUpToRound(state, roundIndex, player),
+    );
   };
 
   const getRandomPositionQuestion = () => {
-    return generateRandomPositionQuestion((roundIndex, player) => getTotalScoreUpToRound(state, roundIndex, player));
+    return generateRandomPositionQuestion(roundIndex, (roundIndex, player) =>
+      getTotalScoreUpToRound(state, roundIndex, player),
+    );
   };
 
   const getPlayerPositionBooleanQuestion = () => {
-    return generatePlayerPositionBooleanQuestion((roundIndex, player) => getTotalScoreUpToRound(state, roundIndex, player));
+    return generatePlayerPositionBooleanQuestion(
+      roundIndex,
+      (roundIndex, player) => getTotalScoreUpToRound(state, roundIndex, player),
+    );
   };
 
   const getDivisibilityQuestion = () => {
-    return generateDivisibilityQuestion((roundIndex, player) => getSpecificRoundScore(state, roundIndex, player));
+    return generateDivisibilityQuestion(roundIndex, (roundIndex, player) =>
+      getSpecificRoundScore(state, roundIndex, player),
+    );
   };
 
   const getTrueFalseQuestion = () => {
-    return generateTrueFalseQuestion((roundIndex, player) => getTotalScoreUpToRound(state, roundIndex, player));
+    return generateTrueFalseQuestion(roundIndex, (roundIndex, player) =>
+      getTotalScoreUpToRound(state, roundIndex, player),
+    );
   };
 
   const getRoundOffQuestion = () => {
@@ -50,7 +66,9 @@ export const useGameTableAndScores = () => {
   };
 
   const getOperationQuestion = () => {
-    return generateOperationQuestion((roundIndex, player) => getSpecificRoundScore(state, roundIndex, player));
+    return generateOperationQuestion(roundIndex, (roundIndex, player) =>
+      getSpecificRoundScore(state, roundIndex, player),
+    );
   };
 
   const getRandomQuestion = () => {
