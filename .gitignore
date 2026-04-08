@@ -49,3 +49,7 @@ expo-env.d.ts
 
 # Firebase Admin SDK credentials
 chor-police-playstore-7d7f6-firebase-adminsdk-fbsvc-e948242158.json
+
+# Keystore and Firebase keys
+*.jks
+chor-police-playstore-*.json

@@ -32,7 +32,6 @@ const difficultySlice = createSlice({
       state.correctQuestions = 0;
       state.isWinner = false;
     },
-  
 
     resetDifficulty: (state) => {
       state.level = null;
@@ -64,7 +63,7 @@ const generateRandomNumber = (
 
 const generateTable = (difficulty: "easy" | "medium" | "hard" | null) => {
   const header = ["Round", "Police", "Thief", "King", "Advisor"];
-  const rows = Array.from({ length: 10 }, (_, roundIndex) => {
+  const rows = Array.from({ length: 5 }, (_, roundIndex) => {
     const roundScores = {
       Police: generateRandomNumber(difficulty),
       Thief: generateRandomNumber(difficulty),
