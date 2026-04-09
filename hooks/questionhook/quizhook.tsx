@@ -12,7 +12,6 @@ import {
   getSpecificRoundScore,
   getTotalScoreUpToRound,
 } from "@/redux/reducers/quiz"; // Import the functions
-import { useMemo } from "react";
 
 export const useGameTableAndScores = () => {
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
@@ -22,27 +21,41 @@ export const useGameTableAndScores = () => {
   );
   const state = useSelector((state: RootState) => state.difficulty);
 
-  const roundIndex = useMemo(() => Math.floor(Math.random() * 5), []);
+  const max_row = table.length;
+
+  const getRoundIndex = () => {
+    const index = Math.floor(Math.random() * max_row);
+    // Logging as requested
+    console.log(`Max Row: ${max_row} | Generated Random Round Index: ${index}`);
+    return index;
+  };
 
   const getScoreQuestion = () => {
-    return generateScoreQuestion(roundIndex, (roundIndex, player) =>
-      getTotalScoreUpToRound(state, roundIndex, player),
+    const roundIndex = getRoundIndex();
+    return generateScoreQuestion(
+      roundIndex,
+      (rIdx, player) => getTotalScoreUpToRound(state, rIdx, player),
+      max_row,
     );
   };
 
   const getTotalScoreQuestion = () => {
+    const roundIndex = getRoundIndex();
     return generateTotalScoreQuestion(roundIndex, (roundIndex, player) =>
       getTotalScoreUpToRound(state, roundIndex, player),
     );
   };
 
   const getRandomPositionQuestion = () => {
+    const roundIndex = getRoundIndex();
     return generateRandomPositionQuestion(roundIndex, (roundIndex, player) =>
       getTotalScoreUpToRound(state, roundIndex, player),
     );
   };
 
   const getPlayerPositionBooleanQuestion = () => {
+    const roundIndex = getRoundIndex();
+
     return generatePlayerPositionBooleanQuestion(
       roundIndex,
       (roundIndex, player) => getTotalScoreUpToRound(state, roundIndex, player),
@@ -50,12 +63,14 @@ export const useGameTableAndScores = () => {
   };
 
   const getDivisibilityQuestion = () => {
+    const roundIndex = getRoundIndex();
     return generateDivisibilityQuestion(roundIndex, (roundIndex, player) =>
       getSpecificRoundScore(state, roundIndex, player),
     );
   };
 
   const getTrueFalseQuestion = () => {
+    const roundIndex = getRoundIndex();
     return generateTrueFalseQuestion(roundIndex, (roundIndex, player) =>
       getTotalScoreUpToRound(state, roundIndex, player),
     );
@@ -66,6 +81,7 @@ export const useGameTableAndScores = () => {
   };
 
   const getOperationQuestion = () => {
+    const roundIndex = getRoundIndex();
     return generateOperationQuestion(roundIndex, (roundIndex, player) =>
       getSpecificRoundScore(state, roundIndex, player),
     );

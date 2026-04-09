@@ -25,9 +25,9 @@ const MEDIA = {
 };
 
 const TIMER_BY_DIFFICULTY = {
-  easy: 60,
-  medium: 90,
-  hard: 150,
+  easy: 30,
+  medium: 60,
+  hard: 100,
 } as const;
 
 const POPUP_DELAY = 3000;

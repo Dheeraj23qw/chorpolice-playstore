@@ -1,11 +1,11 @@
 export const generateScoreQuestion = (
-  roundIndex: number,
+  initialRoundIndex: number,
   getTotalScoreUpToRound: (
     roundIndex: number,
-    player: "Police" | "Thief" | "King" | "Advisor"
-  ) => number
+    player: "Police" | "Thief" | "King" | "Advisor",
+  ) => number,
+  maxRounds: number, // Added this to keep random picks within table bounds
 ) => {
-  
   const players: ("Police" | "Thief" | "King" | "Advisor")[] = [
     "Police",
     "Thief",
@@ -13,65 +13,61 @@ export const generateScoreQuestion = (
     "Advisor",
   ];
 
-  let targetScore = 0; 
-  let selectedPlayer: "Police" | "Thief" | "King" | "Advisor" = "Police"; // Default initialization
+  let targetScore = 0;
+  let selectedPlayer: "Police" | "Thief" | "King" | "Advisor" = "Police";
   let scoresAreUnique: boolean;
+  let currentRound = initialRoundIndex;
 
   do {
-    roundIndex = 4 + Math.floor(Math.random() * 6); // 4 + (0 to 5)
-    // Get scores for all players at the selected round
+    // REMOVED: roundIndex = 4 + Math.floor(Math.random() * 6);
+    // This was the bug causing it to jump to row 7 or 9.
+
+    // Get scores for all players at the current round
     const scores = players.map((player) => ({
       player,
-      score: getTotalScoreUpToRound(roundIndex, player),
+      score: getTotalScoreUpToRound(currentRound, player),
     }));
 
-    // Check for unique scores
+    // Check if all players have different scores (to avoid multiple correct answers)
     const scoreValues = scores.map(({ score }) => score);
     const uniqueScores = new Set(scoreValues);
     scoresAreUnique = uniqueScores.size === players.length;
 
     if (scoresAreUnique) {
-      // Randomly select a player and their score
+      // Randomly select one of the players to be the "target"
       const randomPlayerIndex = Math.floor(Math.random() * players.length);
       selectedPlayer = players[randomPlayerIndex];
-      targetScore = getTotalScoreUpToRound(roundIndex, selectedPlayer);
+      targetScore = scores[randomPlayerIndex].score;
+    } else {
+      // If scores are not unique, pick a NEW round index
+      // that is guaranteed to be within your table's range
+      currentRound = Math.floor(Math.random() * maxRounds);
     }
-  } while (!scoresAreUnique); // Regenerate round if scores are not unique
+  } while (!scoresAreUnique);
 
   // Shuffle the player options for multiple-choice answers
-const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
+  const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
 
-  // Calculate the total score at the end of the round for all players
-  const totalScores = players
-    .map((player) => ({
-      player,
-      score: getTotalScoreUpToRound(roundIndex, player),
-    }))
-    .reduce((acc, { player, score }) => {
-      acc[player] = score;
+  // Calculate the total scores for the hint display
+  const totalScores = players.reduce(
+    (acc, player) => {
+      acc[player] = getTotalScoreUpToRound(currentRound, player);
       return acc;
-    }, {} as Record<string, number>);
+    },
+    {} as Record<string, number>,
+  );
 
-  // Construct the hint
   const totalScoresAtRoundEnd = Object.entries(totalScores)
     .map(([player, score]) => `${player}: ${score}`)
     .join(",\n ");
 
-  const hint = `At the end of round ${
-    roundIndex + 1
-  },\n\n the scores are as follows: \n\n${totalScoresAtRoundEnd}.\n\n The player with the score of ${targetScore} is ${
-    selectedPlayer
-  }.\n\n Therefore, ${selectedPlayer} is the correct answer.`;
+  const hint = `At the end of round ${currentRound + 1},\n\nthe scores are as follows:\n\n${totalScoresAtRoundEnd}.\n\nThe player with the score of ${targetScore} is ${selectedPlayer}.\n\nTherefore, ${selectedPlayer} is the correct answer.`;
 
-  // Return the question, options, correct answer, and hint
   return {
-    question: `Which player has a score of ${targetScore} at the end of round ${
-      roundIndex + 1
-    }?`,
-    options: shuffledPlayers, // Multiple-choice options
-    correctAnswer: selectedPlayer, // The correct answer
-    hint, // Explanation of the correct answer
-    boolean: false
-
+    question: `Which player has a score of ${targetScore} at the end of round ${currentRound + 1}?`,
+    options: shuffledPlayers,
+    correctAnswer: selectedPlayer,
+    hint,
+    boolean: false,
   };
 };
