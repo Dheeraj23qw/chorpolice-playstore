@@ -8,20 +8,20 @@ const useGalleryPicker = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const pickImage = async (): Promise<string | null> => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permissionResult.granted) {
       Alert.alert(
         "Permission required",
-        "Permission to access the media library is required."
+        "Permission to access the media library is required.",
       );
       return null;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"], // ✅ just use a string array
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false,
       quality: 1,
     });
 
