@@ -105,7 +105,7 @@ export const GameModeCard = ({ item, index }: Props) => {
 
               <View
                 className="ml-3 h-6 w-6 items-center justify-center rounded-full"
-                style={{ backgroundColor: item.accentColor }}
+                style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
               >
                 <Ionicons name="chevron-forward" size={rf(1.4)} color="white" />
               </View>

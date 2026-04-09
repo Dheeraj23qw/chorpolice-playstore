@@ -2,6 +2,13 @@ import React, { useEffect } from "react";
 import { View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing,
+} from "react-native-reanimated";
 
 import HeaderSection from "@/components/GameModeScreen/HeaderSection";
 import GameModeList from "@/components/GameModeScreen/GameModeList";
@@ -17,68 +24,81 @@ const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
 
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.98);
+  const bgScale = useSharedValue(1.1);
+
   const isGameReset = useSelector(
     (state: RootState) => state.player.isGameReset,
   );
 
   useEffect(() => {
-    try {
-      AudioEngine.stopAllExceptQuiz();
-      const timer = setTimeout(() => {
-        dispatch(setIsGameReset(false));
-      }, 500);
-      return () => clearTimeout(timer);
-    } catch (err) {
-      console.error("Error in GameModeScreen effect:", err);
-    }
-  }, [dispatch, isGameReset]);
+    // 🔊 audio logic
+    AudioEngine.stopAllExceptQuiz();
+
+    const timer = setTimeout(() => {
+      dispatch(setIsGameReset(false));
+    }, 500);
+
+    // 🎬 SCREEN ANIMATION
+    opacity.value = withTiming(1, { duration: 600 });
+    scale.value = withTiming(1, {
+      duration: 600,
+      easing: Easing.out(Easing.exp),
+    });
+
+    // 🌌 BG subtle zoom-in
+    bgScale.value = withTiming(1, {
+      duration: 1200,
+      easing: Easing.out(Easing.ease),
+    });
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const unclaimedExists = useSelector(hasUnclaimedAwards);
 
+  const screenStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+
+  const bgStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bgScale.value }],
+  }));
+
   return (
     <View className="flex-1 bg-black">
-      {/* 🔥 BACKGROUND IMAGE ONLY */}
-      <Image
+      {/* 🌌 BACKGROUND IMAGE (ANIMATED) */}
+      <Animated.Image
         source={require("@/assets/images/bg/image.png")}
         resizeMode="cover"
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-        }}
+        style={[
+          {
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+          },
+          bgStyle,
+        ]}
       />
 
-      {/* 🔥 VERY SUBTLE DARK OVERLAY (important for readability) */}
+      {/* 🌑 DARK OVERLAY */}
       <View
         style={{
           position: "absolute",
           width: "100%",
           height: "100%",
-          backgroundColor: "black",
-          opacity: 0.4, // 🔥 tweak (0.3–0.5 best)
+          backgroundColor: "rgba(0,0,0,0.4)",
         }}
       />
 
-      {/* 🔥 OPTIONAL LIGHT GLOW (keep minimal) */}
-      <View
-        style={{
-          position: "absolute",
-          top: -100,
-          left: -80,
-          width: 250,
-          height: 250,
-          borderRadius: 250,
-          backgroundColor: "#7C5CFF",
-          opacity: 0.06,
-        }}
-      />
-
-      {/* 🔥 CONTENT */}
-      <View style={{ paddingTop: insets.top }} className="flex-1">
+      {/* 🎬 MAIN CONTENT */}
+      <Animated.View style={[{ paddingTop: insets.top, flex: 1 }, screenStyle]}>
         <HeaderSection />
         <UserProfilecard />
         <GameModeList />
-      </View>
+      </Animated.View>
 
       {unclaimedExists && <UnlockedAwardModal />}
     </View>
