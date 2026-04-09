@@ -1,15 +1,14 @@
 import React from "react";
 import { View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { router } from "expo-router";
-
 import { hp, wp } from "@/utils/responsive";
-import RulesButton from "@/components/rules/rulesButton";
 import OptionHeader from "@/components/optionHeader";
 
 const HeaderSection = () => {
   return (
-    <View
+    <Animated.View
+      // entering animation with a slight delay and spring for a "cool" feel
+      entering={FadeInDown.delay(100).springify().damping(15)}
       style={{
         paddingHorizontal: wp(6),
         marginBottom: hp(2),
@@ -17,7 +16,7 @@ const HeaderSection = () => {
       }}
     >
       <OptionHeader />
-    </View>
+    </Animated.View>
   );
 };
 

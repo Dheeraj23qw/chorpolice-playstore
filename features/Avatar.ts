@@ -33,13 +33,13 @@ export const saveUsername = (name: string) => {
 };
 
 /**
- * Loads the username. Returns "PLAYER_1" as a fallback.
+ * Loads the username. Returns "PLAYER" as a fallback.
  */
 export const loadUsername = (): string => {
   try {
-    return storage.getString(USERNAME_KEY) || "PLAYER_1";
+    return storage.getString(USERNAME_KEY) || "PLAYER";
   } catch (e) {
-    return "PLAYER_1";
+    return "PLAYER";
   }
 };
 
