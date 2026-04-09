@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chor Police",
     "slug": "chorpolice",
-    "version": "2.0.0",
+    "version": "2.3.0",
     "platforms": ["android"],
     "orientation": "portrait",
     "scheme": "chorpolice",
