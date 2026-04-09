@@ -21,7 +21,7 @@ export const useGameTableAndScores = () => {
   );
   const state = useSelector((state: RootState) => state.difficulty);
 
-  const max_row = table.length;
+  const max_row = table.length - 1; // table has 6 rows first for names and and rest for numbers
 
   const getRoundIndex = () => {
     const index = Math.floor(Math.random() * max_row);
