@@ -25,8 +25,6 @@ export const useGameTableAndScores = () => {
 
   const getRoundIndex = () => {
     const index = Math.floor(Math.random() * max_row);
-    // Logging as requested
-    console.log(`Max Row: ${max_row} | Generated Random Round Index: ${index}`);
     return index;
   };
 

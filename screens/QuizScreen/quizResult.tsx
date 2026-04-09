@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, ScrollView, Image } from "react-native";
+import React, { useEffect } from "react";
+import { View, ScrollView, Image, BackHandler } from "react-native";
 import { useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -13,7 +13,7 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { useQuizReward } from "@/hooks/useQuizRewards";
 import { ActionButtons } from "./components/renderButtons";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
-import ExitConfirmationModal from "@/modal/ExitModal";
+// Removed ExitConfirmationModal import
 
 export default function QuizResult() {
   const insets = useSafeAreaInsets();
@@ -22,10 +22,8 @@ export default function QuizResult() {
     totalQuestions: Total,
     isWinner,
   } = useSelector((state: RootState) => state.difficulty);
-  const { handleQuit, handleStats, handleEarn } = useQuizGameLogic();
 
-  const [showCoins, setShowCoins] = useState(false);
-  const [showExitModal, setShowExitModal] = useState(false);
+  const { handleQuit, handleStats, handleEarn } = useQuizGameLogic();
 
   const Message = useRandomMessage(isWinner ? "winner" : "loser");
   const { reward, message: coinsAwarded } = useQuizReward();
@@ -35,23 +33,15 @@ export default function QuizResult() {
     AudioEngine.stop("timer");
   }, [isWinner]);
 
-  useEffect(() => {
-    if (reward) setShowCoins(true);
-  }, [reward]);
-
-  // Dynamic colors based on result
   const statusColor = isWinner ? "#10b981" : "#ef4444";
 
   return (
     <View className="flex-1 bg-black">
-      {/* 🌌 FULL SCREEN BACKGROUND */}
       <Image
         source={require("@/assets/images/bg/image.png")}
         className="absolute h-full w-full"
         resizeMode="cover"
       />
-
-      {/* 🌑 DARK OVERLAY (Slightly heavier for readability) */}
       <View className="absolute h-full w-full bg-black/80" />
 
       <ScrollView
@@ -62,7 +52,6 @@ export default function QuizResult() {
           paddingBottom: hp(5),
         }}
       >
-        {/* Header Section */}
         <View className="items-center py-4">
           <Text
             className="font-main-bold text-[48px] tracking-tighter"
@@ -81,7 +70,6 @@ export default function QuizResult() {
           />
         </View>
 
-        {/* Main Result Card */}
         <View className="overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.04] shadow-2xl backdrop-blur-2xl">
           <ResultInfo
             Correct={Correct}
@@ -93,7 +81,6 @@ export default function QuizResult() {
           />
         </View>
 
-        {/* Action Section */}
         <View className="mt-12 px-2">
           <ActionButtons
             onStatsPress={handleStats}
@@ -102,12 +89,6 @@ export default function QuizResult() {
           />
         </View>
       </ScrollView>
-
-      <ExitConfirmationModal
-        visible={showExitModal}
-        onCancel={() => setShowExitModal(false)}
-        onConfirm={handleQuit}
-      />
     </View>
   );
 }

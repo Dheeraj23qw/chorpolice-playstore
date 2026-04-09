@@ -292,7 +292,7 @@ export const useQuizGameLogic = () => {
       clearTimer();
       AudioEngine.stop("timer");
 
-      const penaltyAmount = 500;
+      const penaltyAmount = 50;
 
       await dispatch(
         applyTransaction({

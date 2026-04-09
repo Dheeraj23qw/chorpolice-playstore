@@ -1,4 +1,3 @@
-import "../global.css";
 import React, { useEffect, useCallback } from "react";
 import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
@@ -64,7 +63,7 @@ function AppLayout() {
         {children}
       </ScreenWrapper>
     ),
-    []
+    [],
   );
 
   return (

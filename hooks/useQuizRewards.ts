@@ -14,24 +14,31 @@ export function useQuizReward() {
   );
 
   const rewardData = useMemo(() => {
-    if (!level || totalQuestions === 0) return { totalReward: 0, baseReward: 0, bonus: 0, accuracy: 0 };
+    if (!level || totalQuestions === 0)
+      return { totalReward: 0, baseReward: 0, bonus: 0, accuracy: 0 };
     const accuracy = correctQuestions / totalQuestions;
-    
+
     const baseTable = {
-      easy: { full: 500, half: 250, fail: -500 },
-      medium: { full: 1500, half: 750, fail: -700 },
-      hard: { full: 3000, half: 1500, fail: -1000 },
+      easy: { full: 500, half: 250, fail: -50 },
+      medium: { full: 1500, half: 750, fail: -70 },
+      hard: { full: 3000, half: 1500, fail: -100 },
     };
 
-    let baseReward = accuracy === 1 ? baseTable[level].full : (accuracy >= 0.5 ? baseTable[level].half : baseTable[level].fail);
-    let bonus = accuracy === 1 ? 500 : (accuracy >= 0.9 ? 300 : (accuracy >= 0.8 ? 150 : 0));
+    let baseReward =
+      accuracy === 1
+        ? baseTable[level].full
+        : accuracy >= 0.5
+          ? baseTable[level].half
+          : baseTable[level].fail;
+    let bonus =
+      accuracy === 1 ? 500 : accuracy >= 0.9 ? 300 : accuracy >= 0.8 ? 150 : 0;
 
     return { totalReward: baseReward + bonus, baseReward, bonus, accuracy };
   }, [level, correctQuestions, totalQuestions]);
 
   useEffect(() => {
     if (!level || hasRecorded.current) return;
-    
+
     hasRecorded.current = true;
 
     const { totalReward, baseReward, bonus, accuracy } = rewardData;
@@ -42,7 +49,13 @@ export function useQuizReward() {
           amount: totalReward,
           reason: totalReward > 0 ? "Quiz Performance Reward" : "Quiz Penalty",
           source: "quiz_reward",
-          metadata: { level, correctQuestions, totalQuestions, baseReward, bonus },
+          metadata: {
+            level,
+            correctQuestions,
+            totalQuestions,
+            baseReward,
+            bonus,
+          },
         }),
       );
     }
@@ -57,13 +70,14 @@ export function useQuizReward() {
     };
 
     dispatch(addQuizEntry(entry));
-
-
-  }, [rewardData, level, isWinner, dispatch]); 
+  }, [rewardData, level, isWinner, dispatch]);
 
   const message = useMemo(() => {
     const { totalReward, bonus } = rewardData;
-    if (totalReward > 0) return bonus > 0 ? `You earned ${totalReward} coins 🎉 (+${bonus} bonus)` : `You earned ${totalReward} coins 🎉`;
+    if (totalReward > 0)
+      return bonus > 0
+        ? `You earned ${totalReward} coins 🎉 (+${bonus} bonus)`
+        : `You earned ${totalReward} coins 🎉`;
     if (totalReward < 0) return `Penalty: ${totalReward} coins ⚠️`;
     return "";
   }, [rewardData]);

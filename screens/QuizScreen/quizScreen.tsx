@@ -1,10 +1,11 @@
-import React, { memo, useCallback, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect } from "react"; // Removed useState
 import {
   View,
   ScrollView,
   TouchableOpacity,
   Image,
   BackHandler,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
@@ -20,11 +21,11 @@ import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
 import { Text } from "@/components/Text";
-import QuitQuizModal from "@/modal/ExitConfirmationModal";
+import { useNavigation, useRouter } from "expo-router";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
-  const [showQuitModal, setShowQuitModal] = useState(false);
+  const router = useRouter();
 
   const {
     countdown,
@@ -47,19 +48,34 @@ const QuizScreen = () => {
     isHintButtonVisible,
     setIsHintButtonVisible,
     handleQuitInMiddle,
+    handleQuit,
   } = useQuizGameLogic();
 
   useEffect(() => {
     const backAction = () => {
-      setShowQuitModal(true);
+      Alert.alert("Exit", "Are you sure you want to exit?", [
+        {
+          text: "No",
+          onPress: () => null,
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: () => {
+            handleQuit();
+          },
+        },
+      ]);
       return true;
     };
+
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       backAction,
     );
+
     return () => subscription.remove();
-  }, []);
+  }, [handleQuit]);
 
   const onOptionPress = useCallback(
     (value: string) => {
@@ -70,7 +86,6 @@ const QuizScreen = () => {
 
   return (
     <View className="flex-1 bg-black">
-      {/* 🌌 UNIFIED BACKGROUND */}
       <Image
         source={require("@/assets/images/bg/image.png")}
         className="absolute h-full w-full"
@@ -78,7 +93,6 @@ const QuizScreen = () => {
       />
       <View className="absolute h-full w-full bg-black/70" />
 
-      {/* --- CONDITIONAL VIEWS (TABLE & POPUP) --- */}
       {isTableOpen ? (
         <View className="z-[60] flex-1">
           <GameTable
@@ -98,7 +112,6 @@ const QuizScreen = () => {
           />
         </View>
       ) : (
-        /* --- MAIN QUIZ UI --- */
         <>
           <HintSection
             isVisible={showHint}
@@ -120,7 +133,6 @@ const QuizScreen = () => {
               paddingBottom: insets.bottom,
             }}
           >
-            {/* Floating Question Indicator */}
             <View
               style={{
                 top: insets.top > 0 ? insets.top + hp(1) : hp(7),
@@ -151,7 +163,6 @@ const QuizScreen = () => {
             >
               <QuestionSection question={question?.question} />
 
-              {/* Divider */}
               <View
                 style={{ marginTop: hp(1), marginBottom: hp(1) }}
                 className="items-center"
@@ -201,16 +212,6 @@ const QuizScreen = () => {
           </View>
         </>
       )}
-
-      <QuitQuizModal
-        visible={showQuitModal}
-        penalty={500}
-        onCancel={() => setShowQuitModal(false)}
-        onConfirm={() => {
-          setShowQuitModal(false);
-          handleQuitInMiddle();
-        }}
-      />
     </View>
   );
 };
