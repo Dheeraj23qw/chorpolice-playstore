@@ -14,7 +14,7 @@ import {
   saveAvatar,
   loadUsername,
   saveUsername,
-} from "@/features/Avatar"; // Added Username functions
+} from "@/features/Avatar";
 import { useEarnLogic } from "@/hooks/useEarnLogic";
 
 const UserProfileCard = () => {
@@ -23,8 +23,13 @@ const UserProfileCard = () => {
   const { pickImage } = useGalleryPicker();
 
   const [avatar, setAvatar] = useState<string | null>(null);
-  const [name, setName] = useState("PLAYER_1");
+  const [name, setName] = useState("PLAYER");
   const [isEditing, setIsEditing] = useState(false);
+
+  // Avatar dimensions config
+  const AVATAR_SIZE = wp(32); // Slightly increased to fit the border better
+  const BORDER_THICKNESS = 4;
+  const INNER_RADIUS = (AVATAR_SIZE - BORDER_THICKNESS * 2) / 2;
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -33,7 +38,6 @@ const UserProfileCard = () => {
     return "GOOD EVENING 🌙";
   }, []);
 
-  // Load both Avatar and Username on mount
   useEffect(() => {
     const savedAvatar = loadAvatar();
     const savedName = loadUsername();
@@ -54,13 +58,11 @@ const UserProfileCard = () => {
     }
   };
 
-  // Save name to MMKV when editing is finished
   const handleSaveName = () => {
     setIsEditing(false);
     saveUsername(name);
   };
 
-  // Logic for the 9-character display limit
   const displayName = name.length > 9 ? `${name.substring(0, 9)}...` : name;
 
   return (
@@ -75,42 +77,69 @@ const UserProfileCard = () => {
 
       {/* --- MAIN HORIZONTAL ROW --- */}
       <View className="mt-5 flex-row items-center">
-        {/* --- AVATAR --- */}
+        {/* --- COOL AVATAR BORDER --- */}
         <Animated.View style={animatedStyle}>
           <Pressable
             onPress={handlePickImage}
-            onPressIn={() => (scale.value = withSpring(0.94))}
+            // Adjusted scaling for smoother feel
+            onPressIn={() =>
+              (scale.value = withSpring(0.96, { damping: 10, stiffness: 100 }))
+            }
             onPressOut={() => (scale.value = withSpring(1))}
           >
             <View className="relative items-center justify-center">
+              {/* 1. EXISTING GHOST GLOW (Unchanged) */}
               <View
                 style={{
-                  width: wp(30),
-                  height: wp(30),
+                  width: AVATAR_SIZE,
+                  height: AVATAR_SIZE,
                   backgroundColor: "#7C5CFF",
                 }}
                 className="absolute rounded-full opacity-20 blur-2xl"
               />
 
+              {/* 2. THE COOL BORDER CONTAINER (Metal/Neon Feel) */}
               <View
                 style={{
-                  width: wp(30),
-                  height: wp(30),
-                  borderRadius: wp(15),
-                  borderWidth: 3,
-                  borderColor: "rgba(255, 255, 255, 0.15)",
+                  width: AVATAR_SIZE,
+                  height: AVATAR_SIZE,
+                  borderRadius: AVATAR_SIZE / 2,
+                  // Using multiple borders/shades gives it depth
+                  backgroundColor: "rgb(24, 24, 27)", // bg-zinc-900 (same as inner)
+                  borderWidth: BORDER_THICKNESS,
+                  borderColor: "rgba(255, 255, 255, 0.25)", // Light inner highlight
+                  // Layer 1: Cool cyan subtle light (acts like a 'glow')
+                  shadowColor: "#00E5FF",
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  // Layer 2: Main metallic color
+                  elevation: 5, // Adds subtle depth on Android
                 }}
-                className="items-center justify-center overflow-hidden bg-zinc-900"
+                className="items-center justify-center p-0.5" // Slight padding keeps image clean
               >
-                <Image
-                  source={
-                    avatar
-                      ? { uri: avatar }
-                      : require("@/assets/images/chorsipahi/king.png")
-                  }
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
+                {/* 3. INNER IMAGE CONTAINER (Clean Crop) */}
+                <View
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: INNER_RADIUS,
+                    // Subtle inner shadow effect
+                    borderWidth: 1,
+                    borderColor: "rgba(0, 0, 0, 0.4)",
+                  }}
+                  className="items-center justify-center overflow-hidden bg-zinc-900"
+                >
+                  <Image
+                    source={
+                      avatar
+                        ? { uri: avatar }
+                        : require("@/assets/images/chorsipahi/king.png")
+                    }
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                </View>
               </View>
             </View>
           </Pressable>
@@ -124,8 +153,8 @@ const UserProfileCard = () => {
               <TextInput
                 value={name}
                 onChangeText={setName}
-                onBlur={handleSaveName} // Saves when user clicks away
-                onSubmitEditing={handleSaveName} // Saves when user hits 'Done'
+                onBlur={handleSaveName}
+                onSubmitEditing={handleSaveName}
                 autoFocus
                 maxLength={12}
                 className="p-0 font-main-bold text-white"

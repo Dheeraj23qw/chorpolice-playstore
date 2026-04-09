@@ -107,6 +107,8 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   );
 };
 
+// ... existing imports
+
 const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
   const animatedStyle = useAnimatedStyle(() => {
     const inputRange = [
@@ -121,6 +123,15 @@ const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
       [0.85, 1, 0.85],
       Extrapolate.CLAMP,
     );
+
+    // Smooth opacity for the glow: only the center card should glow intensely
+    const glowOpacity = interpolate(
+      scrollX.value,
+      inputRange,
+      [0, 0.35, 0],
+      Extrapolate.CLAMP,
+    );
+
     const rotateY = interpolate(
       scrollX.value,
       inputRange,
@@ -130,44 +141,102 @@ const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
 
     return {
       transform: [{ scale }, { rotateY: `${rotateY}deg` }],
+      glowOpacity, // passing to use in the glow view
     };
   });
 
+  // Separate style for the glow underlay
+  const glowStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollX.value,
+      [
+        (index - 1) * (CARD_WIDTH + 20),
+        index * (CARD_WIDTH + 20),
+        (index + 1) * (CARD_WIDTH + 20),
+      ],
+      [0, 0.6, 0], // Peak glow at 60% opacity when centered
+      Extrapolate.CLAMP,
+    );
+    return { opacity };
+  });
+
   return (
-    <Animated.View
-      style={[
-        animatedStyle,
-        {
-          width: CARD_WIDTH,
-          height: hp(38),
-          marginHorizontal: 10,
-          borderRadius: 24,
-          borderWidth: isSelected ? 3 : 1,
-          borderColor: isSelected ? "#7C5CFF" : "rgba(255,255,255,0.1)",
-          backgroundColor: "#151515",
-          overflow: "hidden",
-        },
-      ]}
+    <View
+      style={{
+        width: CARD_WIDTH,
+        height: hp(42),
+        marginHorizontal: 10,
+        justifyContent: "center",
+      }}
     >
-      <Pressable onPress={onPress} className="flex-1">
-        {/* Full Image - No Dark Overlay */}
-        <Image
-          source={item.image}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
-        />
+      {/* 🟣 THE DEEP GLOW UNDERLAY (Matching UserProfileCard) */}
+      <Animated.View
+        style={[
+          glowStyle,
+          {
+            position: "absolute",
+            width: CARD_WIDTH * 0.8,
+            height: CARD_WIDTH * 0.8,
+            borderRadius: CARD_WIDTH,
+            backgroundColor: "#7C5CFF",
+            alignSelf: "center",
+            filter: [{ blur: 40 }], // Blur for the neon light bleed effect
+          },
+        ]}
+      />
 
-        {/* Glossy Top Edge Shine */}
-        <View className="absolute top-0 h-1/3 w-full bg-white/5" />
+      <Animated.View
+        style={[
+          animatedStyle,
+          {
+            width: CARD_WIDTH,
+            height: hp(38),
+            borderRadius: 32, // Increased for a smoother "premium" feel
+            borderWidth: isSelected ? 4 : 1.5,
+            // Dynamic border color
+            borderColor: isSelected ? "#7C5CFF" : "rgba(255,255,255,0.15)",
+            backgroundColor: "#151515",
+            overflow: "hidden",
+            // Depth Shadow
+            shadowColor: isSelected ? "#7C5CFF" : "#000",
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: isSelected ? 0.5 : 0.3,
+            shadowRadius: 15,
+            elevation: 10,
+          },
+        ]}
+      >
+        <Pressable onPress={onPress} className="flex-1">
+          <Image
+            source={item.image}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="cover"
+          />
 
-        {/* Selected Badge */}
-        {isSelected && (
-          <View className="absolute right-4 top-4 h-8 w-8 items-center justify-center rounded-full border-2 border-white/20 bg-purple-600">
-            <Ionicons name="checkmark" size={rf(2)} color="white" />
-          </View>
-        )}
-      </Pressable>
-    </Animated.View>
+          {/* 🧊 GLASS SHINE (Matching the gloss top edge) */}
+          <View
+            className="absolute top-0 h-[1px] w-full bg-white/20"
+            style={{ marginTop: 2, marginHorizontal: 20, width: "80%" }}
+          />
+          <View className="absolute top-0 h-1/4 w-full bg-white/5" />
+
+          {/* SELECTED BADGE (Enhanced) */}
+          {isSelected && (
+            <View
+              style={{
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+              }}
+              className="absolute right-4 top-4 h-10 w-10 items-center justify-center rounded-full border-2 border-white/30 bg-purple-600"
+            >
+              <Ionicons name="checkmark-circle" size={rf(2.5)} color="white" />
+            </View>
+          )}
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 };
 
