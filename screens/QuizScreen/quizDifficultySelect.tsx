@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useState } from "react";
-import { View, ScrollView, Platform } from "react-native";
+import { View, ScrollView, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useDispatch } from "react-redux";
 
@@ -26,6 +26,7 @@ const QuizDifficultyScreen = () => {
   const [selected, setSelected] = useState<DifficultyOption | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [showRules, setShowRules] = useState(true);
+
   const handleSelect = useCallback(
     (option: DifficultyOption) => {
       AudioEngine.play("select", "ui");
@@ -47,20 +48,16 @@ const QuizDifficultyScreen = () => {
   }, [selected, isReady, isNavigating, router]);
 
   return (
-    <View className="flex-1 bg-[#020617]">
-      {/* --- 🌌 Ambient Background Art --- */}
-      {/* Top Left Glow */}
-      <View
-        style={{ width: wp(100), height: hp(40), top: -hp(10), left: -wp(20) }}
-        className="absolute rounded-full bg-indigo-600/10 blur-[120px]"
-        pointerEvents="none"
+    <View className="flex-1 bg-black">
+      {/* 🌌 FULL SCREEN BACKGROUND */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
       />
-      {/* Center Right Glow */}
-      <View
-        style={{ width: wp(80), height: hp(30), top: hp(30), right: -wp(30) }}
-        className="absolute rounded-full bg-blue-500/5 blur-[100px]"
-        pointerEvents="none"
-      />
+
+      {/* 🌑 DARK DIM OVERLAY */}
+      <View className="absolute h-full w-full bg-black/60" />
 
       {/* --- 🔙 Navigation --- */}
       <View className="z-50">
@@ -69,8 +66,8 @@ const QuizDifficultyScreen = () => {
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: hp(15), // Responsive Top Spacing
-          paddingBottom: hp(25), // Extra space for floating button
+          paddingTop: hp(15),
+          paddingBottom: hp(25),
           paddingHorizontal: wp(7),
         }}
         showsVerticalScrollIndicator={false}
@@ -91,7 +88,7 @@ const QuizDifficultyScreen = () => {
         {showRules && (
           <View
             style={{ marginBottom: hp(3), padding: wp(5) }}
-            className="rounded-3xl border border-indigo-500/30 bg-indigo-500/5 backdrop-blur-md"
+            className="rounded-3xl border border-white/10 bg-white/[0.05] shadow-2xl backdrop-blur-2xl"
           >
             {/* Header with Close Button */}
             <View className="mb-2 flex-row items-center justify-between">
@@ -108,7 +105,7 @@ const QuizDifficultyScreen = () => {
               {/* ✖️ Toggle/Close Button */}
               <View
                 onTouchEnd={() => setShowRules(false)}
-                className="h-6 w-6 items-center justify-center rounded-full bg-white/10"
+                className="h-7 w-7 items-center justify-center rounded-full bg-white/10"
               >
                 <Text
                   style={{ fontSize: rf(1.2) }}
@@ -122,7 +119,7 @@ const QuizDifficultyScreen = () => {
             {/* Message Content */}
             <Text
               style={{ fontSize: rf(1.8), lineHeight: rf(2.6) }}
-              className="font-main-medium text-slate-300"
+              className="font-main-medium text-slate-200"
             >
               Answer{" "}
               <Text className="font-main-bold text-indigo-400">
@@ -134,7 +131,7 @@ const QuizDifficultyScreen = () => {
 
             <Text
               style={{ fontSize: rf(1.8), lineHeight: rf(2.6), marginTop: 8 }}
-              className="font-main-medium text-slate-300"
+              className="font-main-medium text-slate-200"
             >
               Use your{" "}
               <Text className="font-main-bold text-amber-400">2 lifelines</Text>{" "}
@@ -167,9 +164,9 @@ const QuizDifficultyScreen = () => {
             right: wp(7),
             padding: 4,
           }}
-          className="absolute rounded-[36px] border border-white/5 bg-[#020617]/40 backdrop-blur-xl"
+          className="absolute rounded-[36px] border border-white/10 bg-black/40 shadow-2xl backdrop-blur-3xl"
         >
-          <View className="shadow-2xl shadow-indigo-500/40">
+          <View className="shadow-2xl shadow-indigo-500/50">
             <StartButton label="Initiate Quiz" onPress={handleBegin} />
           </View>
         </View>

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import { View, ScrollView, Alert, BackHandler, } from "react-native";
-import {  useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, ScrollView, Alert, BackHandler, Image } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { wp, hp } from "@/utils/responsive";
 
@@ -51,95 +51,90 @@ const ChorPoliceQuiz: React.FC = () => {
     );
     return () => subscription.remove();
   }, []);
+
   const insets = useSafeAreaInsets();
+
   return (
-    <View
-      className="flex-1 bg-[#020205] relative"
-      style={{
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-      }}
-    >
-      <View
-        style={{
-          width: wp(120),
-          height: wp(120),
-          top: -hp(15),
-          left: -wp(20),
-          position: "absolute",
-        }}
-        className="bg-indigo-600/10 rounded-full blur-[110px]"
-      />
-      <View
-        style={{
-          width: wp(100),
-          height: wp(100),
-          bottom: -hp(10),
-          right: -wp(30),
-          position: "absolute",
-        }}
-        className="bg-purple-900/10 rounded-full blur-[90px]"
+    <View className="flex-1 bg-black">
+      {/* 🌌 CONSISTENT BACKGROUND IMAGE */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
       />
 
-      {isPopUp && mediaId && mediaType ? (
-        <DynamicOverlayPopUp
-          isPopUp={isPopUp}
-          mediaId={mediaId}
-          mediaType={mediaType}
-          closeVisibleDelay={3000}
-          playerData={{
-            image: currentPlayerImage,
-            message: feedbackMessage,
-            imageType: currentPlayerImageType,
-          }}
-        />
-      ) : (
-        // QUIZ LAYOUT
-        <View className="flex-1 ">
-          <ScrollView
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: hp(5) }}
-            showsVerticalScrollIndicator={false}
-          >
-            <View className="flex-1 px-6 pt-5">
-              {/* Player Stage */}
-              <View className="items-center justify-center mb-10  relative">
+      {/* 🌑 DARK OVERLAY */}
+      <View className="absolute h-full w-full bg-black/70" />
+
+      <View
+        className="flex-1"
+        style={{
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        }}
+      >
+        {isPopUp && mediaId && mediaType ? (
+          <DynamicOverlayPopUp
+            isPopUp={isPopUp}
+            mediaId={mediaId}
+            mediaType={mediaType}
+            closeVisibleDelay={3000}
+            playerData={{
+              image: currentPlayerImage,
+              message: feedbackMessage,
+              imageType: currentPlayerImageType,
+            }}
+          />
+        ) : (
+          <View className="flex-1">
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: hp(5) }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View className="flex-1 px-6 pt-5">
+                {/* Player Stage */}
+                <View className="relative mb-10 items-center justify-center">
+                  {/* Subtle spotlight glow behind player info */}
+                  <View
+                    style={{
+                      width: wp(60),
+                      height: hp(15),
+                      position: "absolute",
+                      top: 0,
+                    }}
+                    className="rounded-full bg-indigo-500/10 blur-3xl"
+                  />
+                  <PlayerInfo playerImage={playerImage} />
+                </View>
+
+                {/* Glass Interface */}
                 <View
+                  className="relative w-full overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.05]"
                   style={{
-                    width: wp(60),
-                    height: hp(15),
-                    position: "absolute",
-                    top: 0,
+                    paddingVertical: hp(4),
+                    paddingHorizontal: wp(2),
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 20 },
+                    shadowOpacity: 0.5,
+                    shadowRadius: 30,
+                    elevation: 10,
                   }}
-                  className="bg-indigo-500/5 blur-3xl rounded-full"
-                />
-                <PlayerInfo playerImage={playerImage} />
-              </View>
+                >
+                  {/* Top specular shine */}
+                  <View className="absolute left-0 right-0 top-0 h-[1px] bg-white/30" />
 
-              {/* Glass Interface */}
-              <View
-                className="w-full rounded-[40px] bg-white/[0.04] border border-white/10 overflow-hidden relative"
-                style={{
-                  paddingVertical: hp(4),
-                  paddingHorizontal: wp(2),
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 20 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 25,
-                  elevation: 10,
-                }}
-              >
-                <View className="absolute top-0 left-0 right-0 h-[1px] bg-white/20" />
-                <QuizOptions
-                  playerName={currentPlayer.name}
-                  options={options}
-                  onOptionPress={handleOptionPress}
-                  isOptionDisabled={isOptionDisabled}
-                />
+                  <QuizOptions
+                    playerName={currentPlayer.name}
+                    options={options}
+                    onOptionPress={handleOptionPress}
+                    isOptionDisabled={isOptionDisabled}
+                  />
+                </View>
               </View>
-            </View>
-          </ScrollView>
-        </View>
-      )}
+            </ScrollView>
+          </View>
+        )}
+      </View>
     </View>
   );
 };

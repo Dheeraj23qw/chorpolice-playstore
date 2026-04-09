@@ -33,29 +33,31 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   message,
   getCardStyle,
   showTableButton,
-  toggleModal, // 👈 ADD THIS
+  toggleModal,
 }) => {
   return (
-    <View className="flex-1 bg-[#020207]">
-      {/* 🌌 Ambient Gradient Glow */}
-      <View className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full bg-indigo-600/20 blur-3xl" />
-      <View className="absolute top-40 -right-40 w-[360px] h-[360px] rounded-full bg-fuchsia-600/10 blur-3xl" />
-
+    // Changed to transparent so the parent's Background Image shows through
+    <View className="flex-1 bg-transparent">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
         className="px-6"
       >
         {/* 🧊 Glass Header */}
-        <View className="items-center mt-8 mb-10">
-          <View className="relative px-6 py-2 rounded-full border border-white/15 bg-white/5 overflow-hidden">
-            {/* Shine Reflection */}
-            <View className="absolute inset-x-2 top-0 h-[1px] bg-white/40 rounded-full" />
+        <View className="mb-10 mt-8 items-center">
+          <View
+            className="relative overflow-hidden rounded-full border border-white/20 bg-white/10 px-6 py-2"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 10,
+            }}
+          >
+            {/* Specular Shine Reflection */}
+            <View className="absolute inset-x-2 top-0 h-[1px] rounded-full bg-white/30" />
 
-            <Text
-              // Swapped font-extrabold for font-main-bold
-              className="text-indigo-300 font-main-bold uppercase tracking-[4px] text-[11px]"
-            >
+            <Text className="font-main-bold text-[11px] uppercase tracking-[4px] text-indigo-300">
               ROUND — {round}
             </Text>
           </View>
@@ -68,7 +70,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
               disabled={false}
               onPress={toggleModal}
               buttonText="Show Score Table"
-              variant="secondary" // 👈 important
+              variant="secondary"
             />
           ) : (
             <PlayButton
@@ -81,7 +83,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                     : `Round ${round}`
                   : `Press me to play!`
               }
-              variant="primary" // 👈 important
+              variant="primary"
             />
           )}
         </View>
@@ -91,7 +93,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           {/* Row 1 */}
           <View className="flex-row justify-between">
             {roles.slice(0, 2).map((_, index) => (
-              <View key={index} className="w-[47%] aspect-[3/4.2]">
+              <View key={index} className="aspect-[3/4.2] w-[47%]">
                 <PlayerCard
                   index={index}
                   role={roles[index]}
@@ -109,7 +111,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           {/* Row 2 */}
           <View className="flex-row justify-between">
             {roles.slice(2).map((_, index) => (
-              <View key={index + 2} className="w-[47%] aspect-[3/4.2]">
+              <View key={index + 2} className="aspect-[3/4.2] w-[47%]">
                 <PlayerCard
                   index={index + 2}
                   role={roles[index + 2]}

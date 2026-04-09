@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { ScrollView, View, Pressable, Alert } from "react-native";
+import { ScrollView, View, Pressable, Image } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -25,8 +25,6 @@ import { PlayernameActionButtons } from "@/components/playerNameScreen/ActionBut
 import RoundSelector from "../RoundSelector";
 import { Text } from "@/components/Text";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
-import { hp, wp } from "@/utils/responsive";
-import InfoTooltip from "@/components/InfoTooltip";
 
 const PlayerNameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -62,26 +60,29 @@ const PlayerNameScreen: React.FC = () => {
       opacity.value = withTiming(1, { duration: 600 });
     }, [translateY, opacity]),
   );
+
   const { pickImage } = useGalleryPicker();
 
   return (
-    <View className="flex-1 bg-[#020205]">
-      {/* 🔮 Background Glows */}
-      <View className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-indigo-600/10 blur-3xl" />
-      <View className="absolute -right-20 bottom-40 h-72 w-72 rounded-full bg-blue-600/5 blur-3xl" />
+    <View className="flex-1 bg-black">
+      {/* 🌌 FULL SCREEN BACKGROUND */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
+      />
+
+      {/* 🌑 DARK DIM OVERLAY */}
+      <View className="absolute h-full w-full bg-black/60" />
 
       {/* 🔙 Fixed Back Button */}
-
       <SafeBackButton />
 
       {/* 📍 FIXED HEADER AREA */}
-      <View
-        style={{ paddingTop: insets.top + 70 }}
-        className="z-40 bg-[#020205]/80 px-6 pb-4 backdrop-blur-md"
-      >
+      <View style={{ paddingTop: insets.top + 70 }} className="z-40 px-6 pb-4">
         <Animated.View style={animatedStyle}>
           <OptionHeader />
-          <View className="mt-2 h-[1.5px] w-12 rounded-full bg-indigo-500" />
+          <View className="mt-2 h-[1.5px] w-12 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500" />
         </Animated.View>
       </View>
 
@@ -93,7 +94,7 @@ const PlayerNameScreen: React.FC = () => {
         {/* --- 1. AVATAR SELECTION PHASE --- */}
         {selectedImages.length < 4 && (
           <Animated.View entering={FadeIn} exiting={FadeOut}>
-            <View className="mb-6 rounded-[32px] border border-white/10 bg-white/[0.03] p-4 shadow-2xl">
+            <View className="mb-6 rounded-[32px] border border-white/10 bg-white/[0.05] p-4 backdrop-blur-xl">
               <AvatarSelectionMemo
                 selectedOption={selectedOption}
                 setSelectedOption={setSelectedOption}
@@ -102,72 +103,65 @@ const PlayerNameScreen: React.FC = () => {
               />
             </View>
 
-            <View
-              style={{
-                top: insets.top + hp(25),
-                right: wp(1),
-              }}
-              className="absolute z-50"
-            >
-              <InfoTooltip text="play with 4 real players using their own images — or choose and upload any character you like from your gallery. " />
-            </View>
             <View className="mb-4 items-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-4 py-3">
               <Text className="font-main-bold text-xs uppercase tracking-wider text-indigo-200">
                 Select {4 - selectedImages.length} Players to Begin
               </Text>
             </View>
+
             <ImageGrid
               selectedImages={selectedImages}
               handleImageSelect={handleImageSelect}
-              imagesPerRow={3}
               gameMode="OFFLINE"
             />
           </Animated.View>
         )}
 
-        {/* --- 2. SELECTED PLAYERS LIST --- */}
-        <View className="mb-6 mt-4 rounded-[32px] border border-white/5 bg-white/[0.02] p-1">
-          <SelectedImageGrid
-            selectedImages={selectedImages}
-            imageNames={imageNames}
-            handleNameChange={handleNameChange}
-            handleSelectedImageClick={handleSelectedImageClick}
-          />
-        </View>
-
         {/* --- 3. ROUND CONFIGURATION SECTION --- */}
         {selectedImages.length === 4 && (
-          <View className="mb-6">
-            <Pressable
-              onPress={() => setShowRoundTable(!showRoundTable)}
-              className="flex-row items-center justify-between rounded-3xl border border-white/10 bg-white/[0.05] p-5"
-            >
-              <View className="flex-row items-center">
-                <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
-                  <Ionicons name="timer-outline" size={20} color="#818cf8" />
-                </View>
-                <View>
-                  <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white/40">
-                    Game Duration
-                  </Text>
-                  <Text className="font-main-bold text-base text-white">
-                    {showRoundTable ? "CLOSE SELECTOR" : "SELECT ROUNDS"}
-                  </Text>
-                </View>
-              </View>
-              <Ionicons
-                name={showRoundTable ? "chevron-up" : "chevron-down"}
-                size={24}
-                color="white"
+          <>
+            {/* --- 2. SELECTED PLAYERS LIST --- */}
+            <View className="mb-6 mt-4 rounded-[32px] border border-white/10 bg-white/[0.03] p-1 backdrop-blur-md">
+              <SelectedImageGrid
+                selectedImages={selectedImages}
+                imageNames={imageNames}
+                handleNameChange={handleNameChange}
+                handleSelectedImageClick={handleSelectedImageClick}
               />
-            </Pressable>
+            </View>
 
-            {showRoundTable && (
-              <Animated.View entering={FadeIn.duration(400)} className="mt-4">
-                <RoundSelector />
-              </Animated.View>
-            )}
-          </View>
+            <View className="mb-6">
+              <Pressable
+                onPress={() => setShowRoundTable(!showRoundTable)}
+                className="flex-row items-center justify-between rounded-3xl border border-white/10 bg-white/[0.08] p-5"
+              >
+                <View className="flex-row items-center">
+                  <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
+                    <Ionicons name="timer-outline" size={20} color="#818cf8" />
+                  </View>
+                  <View>
+                    <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white/40">
+                      Game Duration
+                    </Text>
+                    <Text className="font-main-bold text-base text-white">
+                      {showRoundTable ? "CLOSE SELECTOR" : "SELECT ROUNDS"}
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons
+                  name={showRoundTable ? "chevron-up" : "chevron-down"}
+                  size={24}
+                  color="white"
+                />
+              </Pressable>
+
+              {showRoundTable && (
+                <Animated.View entering={FadeIn.duration(400)} className="mt-4">
+                  <RoundSelector />
+                </Animated.View>
+              )}
+            </View>
+          </>
         )}
 
         {/* --- 4. FINAL START ACTION --- */}

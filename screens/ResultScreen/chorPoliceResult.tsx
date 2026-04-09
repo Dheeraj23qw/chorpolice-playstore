@@ -1,14 +1,14 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StatusBar, View, BackHandler, Alert } from "react-native";
+import { ScrollView, View, BackHandler, Alert, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSortedScores } from "@/hooks/useSortedScores";
 import { rf, hp, wp } from "@/utils/responsive";
 
-// Redesigned Components (Ensure these use Tailwind/Glass styles)
+// Redesigned Components
 import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
 import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
 import { ActionButtons } from "@/components/leaderBoardScreen/ActionButtons";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import useRajaMantriGame from "@/hooks/useRajaMantriGame/useRajaMantriGame";
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
 import { Text } from "@/components/Text";
@@ -62,42 +62,38 @@ const ChorPoliceResult = () => {
 
     return () => subscription.remove();
   }, [handleExitGame]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowCelebration(false);
-    }, 4500); // same as duration in component
+    }, 4500);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View className="flex-1 bg-[#09090b]">
+    <View className="flex-1 bg-black">
+      {/* 🌌 CONSISTENT BACKGROUND IMAGE */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
+      />
+
+      {/* 🌑 DARK OVERLAY */}
+      <View className="absolute h-full w-full bg-black/75" />
+
+      {/* 🏆 CELEBRATION LAYER (Ensure it is on top) */}
       {showCelebration && (
-        <VictoryCelebration
-          type="GOLD"
-          intensity="MEDIUM"
-          duration={4500}
-          onComplete={() => setShowCelebration(false)}
-        />
+        <View className="absolute inset-0 z-[100]" pointerEvents="none">
+          <VictoryCelebration
+            type="GOLD"
+            intensity="MEDIUM"
+            duration={4500}
+            onComplete={() => setShowCelebration(false)}
+          />
+        </View>
       )}
-      <View
-        style={{
-          width: wp(110),
-          height: wp(110),
-          top: -hp(10),
-          right: -wp(20),
-        }}
-        className="absolute bg-indigo-600/10 rounded-full blur-[120px]"
-      />
-      <View
-        style={{
-          width: wp(100),
-          height: wp(100),
-          bottom: -hp(15),
-          left: -wp(20),
-        }}
-        className="absolute bg-purple-600/10 rounded-full blur-[100px]"
-      />
 
       <View
         style={{
@@ -110,15 +106,13 @@ const ChorPoliceResult = () => {
         <View className="px-6 py-4">
           <Text
             style={{ fontSize: rf(1.2) }}
-            // Swapped font-black for font-main-bold + tracking
-            className="text-white/30 font-main-bold uppercase tracking-[5px]"
+            className="font-main-bold uppercase tracking-[5px] text-white/40"
           >
             Final Briefing
           </Text>
           <Text
             style={{ fontSize: rf(3.5) }}
-            // Swapped font-black for font-main-bold + italic
-            className="text-white font-main-bold mt-1"
+            className="mt-1 font-main-bold text-white"
           >
             RESULTS
           </Text>
@@ -129,8 +123,8 @@ const ChorPoliceResult = () => {
           contentContainerStyle={{ paddingBottom: hp(5) }}
         >
           {/* 1. Winner Spotlight */}
-          <View className="px-6 mb-6">
-            <View className="bg-white/[0.03] border border-white/10 rounded-[40px] overflow-hidden py-6">
+          <View className="mb-6 px-6">
+            <View className="overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.05] py-6 shadow-2xl backdrop-blur-3xl">
               <MemoizedWinnerSection
                 winnerName={winnerName}
                 winnerImage={winnerImage}
@@ -140,14 +134,13 @@ const ChorPoliceResult = () => {
           </View>
 
           {/* 2. Leaderboard Glass List */}
-          <View className="px-6 mb-8">
-            <View className="bg-white/[0.03] border border-white/10 rounded-[32px] p-4">
-              <View className="flex-row items-center mb-4 px-2">
-                <View className="h-2 w-2 rounded-full bg-indigo-500 mr-2" />
+          <View className="mb-8 px-6">
+            <View className="rounded-[32px] border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
+              <View className="mb-4 flex-row items-center px-2">
+                <View className="mr-2 h-2 w-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500" />
                 <Text
                   style={{ fontSize: rf(1) }}
-                  // Swapped font-bold for font-main-bold
-                  className="text-white/40 font-main-bold uppercase tracking-widest"
+                  className="font-main-bold uppercase tracking-widest text-white/40"
                 >
                   Squad Rankings
                 </Text>

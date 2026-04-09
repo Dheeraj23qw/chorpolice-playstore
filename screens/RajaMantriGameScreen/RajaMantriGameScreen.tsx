@@ -1,10 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Animated,
-  BackHandler,
-  Alert,
-} from "react-native";
+import { View, Animated, BackHandler, Alert, Image } from "react-native";
 
 // Redux
 import { useSelector } from "react-redux";
@@ -106,62 +101,74 @@ const RajaMantriGameScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      className="flex-1 bg-[#050508]"
-      style={{
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-      }}
-    >
-      {isDynamicPopUp && mediaId != null && mediaType != null ? (
-        <DynamicOverlayPopUp
-          isPopUp={isDynamicPopUp}
-          mediaId={mediaId}
-          mediaType={mediaType}
-          closeVisibleDelay={3000}
-          playerData={playerData}
-        />
-      ) : (
-        <>
-          <ScoreTable
-            playerNames={playerNames}
-            playerScores={playerScores}
-            popupTable={popupTable}
-            onClose={() => setPopupTable(false)}
+    <View className="flex-1 bg-black">
+      {/* 🌌 CONSISTENT BACKGROUND IMAGE */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
+      />
+
+      {/* 🌑 DARK OVERLAY FOR GAMEPLAY FOCUS */}
+      <View className="absolute h-full w-full bg-black/70" />
+
+      <View
+        className="flex-1"
+        style={{
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        }}
+      >
+        {isDynamicPopUp && mediaId != null && mediaType != null ? (
+          <DynamicOverlayPopUp
+            isPopUp={isDynamicPopUp}
+            mediaId={mediaId}
+            mediaType={mediaType}
+            closeVisibleDelay={3000}
+            playerData={playerData}
           />
-
-          {popupIndex && (
-            <OverlayPopUp
-              index={popupIndex}
-              policeIndex={policeIndex}
-              kingIndex={kingIndex}
-              advisorIndex={advisorIndex}
-              thiefIndex={thiefIndex}
-              displayDuration={3000}
-            />
-          )}
-
-          {isRoundStartPopupVisible && <RoundStartLoader />}
-
-          <View className="flex-1">
-            <GamePlaySection
-              isPlayButtonDisabled={isPlayButtonDisabled}
-              handlePlay={handlePlay}
-              roles={roles}
+        ) : (
+          <>
+            <ScoreTable
               playerNames={playerNames}
-              flippedStates={flippedStates}
-              clickedCards={clickedCards}
-              handleCardClick={handleCardClick}
-              handleCardClickWithBounce={handleCardClickWithBounce}
-              toggleModal={toggleModal}
-              round={round}
-              message={message}
-              getCardStyle={getCardStyle}
-              showTableButton={showTableButton}
+              playerScores={playerScores}
+              popupTable={popupTable}
+              onClose={() => setPopupTable(false)}
             />
-          </View>
-        </>
-      )}
+
+            {popupIndex && (
+              <OverlayPopUp
+                index={popupIndex}
+                policeIndex={policeIndex}
+                kingIndex={kingIndex}
+                advisorIndex={advisorIndex}
+                thiefIndex={thiefIndex}
+                displayDuration={3000}
+              />
+            )}
+
+            {isRoundStartPopupVisible && <RoundStartLoader />}
+
+            <View className="flex-1">
+              <GamePlaySection
+                isPlayButtonDisabled={isPlayButtonDisabled}
+                handlePlay={handlePlay}
+                roles={roles}
+                playerNames={playerNames}
+                flippedStates={flippedStates}
+                clickedCards={clickedCards}
+                handleCardClick={handleCardClick}
+                handleCardClickWithBounce={handleCardClickWithBounce}
+                toggleModal={toggleModal}
+                round={round}
+                message={message}
+                getCardStyle={getCardStyle}
+                showTableButton={showTableButton}
+              />
+            </View>
+          </>
+        )}
+      </View>
     </View>
   );
 };

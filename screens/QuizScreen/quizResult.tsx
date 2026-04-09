@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, Image } from "react-native";
 import { useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { hp, wp, rf } from "@/utils/responsive";
+import { hp, wp } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 import useRandomMessage from "@/hooks/useRandomMessage";
 import { RootState } from "@/redux/store";
@@ -39,11 +39,20 @@ export default function QuizResult() {
     if (reward) setShowCoins(true);
   }, [reward]);
 
-  const accentColor = isWinner ? "#10b981" : "#ef4444";
+  // Dynamic colors based on result
+  const statusColor = isWinner ? "#10b981" : "#ef4444";
 
   return (
-    <View className="flex-1 bg-[#050505]">
-      {/* Premium Ambient Background */}
+    <View className="flex-1 bg-black">
+      {/* 🌌 FULL SCREEN BACKGROUND */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
+      />
+
+      {/* 🌑 DARK OVERLAY (Slightly heavier for readability) */}
+      <View className="absolute h-full w-full bg-black/80" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -56,18 +65,24 @@ export default function QuizResult() {
         {/* Header Section */}
         <View className="items-center py-4">
           <Text
-            className="font-main-bold text-[48px] tracking-tighter text-white"
+            className="font-main-bold text-[48px] tracking-tighter"
             style={{
-              textShadowColor: "rgba(255,255,255,0.1)",
-              textShadowRadius: 20,
+              color: "white",
+              textShadowColor: statusColor,
+              textShadowRadius: 15,
+              textShadowOffset: { width: 0, height: 0 },
             }}
           >
             {isWinner ? "VICTORY" : "DEFEAT"}
           </Text>
+          <View
+            className="mt-[-4px] h-1 w-12 rounded-full"
+            style={{ backgroundColor: statusColor }}
+          />
         </View>
 
         {/* Main Result Card */}
-        <View className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-xl">
+        <View className="overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.04] shadow-2xl backdrop-blur-2xl">
           <ResultInfo
             Correct={Correct}
             Total={Total}
@@ -79,7 +94,7 @@ export default function QuizResult() {
         </View>
 
         {/* Action Section */}
-        <View className="mt-12">
+        <View className="mt-12 px-2">
           <ActionButtons
             onStatsPress={handleStats}
             onEarnPress={handleEarn}

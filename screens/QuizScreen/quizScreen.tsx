@@ -1,5 +1,11 @@
 import React, { memo, useCallback, useEffect, useState } from "react";
-import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  BackHandler,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
 
@@ -13,12 +19,12 @@ import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection"
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Lightbulb } from "lucide-react-native";
-import { BackHandler } from "react-native";
 import { Text } from "@/components/Text";
 import QuitQuizModal from "@/modal/ExitConfirmationModal";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
+  const [showQuitModal, setShowQuitModal] = useState(false);
 
   const {
     countdown,
@@ -31,7 +37,6 @@ const QuizScreen = () => {
     handleFiftyFifty,
     handleNextQuestion,
     handleAnswerSelection,
-    handleQuit,
     isTableOpen,
     setIsTableOpen,
     questionIndex,
@@ -44,19 +49,15 @@ const QuizScreen = () => {
     handleQuitInMiddle,
   } = useQuizGameLogic();
 
-  const [showQuitModal, setShowQuitModal] = useState(false);
-
   useEffect(() => {
     const backAction = () => {
       setShowQuitModal(true);
       return true;
     };
-
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       backAction,
     );
-
     return () => subscription.remove();
   }, []);
 
@@ -67,152 +68,149 @@ const QuizScreen = () => {
     [handleAnswerSelection],
   );
 
-  if (isTableOpen) {
-    return (
-      <View className="flex-1 bg-[#050505]">
-        <GameTable
-          isTableOpen={isTableOpen}
-          setIsTableOpen={setIsTableOpen}
-          table={table}
-        />
-      </View>
-    );
-  }
-
-  if (isDynamicPopUp) {
-    return (
-      <View className="flex-1 bg-[#050505] items-center justify-center">
-        <DynamicOverlayPopUp
-          isPopUp={isDynamicPopUp}
-          mediaId={mediaId}
-          mediaType={mediaType}
-          closeVisibleDelay={3000}
-          playerData={playerMessage}
-        />
-      </View>
-    );
-  }
-
   return (
-    <View className="flex-1 bg-[#09090b]">
-      <HintSection
-        isVisible={showHint}
-        hint={question?.hint}
-        onClose={() => {
-          setShowHint(false);
-          setIsHintButtonVisible(true);
-        }}
-        onNext={() => {
-          setIsHintButtonVisible(false);
-          handleNextQuestion();
-        }}
+    <View className="flex-1 bg-black">
+      {/* 🌌 UNIFIED BACKGROUND */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
       />
+      <View className="absolute h-full w-full bg-black/70" />
 
-      <View
-        style={{ width: wp(120), height: wp(120), top: -hp(20), left: -wp(20) }}
-        className="absolute bg-indigo-600/10 rounded-full blur-[100px]"
-      />
-
-      <View
-        style={{
-          flex: 1,
-          paddingTop: insets.top > 0 ? insets.top : hp(2),
-          paddingBottom: insets.bottom,
-        }}
-      >
-        {/* Floating Question Indicator */}
-        <View
-          style={{
-            top: insets.top > 0 ? insets.top + hp(1) : hp(7),
-            paddingHorizontal: wp(5),
-            paddingVertical: hp(1),
-          }}
-          className="absolute self-center rounded-full bg-white/5 border border-white/10 z-50 backdrop-blur-md"
-        >
-          <Text
-            style={{ fontSize: rf(1.4) }}
-            // Swapped font-bold for font-main-bold
-            className="text-indigo-400 font-main-bold tracking-[3px] uppercase"
-          >
-            Question {questionIndex + 1}
-          </Text>
+      {/* --- CONDITIONAL VIEWS (TABLE & POPUP) --- */}
+      {isTableOpen ? (
+        <View className="z-[60] flex-1">
+          <GameTable
+            isTableOpen={isTableOpen}
+            setIsTableOpen={setIsTableOpen}
+            table={table}
+          />
         </View>
-
-        <View style={{ marginTop: hp(8) }}>
-          <Timer countdown={countdown} />
+      ) : isDynamicPopUp ? (
+        <View className="z-[60] flex-1 items-center justify-center">
+          <DynamicOverlayPopUp
+            isPopUp={isDynamicPopUp}
+            mediaId={mediaId}
+            mediaType={mediaType}
+            closeVisibleDelay={3000}
+            playerData={playerMessage}
+          />
         </View>
+      ) : (
+        /* --- MAIN QUIZ UI --- */
+        <>
+          <HintSection
+            isVisible={showHint}
+            hint={question?.hint}
+            onClose={() => {
+              setShowHint(false);
+              setIsHintButtonVisible(true);
+            }}
+            onNext={() => {
+              setIsHintButtonVisible(false);
+              handleNextQuestion();
+            }}
+          />
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: wp(6),
-            paddingTop: hp(2),
-            paddingBottom: hp(10),
-          }}
-        >
-          <QuestionSection question={question?.question} />
-
-          {/* Divider */}
           <View
-            style={{ marginTop: hp(1), marginBottom: hp(1) }}
-            className="items-center"
+            style={{
+              flex: 1,
+              paddingTop: insets.top > 0 ? insets.top : hp(2),
+              paddingBottom: insets.bottom,
+            }}
           >
-            <View className="h-[1px] w-20 bg-white/10 mb-4" />
-            <Text
-              style={{ fontSize: rf(1.4) }}
-              // Swapped for font-main-md
-              className="text-white/30 text-center font-main-md tracking-widest uppercase"
+            {/* Floating Question Indicator */}
+            <View
+              style={{
+                top: insets.top > 0 ? insets.top + hp(1) : hp(7),
+                paddingHorizontal: wp(5),
+                paddingVertical: hp(1),
+              }}
+              className="absolute z-50 self-center rounded-full border border-white/20 bg-white/10 shadow-2xl backdrop-blur-xl"
             >
-              Consult the Quiz table to solve
-            </Text>
-          </View>
-
-          {!isHintButtonVisible && (
-            <View style={{ marginTop: hp(4) }}>
-              <OptionsSection
-                options={
-                  isFiftyFiftyActive ? remainingOptions : question?.options
-                }
-                handleAnswerSelection={onOptionPress}
-              />
-            </View>
-          )}
-
-          {isHintButtonVisible && (
-            <TouchableOpacity
-              onPress={() => setShowHint(true)}
-              activeOpacity={0.8}
-              className="mt-8 flex-row items-center justify-center bg-indigo-500/10 border border-indigo-500/30 py-4 rounded-2xl"
-            >
-              <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
               <Text
-                // Swapped font-bold for font-main-bold
-                className="ml-3 text-indigo-400 font-main-bold uppercase tracking-[2px] text-[12px]"
+                style={{ fontSize: rf(1.4) }}
+                className="font-main-bold uppercase tracking-[3px] text-indigo-400"
               >
-                View Solution Hint
+                Question {questionIndex + 1}
               </Text>
-            </TouchableOpacity>
-          )}
+            </View>
 
-          <View style={{ marginTop: hp(1) }}>
-            <QuizButton
-              showHint={isHintButtonVisible}
-              setIsTableOpen={setIsTableOpen}
-              handleNextQuestion={handleNextQuestion}
-              handleFiftyFifty={handleFiftyFifty}
-            />
+            <View style={{ marginTop: hp(8) }}>
+              <Timer countdown={countdown} />
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: wp(6),
+                paddingTop: hp(2),
+                paddingBottom: hp(10),
+              }}
+            >
+              <QuestionSection question={question?.question} />
+
+              {/* Divider */}
+              <View
+                style={{ marginTop: hp(1), marginBottom: hp(1) }}
+                className="items-center"
+              >
+                <View className="mb-4 h-[1px] w-20 bg-white/10" />
+                <Text
+                  style={{ fontSize: rf(1.4) }}
+                  className="text-center font-main-md uppercase tracking-widest text-white/40"
+                >
+                  Consult the Quiz table to solve
+                </Text>
+              </View>
+
+              {!isHintButtonVisible && (
+                <View style={{ marginTop: hp(4) }}>
+                  <OptionsSection
+                    options={
+                      isFiftyFiftyActive ? remainingOptions : question?.options
+                    }
+                    handleAnswerSelection={onOptionPress}
+                  />
+                </View>
+              )}
+
+              {isHintButtonVisible && (
+                <TouchableOpacity
+                  onPress={() => setShowHint(true)}
+                  activeOpacity={0.8}
+                  className="mt-8 flex-row items-center justify-center rounded-3xl border border-white/10 bg-white/5 py-5 backdrop-blur-md"
+                >
+                  <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
+                  <Text className="ml-3 font-main-bold text-[12px] uppercase tracking-[2px] text-indigo-400">
+                    View Solution Hint
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <View style={{ marginTop: hp(1) }}>
+                <QuizButton
+                  showHint={isHintButtonVisible}
+                  setIsTableOpen={setIsTableOpen}
+                  handleNextQuestion={handleNextQuestion}
+                  handleFiftyFifty={handleFiftyFifty}
+                />
+              </View>
+            </ScrollView>
           </View>
-        </ScrollView>
-        <QuitQuizModal
-          visible={showQuitModal}
-          penalty={500}
-          onCancel={() => setShowQuitModal(false)}
-          onConfirm={() => {
-            setShowQuitModal(false);
-            handleQuitInMiddle();
-          }}
-        />
-      </View>
+        </>
+      )}
+
+      <QuitQuizModal
+        visible={showQuitModal}
+        penalty={500}
+        onCancel={() => setShowQuitModal(false)}
+        onConfirm={() => {
+          setShowQuitModal(false);
+          handleQuitInMiddle();
+        }}
+      />
     </View>
   );
 };
