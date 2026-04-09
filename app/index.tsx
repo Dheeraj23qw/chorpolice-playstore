@@ -12,13 +12,10 @@ import { useWelcomeBonus } from "@/service/useWelcomeBonus";
 
 export default function Index() {
   const navigation = useNavigation();
-
-  // 👇 only 2 stages now
   const [stage, setStage] = useState<"video" | "game">("video");
+  const [isBonusTriggered, setIsBonusTriggered] = useState(false);
 
   const { showModal, claimBonus } = useWelcomeBonus();
-
-  // ✅ prevent multiple triggers (robust)
   const hasNavigated = useRef(false);
 
   /* ---------------- INIT ---------------- */
@@ -33,43 +30,51 @@ export default function Index() {
 
   /* ---------------- SAFE TRANSITION ---------------- */
   const goToGame = () => {
-    if (hasNavigated.current) return; // prevent double call
+    if (hasNavigated.current) return;
     hasNavigated.current = true;
 
     setStage("game");
     AudioEngine.play("quiz", "background");
   };
 
-  /* ---------------- FALLBACK (IMPORTANT) ---------------- */
+  /* ---------------- FALLBACK ---------------- */
   useEffect(() => {
     if (stage === "video") {
       const fallback = setTimeout(() => {
-        goToGame(); // if video fails
-      }, 4000); // slightly more than 2s video
-
+        goToGame();
+      }, 4000);
       return () => clearTimeout(fallback);
+    }
+  }, [stage]);
+
+  useEffect(() => {
+    if (stage === "game") {
+      const bonusTimer = setTimeout(() => {
+        setIsBonusTriggered(true);
+      }, 12000); // 12 Seconds
+
+      return () => clearTimeout(bonusTimer);
     }
   }, [stage]);
 
   /* ---------------- UI ---------------- */
 
-  // 🎬 VIDEO
   if (stage === "video") {
     return (
       <View style={{ flex: 1, backgroundColor: "#050508" }}>
-        <VideoPlayerComponent
-          videoIndex={1}
-          onVideoEnd={goToGame} // 👈 direct transition
-        />
+        <VideoPlayerComponent videoIndex={1} onVideoEnd={goToGame} />
       </View>
     );
   }
 
-  // 🎮 GAME
   return (
     <View style={{ flex: 1 }}>
       <GameModeScreen />
-      <WelcomeBonusModal isVisible={showModal} onClaim={claimBonus} />
+
+      <WelcomeBonusModal
+        isVisible={showModal && isBonusTriggered}
+        onClaim={claimBonus}
+      />
     </View>
   );
 }
