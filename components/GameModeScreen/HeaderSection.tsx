@@ -9,15 +9,14 @@ import OptionHeader from "@/components/optionHeader";
 
 const HeaderSection = () => {
   return (
-    <View style={{ paddingHorizontal: wp(6), marginBottom: hp(2) ,paddingTop:hp(4) }}>
+    <View
+      style={{
+        paddingHorizontal: wp(6),
+        marginBottom: hp(2),
+        paddingTop: hp(4),
+      }}
+    >
       <OptionHeader />
-
-      <Animated.View
-        entering={FadeInDown.delay(200).springify().damping(15)}
-        className="mt-6"
-      >
-        <RulesButton onPress={() => router.push("/rules-home")} />
-      </Animated.View>
     </View>
   );
 };

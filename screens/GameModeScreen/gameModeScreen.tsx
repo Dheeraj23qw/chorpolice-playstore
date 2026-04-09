@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
-import { View } from "react-native";
+import { View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
-import BackgroundOrbs from "@/components/GameModeScreen/BackgroundOrbs";
 import HeaderSection from "@/components/GameModeScreen/HeaderSection";
 import GameModeList from "@/components/GameModeScreen/GameModeList";
+import UserProfilecard from "@/components/GameModeScreen/UserProfilecard";
+
 import { AudioEngine } from "@/audio/audioEngine";
 import { AppDispatch, RootState } from "@/redux/store";
 import { setIsGameReset } from "@/redux/reducers/playerReducer";
@@ -34,16 +35,52 @@ const GameModeScreen: React.FC = () => {
 
   const unclaimedExists = useSelector(hasUnclaimedAwards);
 
-
   return (
-    <View className="flex-1 bg-[#050508]">
-      <BackgroundOrbs />
+    <View className="flex-1 bg-black">
+      {/* 🔥 BACKGROUND IMAGE ONLY */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        resizeMode="cover"
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+        }}
+      />
 
+      {/* 🔥 VERY SUBTLE DARK OVERLAY (important for readability) */}
+      <View
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          backgroundColor: "black",
+          opacity: 0.4, // 🔥 tweak (0.3–0.5 best)
+        }}
+      />
+
+      {/* 🔥 OPTIONAL LIGHT GLOW (keep minimal) */}
+      <View
+        style={{
+          position: "absolute",
+          top: -100,
+          left: -80,
+          width: 250,
+          height: 250,
+          borderRadius: 250,
+          backgroundColor: "#7C5CFF",
+          opacity: 0.06,
+        }}
+      />
+
+      {/* 🔥 CONTENT */}
       <View style={{ paddingTop: insets.top }} className="flex-1">
         <HeaderSection />
+        <UserProfilecard />
         <GameModeList />
       </View>
-    {unclaimedExists && <UnlockedAwardModal />}
+
+      {unclaimedExists && <UnlockedAwardModal />}
     </View>
   );
 };

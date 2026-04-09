@@ -1,122 +1,145 @@
-import React, { memo } from "react";
+import React, { memo, useEffect } from "react";
 import { View, Pressable } from "react-native";
-import { Table, FastForward, Split, Zap } from "lucide-react-native";
+import { Table, FastForward, Split } from "lucide-react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { AudioEngine } from "@/audio/audioEngine";
 import { Text } from "../Text";
 
 interface ButtonProps {
   showHint: boolean;
-  setIsTableOpen: (isOpen: boolean) => void;
+  setIsTableOpen: (open: boolean) => void;
   handleNextQuestion: () => void;
   handleFiftyFifty: () => void;
 }
 
-const ActionButton = memo(
-  function ActionButton({
-    label,
-    onPress,
-    variant = "primary",
-    icon: Icon,
-  }: {
-    label: string;
-    onPress: () => void;
-    variant?: "primary" | "secondary" | "accent";
-    icon?: any;
-  }) {
-    const handlePress = () => {
-      AudioEngine.play("select", "ui");
-      onPress();
-    };
+/* -------------------- Action Button -------------------- */
+const ActionButton = memo(function ActionButton({
+  label,
+  onPress,
+  variant = "primary",
+  icon: Icon,
+  isAttentionRequired = false,
+}: {
+  label: string;
+  onPress: () => void;
+  variant?: "primary" | "secondary" | "accent";
+  icon?: any;
+  isAttentionRequired?: boolean;
+}) {
+  const scale = useSharedValue(1);
 
-    const themes = {
-      primary: {
-        bg: "bg-indigo-500/10",
-        border: "border-indigo-500/40",
-        text: "text-indigo-400",
-        icon: "#818cf8",
-      },
-      secondary: {
-        bg: "bg-white/5",
-        border: "border-white/10",
-        text: "text-slate-400",
-        icon: "#94a3b8",
-      },
-      accent: {
-        bg: "bg-amber-500/10",
-        border: "border-amber-500/40",
-        text: "text-amber-400",
-        icon: "#fbbf24",
-      },
-    };
+  useEffect(() => {
+    if (isAttentionRequired) {
+      scale.value = withRepeat(
+        withTiming(1.08, {
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        -1,
+        true, // reverse for pulse
+      );
+    } else {
+      scale.value = 1;
+    }
+  }, [isAttentionRequired]);
 
-    const current = themes[variant];
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
-    return (
+  const handlePress = () => {
+    AudioEngine.play("select", "ui");
+    onPress();
+  };
+
+  const themes = {
+    primary: {
+      bg: "bg-indigo-500/10",
+      border: "border-indigo-500/40",
+      text: "text-indigo-400",
+      icon: "#818cf8",
+    },
+    secondary: {
+      bg: "bg-white/5",
+      border: "border-white/10",
+      text: "text-slate-400",
+      icon: "#94a3b8",
+    },
+    accent: {
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20",
+      text: "text-amber-400",
+      icon: "#fbbf24",
+    },
+  };
+
+  const current = themes[variant];
+
+  return (
+    <Animated.View style={[{ flex: 1, height: 56 }, animatedStyle]}>
       <Pressable
         onPress={handlePress}
         style={({ pressed }) => [
           {
-            transform: [{ scale: pressed ? 0.95 : 1 }],
-            opacity: pressed ? 0.8 : 1,
+            transform: [{ scale: pressed ? 0.96 : 1 }],
+            opacity: pressed ? 0.9 : 1,
           },
         ]}
-        className={`flex-1 flex-row items-center justify-center h-14 rounded-2xl border ${current.bg} ${current.border}`}
+        className={`flex-1 flex-row items-center justify-center rounded-2xl border ${current.bg} ${current.border}`}
       >
         {Icon && <Icon size={18} color={current.icon} strokeWidth={2.5} />}
         <Text
-          className={`ml-2 text-[11px] font-main-bold uppercase tracking-[2px] ${current.text}`}
+          className={`ml-2 font-main-bold text-[11px] uppercase tracking-[2px] ${current.text}`}
         >
           {label}
         </Text>
       </Pressable>
-    );
-  }
-);
+    </Animated.View>
+  );
+});
 
-ActionButton.displayName = "ActionButton";
-
-export const QuizButton: React.FC<ButtonProps> = memo(
-  function QuizButton({ showHint, setIsTableOpen, handleNextQuestion, handleFiftyFifty }) {
-    return (
-      <View className="mt-4 px-4 py-6 rounded-[32px] bg-white/[0.03] border border-white/[0.05] backdrop-blur-xl">
-        <View className="flex-row items-center mb-4 px-2">
-          <Zap size={12} color="#6366f1" fill="#6366f1" />
-          <Text 
-            className="ml-2 text-[10px] font-main-bold text-indigo-500/60 uppercase tracking-[3px]"
-          >
-            Available Lifelines
-          </Text>
-        </View>
-
-        <View className="flex-row gap-3">
-          {!showHint && (
-            <ActionButton
-              label="50:50"
-              onPress={handleFiftyFifty}
-              variant="secondary"
-              icon={Split}
-            />
-          )}
-
+/* -------------------- Quiz Buttons -------------------- */
+export const QuizButton: React.FC<ButtonProps> = memo(function QuizButton({
+  showHint,
+  setIsTableOpen,
+  handleNextQuestion,
+  handleFiftyFifty,
+}) {
+  return (
+    <View className="mt-4 rounded-[32px] border border-white/[0.05] bg-white/[0.02] px-4 py-6">
+      <View className="flex-row gap-3">
+        {!showHint && (
           <ActionButton
-            label="Table"
-            onPress={() => setIsTableOpen(true)}
+            label="50:50"
+            onPress={handleFiftyFifty}
             variant="secondary"
-            icon={Table}
+            icon={Split}
           />
+        )}
 
-          {showHint && (
-            <ActionButton
-              label="Proceed"
-              onPress={handleNextQuestion}
-              variant="accent"
-              icon={FastForward}
-            />
-          )}
-        </View>
+        <ActionButton
+          label="Table"
+          onPress={() => setIsTableOpen(true)}
+          variant="secondary"
+          icon={Table}
+          isAttentionRequired={true}
+        />
+        {showHint && (
+          <ActionButton
+            label="Proceed"
+            onPress={handleNextQuestion}
+            variant="accent"
+            icon={FastForward}
+            isAttentionRequired={true} // pulsating here
+          />
+        )}
       </View>
-    );
-  }
-);
-
-QuizButton.displayName = "QuizButton";
+    </View>
+  );
+});

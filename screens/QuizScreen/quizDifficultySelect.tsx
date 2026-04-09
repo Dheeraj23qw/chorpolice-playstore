@@ -131,6 +131,17 @@ const QuizDifficultyScreen = () => {
               to claim victory. A single mistake leads to{" "}
               <Text className="font-main-bold text-rose-400">defeat</Text>.
             </Text>
+
+            <Text
+              style={{ fontSize: rf(1.8), lineHeight: rf(2.6), marginTop: 8 }}
+              className="font-main-medium text-slate-300"
+            >
+              Use your{" "}
+              <Text className="font-main-bold text-amber-400">2 lifelines</Text>{" "}
+              and the{" "}
+              <Text className="font-main-bold text-indigo-400">Table</Text>{" "}
+              wisely to stay in the game.
+            </Text>
           </View>
         )}
 
