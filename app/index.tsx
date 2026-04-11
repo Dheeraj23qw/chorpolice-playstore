@@ -1,3 +1,22 @@
+/**
+ * --- NETWORK INFRASTRUCTURE INITIALIZATION ---
+ * These polyfills bridge the gap between Node.js-based networking
+ * libraries (TCP/UDP) and the React Native runtime environment.
+ */
+
+// Required for secure random ID generation (nanoid/uuid)
+import "react-native-get-random-values";
+
+// Import Buffer to allow handling of binary network packets
+import { Buffer } from "buffer";
+
+// Attach Buffer to the global scope so networking packages
+// can access it globally without needing manual imports.
+globalThis.Buffer = Buffer;
+
+/** * --- END OF NETWORK INITIALIZATION ---
+ */
+
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useNavigation } from "expo-router";
 import { View } from "react-native";
