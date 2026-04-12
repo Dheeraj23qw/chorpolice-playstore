@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base layer */
+@layer base {
+  .font-main {
+    font-family: "outfit";
+  }
+
+  .font-main-bold {
+    font-family: "outfit-bold";
+  }
+
+  .font-main-medium {
+    font-family: "outfit-medium";
+  }
+}

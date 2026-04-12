@@ -24,10 +24,11 @@ const difficultySlice = createSlice({
   reducers: {
     setDifficulty: (
       state,
-      action: PayloadAction<"easy" | "medium" | "hard">,
+      action: PayloadAction<{ level: "easy" | "medium" | "hard", table?: (number | string)[][] }>,
     ) => {
-      state.level = action.payload;
-      state.table = generateTable(action.payload);
+      const { level, table } = action.payload;
+      state.level = level;
+      state.table = table || generateTable(level);
       state.totalScores = generateTotalScores(state.table);
       state.correctQuestions = 0;
       state.isWinner = false;
@@ -137,4 +138,4 @@ export const { setDifficulty, resetDifficulty, setCorrectAnswers } =
 
 export default difficultySlice.reducer;
 
-export { getSpecificRoundScore, getTotalScoreUpToRound };
+export { getSpecificRoundScore, getTotalScoreUpToRound, generateTable };

@@ -22,7 +22,8 @@ function injectVariables(
 export async function scheduleFromTemplate(
   template: NotificationTemplate,
   seconds: number,
-  variables?: Record<string, string | number>
+  variables?: Record<string, string | number>,
+  color?: string
 ) {
   const title = injectVariables(
     getRandomItem(template.titles),
@@ -39,6 +40,7 @@ export async function scheduleFromTemplate(
     title,
     body,
     seconds,
+    color,
     data: template.data,
   });
 }

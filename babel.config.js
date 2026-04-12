@@ -1,23 +1,15 @@
 module.exports = function (api) {
   api.cache(true);
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  const plugins = [];
-
-  // 1. Production-only: Strip consoles to boost Android performance
-  if (isProduction) {
-    plugins.push("transform-remove-console");
-  }
-
-  // 2. Reanimated MUST ALWAYS be the absolute last plugin in the array
-  plugins.push("react-native-reanimated/plugin");
-
   return {
     presets: [
-      // NativeWind v4 requires this jsxImportSource to enable the className prop
+      // ✅ Standard Expo preset (handles Reanimated and NativeWind automatically in SDK 52+)
       ["babel-preset-expo", { jsxImportSource: "nativewind" }],
-      "nativewind/babel",
+      "nativewind/babel", // This is a PRESET in v4.1+
     ],
-    plugins: plugins,
+    plugins: [
+      // ✅ MUST ALWAYS BE LAST (keeping for experimental v4 support)
+      "react-native-reanimated/plugin",
+    ],
   };
 };

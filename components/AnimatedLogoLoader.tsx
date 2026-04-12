@@ -16,10 +16,11 @@ export default function AnimatedLogoLoader() {
   const bounce = useSharedValue(0);
 
   useEffect(() => {
-    // Continuous rotation
+    // Continuous rotation (360 degrees loop)
     rotate.value = withRepeat(
-      withTiming(1000000,{ duration: 2000, easing: Easing.linear }),
-      -1
+      withTiming(360, { duration: 2500, easing: Easing.linear }),
+      -1,
+      false
     );
 
     // Pulsing scale
@@ -34,13 +35,13 @@ export default function AnimatedLogoLoader() {
     // Subtle bounce up & down
     bounce.value = withRepeat(
       withSequence(
-        withTiming(-8, { duration: 400, easing: Easing.inOut(Easing.ease) }),
-        withTiming(8, { duration: 400, easing: Easing.inOut(Easing.ease) })
+        withTiming(-8, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+        withTiming(8, { duration: 600, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       true
     );
-  }, [bounce, rotate, scale]);
+  }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -48,8 +49,8 @@ export default function AnimatedLogoLoader() {
       { scale: scale.value },
       { translateY: bounce.value },
     ],
-    shadowOpacity: interpolate(scale.value, [0.95, 1.1], [0.3, 0.7]),
-    shadowRadius: interpolate(scale.value, [0.95, 1.1], [10, 25]),
+    // Remove heavy shadows for Android performance
+    opacity: interpolate(scale.value, [0.95, 1.1], [0.8, 1]),
   }));
 
   return (

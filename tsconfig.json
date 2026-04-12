@@ -11,5 +11,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "global.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "types/**/*.d.ts", "nativewind-env.d.ts"]
 }

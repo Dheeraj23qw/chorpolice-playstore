@@ -39,7 +39,11 @@ export default function Index() {
 
   /* ---------------- INIT ---------------- */
   useEffect(() => {
-    loadSounds();
+    // 🚀 Defer heavy loading until the intro is handled
+    const timer = setTimeout(() => {
+      loadSounds();
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   /* ---------------- HIDE HEADER ---------------- */
@@ -52,6 +56,7 @@ export default function Index() {
     if (hasNavigated.current) return;
     hasNavigated.current = true;
 
+    console.log("🎬 [Startup] Transitioning: stage -> game");
     setStage("game");
     AudioEngine.play("quiz", "background");
   };
@@ -59,7 +64,9 @@ export default function Index() {
   /* ---------------- FALLBACK ---------------- */
   useEffect(() => {
     if (stage === "video") {
+      console.log("📼 [Startup] Now in Video Stage. Fallback timer active.");
       const fallback = setTimeout(() => {
+        console.warn("⚠️ [Startup] Video timed out or failed. Falling back to game menu.");
         goToGame();
       }, 4000);
       return () => clearTimeout(fallback);

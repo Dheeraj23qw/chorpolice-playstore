@@ -53,7 +53,19 @@ const GameModeScreen: React.FC = () => {
       easing: Easing.out(Easing.ease),
     });
 
-    return () => clearTimeout(timer);
+    // 🛡️ SAFETY FALLBACK: Ensure screen is visible even if Reanimated hangs
+    const safetyTimer = setTimeout(() => {
+      if (opacity.value !== 1) {
+        console.warn("⚠️ [GameModeScreen] Animation safety fallback triggered.");
+        opacity.value = 1;
+        scale.value = 1;
+      }
+    }, 2000);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   const unclaimedExists = useSelector(hasUnclaimedAwards);

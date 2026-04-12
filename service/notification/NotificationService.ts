@@ -34,7 +34,18 @@ class NotificationService {
   }
 
   async registerPermissions(): Promise<boolean> {
-    if (Platform.OS === "web" || !Device.isDevice) return false;
+    // 🛡️ DEV MODE BYPASS: Allow simulators to request/mock permissions if in development
+    if (Platform.OS === "web") return false;
+    
+    const isRealDevice = Device.isDevice;
+    if (!isRealDevice && !__DEV__) {
+      console.log("🚫 [NotificationService] Blocked: Notifications require a physical device in production.");
+      return false;
+    }
+
+    if (__DEV__) {
+       console.log("🧪 [NotificationService] Dev mode: Bypassing physical device check...");
+    }
 
     const { status: existingStatus } =
       await this.Notifications.getPermissionsAsync();
@@ -47,7 +58,10 @@ class NotificationService {
       finalStatus = status;
     }
 
-    if (finalStatus !== "granted") return false;
+    if (finalStatus !== "granted") {
+      console.log("❌ [NotificationService] Permissions denied:", finalStatus);
+      return false;
+    }
 
     if (Platform.OS === "android") {
       await this.Notifications.setNotificationChannelAsync("default", {
@@ -55,11 +69,13 @@ class NotificationService {
         importance: this.Notifications.AndroidImportance.MAX,
         sound: "default",
         vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#A855F7", // Beautiful purple light
         lockscreenVisibility:
           this.Notifications.AndroidNotificationVisibility.PUBLIC,
       });
     }
 
+    console.log("✅ [NotificationService] Permissions granted & Channel initialized.");
     return true;
   }
 
@@ -68,50 +84,80 @@ class NotificationService {
     title: string;
     body: string;
     seconds: number;
+    color?: string; // For beauty
     data?: AppNotificationData;
   }): Promise<void> {
     if (Platform.OS === "web") return;
 
-    await this.cancel(params.id);
+    console.log(`⏳ [NotificationService] Scheduling: "${params.title}" in ${params.seconds}s...`);
 
-    await this.Notifications.scheduleNotificationAsync({
-      identifier: params.id,
-      content: {
-        title: params.title,
-        body: params.body,
-        data: params.data,
-        sound: true,
-      },
-      trigger: {
-        type: this.Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: Math.max(1, Math.floor(params.seconds)),
-        repeats: false,
-      },
+    try {
+      await this.cancel(params.id);
+
+      await this.Notifications.scheduleNotificationAsync({
+        identifier: params.id,
+        content: {
+          title: params.title,
+          body: params.body,
+          data: params.data,
+          sound: true,
+          color: params.color || "#A855F7", // Default brand purple
+          priority: "max",
+        },
+        trigger: {
+          type: this.Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.max(1, Math.floor(params.seconds)),
+          repeats: false,
+        },
+      });
+      console.log("✨ [NotificationService] Schedule successful.");
+    } catch (error) {
+      console.error("🔥 [NotificationService] Schedule failed:", error);
+    }
+  }
+
+  /**
+   * 🧪 DEBUG: Fire a beautiful test notification immediately (3s delay)
+   */
+  async triggerTestNotification(): Promise<void> {
+    console.log("🔔 [NotificationService] Triggering test notification...");
+    await this.schedule({
+      id: "debug_test",
+      title: "BOOM! 🚀 Notifications Ready",
+      body: "This is a beautiful test notification. If you see this, your system is working perfectly in dev mode!",
+      seconds: 3,
+      color: "#22c55e", // Success green
+      data: { screen: "/" }
     });
   }
-async cancel(id: string): Promise<void> {
-  if (Platform.OS === "web") return;
 
-  try {
-    await this.Notifications.cancelScheduledNotificationAsync(id);
-  } catch (error) {
-    console.log("Cancel error:", error);
+  async cancel(id: string): Promise<void> {
+    if (Platform.OS === "web") return;
+
+    try {
+      await this.Notifications.cancelScheduledNotificationAsync(id);
+    } catch (error) {
+      // Silence cancel errors for non-existent notifications
+    }
   }
-}
-
 
   listen(): void {
     if (Platform.OS === "web") return;
     if (this.responseListener) return;
 
+    console.log("🎧 [NotificationService] Listening for responses...");
+
     this.responseListener =
       this.Notifications.addNotificationResponseReceivedListener(
         (response: any) => {
-          const data =
-            response.notification.request.content
-              .data as AppNotificationData;
+          const content = response.notification.request.content;
+          const data = content.data as AppNotificationData;
+
+          console.log(`🎯 [NotificationService] User tapped notification: "${content.title}"`);
 
           if (data?.screen) {
+            const { router } = require("expo-router");
+            console.log(`➡️ [NotificationService] Navigating to: ${data.screen}`);
             router.push(data.screen);
           }
         }

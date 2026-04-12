@@ -10,6 +10,10 @@ import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 
+import { handleIncomingPacket, subscribeToPackets } from "@/service/lanGameService";
+import { MODES } from "@/constants/Networking";
+import { QuizEngine } from "@/service/QuizEngine";
+
 interface PlayerMessage {
   message?: string | null;
 }
@@ -62,6 +66,10 @@ export const useQuizGameLogic = () => {
   const [isTableOpen, setIsTableOpen] = useState(false);
   const [fiftyFiftyUsageCount, setFiftyFiftyUsageCount] = useState(0);
   const [isHintButtonVisible, setIsHintButtonVisible] = useState(false);
+  const [isLeaderboardVisible, setIsLeaderboardVisible] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState<any>(null);
+
+  const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
 
   const [question, setQuestion] = useState(() => getRandomQuestion());
 
@@ -88,7 +96,9 @@ export const useQuizGameLogic = () => {
 
     setTimeout(() => {
       setIsDynamicPopUp(false);
-      setShowHint(true);
+      if (!isMultiplayer) {
+        setShowHint(true);
+      }
     }, POPUP_DELAY);
   }, [clearTimer]);
 
@@ -131,8 +141,44 @@ export const useQuizGameLogic = () => {
     } while (next === lastQuestionRef.current);
 
     lastQuestionRef.current = next;
+
+    // 📡 If Host, broadcast the question to sync everyone
+    if (isMultiplayer && QuizEngine.state.playerScores["host_id"]) { 
+       console.log("📡 [GameLogic] Host: Syncing question to all clients for Round:", questionIndex + 1);
+       handleIncomingPacket({
+         type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
+         question: next,
+         round: questionIndex + 1
+       });
+    }
+
     return next;
   };
+
+  // 💰 STAKE DEBIT & FIRST QUESTION SYNC EFFECT
+  useEffect(() => {
+    if (isMultiplayer) {
+      const stake = QuizEngine.state.stake;
+      if (stake > 0 && questionIndex === 0) {
+        console.log("💰 [GameLogic] Debiting stake:", stake);
+        dispatch(applyTransaction({
+          amount: -stake,
+          reason: "Quiz Game Stake",
+          source: "quiz_penalty"
+        }));
+      }
+
+      // 📡 Trigger first sync for bots if Host
+      if (QuizEngine.state.playerScores["host_id"] && questionIndex === 0) {
+          console.log("📡 [GameLogic] Host: Triggering first round sync for bots");
+          handleIncomingPacket({
+            type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
+            question: question, // Current initial question
+            round: 1
+          });
+      }
+    }
+  }, []);
 
   /* ---------------- ANSWER ---------------- */
 
@@ -159,9 +205,23 @@ export const useQuizGameLogic = () => {
       AudioEngine.play("lose", "gameplay");
     }
 
+    const timeLimit = TIMER_BY_DIFFICULTY[difficulty ?? "easy"];
+    const timeTaken = (timeLimit - countdown) * 1000; // in ms
+
+    // 📡 Multiplayer Broadcast
+    handleIncomingPacket({
+      type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
+      playerId: "host_id", // For host (clients would use their actual ID)
+      isCorrect: correct,
+      timeTaken: timeTaken,
+      timestamp: Date.now(),
+    });
+
     setTimeout(() => {
       setIsDynamicPopUp(false);
-      setShowHint(true);
+      if (!isMultiplayer) {
+         setShowHint(true);
+      }
     }, POPUP_DELAY);
   };
 
@@ -244,9 +304,52 @@ export const useQuizGameLogic = () => {
     setIsHintButtonVisible(false);
     setSelectedAnswer(null);
     setIsCorrect(null);
+    setIsLeaderboardVisible(false); // Hide leaderboard when moving to next
     setQuestion(getNextQuestion());
     setQuestionIndex((p) => p + 1);
   };
+
+  /* ---------------- MULTIPLAYER LISTENERS ---------------- */
+
+  useEffect(() => {
+    const unsubscribe = subscribeToPackets((packet) => {
+      if (packet.type === "TC_ROUND_SUMMARY") {
+        console.log("🏆 [GameLogic] Received Leaderboard Summary for Round:", packet.round);
+        setLeaderboardData(packet.leaderboard);
+        setIsLeaderboardVisible(true);
+
+        // 💰 WINNER PAYOUT LOGIC (Round 7 - Final)
+        if (packet.isLastRound && packet.leaderboard[0].id === "host_id") {
+             const pot = QuizEngine.state.totalPot;
+             if (pot > 0) {
+                console.log("💰 [GameLogic] Winner! Crediting pot:", pot);
+                dispatch(applyTransaction({
+                  amount: pot,
+                  reason: "Quiz Win - Total Pot",
+                  source: "quiz_reward"
+                }));
+                
+                Toast.show({
+                  type: ALERT_TYPE.SUCCESS,
+                  title: "CHAMPION!",
+                  textBody: `You won the pot of ${pot} coins!`
+                });
+             }
+        }
+      }
+      
+      if (packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC && !isLeaderboardVisible) {
+        console.log("📡 [GameLogic] Syncing question for round:", packet.round);
+        setQuestion(packet.question);
+        // Sync index if needed
+        if (packet.round > questionIndex + 1) {
+           setQuestionIndex(packet.round - 1);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   /* ---------------- RESET / QUIT ---------------- */
 
@@ -354,5 +457,9 @@ export const useQuizGameLogic = () => {
     handleQuitInMiddle,
     handleStats,
     handleEarn,
+    isLeaderboardVisible,
+    setIsLeaderboardVisible,
+    leaderboardData,
+    isMultiplayer,
   };
 };

@@ -1,4 +1,4 @@
-import "../global.css";
+import "../styles/global.css";
 
 import React, { useEffect, useCallback } from "react";
 import { Provider, useSelector } from "react-redux";
@@ -16,6 +16,8 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { notificationService } from "@/service/notification/NotificationService";
+import { GlobalAlert } from "@/components/feedback/GlobalAlert";
+import { runAfterUI } from "@/utils/runAfterUI"; // ✅ NEW
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -24,41 +26,50 @@ function AppLayout() {
 
   useAppExit();
 
-  /* ---------------- Audio Restore ---------------- */
+  /* ---------------- 🎧 Audio Restore ---------------- */
   useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
+    const handleAppState = (state: string) => {
       if (state === "active" && !AudioEngine.isMuted()) {
+        AudioEngine.ensureQuizGlobal?.();
+      }
+    };
+
+    const sub = AppState.addEventListener("change", handleAppState);
+
+    // ✅ Non-blocking restore
+    runAfterUI(() => {
+      if (!AudioEngine.isMuted()) {
         AudioEngine.ensureQuizGlobal?.();
       }
     });
 
-    if (!AudioEngine.isMuted()) {
-      AudioEngine.ensureQuizGlobal?.();
-    }
-
     return () => sub.remove();
   }, []);
 
-  /* ---------------- Notifications ---------------- */
+  /* ---------------- 🔔 Notifications ---------------- */
   useEffect(() => {
     let mounted = true;
-    (async () => {
+
+    runAfterUI(async () => {
       try {
         const granted = await notificationService.registerPermissions();
+
         if (!mounted || !granted) return;
+
         notificationService.listen();
         await notificationService.handleInitialNotification();
       } catch (e) {
         console.log("Notification setup error:", e);
       }
-    })();
+    });
+
     return () => {
       mounted = false;
       notificationService.cleanup();
     };
   }, []);
 
-  /* ---------------- Screen Wrapper ---------------- */
+  /* ---------------- 🎬 Screen Wrapper ---------------- */
   const screenLayout = useCallback(
     ({ children }: { children: React.ReactNode }) => (
       <ScreenWrapper variant="default" breathing>
@@ -101,9 +112,12 @@ export default function RootLayout() {
 
   useSystemUI();
 
+  /* ---------------- 🚀 Smooth Splash ---------------- */
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync().catch(() => {});
+      runAfterUI(() => {
+        SplashScreen.hideAsync().catch(() => {});
+      });
     }
   }, [fontsLoaded, fontError]);
 
@@ -114,7 +128,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AlertNotificationRoot theme="dark">
           <StatusBar hidden translucent backgroundColor="transparent" />
+
           <AppLayout />
+
+          {/* 🔥 Global Alert */}
+          <GlobalAlert />
         </AlertNotificationRoot>
       </SafeAreaProvider>
     </Provider>

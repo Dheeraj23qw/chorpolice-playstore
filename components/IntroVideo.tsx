@@ -23,29 +23,24 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
   ({ videoIndex, onVideoEnd }) => {
     const videoSource = VIDEO_SOURCES[videoIndex] || VIDEO_SOURCES[1];
 
-    const player = useVideoPlayer(videoSource, (player) => {
-      player.loop = false;
-      player.play();
-    });
+    const player = useVideoPlayer(videoSource, (p) => {
+      p.loop = false;
+      p.play();
 
-    useEffect(() => {
-      const subscription = player.addListener("playToEnd", () => {
+      // ✅ Attach listener immediately to avoid race conditions
+      p.addListener("playToEnd", () => {
         onVideoEnd();
       });
-
-      return () => {
-        subscription.remove();
-      };
-    }, [player, onVideoEnd]);
+    });
 
     return (
-      <View className="flex-1 bg-white">
+      <View className="flex-1 bg-black">
         <VideoView
           player={player}
           style={{ flex: 1 }}
-          contentFit="contain"
+          contentFit="cover" // Fill the screen properly
           nativeControls={false}
-          surfaceType="textureView" // ✅ Add this workaround
+          surfaceType="textureView"
           fullscreenOptions={{ allowsFullscreen: false } as any}
           allowsPictureInPicture={false}
         />
