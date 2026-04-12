@@ -1,7 +1,7 @@
 import { Platform, Linking } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as StoreReview from "expo-store-review";
-import { ALERT_TYPE, Dialog } from "react-native-alert-notification";
+import { toast } from "@/components/feedback/toast";
 
 const ANDROID_PACKAGE = "com.dheeraj.chorpolice";
 const IOS_APP_ID = "YOUR_IOS_ID";
@@ -36,19 +36,8 @@ export const handleAppReview = async ({
     /* 2️⃣ Low Rating Flow (<4)           */
     /* ---------------------------------- */
     if (rating < 4) {
-   
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: "Thanks for your feedback 💛",
-        textBody:
-          "We appreciate your honesty. We'll work hard to improve your experience!",
-        button: "Close",
-        onPressButton: () => {
-          Dialog.hide();
-          onComplete?.();
-        },
-      });
-
+      toast.warning("Thanks for your feedback 💛", "We appreciate your honesty. We'll work hard to improve your experience!");
+      onComplete?.();
       return;
     }
 
@@ -56,48 +45,35 @@ export const handleAppReview = async ({
     /* 3️⃣ High Rating Flow (4–5 Stars)   */
     /* ---------------------------------- */
  
-    Dialog.show({
-      type: ALERT_TYPE.SUCCESS,
-      title: "Thanks for the love! ❤️",
-      textBody:
-        "Your review helps other players find us. Just paste your message in the store!",
-      button: "Go to Store",
-      onPressButton: async () => {
-        Dialog.hide();
-        await delay(300);
+    toast.success("Thanks for the love! ❤️", "Your review helps other players find us. Redirecting to store...");
+    await delay(800);
 
-        try {
-          if (Platform.OS === "ios") {
-            const available = await StoreReview.isAvailableAsync();
-
-            if (available) {
-              await StoreReview.requestReview();
-            } else {
-              await Linking.openURL(
-                `https://apps.apple.com/app/id${IOS_APP_ID}?action=write-review`
-              );
-            }
-          } else {
-            // Direct open review page instead of details page
-            const deepLink = `market://details?id=${ANDROID_PACKAGE}&showAllReviews=true`;
-
-            const canOpen = await Linking.canOpenURL(deepLink);
-
-            if (canOpen) {
-              await Linking.openURL(deepLink);
-            } else {
-              await Linking.openURL(
-                `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`
-              );
-            }
-          }
-        } catch (err) {
-          console.warn("Store redirect failed:", err);
-        } finally {
-          onComplete?.();
+    try {
+      if (Platform.OS === "ios") {
+        const available = await StoreReview.isAvailableAsync();
+        if (available) {
+          await StoreReview.requestReview();
+        } else {
+          await Linking.openURL(
+            `https://apps.apple.com/app/id${IOS_APP_ID}?action=write-review`
+          );
         }
-      },
-    });
+      } else {
+        const deepLink = `market://details?id=${ANDROID_PACKAGE}&showAllReviews=true`;
+        const canOpen = await Linking.canOpenURL(deepLink);
+        if (canOpen) {
+          await Linking.openURL(deepLink);
+        } else {
+          await Linking.openURL(
+            `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("Store redirect failed:", err);
+    } finally {
+      onComplete?.();
+    }
   } catch (err) {
     console.warn("Global handleAppReview error:", err);
     onComplete?.();

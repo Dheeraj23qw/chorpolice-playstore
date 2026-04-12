@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Image,
   BackHandler,
-  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
@@ -18,6 +17,7 @@ import Timer from "../../components/thinkAndCountScreen/Timer";
 import QuestionSection from "../../components/thinkAndCountScreen/QuestionSection";
 import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+import QuizExitModal from "@/modal/QuizExitModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 import { Text } from "@/components/Text";
@@ -56,23 +56,15 @@ const QuizScreen = () => {
     isWaitingForOthers,
     roundProgress,
     localPlayerId,
+    isExitModalVisible,
+    handleConfirmExit,
+    handleCancelExit,
+    isHost,
   } = useQuizGameLogic();
 
   useEffect(() => {
     const backAction = () => {
-      Alert.alert("Exit", "Are you sure you want to exit?", [
-        {
-          text: "No",
-          onPress: () => null,
-          style: "cancel",
-        },
-        {
-          text: "Yes",
-          onPress: () => {
-            handleQuit();
-          },
-        },
-      ]);
+      handleQuitInMiddle();
       return true;
     };
 
@@ -82,7 +74,7 @@ const QuizScreen = () => {
     );
 
     return () => subscription.remove();
-  }, [handleQuit]);
+  }, [handleQuitInMiddle]);
 
   const onOptionPress = useCallback(
     (value: string) => {
@@ -245,6 +237,17 @@ const QuizScreen = () => {
           </View>
         </>
       )}
+
+      {/* 🚪 EXIT MODAL */}
+      <QuizExitModal
+        visible={isExitModalVisible}
+        onCancel={handleCancelExit}
+        onConfirm={handleConfirmExit}
+        isHost={isHost}
+        isMultiplayer={isMultiplayer}
+        currentRound={questionIndex + 1}
+        totalRounds={NUM_QUESTIONS}
+      />
     </View>
   );
 };

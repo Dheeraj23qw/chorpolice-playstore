@@ -3,7 +3,6 @@ import playerReducer from "./reducers/playerReducer";
 import soundSlice from "./reducers/soundReducer";
 import playerImagesReducer from "./reducers/dynamicImagesReducer";
 import difficultyReducer from "@/redux/reducers/quiz";
-import loaderReducer from "./reducers/loaderReducer";
 import popupReducer from "./reducers/popupReducer";
 import awardsReducer from "@/features/awards/awardsSlice";
 import walletReducer, { loadWallet, WalletState } from "@/features/wallet/walletSlice";
@@ -20,7 +19,6 @@ const store = configureStore({
     sound: soundSlice,
     playerImages: playerImagesReducer,
     difficulty: difficultyReducer,
-    loader: loaderReducer,
     popup: popupReducer,
     wallet: walletReducer,
     quizStats: quizStatsReducer,

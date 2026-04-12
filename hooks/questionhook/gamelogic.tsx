@@ -7,7 +7,7 @@ import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
 import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
-import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { toast } from "@/components/feedback/toast";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 import { loadUsername } from "@/features/Avatar";
 
@@ -294,22 +294,12 @@ export const useQuizGameLogic = () => {
 
   const handleFiftyFifty = () => {
     if (fiftyFiftyUsageCount >= 2) {
-      Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: "Empty!",
-        textBody: "You've used all 50-50 lifelines for this game.",
-        autoClose: 2000,
-      });
+      toast.error("Empty!", "You've used all 50-50 lifelines for this game.", 2000);
       return;
     }
 
     if (!question?.options || question.options.length !== 4) {
-      Toast.show({
-        type: ALERT_TYPE.INFO,
-        title: "Unavailable",
-        textBody: "50-50 is only for 4-option questions.",
-        autoClose: 2000,
-      });
+      toast.info("Unavailable", "50-50 is only for 4-option questions.", 2000);
       return;
     }
 
@@ -329,21 +319,11 @@ export const useQuizGameLogic = () => {
     setFiftyFiftyUsageCount(nextCount);
 
     if (nextCount === 1) {
-      Toast.show({
-        type: ALERT_TYPE.SUCCESS,
-        title: "50-50 Activated!",
-        textBody: "1 lifeline used. 1 remaining.",
-        autoClose: 2000,
-      });
+      toast.success("50-50 Activated!", "1 lifeline used. 1 remaining.", 2000);
     }
 
     if (nextCount === 2) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: "Final Lifeline!",
-        textBody: "No 50-50 lifelines left. Use it wisely!",
-        autoClose: 3000,
-      });
+      toast.warning("Final Lifeline!", "No 50-50 lifelines left. Use it wisely!", 3000);
     }
   };
 
@@ -427,11 +407,7 @@ export const useQuizGameLogic = () => {
               reason: "Quiz Win - Total Pot",
               source: "quiz_reward"
             }));
-            Toast.show({
-              type: ALERT_TYPE.SUCCESS,
-              title: "CHAMPION!",
-              textBody: `You won the pot of ${pot} coins!`
-            });
+            toast.success("CHAMPION!", `You won the pot of ${pot} coins!`);
           }
         }
       }
@@ -444,10 +420,42 @@ export const useQuizGameLogic = () => {
           setQuestionIndex(packet.round - 1);
         }
       }
+
+      // 🚪 GAME END: Host quit — refund innocent non-host players
+      if (packet.type === MODES.THINK_AND_COUNT.GAME_END && packet.reason === "host_quit") {
+        if (!isHost) {
+          const refund = packet.stake || 0;
+          console.log(`💰 [GameLogic] Host quit — refunding ${refund} coins to innocent player.`);
+
+          if (refund > 0) {
+            dispatch(applyTransaction({
+              amount: refund,
+              reason: "Refund — Host left the game",
+              source: "quiz_refund"
+            }));
+            toast.success("Coins Refunded!", `${refund} coins returned because the host left the game.`, 4000);
+          }
+
+          // Navigate back to home
+          clearTimer();
+          AudioEngine.stop("timer");
+          resetGame();
+          dispatch(resetDifficulty());
+          requestAnimationFrame(() => {
+            router.dismissAll();
+            router.replace("/mode-select" as any);
+          });
+        }
+      }
     });
 
     return () => unsubscribe();
   }, [isLeaderboardVisible, questionIndex, dispatch, localPlayerId]);
+
+  /* ---------------- EXIT MODAL STATE ---------------- */
+
+  const [isExitModalVisible, setIsExitModalVisible] = useState(false);
+  const isHost = localPlayerId === "host_id";
 
   /* ---------------- RESET / QUIT ---------------- */
 
@@ -481,34 +489,105 @@ export const useQuizGameLogic = () => {
   const handleStats = useCallback(() => handleNavigation("/stats"), [handleNavigation]);
   const handleEarn = useCallback(() => handleNavigation("/earn"), [handleNavigation]);
 
+  /**
+   * 🛡️ Double-tap guarded exit handler.
+   * RULES:
+   * - Single player: Clean exit, no penalty.
+   * - HOST exits multiplayer: Stake was already deducted at game start — no double deduction.
+   *   Just show message that stake is lost, end the game, kill bots.
+   * - NON-HOST exits multiplayer by choice: Stake already deducted — show stake lost message,
+   *   remove self from engine so the game continues for others.
+   */
   const isQuittingRef = useRef(false);
 
-  const handleQuitInMiddle = async () => {
-    if (isQuittingRef.current) return;
+  const handleConfirmExit = useCallback(async () => {
+    if (isQuittingRef.current) return; // 🛡️ double-tap guard
     isQuittingRef.current = true;
 
     try {
       clearTimer();
       AudioEngine.stop("timer");
+      setIsExitModalVisible(false);
 
-      await dispatch(
-        applyTransaction({
-          amount: -50,
-          reason: "Quit Quiz Penalty",
-          source: "quiz_penalty",
-          metadata: { round: questionIndex + 1 },
-        }),
-      );
+      if (isMultiplayer) {
+        const stake = QuizEngine.state.stake;
+
+        if (isHost) {
+          // HOST: End the entire session
+          // Stake was already cut at game start — no double deduction.
+          console.log(`🚪 [GameLogic] Host leaving — stake (${stake}) already deducted, ending session.`);
+
+          if (stake > 0) {
+            toast.error("Stake Lost!", `Your ${stake} coins are lost because you left the game in the middle.`, 4000);
+          }
+
+          // 📡 Broadcast TC_GAME_END so non-host players get refunded
+          handleIncomingPacket({
+            type: MODES.THINK_AND_COUNT.GAME_END,
+            reason: "host_quit",
+            stake: stake,
+          });
+
+          const { BotEngine } = require("@/service/BotEngine");
+          BotEngine.reset();
+          QuizEngine.reset();
+        } else {
+          // NON-HOST exits by choice: Stake already deducted at start — it's lost.
+          console.log(`🚪 [GameLogic] Player ${localPlayerId} leaving — stake (${stake}) lost.`);
+
+          if (stake > 0) {
+            toast.warning("Stake Lost", `Your ${stake} coins are lost because you left the game.`, 3000);
+          }
+
+          QuizEngine.removePlayer(localPlayerId);
+        }
+      }
+      // Single player: No penalty — just exit cleanly.
 
       resetGame();
       dispatch(resetDifficulty());
-      router.replace("/level-select");
+
+      requestAnimationFrame(() => {
+        router.dismissAll();
+        router.replace("/mode-select" as any);
+      });
     } catch (error) {
-      console.error("Error during quit-in-middle:", error);
+      console.error("Error during exit:", error);
     } finally {
       isQuittingRef.current = false;
     }
-  };
+  }, [clearTimer, isMultiplayer, isHost, localPlayerId, dispatch, resetGame, router]);
+
+  /**
+   * Opens the exit modal — immediately pauses the timer and kills the
+   * ticking sound so the modal feels clean and silent.
+   */
+  const handleQuitInMiddle = useCallback(() => {
+    clearTimer();
+    AudioEngine.stop("timer");
+    setIsExitModalVisible(true);
+  }, [clearTimer]);
+
+  /**
+   * User cancelled the exit modal — resume the timer and sound
+   * from wherever they left off.
+   */
+  const handleCancelExit = useCallback(() => {
+    setIsExitModalVisible(false);
+    // Restart the timer from the current countdown value
+    if (countdown > 0) {
+      AudioEngine.play("timer", "gameplay");
+      timerRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            handleTimeUp();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+  }, [countdown, handleTimeUp]);
 
   return {
     question,
@@ -548,5 +627,11 @@ export const useQuizGameLogic = () => {
     isWaitingForOthers,
     roundProgress,
     localPlayerId,
+    // Exit modal
+    isExitModalVisible,
+    setIsExitModalVisible,
+    handleConfirmExit,
+    handleCancelExit,
+    isHost,
   };
 };

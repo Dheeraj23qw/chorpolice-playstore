@@ -1,28 +1,24 @@
 import "../styles/global.css";
 
 import React, { useEffect, useCallback } from "react";
-import { Provider, useSelector } from "react-redux";
+import { Provider } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
 import { useFonts } from "expo-font";
-import store, { RootState } from "@/redux/store";
-import GlobalLoader from "@/components/globalLoader";
-import RouteLoader from "@/components/RouteLoader";
+import store from "@/redux/store";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { AlertNotificationRoot } from "react-native-alert-notification";
 import { useAppExit } from "@/hooks/useAppExit";
 import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { notificationService } from "@/service/notification/NotificationService";
-import { GlobalAlert } from "@/components/feedback/GlobalAlert";
-import { runAfterUI } from "@/utils/runAfterUI"; // ✅ NEW
+import { ToastProvider } from "@/components/feedback/ToastProvider";
+import { runAfterUI } from "@/utils/runAfterUI";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
-  const { visible, message } = useSelector((state: RootState) => state.loader);
 
   useAppExit();
 
@@ -94,9 +90,6 @@ function AppLayout() {
         <Stack.Screen name="(social)" />
         <Stack.Screen name="(info)" />
       </Stack>
-
-      <RouteLoader />
-      <GlobalLoader visible={visible} message={message} />
     </View>
   );
 }
@@ -126,14 +119,12 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <AlertNotificationRoot theme="dark">
-          <StatusBar hidden translucent backgroundColor="transparent" />
+        <StatusBar hidden translucent backgroundColor="transparent" />
 
-          <AppLayout />
+        <AppLayout />
 
-          {/* 🔥 Global Alert */}
-          <GlobalAlert />
-        </AlertNotificationRoot>
+        {/* 🔥 Custom Toast System */}
+        <ToastProvider />
       </SafeAreaProvider>
     </Provider>
   );

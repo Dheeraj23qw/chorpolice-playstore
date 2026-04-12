@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
-import { alertStore } from "@/components/feedback/alertStore";
+import { toast } from "@/components/feedback/toast";
 import { useLanDiscovery } from "@/hooks/useLanDiscovery";
 import { loadUsername, saveUsername } from "@/features/Avatar";
 import { setSelectedImages } from "@/redux/reducers/playerReducer";
@@ -195,7 +195,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
       },
     };
     handleIncomingPacket(joinPacket, host.ip);
-    alertStore.show({ message: `Joining ${host.deviceName}...`, type: "success" });
+    toast.success("Joining", `Connecting to ${host.deviceName}...`);
   }, [userName, selectedImages, handleJoinSystemServer]);
 
   const [isStarting, setIsStarting] = useState(false);
@@ -204,7 +204,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     setIsStarting(true);
 
     setIsBettingModalVisible(false);
-    alertStore.show({ message: `💰 ${stake} coins added to pot!`, type: "success" });
+    toast.success("Stake Added", `💰 ${stake} coins added to pot!`);
 
     if (gameType === "QUIZ") {
       QuizEngine.init(players, difficulty, stake);
@@ -227,7 +227,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     setPlayers(currentPlayers => {
       const isTaken = currentPlayers.some((p) => p.avatarId === id);
       if (isTaken) {
-        alertStore.show({ message: "🚫 Character already taken! Please pick another kid.", type: "error" });
+        toast.error("Taken!", "🚫 Character already taken! Please pick another kid.");
         return currentPlayers;
       }
       dispatch(setSelectedImages([id]));

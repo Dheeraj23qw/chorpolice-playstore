@@ -9,7 +9,7 @@ import {
 import { AppDispatch, RootState } from "@/redux/store";
 import { GameMode } from "@/types/redux/reducers";
 import { generateRandomName } from "@/utils/generateRandomnames";
-import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
+import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
 
 const MAX_SELECTED_IMAGES = 4;
@@ -80,12 +80,7 @@ const dispatch = useDispatch<AppDispatch>();
   // ---------------------------
   const handleNameChange = useCallback((imageId: number, name: string) => {
     if (name.length > MAX_NAME_LENGTH) {
-      Toast.show({
-        type: ALERT_TYPE.WARNING,
-        title: "Limit Reached",
-        textBody: `Names cannot exceed ${MAX_NAME_LENGTH} characters.`,
-        autoClose: 1500, // Disappears quickly so it doesn't stay in the way
-      });
+      toast.warning("Limit Reached", `Names cannot exceed ${MAX_NAME_LENGTH} characters.`, 1500);
       return;
     }
 
@@ -125,13 +120,7 @@ const dispatch = useDispatch<AppDispatch>();
     const hasDuplicates = new Set(names).size !== names.length;
 
     if (hasDuplicates) {
-      Dialog.show({
-        type: ALERT_TYPE.WARNING,
-        title: "Duplicate Names",
-        textBody:
-          "Multiple players have the same name. Please give everyone a unique name!",
-        button: "Fix It",
-      });
+      toast.warning("Duplicate Names", "Multiple players have the same name. Please give everyone a unique name!");
       return true;
     }
 
@@ -164,13 +153,7 @@ const dispatch = useDispatch<AppDispatch>();
       console.error("Failed to start adventure:", error);
 
       // 3. Error Notification
-      Dialog.show({
-        type: ALERT_TYPE.DANGER,
-        title: "Launch Failed",
-        textBody:
-          "Something went wrong while setting up the game. Please try again.",
-        button: "Close",
-      });
+      toast.error("Launch Failed", "Something went wrong while setting up the game. Please try again.");
     } finally {
       setIsButtonDisabled(false);
     }
@@ -214,12 +197,7 @@ const dispatch = useDispatch<AppDispatch>();
         });
 
         // 2. Show the Notification
-        Toast.show({
-          type: ALERT_TYPE.SUCCESS,
-          title: "Player Removed",
-          textBody: "The selected player has been removed.",
-          autoClose: 2000, // Closes after 2 seconds
-        });
+        toast.success("Player Removed", "The selected player has been removed.", 2000);
       }
     },
     [selectedImages, dispatch],

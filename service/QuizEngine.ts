@@ -140,6 +140,34 @@ export const QuizEngine = {
   },
 
   /**
+   * Removes a player from the active session mid-game.
+   * WHY: If a non-host player leaves, the game must continue for everyone else.
+   * The engine adjusts round tracking so the remaining players aren't stuck
+   * waiting for an answer that will never arrive.
+   */
+  removePlayer: (playerId: string) => {
+    if (!QuizEngine.state.playerScores[playerId]) {
+      console.log(`🛡️ [QuizEngine] removePlayer — ID not found: ${playerId}`);
+      return;
+    }
+
+    console.log(`🚪 [QuizEngine] Removing player: ${playerId}`);
+    delete QuizEngine.state.playerScores[playerId];
+
+    // If this player already answered this round, decrement the counter
+    if (QuizEngine.state.roundAnsweredIds[playerId]) {
+      QuizEngine.state.roundAnswersReceived = Math.max(0, QuizEngine.state.roundAnswersReceived - 1);
+      delete QuizEngine.state.roundAnsweredIds[playerId];
+    }
+
+    // Check if all REMAINING players have now answered (removal may trigger round completion)
+    const totalPlayers = Object.keys(QuizEngine.state.playerScores).length;
+    if (totalPlayers > 0 && QuizEngine.state.roundAnswersReceived >= totalPlayers) {
+      QuizEngine.completeRound();
+    }
+  },
+
+  /**
    * Finalizes the current round and broadcasts summary.
    */
   completeRound: () => {

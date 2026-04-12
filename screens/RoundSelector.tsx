@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { setGameRound } from "@/redux/reducers/playerReducer";
 import { rf } from "@/utils/responsive";
-import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
 import { Text } from "@/components/Text";
 
@@ -20,12 +20,7 @@ const dispatch = useDispatch<AppDispatch>();
     AudioEngine.play("select", "ui");
     dispatch(setGameRound(round));
 
-    Toast.show({
-      type: ALERT_TYPE.SUCCESS,
-      title: 'Duration Set',
-      textBody: `Mission updated to ${round} ${round === 1 ? 'round' : 'rounds'}.`,
-      autoClose: 1000, 
-    });
+    toast.success("Duration Set", `Mission updated to ${round} ${round === 1 ? 'round' : 'rounds'}.`, 1000);
   }, [dispatch]);
 
   return (
