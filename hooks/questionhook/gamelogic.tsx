@@ -541,5 +541,6 @@ export const useQuizGameLogic = () => {
     isMultiplayer,
     isWaitingForOthers,
     roundProgress,
+    localPlayerId,
   };
 };

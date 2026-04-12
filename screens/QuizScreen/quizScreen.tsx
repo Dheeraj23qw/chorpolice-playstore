@@ -25,7 +25,6 @@ import { MultiplayerLeaderboard } from "../../components/QuizScreen/MultiplayerL
 import { QuizEngine } from "@/service/QuizEngine";
 import { NUM_QUESTIONS } from "@/constants/quizConstants";
 import { useRouter } from "expo-router";
-import { AnimatePresence, MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
 
 const QuizScreen = () => {
@@ -59,6 +58,7 @@ const QuizScreen = () => {
     isMultiplayer,
     isWaitingForOthers,
     roundProgress,
+    localPlayerId,
   } = useQuizGameLogic();
 
   useEffect(() => {
@@ -94,6 +94,13 @@ const QuizScreen = () => {
     [handleAnswerSelection],
   );
 
+  /**
+   * BLOCKED STATE: When waiting for others OR leaderboard is visible,
+   * the question content must NOT be rendered at all.
+   * This prevents players from reading the next question early.
+   */
+  const isContentBlocked = isWaitingForOthers || isLeaderboardVisible;
+
   return (
     <View className="flex-1 bg-black">
       <Image
@@ -103,36 +110,28 @@ const QuizScreen = () => {
       />
       <View className="absolute h-full w-full bg-black/70" />
 
-      {/* ⏳ WAITING OVERLAY */}
-      <AnimatePresence>
-        {isWaitingForOthers && (
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute z-[70] h-full w-full items-center justify-center bg-black/80 backdrop-blur-3xl"
-          >
-            <View className="items-center rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
-              <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20">
-                <Ionicons name="people-outline" size={32} color="#818cf8" />
-              </View>
-              <Text className="font-main-bold text-lg text-white">
-                Syncing Session
-              </Text>
-              <Text className="font-main-regular mt-2 text-center text-xs uppercase tracking-widest text-white/40">
-                Waiting for other players{"\n"}to finish the round...
-              </Text>
-
-              <MotiView
-                from={{ scale: 1, opacity: 0.5 }}
-                animate={{ scale: 1.2, opacity: 1 }}
-                transition={{ loop: true, duration: 1000, type: "timing" }}
-                className="mt-6 h-1 w-20 rounded-full bg-indigo-500"
-              />
+      {/* ⏳ WAITING OVERLAY — Fully opaque, NO content visible behind */}
+      {isWaitingForOthers && (
+        <View className="absolute z-[70] h-full w-full items-center justify-center bg-black">
+          <Image
+            source={require("@/assets/images/bg/image.png")}
+            className="absolute h-full w-full opacity-20"
+            resizeMode="cover"
+          />
+          <View className="items-center rounded-3xl border border-white/10 bg-white/5 p-8">
+            <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20">
+              <Ionicons name="people-outline" size={32} color="#818cf8" />
             </View>
-          </MotiView>
-        )}
-      </AnimatePresence>
+            <Text className="font-main-bold text-lg text-white">
+              Waiting for Friends
+            </Text>
+            <Text className="font-main-regular mt-2 text-center text-xs uppercase tracking-widest text-white/40">
+              Other players are still{"\n"}answering the question...
+            </Text>
+            <View className="mt-6 h-1 w-20 rounded-full bg-indigo-500/50" />
+          </View>
+        </View>
+      )}
 
       {isTableOpen ? (
         <View className="z-[60] flex-1">
@@ -188,12 +187,14 @@ const QuizScreen = () => {
                 style={{ fontSize: rf(1.4) }}
                 className="font-main-bold uppercase tracking-[3px] text-indigo-400"
               >
-                Question {questionIndex + 1}
+                {isLeaderboardVisible
+                  ? `Round ${questionIndex + 1} Results`
+                  : `Question ${questionIndex + 1}`}
               </Text>
             </View>
 
             <View style={{ marginTop: hp(8) }}>
-              {!isLeaderboardVisible && <Timer countdown={countdown} />}
+              {!isContentBlocked && <Timer countdown={countdown} />}
             </View>
 
             <ScrollView
@@ -205,82 +206,76 @@ const QuizScreen = () => {
                 flexGrow: 1,
               }}
             >
-              <AnimatePresence>
-                {isLeaderboardVisible ? (
-                  <MultiplayerLeaderboard
-                    key="leaderboard"
-                    round={questionIndex + 1}
-                    data={leaderboardData}
-                    roundProgress={roundProgress}
-                    timeLeft={countdown}
-                    onNext={handleNextQuestion}
-                    isHost={
-                      QuizEngine.state.playerScores["host_id"] !== undefined
-                    }
-                    isLastRound={questionIndex + 1 >= NUM_QUESTIONS}
-                    totalPot={QuizEngine.state.totalPot}
-                  />
-                ) : (
-                  <MotiView
-                    key="game-content"
-                    from={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                  >
-                    <QuestionSection question={question?.question} />
+              {isLeaderboardVisible ? (
+                <MultiplayerLeaderboard
+                  round={questionIndex + 1}
+                  data={leaderboardData}
+                  roundProgress={roundProgress}
+                  timeLeft={countdown}
+                  onNext={handleNextQuestion}
+                  isHost={
+                    QuizEngine.state.playerScores["host_id"] !== undefined
+                  }
+                  isLastRound={questionIndex + 1 >= NUM_QUESTIONS}
+                  totalPot={QuizEngine.state.totalPot}
+                  localPlayerId={localPlayerId}
+                />
+              ) : !isContentBlocked ? (
+                /* Only render question content when NOT blocked */
+                <View>
+                  <QuestionSection question={question?.question} />
 
-                    {!isMultiplayer && (
-                      <View
-                        style={{ marginTop: hp(1), marginBottom: hp(1) }}
-                        className="items-center"
+                  {!isMultiplayer && (
+                    <View
+                      style={{ marginTop: hp(1), marginBottom: hp(1) }}
+                      className="items-center"
+                    >
+                      <View className="mb-4 h-[1px] w-20 bg-white/10" />
+                      <Text
+                        style={{ fontSize: rf(1.4) }}
+                        className="text-center font-main-md uppercase tracking-widest text-white/40"
                       >
-                        <View className="mb-4 h-[1px] w-20 bg-white/10" />
-                        <Text
-                          style={{ fontSize: rf(1.4) }}
-                          className="text-center font-main-md uppercase tracking-widest text-white/40"
-                        >
-                          Consult the Quiz table to solve
-                        </Text>
-                      </View>
-                    )}
+                        Consult the Quiz table to solve
+                      </Text>
+                    </View>
+                  )}
 
-                    {!isHintButtonVisible && (
-                      <View style={{ marginTop: hp(4) }}>
-                        <OptionsSection
-                          options={
-                            isFiftyFiftyActive
-                              ? remainingOptions
-                              : question?.options
-                          }
-                          handleAnswerSelection={onOptionPress}
-                        />
-                      </View>
-                    )}
-
-                    {isHintButtonVisible && !isMultiplayer && (
-                      <TouchableOpacity
-                        onPress={() => setShowHint(true)}
-                        activeOpacity={0.8}
-                        className="mt-8 flex-row items-center justify-center rounded-3xl border border-white/10 bg-white/5 py-5 backdrop-blur-md"
-                      >
-                        <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
-                        <Text className="ml-3 font-main-bold text-[12px] uppercase tracking-[2px] text-indigo-400">
-                          View Solution Hint
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                    <View style={{ marginTop: hp(1) }}>
-                      <QuizButton
-                        showHint={isHintButtonVisible}
-                        setIsTableOpen={setIsTableOpen}
-                        handleNextQuestion={handleNextQuestion}
-                        handleFiftyFifty={handleFiftyFifty}
+                  {!isHintButtonVisible && (
+                    <View style={{ marginTop: hp(4) }}>
+                      <OptionsSection
+                        options={
+                          isFiftyFiftyActive
+                            ? remainingOptions
+                            : question?.options
+                        }
+                        handleAnswerSelection={onOptionPress}
                       />
                     </View>
-                  </MotiView>
-                )}
-              </AnimatePresence>
+                  )}
+
+                  {isHintButtonVisible && !isMultiplayer && (
+                    <TouchableOpacity
+                      onPress={() => setShowHint(true)}
+                      activeOpacity={0.8}
+                      className="mt-8 flex-row items-center justify-center rounded-3xl border border-white/10 bg-white/5 py-5 backdrop-blur-md"
+                    >
+                      <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
+                      <Text className="ml-3 font-main-bold text-[12px] uppercase tracking-[2px] text-indigo-400">
+                        View Solution Hint
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <View style={{ marginTop: hp(1) }}>
+                    <QuizButton
+                      showHint={isHintButtonVisible}
+                      setIsTableOpen={setIsTableOpen}
+                      handleNextQuestion={handleNextQuestion}
+                      handleFiftyFifty={handleFiftyFifty}
+                    />
+                  </View>
+                </View>
+              ) : null}
             </ScrollView>
           </View>
         </>
