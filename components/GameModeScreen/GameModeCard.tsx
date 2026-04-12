@@ -6,58 +6,39 @@ import Animated, {
   withSpring,
   FadeInRight,
 } from "react-native-reanimated";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, wp, hp } from "@/utils/responsive";
 import { GameModeType } from "@/constants/gamemode";
 import { Text } from "../Text";
-import GameModeModal from "./GameModeModal";
 
 interface Props {
   item: GameModeType;
   index: number;
+  onPress: () => void; // This will handle the logic from GameModeList
 }
 
-export const GameModeCard = ({ item, index }: Props) => {
+export const GameModeCard = ({ item, index, onPress }: Props) => {
   const scale = useSharedValue(1);
-  const [isModalVisible, setIsModalVisible] = React.useState(false);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePress = () => {
-    console.log("🖱️ [GameModeCard] Pressed item:", item.id);
-    if (item.id.endsWith("_online")) {
-      setIsModalVisible(true);
-    } else {
-      console.log(`[MENU] Navigating to Offline mode: ${item.route}`);
-      router.push(item.route);
-    }
-  };
-
-  const getGameType = () => {
-    if (item.id.startsWith("chor")) return "CHOR_POLICE";
-    if (item.id.startsWith("think")) return "QUIZ";
-    return "UNKNOWN";
-  };
-
   return (
-    <>
-      <Animated.View
-        entering={FadeInRight.delay(200 + index * 150)
-          .springify()
-          .damping(12)}
-        className="mb-6 w-full"
-      >
-        <Animated.View style={animatedStyle}>
-          <Pressable
-            onPressIn={() => (scale.value = withSpring(0.96))}
-            onPressOut={() => (scale.value = withSpring(1))}
-            onPress={handlePress}
-            style={{ height: hp(20) }}
-            className="relative flex-row items-center"
-          >
+    <Animated.View
+      entering={FadeInRight.delay(200 + index * 150)
+        .springify()
+        .damping(12)}
+      className="mb-6 w-full"
+    >
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          onPressIn={() => (scale.value = withSpring(0.96))}
+          onPressOut={() => (scale.value = withSpring(1))}
+          onPress={onPress} // Uses the passed prop from parent
+          style={{ height: hp(20) }}
+          className="relative flex-row items-center"
+        >
           {/* 🌊 PREMIUM GLASS BACK PANEL */}
           <View
             className="absolute right-0 h-[95%] w-[90%] rounded-l-[40px] border-b border-l border-t border-white/10"
@@ -74,7 +55,6 @@ export const GameModeCard = ({ item, index }: Props) => {
           <View className="z-20 w-[42%] items-center justify-center">
             <Image
               source={item.image}
-              // Scaling image larger than the card height for depth
               style={{
                 width: wp(45),
                 height: hp(24),
@@ -87,13 +67,11 @@ export const GameModeCard = ({ item, index }: Props) => {
 
           {/* 🧠 CONTENT SECTION */}
           <View className="z-30 flex-1 py-4 pl-6">
-            {/* TITLE: High Visibility */}
             <Text
               className="font-main-bold uppercase text-white"
               style={{
                 fontSize: rf(2.8),
                 letterSpacing: 2,
-                // Text shadow makes it visible against any background
                 textShadowColor: "rgba(0,0,0,0.8)",
                 textShadowOffset: { width: 0, height: 2 },
                 textShadowRadius: 6,
@@ -102,7 +80,6 @@ export const GameModeCard = ({ item, index }: Props) => {
               {item.title}
             </Text>
 
-            {/* TRANSPARENT GLASS BUTTON */}
             <View
               className="mt-auto flex-row items-center self-start rounded-xl px-4 py-2"
               style={{
@@ -114,14 +91,13 @@ export const GameModeCard = ({ item, index }: Props) => {
               <Text
                 className="font-main-bold uppercase"
                 style={{
-                  color: "white", // White text is more premium than accent color for buttons
+                  color: "white",
                   fontSize: rf(1.3),
                   letterSpacing: 2,
                 }}
               >
                 {item.buttonText || "PLAY NOW"}
               </Text>
-
               <View
                 className="ml-3 h-6 w-6 items-center justify-center rounded-full"
                 style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
@@ -133,11 +109,5 @@ export const GameModeCard = ({ item, index }: Props) => {
         </Pressable>
       </Animated.View>
     </Animated.View>
-    <GameModeModal 
-      isVisible={isModalVisible} 
-      onClose={() => setIsModalVisible(false)} 
-      gameType={getGameType()}
-    />
-  </>
-);
+  );
 };

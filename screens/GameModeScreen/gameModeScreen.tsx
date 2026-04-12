@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -23,7 +23,7 @@ import { hasUnclaimedAwards } from "@/features/awards/awardsSlice";
 const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
-
+  const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.98);
   const bgScale = useSharedValue(1.1);
@@ -31,6 +31,13 @@ const GameModeScreen: React.FC = () => {
   const isGameReset = useSelector(
     (state: RootState) => state.player.isGameReset,
   );
+
+  const contentVisibility = useAnimatedStyle(() => ({
+    opacity: isAnyModalOpen
+      ? withTiming(0, { duration: 300 })
+      : withTiming(1, { duration: 300 }),
+    transform: [{ scale: isAnyModalOpen ? 0.95 : 1 }],
+  }));
 
   useEffect(() => {
     // 🔊 audio logic
@@ -46,7 +53,6 @@ const GameModeScreen: React.FC = () => {
       duration: 600,
       easing: Easing.out(Easing.exp),
     });
-
     // 🌌 BG subtle zoom-in
     bgScale.value = withTiming(1, {
       duration: 1200,
@@ -56,7 +62,9 @@ const GameModeScreen: React.FC = () => {
     // 🛡️ SAFETY FALLBACK: Ensure screen is visible even if Reanimated hangs
     const safetyTimer = setTimeout(() => {
       if (opacity.value !== 1) {
-        console.warn("⚠️ [GameModeScreen] Animation safety fallback triggered.");
+        console.warn(
+          "⚠️ [GameModeScreen] Animation safety fallback triggered.",
+        );
         opacity.value = 1;
         scale.value = 1;
       }
@@ -81,16 +89,12 @@ const GameModeScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-black">
-      {/* 🌌 BACKGROUND IMAGE (ANIMATED) */}
+      {/* 🌌 BACKGROUND IMAGE (Stays visible as the base layer) */}
       <Animated.Image
         source={require("@/assets/images/bg/image.png")}
         resizeMode="cover"
         style={[
-          {
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-          },
+          { position: "absolute", width: "100%", height: "100%" },
           bgStyle,
         ]}
       />
@@ -105,11 +109,19 @@ const GameModeScreen: React.FC = () => {
         }}
       />
 
-      {/* 🎬 MAIN CONTENT */}
-      <Animated.View style={[{ paddingTop: insets.top, flex: 1 }, screenStyle]}>
+      {/* 🎬 MAIN CONTENT (Fades out when modal is open) */}
+      <Animated.View
+        style={[
+          { paddingTop: insets.top, flex: 1 },
+          screenStyle,
+          contentVisibility,
+        ]}
+      >
         <HeaderSection />
         <UserProfilecard />
-        <GameModeList />
+
+        {/* Pass the toggle function to the list */}
+        <GameModeList onModalToggle={setIsAnyModalOpen} />
       </Animated.View>
 
       {unclaimedExists && <UnlockedAwardModal />}

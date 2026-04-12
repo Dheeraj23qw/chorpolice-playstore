@@ -10,6 +10,7 @@ export interface GameModeType {
   accentColor: string;
   icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
   buttonText: string;
+  gameType?: string; // Canonical game type used by lobby logic ("QUIZ", "CHOR_POLICE", etc.)
 }
 export const optionsGameMode: GameModeType[] = [
   {
@@ -33,6 +34,7 @@ export const optionsGameMode: GameModeType[] = [
     accentColor: "#EF4444",
     icon: "people",
     buttonText: "HOST/JOIN",
+    gameType: "CHOR_POLICE",
   },
   {
     id: "think_online",
@@ -44,5 +46,6 @@ export const optionsGameMode: GameModeType[] = [
     accentColor: "#6366F1",
     icon: "people",
     buttonText: "HOST/JOIN",
+    gameType: "QUIZ",
   },
 ];

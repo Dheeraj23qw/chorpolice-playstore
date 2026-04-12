@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { View, ScrollView, TouchableOpacity, Image, Pressable } from "react-native";
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Pressable,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/Text";
 import { rf, hp, wp } from "@/utils/responsive";
@@ -32,7 +38,9 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
 
   const getAvatarSource = (avatarId: number) => {
     const imgData = playerImages[avatarId];
-    return imgData ? imgData.src : require("@/assets/images/chorsipahi/kid1.png");
+    return imgData
+      ? imgData.src
+      : require("@/assets/images/chorsipahi/kid1.png");
   };
 
   const allFinished = !!(data && data.length > 0);
@@ -47,13 +55,15 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
         avatarId: d.avatarId,
         isFinished: true,
       }))
-    : Object.values(roundProgress).sort((a: any, b: any) => b.correctCount - a.correctCount);
+    : Object.values(roundProgress).sort(
+        (a: any, b: any) => b.correctCount - a.correctCount,
+      );
 
   const winner = allFinished && players.length > 0 ? players[0] : null;
   const others = allFinished ? players.slice(1) : players;
 
   const toggleExpand = (id: string) => {
-    setExpandedId(prev => (prev === id ? null : id));
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const getAccuracy = (player: any) => {
@@ -72,9 +82,8 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
   return (
     <View className="flex-1 px-4">
       <View className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.04]">
-
         {/* ── HEADER ── */}
-        <View className="bg-indigo-600/15 px-6 pt-6 pb-4 items-center">
+        <View className="items-center bg-indigo-600/15 px-6 pb-4 pt-6">
           <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-white/40">
             {isLastRound ? "🏆 Final Results" : `Round ${round} of 7`}
           </Text>
@@ -82,18 +91,18 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
 
         {/* ── WINNER CIRCLE ── */}
         {winner && allFinished && (
-          <View className="items-center pb-4 -mt-1">
+          <View className="-mt-1 items-center pb-4">
             {/* Big circular avatar */}
-            <View className="h-20 w-20 rounded-full items-center justify-center overflow-hidden border-[3px] border-yellow-400/60 bg-white/10">
+            <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-full border-[3px] border-yellow-400/60 bg-white/10">
               <Image
                 source={getAvatarSource(winner.avatarId)}
-                className="w-16 h-16"
+                className="h-16 w-16"
                 resizeMode="contain"
               />
             </View>
 
             {/* Winner badge */}
-            <View className="mt-2 rounded-full bg-yellow-400/15 border border-yellow-400/30 px-4 py-1">
+            <View className="mt-2 rounded-full border border-yellow-400/30 bg-yellow-400/15 px-4 py-1">
               <Text className="font-main-bold text-[10px] uppercase tracking-widest text-yellow-400">
                 🥇 {winner.name}
               </Text>
@@ -103,48 +112,57 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
             <Text className="mt-1 font-main-bold text-2xl text-white">
               {winner.correctCount}/{round}
             </Text>
-            <Text className="font-main-regular text-[9px] uppercase text-white/30 tracking-widest">
+            <Text className="font-main-regular text-[9px] uppercase tracking-widest text-white/30">
               Correct Answers
             </Text>
 
             {/* Pot congratulations */}
             {isLastRound && totalPot > 0 && (
-              <View className="mt-3 rounded-2xl bg-green-500/10 border border-green-500/20 px-5 py-2">
-                <Text className="font-main-bold text-[11px] text-green-400 text-center">
+              <View className="mt-3 rounded-2xl border border-green-500/20 bg-green-500/10 px-5 py-2">
+                <Text className="text-center font-main-bold text-[11px] text-green-400">
                   🎉 Congratulations! Won {totalPot} Coins!
                 </Text>
               </View>
             )}
 
             {/* Expandable stats for winner */}
-            <Pressable
-              onPress={() => toggleExpand(winner.id)}
-              className="mt-2"
-            >
-              <Text className="text-[9px] uppercase text-indigo-400 font-main-bold tracking-widest">
+            <Pressable onPress={() => toggleExpand(winner.id)} className="mt-2">
+              <Text className="font-main-bold text-[9px] uppercase tracking-widest text-indigo-400">
                 {expandedId === winner.id ? "Hide Stats ▲" : "View Stats ▼"}
               </Text>
             </Pressable>
 
             {expandedId === winner.id && (
-              <View className="mt-2 rounded-2xl border border-white/5 bg-white/5 px-5 py-3 flex-row justify-around w-[80%]">
+              <View className="mt-2 w-[80%] flex-row justify-around rounded-2xl border border-white/5 bg-white/5 px-5 py-3">
                 <View className="items-center">
-                  <Text className="font-main-bold text-sm text-white">{getAccuracy(winner)}%</Text>
-                  <Text className="text-[7px] uppercase text-white/30">Accuracy</Text>
+                  <Text className="font-main-bold text-sm text-white">
+                    {getAccuracy(winner)}%
+                  </Text>
+                  <Text className="text-[7px] uppercase text-white/30">
+                    Accuracy
+                  </Text>
                 </View>
                 <View className="items-center">
-                  <Text className="font-main-bold text-sm text-white">{getAvgTime(winner)}</Text>
-                  <Text className="text-[7px] uppercase text-white/30">Avg Time</Text>
+                  <Text className="font-main-bold text-sm text-white">
+                    {getAvgTime(winner)}
+                  </Text>
+                  <Text className="text-[7px] uppercase text-white/30">
+                    Avg Time
+                  </Text>
                 </View>
                 <View className="items-center">
-                  <Text className="font-main-bold text-sm text-white">{winner.correctCount}</Text>
-                  <Text className="text-[7px] uppercase text-white/30">Correct</Text>
+                  <Text className="font-main-bold text-sm text-white">
+                    {winner.correctCount}
+                  </Text>
+                  <Text className="text-[7px] uppercase text-white/30">
+                    Correct
+                  </Text>
                 </View>
               </View>
             )}
 
             {isMe(winner.id) && (
-              <View className="mt-2 rounded-full bg-indigo-500/15 border border-indigo-500/20 px-3 py-1">
+              <View className="mt-2 rounded-full border border-indigo-500/20 bg-indigo-500/15 px-3 py-1">
                 <Text className="font-main-bold text-[8px] uppercase tracking-widest text-indigo-400">
                   That's You! 🎯
                 </Text>
@@ -184,37 +202,46 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
                 key={item.id}
                 onPress={() => allFinished && toggleExpand(item.id)}
                 className={`mb-3 rounded-2xl border p-3 ${
-                  isMe(item.id) ? "border-indigo-500/20 bg-indigo-500/5" : "border-white/5 bg-white/[0.03]"
+                  isMe(item.id)
+                    ? "border-indigo-500/20 bg-indigo-500/5"
+                    : "border-white/5 bg-white/[0.03]"
                 }`}
               >
                 <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center flex-1">
+                  <View className="flex-1 flex-row items-center">
                     {/* Rank */}
                     <View className="w-7 items-center">
                       {medal ? (
                         <Text style={{ fontSize: 16 }}>{medal}</Text>
                       ) : (
-                        <Text className="font-main-bold text-xs text-white/25">#{rank}</Text>
+                        <Text className="font-main-bold text-xs text-white/25">
+                          #{rank}
+                        </Text>
                       )}
                     </View>
 
                     {/* Avatar */}
-                    <View className="ml-2 h-9 w-9 rounded-full items-center justify-center overflow-hidden bg-white/10 border border-white/5">
+                    <View className="ml-2 h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/5 bg-white/10">
                       <Image
                         source={getAvatarSource(item.avatarId)}
-                        className="w-7 h-7"
+                        className="h-7 w-7"
                         resizeMode="contain"
                       />
                     </View>
 
                     {/* Name & status */}
                     <View className="ml-3 flex-1">
-                      <Text className="font-main-bold text-[12px] text-white" numberOfLines={1}>
+                      <Text
+                        className="font-main-bold text-[12px] text-white"
+                        numberOfLines={1}
+                      >
                         {item.name} {isMe(item.id) ? "(You)" : ""}
                       </Text>
-                      <Text className={`text-[8px] uppercase font-main-md tracking-widest ${
-                        item.isFinished ? "text-green-400" : "text-yellow-400"
-                      }`}>
+                      <Text
+                        className={`font-main-md text-[8px] uppercase tracking-widest ${
+                          item.isFinished ? "text-green-400" : "text-yellow-400"
+                        }`}
+                      >
                         {item.isFinished ? "✅ Done" : "🤔 Thinking..."}
                       </Text>
                     </View>
@@ -225,7 +252,7 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
                     <Text className="font-main-bold text-base text-white">
                       {item.correctCount}
                     </Text>
-                    <Text className="font-main-regular text-[7px] text-white/25 uppercase">
+                    <Text className="font-main-regular text-[7px] uppercase text-white/25">
                       Correct
                     </Text>
                   </View>
@@ -233,18 +260,30 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
 
                 {/* Expanded Stats */}
                 {isExpanded && allFinished && (
-                  <View className="mt-3 rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3 flex-row justify-around">
+                  <View className="mt-3 flex-row justify-around rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3">
                     <View className="items-center">
-                      <Text className="font-main-bold text-sm text-white">{getAccuracy(item)}%</Text>
-                      <Text className="text-[7px] uppercase text-white/30">Accuracy</Text>
+                      <Text className="font-main-bold text-sm text-white">
+                        {getAccuracy(item)}%
+                      </Text>
+                      <Text className="text-[7px] uppercase text-white/30">
+                        Accuracy
+                      </Text>
                     </View>
                     <View className="items-center">
-                      <Text className="font-main-bold text-sm text-white">{getAvgTime(item)}</Text>
-                      <Text className="text-[7px] uppercase text-white/30">Avg Time</Text>
+                      <Text className="font-main-bold text-sm text-white">
+                        {getAvgTime(item)}
+                      </Text>
+                      <Text className="text-[7px] uppercase text-white/30">
+                        Avg Time
+                      </Text>
                     </View>
                     <View className="items-center">
-                      <Text className="font-main-bold text-sm text-white">{item.correctCount}</Text>
-                      <Text className="text-[7px] uppercase text-white/30">Correct</Text>
+                      <Text className="font-main-bold text-sm text-white">
+                        {item.correctCount}
+                      </Text>
+                      <Text className="text-[7px] uppercase text-white/30">
+                        Correct
+                      </Text>
                     </View>
                   </View>
                 )}
@@ -275,7 +314,9 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
           ) : (
             <View className="w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5 py-4">
               <Text className="font-main-bold text-[11px] uppercase tracking-widest text-white/50">
-                {allFinished ? "⏳ Host is choosing..." : "⏳ Waiting for friends..."}
+                {allFinished
+                  ? "⏳ Host is choosing..."
+                  : "⏳ Waiting for friends..."}
               </Text>
             </View>
           )}
