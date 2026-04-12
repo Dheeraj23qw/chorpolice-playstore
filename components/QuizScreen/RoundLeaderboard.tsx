@@ -1,10 +1,9 @@
 import React from "react";
-import { View, ScrollView, Pressable } from "react-native";
+import { View, ScrollView, Pressable, Image } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/Text";
-import { rf, hp, wp } from "@/utils/responsive";
-
+import { hp, wp } from "@/utils/responsive";
 interface LeaderboardItem {
   id: string;
   name: string;
@@ -19,77 +18,98 @@ interface RoundLeaderboardProps {
   data: LeaderboardItem[];
   onNext: () => void;
   isLastRound?: boolean;
+  getAvatarSource: (avatarId: number) => any;
 }
-
 export const RoundLeaderboard: React.FC<RoundLeaderboardProps> = ({
   isVisible,
   round,
   data,
   onNext,
   isLastRound,
+  getAvatarSource,
 }) => {
   if (!isVisible || !data) return null;
 
   return (
-    <Animated.View 
+    <Animated.View
       entering={FadeIn.duration(400)}
-      className="absolute inset-0 z-[100] items-center justify-center bg-black/90 px-6"
+      className="absolute inset-0 z-[100] items-center justify-center bg-black/95 px-5"
     >
-      <View className="w-full max-w-md overflow-hidden rounded-[40px] border border-white/10 bg-white/5 shadow-2xl backdrop-blur-2xl">
-        {/* Header */}
-        <View className="bg-purple-600/20 px-6 py-6 items-center">
-          <View className="h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/20 mb-3">
-             <Ionicons name="trophy" size={24} color="#A855F7" />
+      {/* Container with max-width for responsiveness */}
+      <View className="w-full max-w-[450px] overflow-hidden rounded-[48px] border border-white/10 bg-white/[0.03] shadow-2xl backdrop-blur-3xl">
+        {/* Header - Increased Vertical Space */}
+        <View className="items-center bg-white/[0.02] px-8 py-10">
+          <View className="mb-6 h-20 w-20 items-center justify-center rounded-3xl border border-purple-500/20 bg-purple-500/10">
+            <Ionicons name="trophy" size={40} color="#A855F7" />
           </View>
-          <Text className="font-main-bold text-2xl uppercase tracking-[4px] text-white">
-            Round {round} Results
+          <Text className="font-main-bold text-3xl uppercase tracking-[6px] text-white">
+            Round {round}
           </Text>
-          <Text className="font-main-regular text-[10px] text-white/40 uppercase tracking-widest mt-1">
+          <Text className="font-main-regular mt-2 text-xs uppercase tracking-[4px] text-white/40">
             Official Standings
           </Text>
         </View>
 
-        <ScrollView className="max-h-[400px] px-6 py-4">
+        {/* Scrollable Content - Increased Vertical Padding */}
+        <ScrollView className="max-h-[50vh] px-8 py-6">
           {data.map((item, index) => (
             <Animated.View
               key={item.id}
               entering={FadeInDown.delay(index * 100)}
-              className={`mb-3 flex-row items-center justify-between rounded-2xl border p-4 ${
-                index === 0 ? "bg-purple-600/10 border-purple-500/30" : "bg-white/5 border-white/5"
+              className={`mb-4 flex-row items-center justify-between rounded-3xl border p-5 ${
+                index === 0
+                  ? "border-purple-500/30 bg-purple-900/20"
+                  : "border-white/5 bg-white/[0.03]"
               }`}
             >
-              <View className="flex-row items-center">
-                <Text className={`font-main-bold text-lg mr-4 ${index === 0 ? "text-yellow-400" : "text-white/20"}`}>
+              <View className="flex-1 flex-row items-center">
+                <Text
+                  className={`mr-5 font-main-bold text-xl ${index === 0 ? "text-yellow-400" : "text-white/30"}`}
+                >
                   #{index + 1}
                 </Text>
-                <View>
-                  <Text className="font-main-bold text-base text-white">{item.name}</Text>
-                  <View className="flex-row items-center">
-                    <Text className="font-main-regular text-[9px] text-white/30 uppercase tracking-tighter">
-                      {(item.lastRoundTime / 1000).toFixed(1)}s speed
-                    </Text>
-                    <View className="mx-2 h-1 w-1 rounded-full bg-white/10" />
-                    <Text className="font-main-regular text-[9px] text-purple-400 uppercase tracking-tighter">
-                      Sub at {item.submissionTime || "N/A"}
-                    </Text>
-                  </View>
+
+                {/* Image Container - Fixed Aspect Ratio */}
+                <View className="mr-4 h-16 w-16 overflow-hidden rounded-2xl bg-black/20">
+                  <Image
+                    source={getAvatarSource(Number(item.id))}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                </View>
+
+                <View className="flex-1">
+                  <Text
+                    className="font-main-bold text-lg text-white"
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text className="font-main-regular mt-0.5 text-[10px] uppercase tracking-widest text-white/40">
+                    {(item.lastRoundTime / 1000).toFixed(1)}s speed
+                  </Text>
                 </View>
               </View>
-              
-              <View className="items-end">
-                <Text className="font-main-bold text-lg text-purple-400">{item.score}</Text>
-                <Text className="font-main-regular text-[8px] text-white/20 uppercase">Pts</Text>
+
+              <View className="items-end rounded-2xl border border-white/5 bg-black/20 px-4 py-2">
+                <Text className="font-main-bold text-2xl text-purple-400">
+                  {item.score}
+                </Text>
+                <Text className="font-main-regular text-[9px] uppercase tracking-widest text-white/20">
+                  Pts
+                </Text>
               </View>
             </Animated.View>
           ))}
         </ScrollView>
 
-        <View className="p-6">
+        {/* Action Button - Increased Height */}
+        <View className="p-8">
           <Pressable
             onPress={onNext}
-            className="w-full items-center justify-center rounded-3xl bg-purple-600 py-4 shadow-lg shadow-purple-600/40"
+            className="w-full items-center justify-center rounded-full bg-purple-600 py-5 shadow-2xl shadow-purple-600/50"
           >
-            <Text className="font-main-bold text-base uppercase tracking-widest text-white">
+            <Text className="font-main-bold text-lg uppercase tracking-[3px] text-white">
               {isLastRound ? "Final Standings" : "Start Next Round"}
             </Text>
           </Pressable>

@@ -66,25 +66,40 @@ export default function QuizResult() {
   const standings = isMultiplayer
     ? Object.entries(QuizEngine.state.playerScores)
         .map(([id, stats]) => ({ playerId: id, ...stats }))
-        .sort((a, b) => (b.correctCount - a.correctCount) || (a.totalTime - b.totalTime))
+        .sort(
+          (a, b) =>
+            b.correctCount - a.correctCount || a.totalTime - b.totalTime,
+        )
     : [];
 
   /* Navigation — implemented directly, not via useQuizGameLogic */
-  const handleNavigation = useCallback((targetRoute: string) => {
-    try {
-      dispatch(resetDifficulty());
-      requestAnimationFrame(() => {
-        router.dismissAll();
-        router.replace(targetRoute as any);
-      });
-    } catch (err) {
-      console.error("Navigation failed:", err);
-    }
-  }, [dispatch, router]);
+  const handleNavigation = useCallback(
+    (targetRoute: string) => {
+      try {
+        dispatch(resetDifficulty());
+        requestAnimationFrame(() => {
+          router.dismissAll();
+          router.replace(targetRoute as any);
+        });
+      } catch (err) {
+        console.error("Navigation failed:", err);
+      }
+    },
+    [dispatch, router],
+  );
 
-  const handleQuit = useCallback(() => handleNavigation("/mode-select"), [handleNavigation]);
-  const handleStats = useCallback(() => handleNavigation("/stats"), [handleNavigation]);
-  const handleEarn = useCallback(() => handleNavigation("/earn"), [handleNavigation]);
+  const handleQuit = useCallback(
+    () => handleNavigation("/mode-select"),
+    [handleNavigation],
+  );
+  const handleStats = useCallback(
+    () => handleNavigation("/stats"),
+    [handleNavigation],
+  );
+  const handleEarn = useCallback(
+    () => handleNavigation("/earn"),
+    [handleNavigation],
+  );
 
   // Block back button — force user to use the action buttons
   useEffect(() => {
@@ -126,23 +141,31 @@ export default function QuizResult() {
             {isWinner ? "VICTORY" : "DEFEAT"}
           </Text>
 
-          <View className="my-6">
-            {/* Square photo frame */}
+          <View className="my-6 items-center">
+            {/* Outer Glow / Ring Container */}
             <View
-              style={{ width: wp(30), height: wp(30) }}
-              className="items-center justify-center overflow-hidden rounded-2xl border-4 border-white/10 bg-white/5 shadow-2xl"
+              style={{ width: wp(32), height: wp(32) }}
+              className="items-center justify-center rounded-3xl border border-white/10 bg-white/[0.03] shadow-2xl shadow-indigo-500/20"
             >
-              <Image
-                source={getAvatarSource(selectedImages[0] || 1)}
-                style={{ width: wp(24), height: wp(24) }}
-                resizeMode="contain"
-              />
+              {/* Inner Glass Frame */}
+              <View
+                style={{ width: wp(28), height: wp(28) }}
+                className="items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-black/40 backdrop-blur-md"
+              >
+                <Image
+                  source={getAvatarSource(selectedImages[0] || 1)}
+                  style={{ width: wp(20), height: wp(20) }}
+                  resizeMode="contain"
+                />
+              </View>
             </View>
+
+            {/* Refined Status Badge */}
             <View
-              className="absolute -bottom-2 self-center rounded-full border border-white/20 bg-black px-4 py-1"
+              className="absolute -bottom-3 rounded-full border border-white/10 px-5 py-1.5 shadow-lg shadow-black/50"
               style={{ backgroundColor: statusColor }}
             >
-              <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white">
+              <Text className="font-main-bold text-[10px] uppercase tracking-[2px] text-white">
                 {isWinner ? "Champion" : "Runner Up"}
               </Text>
             </View>
@@ -172,7 +195,14 @@ export default function QuizResult() {
 
             {standings.map((item, index) => {
               const isTop = index === 0;
-              const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : null;
+              const medal =
+                index === 0
+                  ? "🥇"
+                  : index === 1
+                    ? "🥈"
+                    : index === 2
+                      ? "🥉"
+                      : null;
               return (
                 <View
                   key={item.playerId}
@@ -188,7 +218,9 @@ export default function QuizResult() {
                       {medal ? (
                         <Text style={{ fontSize: 18 }}>{medal}</Text>
                       ) : (
-                        <Text className="font-main-bold text-xs text-white/25">#{index + 1}</Text>
+                        <Text className="font-main-bold text-xs text-white/25">
+                          #{index + 1}
+                        </Text>
                       )}
                     </View>
                     {/* Square avatar */}
@@ -209,9 +241,7 @@ export default function QuizResult() {
                         {item.name}
                       </Text>
                       <Text className="text-[8px] uppercase tracking-widest text-white/20">
-                        {index === 0
-                          ? "Grand Champion"
-                          : `Rank #${index + 1}`}
+                        {index === 0 ? "Grand Champion" : `Rank #${index + 1}`}
                       </Text>
                     </View>
                   </View>
