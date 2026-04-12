@@ -9,10 +9,12 @@ import useRandomMessage from "../useRandomMessage";
 import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import { applyTransaction } from "@/features/wallet/walletSlice";
+import { loadUsername } from "@/features/Avatar";
 
 import { handleIncomingPacket, subscribeToPackets } from "@/service/lanGameService";
 import { MODES } from "@/constants/Networking";
 import { QuizEngine } from "@/service/QuizEngine";
+import { NUM_QUESTIONS, POPUP_DELAY, TIMER_BY_DIFFICULTY } from "@/constants/quizConstants";
 
 interface PlayerMessage {
   message?: string | null;
@@ -20,21 +22,14 @@ interface PlayerMessage {
 
 /* ------------------ CONSTANTS ------------------ */
 
-const NUM_QUESTIONS = 7;
+// NUM_QUESTIONS, POPUP_DELAY, TIMER_BY_DIFFICULTY are imported from @/constants/quizConstants
+// to stay in sync with QuizScreen (prevents ReferenceError crash).
 
 const MEDIA = {
   CORRECT: 7,
   WRONG: 6,
   TIMEUP: 8,
 };
-
-const TIMER_BY_DIFFICULTY = {
-  easy: 30,
-  medium: 60,
-  hard: 100,
-} as const;
-
-const POPUP_DELAY = 3000;
 
 /* ------------------------------------------------ */
 
@@ -48,6 +43,20 @@ export const useQuizGameLogic = () => {
   const lastQuestionRef = useRef<any>(null);
 
   const [countdown, setCountdown] = useState(0);
+
+  // 🛡️ User Identity: Find our own ID in the engine's score table
+  const [localPlayerId, setLocalPlayerId] = useState<string>("host_id");
+  const userName = useRef(loadUsername()).current;
+
+  const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
+
+  useEffect(() => {
+    if (isMultiplayer) {
+      const myPlayer = Object.values(QuizEngine.state.playerScores).find(p => p.name === userName);
+      if (myPlayer) setLocalPlayerId(myPlayer.id);
+    }
+  }, [userName, isMultiplayer]);
+
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -69,9 +78,29 @@ export const useQuizGameLogic = () => {
   const [isLeaderboardVisible, setIsLeaderboardVisible] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState<any>(null);
 
-  const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
+  // 🔄 UI Live Sync: Track who is finished vs thinking
+  const [roundProgress, setRoundProgress] = useState<Record<string, { id: string, name: string, isFinished: boolean, correctCount: number, avatarId: number }>>({});
 
   const [question, setQuestion] = useState(() => getRandomQuestion());
+
+  // Initialize progress for the round
+  const initRoundProgress = useCallback(() => {
+     const progress: any = {};
+     Object.values(QuizEngine.state.playerScores).forEach(p => {
+       progress[p.id] = { 
+         id: p.id, 
+         name: p.name, 
+         isFinished: false, 
+         correctCount: 0, // Placeholder, updated by Round Summary or live packets
+         avatarId: p.avatarId 
+       };
+     });
+     setRoundProgress(progress);
+  }, []);
+
+  useEffect(() => {
+    if (isMultiplayer) initRoundProgress();
+  }, [questionIndex, isMultiplayer, initRoundProgress]);
 
   const randomWin = useRandomMessage("winwithoutname");
   const randomLose = useRandomMessage("loserwithoutname");
@@ -94,13 +123,31 @@ export const useQuizGameLogic = () => {
     setPlayerMessage({ message: randomTimeUp });
     setIsDynamicPopUp(true);
 
+    const timeLimit = TIMER_BY_DIFFICULTY[difficulty ?? "easy"];
+
+    // 📡 Inform engine that this player timed out so the round counter advances
+    if (isMultiplayer) {
+       handleIncomingPacket({
+         type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
+         playerId: localPlayerId,
+         isCorrect: false,
+         timeTaken: timeLimit * 1000,
+         timestamp: Date.now(),
+       });
+    }
+
     setTimeout(() => {
       setIsDynamicPopUp(false);
       if (!isMultiplayer) {
         setShowHint(true);
+      } else {
+        // 🛡️ Only show waiting if summary hasn't already arrived
+        if (!roundSummaryReceivedRef.current) {
+          setIsWaitingForOthers(true);
+        }
       }
     }, POPUP_DELAY);
-  }, [clearTimer]);
+  }, [clearTimer, isMultiplayer, localPlayerId, randomTimeUp, difficulty]);
 
   const startTimer = useCallback(() => {
     clearTimer();
@@ -130,11 +177,11 @@ export const useQuizGameLogic = () => {
       clearTimer();
       AudioEngine.stop("timer");
     };
-  }, [questionIndex]);
+  }, [questionIndex, startTimer, clearTimer]);
 
   /* ---------------- QUESTION ---------------- */
 
-  const getNextQuestion = () => {
+  const getNextQuestion = useCallback(() => {
     let next;
     do {
       next = getRandomQuestion();
@@ -143,7 +190,7 @@ export const useQuizGameLogic = () => {
     lastQuestionRef.current = next;
 
     // 📡 If Host, broadcast the question to sync everyone
-    if (isMultiplayer && QuizEngine.state.playerScores["host_id"]) { 
+    if (isMultiplayer && localPlayerId === "host_id") { 
        console.log("📡 [GameLogic] Host: Syncing question to all clients for Round:", questionIndex + 1);
        handleIncomingPacket({
          type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
@@ -153,7 +200,7 @@ export const useQuizGameLogic = () => {
     }
 
     return next;
-  };
+  }, [getRandomQuestion, isMultiplayer, localPlayerId, questionIndex]);
 
   // 💰 STAKE DEBIT & FIRST QUESTION SYNC EFFECT
   useEffect(() => {
@@ -169,7 +216,7 @@ export const useQuizGameLogic = () => {
       }
 
       // 📡 Trigger first sync for bots if Host
-      if (QuizEngine.state.playerScores["host_id"] && questionIndex === 0) {
+      if (localPlayerId === "host_id" && questionIndex === 0) {
           console.log("📡 [GameLogic] Host: Triggering first round sync for bots");
           handleIncomingPacket({
             type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
@@ -178,9 +225,20 @@ export const useQuizGameLogic = () => {
           });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ---------------- ANSWER ---------------- */
+
+  const [isWaitingForOthers, setIsWaitingForOthers] = useState(false);
+
+  /**
+   * 🛡️ RACE CONDITION GUARD:
+   * TC_ROUND_SUMMARY can arrive BEFORE the 3s popup delay fires.
+   * Without this ref, the delayed setTimeout would set isWaitingForOthers=true
+   * AFTER the summary already cleared it — permanently blocking the UI.
+   */
+  const roundSummaryReceivedRef = useRef(false);
 
   const handleAnswerSelection = (answer: string) => {
     clearTimer();
@@ -208,19 +266,26 @@ export const useQuizGameLogic = () => {
     const timeLimit = TIMER_BY_DIFFICULTY[difficulty ?? "easy"];
     const timeTaken = (timeLimit - countdown) * 1000; // in ms
 
-    // 📡 Multiplayer Broadcast
-    handleIncomingPacket({
-      type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
-      playerId: "host_id", // For host (clients would use their actual ID)
-      isCorrect: correct,
-      timeTaken: timeTaken,
-      timestamp: Date.now(),
-    });
+    // 📡 Multiplayer: broadcast this player's answer to the engine
+    if (isMultiplayer) {
+      handleIncomingPacket({
+        type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
+        playerId: localPlayerId,
+        isCorrect: correct,
+        timeTaken: timeTaken,
+        timestamp: Date.now(),
+      });
+    }
 
     setTimeout(() => {
       setIsDynamicPopUp(false);
       if (!isMultiplayer) {
-         setShowHint(true);
+        setShowHint(true);
+      } else {
+        // 🛡️ Only show waiting if summary hasn't already arrived
+        if (!roundSummaryReceivedRef.current) {
+          setIsWaitingForOthers(true);
+        }
       }
     }, POPUP_DELAY);
   };
@@ -228,7 +293,6 @@ export const useQuizGameLogic = () => {
   /* ---------------- 50-50 ---------------- */
 
   const handleFiftyFifty = () => {
-    // 🚫 Already exhausted
     if (fiftyFiftyUsageCount >= 2) {
       Toast.show({
         type: ALERT_TYPE.DANGER,
@@ -236,10 +300,9 @@ export const useQuizGameLogic = () => {
         textBody: "You've used all 50-50 lifelines for this game.",
         autoClose: 2000,
       });
-      return; // ✅ IMPORTANT
+      return;
     }
 
-    // 🚫 Invalid question
     if (!question?.options || question.options.length !== 4) {
       Toast.show({
         type: ALERT_TYPE.INFO,
@@ -247,7 +310,7 @@ export const useQuizGameLogic = () => {
         textBody: "50-50 is only for 4-option questions.",
         autoClose: 2000,
       });
-      return; // ✅ IMPORTANT
+      return;
     }
 
     const incorrect = question.options.filter(
@@ -259,14 +322,12 @@ export const useQuizGameLogic = () => {
 
     const filtered = question.options.filter((opt) => !toRemove.includes(opt));
 
-    // ✅ Apply lifeline
     setRemainingOptions(filtered);
     setIsFiftyFiftyActive(true);
 
     const nextCount = fiftyFiftyUsageCount + 1;
     setFiftyFiftyUsageCount(nextCount);
 
-    // ✅ Feedback
     if (nextCount === 1) {
       Toast.show({
         type: ALERT_TYPE.SUCCESS,
@@ -298,13 +359,15 @@ export const useQuizGameLogic = () => {
     if (questionIndex + 1 >= NUM_QUESTIONS) {
       dispatch(setCorrectAnswers(correctAnswer));
       AudioEngine.stop("timer");
-      router.push("/quiz-result");
+      router.push({ pathname: "/quiz-result" } as any);
       return;
     }
     setIsHintButtonVisible(false);
     setSelectedAnswer(null);
     setIsCorrect(null);
-    setIsLeaderboardVisible(false); // Hide leaderboard when moving to next
+    setIsLeaderboardVisible(false);
+    setIsWaitingForOthers(false);
+    roundSummaryReceivedRef.current = false; // 🔄 Reset for next round
     setQuestion(getNextQuestion());
     setQuestionIndex((p) => p + 1);
   };
@@ -313,47 +376,76 @@ export const useQuizGameLogic = () => {
 
   useEffect(() => {
     const unsubscribe = subscribeToPackets((packet) => {
+
+      // 🔄 LIVE ANSWER PROGRESS: Mark individual player as done in real-time
+      if (packet.type === MODES.THINK_AND_COUNT.ANSWER_SUBMITTED) {
+        setRoundProgress(prev => {
+          if (!prev[packet.playerId]) return prev;
+          return {
+            ...prev,
+            [packet.playerId]: {
+              ...prev[packet.playerId],
+              isFinished: true,
+            }
+          };
+        });
+      }
+
+      // 🏆 ROUND SUMMARY: Authoritative signal that ALL players have answered.
+      // This is the ONLY place where we show the leaderboard.
       if (packet.type === "TC_ROUND_SUMMARY") {
         console.log("🏆 [GameLogic] Received Leaderboard Summary for Round:", packet.round);
+
         setLeaderboardData(packet.leaderboard);
+
+        // Update progress with final correctCount from authoritative summary
+        setRoundProgress(prev => {
+          const updated = { ...prev };
+          packet.leaderboard.forEach((item: any) => {
+            updated[item.id] = { ...updated[item.id], isFinished: true, correctCount: item.correctCount };
+          });
+          return updated;
+        });
+
+        // ✅ NOW show the leaderboard — waiting overlay goes away automatically
+        roundSummaryReceivedRef.current = true;
+        setIsWaitingForOthers(false);
         setIsLeaderboardVisible(true);
 
-        // 💰 WINNER PAYOUT LOGIC (Round 7 - Final)
-        if (packet.isLastRound && packet.leaderboard[0].id === "host_id") {
-             const pot = QuizEngine.state.totalPot;
-             if (pot > 0) {
-                console.log("💰 [GameLogic] Winner! Crediting pot:", pot);
-                dispatch(applyTransaction({
-                  amount: pot,
-                  reason: "Quiz Win - Total Pot",
-                  source: "quiz_reward"
-                }));
-                
-                Toast.show({
-                  type: ALERT_TYPE.SUCCESS,
-                  title: "CHAMPION!",
-                  textBody: `You won the pot of ${pot} coins!`
-                });
-             }
+        // 💰 WINNER PAYOUT: Only on the final round and only for the top player
+        if (packet.isLastRound && packet.leaderboard[0]?.id === localPlayerId) {
+          const pot = QuizEngine.state.totalPot;
+          if (pot > 0) {
+            dispatch(applyTransaction({
+              amount: pot,
+              reason: "Quiz Win - Total Pot",
+              source: "quiz_reward"
+            }));
+            Toast.show({
+              type: ALERT_TYPE.SUCCESS,
+              title: "CHAMPION!",
+              textBody: `You won the pot of ${pot} coins!`
+            });
+          }
         }
       }
-      
+
+      // 📡 QUESTION SYNC: Only apply if we are NOT already on leaderboard
+      // (prevents a late sync overwriting the leaderboard state)
       if (packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC && !isLeaderboardVisible) {
-        console.log("📡 [GameLogic] Syncing question for round:", packet.round);
         setQuestion(packet.question);
-        // Sync index if needed
         if (packet.round > questionIndex + 1) {
-           setQuestionIndex(packet.round - 1);
+          setQuestionIndex(packet.round - 1);
         }
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isLeaderboardVisible, questionIndex, dispatch, localPlayerId]);
 
   /* ---------------- RESET / QUIT ---------------- */
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     clearTimer();
     setQuestionIndex(0);
     setCorrectAnswer(0);
@@ -363,27 +455,25 @@ export const useQuizGameLogic = () => {
     setIsFiftyFiftyActive(false);
     setFiftyFiftyUsageCount(0);
     setQuestion(getNextQuestion());
-  };
+  }, [clearTimer, getNextQuestion]);
 
-  type Routes = "/mode-select" | "/stats" | "/earn";
-
-  const handleNavigation = (targetRoute: Routes) => {
+  const handleNavigation = useCallback((targetRoute: string) => {
     try {
       resetGame();
       dispatch(resetDifficulty());
 
       requestAnimationFrame(() => {
         router.dismissAll();
-        router.replace(targetRoute);
+        router.replace(targetRoute as any);
       });
     } catch (err) {
       console.error("Navigation failed:", err);
     }
-  };
+  }, [dispatch, resetGame, router]);
 
-  const handleQuit = () => handleNavigation("/mode-select");
-  const handleStats = () => handleNavigation("/stats");
-  const handleEarn = () => handleNavigation("/earn");
+  const handleQuit = useCallback(() => handleNavigation("/mode-select"), [handleNavigation]);
+  const handleStats = useCallback(() => handleNavigation("/stats"), [handleNavigation]);
+  const handleEarn = useCallback(() => handleNavigation("/earn"), [handleNavigation]);
 
   const isQuittingRef = useRef(false);
 
@@ -395,32 +485,20 @@ export const useQuizGameLogic = () => {
       clearTimer();
       AudioEngine.stop("timer");
 
-      const penaltyAmount = 50;
-
       await dispatch(
         applyTransaction({
-          amount: -penaltyAmount,
+          amount: -50,
           reason: "Quit Quiz Penalty",
           source: "quiz_penalty",
-          metadata: {
-            round: questionIndex + 1,
-            difficulty: difficulty ?? "easy",
-            timestamp: Date.now(),
-            gameId: "quiz_think_count",
-          },
+          metadata: { round: questionIndex + 1 },
         }),
       );
 
       resetGame();
       dispatch(resetDifficulty());
-
-      requestAnimationFrame(() => {
-        router.dismissAll();
-
-        router.replace("/level-select");
-      });
+      router.replace("/level-select");
     } catch (error) {
-      console.error("Error during quit-in-middle workflow:", error);
+      console.error("Error during quit-in-middle:", error);
     } finally {
       isQuittingRef.current = false;
     }
@@ -461,5 +539,7 @@ export const useQuizGameLogic = () => {
     setIsLeaderboardVisible,
     leaderboardData,
     isMultiplayer,
+    isWaitingForOthers,
+    roundProgress,
   };
 };

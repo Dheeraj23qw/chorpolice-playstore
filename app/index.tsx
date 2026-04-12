@@ -38,13 +38,9 @@ export default function Index() {
   const hasNavigated = useRef(false);
 
   /* ---------------- INIT ---------------- */
-  useEffect(() => {
-    // 🚀 Defer heavy loading until the intro is handled
-    const timer = setTimeout(() => {
-      loadSounds();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+  // Sound loading is deferred to goToGame() — NOT here.
+  // WHY: loadSounds() does heavy I/O (decoding audio) which competes
+  // with the video decoder for CPU, causing stutters on low-end devices.
 
   /* ---------------- HIDE HEADER ---------------- */
   useLayoutEffect(() => {
@@ -58,7 +54,12 @@ export default function Index() {
 
     console.log("🎬 [Startup] Transitioning: stage -> game");
     setStage("game");
-    AudioEngine.play("quiz", "background");
+
+    // Load sounds AFTER the video — non-blocking
+    setTimeout(() => {
+      loadSounds();
+      AudioEngine.play("quiz", "background");
+    }, 100);
   };
 
   /* ---------------- FALLBACK ---------------- */

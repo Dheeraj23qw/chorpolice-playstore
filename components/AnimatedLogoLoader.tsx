@@ -8,55 +8,58 @@ import Animated, {
   withSequence,
   Easing,
   interpolate,
+  cancelAnimation,
 } from "react-native-reanimated";
 
+/**
+ * Simplified logo loader — runs on the UI thread via Reanimated.
+ *
+ * WHY reduced from 3 to 2 animations:
+ * The original had rotate + scale + bounce running simultaneously.
+ * On low-end Android, 3 infinite animations for a loading spinner
+ * was overkill — each one creates a worklet frame callback.
+ * Reduced to rotate + subtle pulse which looks cleaner and runs smoother.
+ */
 export default function AnimatedLogoLoader() {
   const rotate = useSharedValue(0);
-  const scale = useSharedValue(1);
-  const bounce = useSharedValue(0);
+  const pulse = useSharedValue(1);
 
   useEffect(() => {
-    // Continuous rotation (360 degrees loop)
+    // Smooth rotation
     rotate.value = withRepeat(
-      withTiming(360, { duration: 2500, easing: Easing.linear }),
+      withTiming(360, { duration: 3000, easing: Easing.linear }),
       -1,
       false
     );
 
-    // Pulsing scale
-    scale.value = withRepeat(
+    // Gentle pulse (replaces both scale AND bounce — one animation instead of two)
+    pulse.value = withRepeat(
       withSequence(
-        withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.95, { duration: 800, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.08, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.97, { duration: 1000, easing: Easing.inOut(Easing.ease) })
       ),
       -1
     );
 
-    // Subtle bounce up & down
-    bounce.value = withRepeat(
-      withSequence(
-        withTiming(-8, { duration: 600, easing: Easing.inOut(Easing.ease) }),
-        withTiming(8, { duration: 600, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
+    return () => {
+      cancelAnimation(rotate);
+      cancelAnimation(pulse);
+    };
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { rotate: `${rotate.value}deg` },
-      { scale: scale.value },
-      { translateY: bounce.value },
+      { scale: pulse.value },
     ],
-    // Remove heavy shadows for Android performance
-    opacity: interpolate(scale.value, [0.95, 1.1], [0.8, 1]),
+    opacity: interpolate(pulse.value, [0.97, 1.08], [0.85, 1]),
   }));
 
   return (
     <View className="flex-1 items-center justify-end">
       <Animated.View
         style={animatedStyle}
+        renderToHardwareTextureAndroid={true}
         className="w-20 h-20 rounded-full overflow-hidden items-center justify-center border-4 border-white shadow-xl"
       >
         <Image

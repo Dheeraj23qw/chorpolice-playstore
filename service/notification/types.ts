@@ -1,4 +1,14 @@
-export type AppRoute = "/earn" | "/";
+/**
+ * All valid deep-link routes that notifications can navigate to.
+ * Must stay in sync with templates.ts data.screen values.
+ */
+export type AppRoute =
+  | "/"
+  | "/earn"
+  | "/news"
+  | "/stats"
+  | "/level-select"
+  | "/mode-select";
 
 export type AppNotificationData = {
   screen?: AppRoute;
@@ -8,5 +18,5 @@ export interface NotificationTemplate {
   id: string;
   titles: string[];
   bodies: string[];
-  data?: Record<string, any>;
+  data?: Partial<AppNotificationData> & Record<string, any>;
 }

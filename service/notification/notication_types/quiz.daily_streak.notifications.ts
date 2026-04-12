@@ -7,9 +7,13 @@ export async function scheduleDailyStreakReminder(dailyStreak: number) {
 
   const seconds = secondsUntilTomorrowAt(20); // 8 PM
 
-  await scheduleFromTemplate(DAILY_STREAK_TEMPLATE, seconds, {
-    streak: dailyStreak,
-  });
+  await scheduleFromTemplate(
+    DAILY_STREAK_TEMPLATE,
+    seconds,
+    { streak: dailyStreak },
+    "#EF4444", // Red accent — urgency color
+    "alerts"   // High-priority channel
+  );
 }
 
 export async function cancelDailyStreakReminder() {

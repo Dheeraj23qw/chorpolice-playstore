@@ -67,46 +67,37 @@ export const BotEngine = {
   },
 
   /**
-   * Listens for game-start events to simulate activity.
+   * Listens for game events and simulates bot behavior.
+   * FIX: Centralized listener to avoid memory leaks/duplicate answers.
    */
   initializeListeners: () => {
-    console.log("🤖 [BotEngine] Initializing listeners for virtual clients");
+    console.log("🤖 [BotEngine] Initializing centralized listeners for virtual clients.");
     
-    // Bots listen to the same packets as human clients
     const unsub = subscribeToPackets((packet) => {
+      // 🎮 GAME START
       if (packet.type === MODES.THINK_AND_COUNT.GAME_START) {
-        console.log("🤖 [BotEngine] Bots detected game start. Preparing simulated activity...");
-        BotEngine.simulateGameActivity();
+        console.log("🤖 [BotEngine] Bots ready for multiplayer session.");
       }
-    });
 
-    BotEngine._listeners.push(unsub);
-  },
-
-  /**
-   * Simulates bot behavior during the game.
-   */
-  simulateGameActivity: () => {
-    console.log("🤖 [BotEngine] Bots are now reactive to question synchronization.");
-    
-    const unsub = subscribeToPackets((packet) => {
+      // 📡 NEW QUESTION (Round Sync)
       if (packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC) {
-        console.log(`🤖 [BotEngine] Bots detected new question for round ${packet.round}. Preparing answers...`);
+        console.log(`🤖 [BotEngine] Handling round ${packet.round} for virtual clients...`);
         
         BotEngine.activeBots.forEach((bot) => {
-          // 🏎️ Simulate High Pressure Thinking Time (2s to 9s)
-          const delay = Math.floor(Math.random() * 7000) + 2000;
+          // 🏎️ Random Thinking Delay (3s to 12s)
+          const delay = Math.floor(Math.random() * 9000) + 3000;
           
           setTimeout(() => {
-            // Safety check: is the bot still in a valid sesssion?
+            // Safety: Did the game end or bots cleared?
             if (BotEngine.activeBots.length === 0) return;
 
-            console.log(`🤖 [BotEngine] Bot '${bot.name}' submitting high-pressure answer`);
+            const isCorrect = Math.random() > 0.3; // 70% Accuracy
+            console.log(`🤖 [BotEngine] Bot '${bot.name}' result for Round ${packet.round}: ${isCorrect ? '✅' : '❌'}`);
             
             handleIncomingPacket({
               type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
               playerId: bot.id,
-              isCorrect: true, 
+              isCorrect: isCorrect, 
               timeTaken: delay,
               timestamp: Date.now(),
             });

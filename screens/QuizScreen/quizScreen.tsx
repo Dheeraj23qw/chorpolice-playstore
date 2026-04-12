@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect } from "react"; // Removed useState
+import React, { memo, useCallback, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -23,8 +23,10 @@ import { Lightbulb } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { MultiplayerLeaderboard } from "../../components/QuizScreen/MultiplayerLeaderboard";
 import { QuizEngine } from "@/service/QuizEngine";
+import { NUM_QUESTIONS } from "@/constants/quizConstants";
 import { useRouter } from "expo-router";
 import { AnimatePresence, MotiView } from "moti";
+import { Ionicons } from "@expo/vector-icons";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -55,6 +57,8 @@ const QuizScreen = () => {
     isLeaderboardVisible,
     leaderboardData,
     isMultiplayer,
+    isWaitingForOthers,
+    roundProgress,
   } = useQuizGameLogic();
 
   useEffect(() => {
@@ -98,6 +102,37 @@ const QuizScreen = () => {
         resizeMode="cover"
       />
       <View className="absolute h-full w-full bg-black/70" />
+
+      {/* ⏳ WAITING OVERLAY */}
+      <AnimatePresence>
+        {isWaitingForOthers && (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute z-[70] h-full w-full items-center justify-center bg-black/80 backdrop-blur-3xl"
+          >
+            <View className="items-center rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl">
+              <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20">
+                <Ionicons name="people-outline" size={32} color="#818cf8" />
+              </View>
+              <Text className="font-main-bold text-lg text-white">
+                Syncing Session
+              </Text>
+              <Text className="font-main-regular mt-2 text-center text-xs uppercase tracking-widest text-white/40">
+                Waiting for other players{"\n"}to finish the round...
+              </Text>
+
+              <MotiView
+                from={{ scale: 1, opacity: 0.5 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                transition={{ loop: true, duration: 1000, type: "timing" }}
+                className="mt-6 h-1 w-20 rounded-full bg-indigo-500"
+              />
+            </View>
+          </MotiView>
+        )}
+      </AnimatePresence>
 
       {isTableOpen ? (
         <View className="z-[60] flex-1">
@@ -176,11 +211,13 @@ const QuizScreen = () => {
                     key="leaderboard"
                     round={questionIndex + 1}
                     data={leaderboardData}
+                    roundProgress={roundProgress}
+                    timeLeft={countdown}
                     onNext={handleNextQuestion}
                     isHost={
                       QuizEngine.state.playerScores["host_id"] !== undefined
-                    } // Simplified host check
-                    isLastRound={questionIndex + 1 >= 7}
+                    }
+                    isLastRound={questionIndex + 1 >= NUM_QUESTIONS}
                     totalPot={QuizEngine.state.totalPot}
                   />
                 ) : (

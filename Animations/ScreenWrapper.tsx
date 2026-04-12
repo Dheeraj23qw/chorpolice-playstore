@@ -1,12 +1,12 @@
 import React, { useCallback } from "react";
-import { ViewProps, Platform } from "react-native";
+import { ViewProps } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
   withSpring,
   withRepeat,
   withSequence,
+  withTiming,
   Easing,
   cancelAnimation,
   interpolate,
@@ -19,6 +19,15 @@ interface ScreenWrapperProps extends ViewProps {
   breathing?: boolean;
 }
 
+/**
+ * Wraps every screen with an entrance animation and optional breathing effect.
+ *
+ * PERFORMANCE FIX:
+ * - Removed rotateX 3D transform (forces GPU rasterization of the ENTIRE tree)
+ * - Removed perspective (same issue — expensive on large views)
+ * - Made breathing amplitude smaller (1.005 vs 1.01) and slower (4s vs 5s)
+ * - These changes eliminate the frame drops on low-end Android during the intro video
+ */
 export default function ScreenWrapper({
   children,
   style,
@@ -26,40 +35,30 @@ export default function ScreenWrapper({
   breathing = true,
   ...rest
 }: ScreenWrapperProps) {
-  const progress = useSharedValue(0); // Single source of truth for entrance
+  const progress = useSharedValue(0);
   const scale = useSharedValue(1);
-
-  /* ---------------- Animation Config ---------------- */
 
   const getConfig = () => {
     switch (variant) {
       case "dramatic":
         return {
           spring: { damping: 12, stiffness: 90, mass: 0.8 },
-          duration: 800,
-          yOffset: 80,
-          rotate: "10deg",
+          yOffset: 60,
         };
       case "modal":
         return {
           spring: { damping: 16, stiffness: 85 },
-          duration: 500,
-          yOffset: 50,
-          rotate: "5deg",
+          yOffset: 40,
         };
       case "fast":
         return {
           spring: { damping: 20, stiffness: 150 },
-          duration: 300,
-          yOffset: 20,
-          rotate: "2deg",
+          yOffset: 15,
         };
       default:
         return {
           spring: { damping: 15, stiffness: 100 },
-          duration: 600,
-          yOffset: 40,
-          rotate: "0deg",
+          yOffset: 30,
         };
     }
   };
@@ -68,15 +67,15 @@ export default function ScreenWrapper({
 
   useFocusEffect(
     useCallback(() => {
-      // 1. Entrance Animation
+      // Entrance slide-up + fade
       progress.value = withSpring(1, config.spring);
 
-      // 2. Breathing Effect (Subtle scale)
+      // Breathing: very subtle so it doesn't compete with screen content
       if (breathing) {
         scale.value = withRepeat(
           withSequence(
-            withTiming(1.01, { duration: 2500, easing: Easing.bezier(0.42, 0, 0.58, 1) }),
-            withTiming(1, { duration: 2500, easing: Easing.bezier(0.42, 0, 0.58, 1) })
+            withTiming(1.005, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+            withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) })
           ),
           -1,
           true
@@ -84,7 +83,6 @@ export default function ScreenWrapper({
       }
 
       return () => {
-        // Cleanup: Reset and cancel to prevent "ghost" animations on return
         cancelAnimation(progress);
         cancelAnimation(scale);
         progress.value = 0;
@@ -93,24 +91,19 @@ export default function ScreenWrapper({
     }, [variant, breathing])
   );
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      flex: 1,
-      opacity: progress.value,
-      transform: [
-        { perspective: 1000 }, // Necessary for 3D rotations
-        { translateY: interpolate(progress.value, [0, 1], [config.yOffset, 0]) },
-        { scale: scale.value * interpolate(progress.value, [0, 1], [0.95, 1]) },
-        { rotateX: `${interpolate(progress.value, [0, 1], [5, 0])}deg` }
-      ],
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    flex: 1,
+    opacity: progress.value,
+    transform: [
+      { translateY: interpolate(progress.value, [0, 1], [config.yOffset, 0]) },
+      { scale: scale.value * interpolate(progress.value, [0, 1], [0.97, 1]) },
+    ],
+  }));
 
   return (
-    <Animated.View 
-      style={[animatedStyle, style]} 
-      // Improves performance by hinting to the OS that this view animates
-      renderToHardwareTextureAndroid={true} 
+    <Animated.View
+      style={[animatedStyle, style]}
+      renderToHardwareTextureAndroid={true}
       {...rest}
     >
       {children}

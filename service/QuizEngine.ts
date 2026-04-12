@@ -13,8 +13,9 @@ export const QuizEngine = {
     difficulty: "easy" as any,
     currentRound: 1,
     totalRounds: 7,
-    playerScores: {} as Record<string, { id: string, name: string, avatarId: number, score: number, totalTime: number, lastRoundTime: number, submissionTime?: string }>,
+    playerScores: {} as Record<string, { id: string, name: string, avatarId: number, correctCount: number, totalTime: number, submissionTime?: string }>,
     roundAnswersReceived: 0,
+    roundAnsweredIds: {} as Record<string, boolean>, // 🛡️ Round-specific tracking
     isFinalRound: false,
     currentQuestion: null as any,
     stake: 0,
@@ -36,11 +37,12 @@ export const QuizEngine = {
    * Initializes the engine for a new session.
    */
   init: (players: any[], difficulty: any, stake: number = 0) => {
-    console.log("🎮 [QuizEngine] Initializing. Stake:", stake);
+    console.log("🎮 [QuizEngine] Initializing Timer-Enabled Session.");
     QuizEngine.state.difficulty = difficulty;
     QuizEngine.state.currentRound = 1;
     QuizEngine.state.roundAnswersReceived = 0;
-    QuizEngine.state.playerScores = {};
+    QuizEngine.state.roundAnsweredIds = {};
+     QuizEngine.state.playerScores = {};
     QuizEngine.state.stake = stake;
     QuizEngine.state.totalPot = stake * players.length;
     
@@ -49,14 +51,12 @@ export const QuizEngine = {
         id: p.id,
         name: p.name, 
         avatarId: p.avatarId || 1,
-        score: 0, 
+        correctCount: 0,
         totalTime: 0,
-        lastRoundTime: 0,
         submissionTime: "N/A"
       };
     });
 
-    // Sync metadata
     updateDebugMetric("quizDifficulty", difficulty);
   },
 
@@ -78,27 +78,35 @@ export const QuizEngine = {
       
       case MODES.THINK_AND_COUNT.QUESTION_SYNC:
         updateDebugMetric("quizRound", packet.round);
-        updateDebugMetric("lastQuestionSync", `Round ${packet.round}`);
         break;
     }
   },
 
   /**
-   * Handles individual player answers and updates scores.
+   * Handles individual player answers and updates counts.
+   * WHY: Ranking primarily by correctness, TIES broken by speed (totalTime).
    */
   handleAnswer: (packet: any) => {
     const { playerId, isCorrect, timeTaken } = packet;
-    if (!QuizEngine.state.playerScores[playerId]) return;
-
-    if (isCorrect) {
-      const speedBonus = Math.max(0, 1000 - Math.floor(timeTaken / 10));
-      QuizEngine.state.playerScores[playerId].score += speedBonus;
-      QuizEngine.state.playerScores[playerId].lastRoundTime = timeTaken;
-      
-      const date = packet.timestamp ? new Date(packet.timestamp) : new Date();
-      QuizEngine.state.playerScores[playerId].submissionTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
+    // 🛡️ User Request Fix: No multiple answers per round
+    if (!QuizEngine.state.playerScores[playerId] || QuizEngine.state.roundAnsweredIds[playerId]) {
+       console.log(`🛡️ [QuizEngine] Ignoring duplicate/invalid answer from: ${playerId}`);
+       return;
     }
 
+    if (isCorrect) {
+      QuizEngine.state.playerScores[playerId].correctCount += 1;
+    }
+
+    // Always accumulate time for tie-breaking as per User Request
+    QuizEngine.state.playerScores[playerId].totalTime += (timeTaken || 0);
+    
+    const date = packet.timestamp ? new Date(packet.timestamp) : new Date();
+    QuizEngine.state.playerScores[playerId].submissionTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Mark as answered for this round
+    QuizEngine.state.roundAnsweredIds[playerId] = true;
     QuizEngine.state.roundAnswersReceived++;
 
     const totalPlayers = Object.keys(QuizEngine.state.playerScores).length;
@@ -114,17 +122,19 @@ export const QuizEngine = {
     const summaryPacket = {
       type: "TC_ROUND_SUMMARY",
       round: QuizEngine.state.currentRound,
+      // 🏆 TIE-BREAKER: Sort by correctCount (DESC), then totalTime (ASC)
       leaderboard: Object.entries(QuizEngine.state.playerScores)
         .map(([id, stats]) => ({ id, ...stats }))
-        .sort((a, b) => b.score - a.score),
+        .sort((a, b) => (b.correctCount - a.correctCount) || (a.totalTime - b.totalTime)),
       isLastRound: QuizEngine.state.currentRound >= QuizEngine.state.totalRounds
     };
 
-    // Use Router for OCP-compliant broadcast
     PacketRouter.broadcast(summaryPacket);
 
+    // Reset round-specific state
     QuizEngine.state.currentRound++;
     QuizEngine.state.roundAnswersReceived = 0;
+    QuizEngine.state.roundAnsweredIds = {};
   }
 };
 
