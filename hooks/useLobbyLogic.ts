@@ -169,9 +169,34 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
   const handleJoinSystemServer = useCallback(() => {
     router.replace({
       pathname: "/(game)/lobby",
-      params: { isHost: "true", gameType: "QUIZ", isSystem: "true" },
+      params: { isHost: "true", gameType: gameType || "QUIZ", isSystem: "true" },
     } as any);
-  }, [router]);
+  }, [router, gameType]);
+
+  /**
+   * handleJoin — Called from PlayerListItem when a client taps "JOIN" on a discovered host.
+   * For VIRTUAL hosts (system bots): re-mount as host with bots.
+   * For REAL LAN hosts: send a PLAYER_JOIN packet so the host adds us.
+   */
+  const handleJoin = useCallback((host: any) => {
+    if (host.type === "VIRTUAL") {
+      // System Server — become the host with bots
+      handleJoinSystemServer();
+      return;
+    }
+
+    // Real LAN host — notify them we're joining
+    const joinPacket = {
+      type: NETWORK.PLAYER_JOIN,
+      player: {
+        id: `client_${Date.now()}`,
+        name: userName,
+        avatarId: selectedImages[0] || 1,
+      },
+    };
+    handleIncomingPacket(joinPacket, host.ip);
+    alertStore.show({ message: `Joining ${host.deviceName}...`, type: "success" });
+  }, [userName, selectedImages, handleJoinSystemServer]);
 
   const [isStarting, setIsStarting] = useState(false);
   const handleConfirmStake = useCallback((stake: number) => {
@@ -231,6 +256,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     isBettingModalVisible,
     setIsBettingModalVisible,
     selectedImages,
+    handleJoin,
     handleJoinSystemServer,
     handleDifficultyChange,
     handleConfirmStake,
