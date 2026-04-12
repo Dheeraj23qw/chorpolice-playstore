@@ -13,6 +13,7 @@ import {
   subscribeToPackets,
   startHeartbeat,
   stopHeartbeat,
+  clearAllListeners,
   debugState,
 } from "@/service/lanGameService";
 import { BotEngine } from "@/service/BotEngine";
@@ -59,32 +60,42 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     });
   }, [isHost]);
 
-  // 🔥 INIT
+  // 🔥 INIT — Fresh state every time the lobby mounts
   useEffect(() => {
-    // 1. Set initial players (Host + already active bots)
-    const initialPlayers = [
-      {
-        id: "host_id",
-        name: userName,
-        avatarId: selectedImages[0] || 1,
-      },
-      ...BotEngine.activeBots,
-    ];
-    setPlayers(initialPlayers);
+    /**
+     * 🧹 STEP 1: Nuke ALL previous game state.
+     * WHY: If the user plays a game and comes back to lobby,
+     * BotEngine.activeBots, QuizEngine.state.playerScores, etc.
+     * still contain data from the last session.
+     */
+    BotEngine.reset();
+    QuizEngine.reset();
+    clearAllListeners(); // Kill ghost listeners from crashed sessions
 
-    // 2. Initialize Session
+    // STEP 2: Start fresh — only the host player, zero bots
+    const hostPlayer: Player = {
+      id: "host_id",
+      name: userName,
+      avatarId: selectedImages[0] || 1,
+    };
+    setPlayers([hostPlayer]);
+
+    // STEP 3: Initialize session
     if (isHost) {
       startHeartbeat(true, []);
       
       if (gameType === "QUIZ") {
+        // Bots will join via PLAYER_JOIN packets (same as real players)
+        // This ensures setPlayers picks them up through the subscription
         BotEngine.spawn(3);
-        // 🚀 DEFAULT DISPATCH: Ensure clients are ready with 'easy' mode immediately
-        // Delay slightly to ensure network listeners in Discovery are active
+        
+        // Set default difficulty after listeners are ready
         const t = setTimeout(() => handleDifficultyChange("easy"), 800);
         return () => clearTimeout(t);
       }
     }
 
+    // STEP 4: Cleanup on unmount — kill everything
     return () => {
       if (isHost) {
         stopHeartbeat();

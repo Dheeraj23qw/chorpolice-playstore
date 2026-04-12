@@ -26,6 +26,16 @@ export const subscribeToPackets = (listener: PacketListener) => {
 };
 
 /**
+ * 🧹 Clears ALL packet listeners.
+ * WHY: Prevents ghost listeners from a crashed/unmounted game session
+ * from processing packets in the next session.
+ */
+export const clearAllListeners = () => {
+  console.log(`🧹 [LAN] Clearing ${listeners.size} stale packet listeners.`);
+  listeners.clear();
+};
+
+/**
  * --- PACKET AUDIT & DISPATCH ---
  */
 const debugLogger = (role: string, packet: any, metadata: string = "N/A") => {

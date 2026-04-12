@@ -1,24 +1,37 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { View, ScrollView, Image, BackHandler } from "react-native";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
 import { hp, wp, rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 import useRandomMessage from "@/hooks/useRandomMessage";
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { playerImages } from "@/constants/playerData";
+import { resetDifficulty } from "@/redux/reducers/quiz";
 
 import { ResultInfo } from "./components/reseltInfo";
 import { AudioEngine } from "@/audio/audioEngine";
 import { useQuizReward } from "@/hooks/useQuizRewards";
 import { ActionButtons } from "./components/renderButtons";
-import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 import { Ionicons } from "@expo/vector-icons";
 import { QuizEngine } from "@/service/QuizEngine";
+import { BotEngine } from "@/service/BotEngine";
 
+/**
+ * WHY this screen does NOT use useQuizGameLogic():
+ * That hook starts timers, attaches packet listeners, and processes
+ * incoming packets with setState. When packets arrive during QuizResult's
+ * render cycle, React throws "Cannot update a component while rendering
+ * a different component". This screen only needs navigation functions,
+ * which are implemented directly here.
+ */
 export default function QuizResult() {
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
+
   const {
     correctQuestions: Correct,
     totalQuestions: Total,
@@ -29,15 +42,15 @@ export default function QuizResult() {
     (state: RootState) => state.player.selectedImages,
   );
 
-  const { handleQuit, handleStats, handleEarn } = useQuizGameLogic();
-
   const Message = useRandomMessage(isWinner ? "winner" : "loser");
   const { reward, message: coinsAwarded } = useQuizReward();
   const accuracy = Total > 0 ? Math.round((Correct / Total) * 100) : 0;
 
+  // Stop all game activity when this screen mounts
   useEffect(() => {
     AudioEngine.stop("timer");
-  }, [isWinner]);
+    BotEngine.reset(); // Kill bot listeners so they don't fire more packets
+  }, []);
 
   const statusColor = isWinner ? "#10b981" : "#ef4444";
 
@@ -47,6 +60,41 @@ export default function QuizResult() {
       ? imgData.src
       : require("@/assets/images/chorsipahi/kid1.png");
   };
+
+  // Multiplayer final standings (read once, no hook needed)
+  const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
+  const standings = isMultiplayer
+    ? Object.entries(QuizEngine.state.playerScores)
+        .map(([id, stats]) => ({ playerId: id, ...stats }))
+        .sort((a, b) => (b.correctCount - a.correctCount) || (a.totalTime - b.totalTime))
+    : [];
+
+  /* Navigation — implemented directly, not via useQuizGameLogic */
+  const handleNavigation = useCallback((targetRoute: string) => {
+    try {
+      dispatch(resetDifficulty());
+      requestAnimationFrame(() => {
+        router.dismissAll();
+        router.replace(targetRoute as any);
+      });
+    } catch (err) {
+      console.error("Navigation failed:", err);
+    }
+  }, [dispatch, router]);
+
+  const handleQuit = useCallback(() => handleNavigation("/mode-select"), [handleNavigation]);
+  const handleStats = useCallback(() => handleNavigation("/stats"), [handleNavigation]);
+  const handleEarn = useCallback(() => handleNavigation("/earn"), [handleNavigation]);
+
+  // Block back button — force user to use the action buttons
+  useEffect(() => {
+    const backAction = () => {
+      handleQuit();
+      return true;
+    };
+    const sub = BackHandler.addEventListener("hardwareBackPress", backAction);
+    return () => sub.remove();
+  }, [handleQuit]);
 
   return (
     <View className="flex-1 bg-black">
@@ -79,10 +127,14 @@ export default function QuizResult() {
           </Text>
 
           <View className="my-6">
-            <View className="h-32 w-32 items-center justify-center overflow-hidden rounded-[40px] border-4 border-white/10 bg-white/5 shadow-2xl">
+            {/* Square photo frame */}
+            <View
+              style={{ width: wp(30), height: wp(30) }}
+              className="items-center justify-center overflow-hidden rounded-2xl border-4 border-white/10 bg-white/5 shadow-2xl"
+            >
               <Image
                 source={getAvatarSource(selectedImages[0] || 1)}
-                className="h-24 w-24"
+                style={{ width: wp(24), height: wp(24) }}
                 resizeMode="contain"
               />
             </View>
@@ -97,7 +149,7 @@ export default function QuizResult() {
           </View>
         </View>
 
-        <View className="overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.04] shadow-2xl backdrop-blur-2xl">
+        <View className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.04]">
           <ResultInfo
             Correct={Correct}
             Total={Total}
@@ -108,8 +160,8 @@ export default function QuizResult() {
           />
         </View>
 
-        {/* 🏆 FINAL STANDINGS (User Request: leader boards type ui in multi quizresult) */}
-        {Object.keys(QuizEngine.state.playerScores).length > 1 && (
+        {/* 🏆 FINAL STANDINGS */}
+        {isMultiplayer && standings.length > 0 && (
           <View className="mt-8">
             <View className="mb-4 flex-row items-center justify-between px-2">
               <Text className="font-main-bold text-lg text-white">
@@ -118,53 +170,63 @@ export default function QuizResult() {
               <Ionicons name="medal-outline" size={20} color="#818cf8" />
             </View>
 
-            {Object.entries(QuizEngine.state.playerScores)
-              .map(([id, stats]) => ({ playerId: id, ...stats }))
-              .sort((a, b) => b.correctCount - a.correctCount)
-              .map((item, index) => {
-                const isWinner = index === 0;
-                return (
-                  <View
-                    key={item.playerId}
-                    className={`mb-3 flex-row items-center justify-between rounded-3xl border p-4 ${
-                      isWinner
-                        ? "border-indigo-500/30 bg-indigo-500/10"
-                        : "border-white/5 bg-white/5"
-                    }`}
-                  >
-                    <View className="flex-1 flex-row items-center">
-                      <View className="h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-white/10">
-                        <Image
-                          source={getAvatarSource(item.avatarId)}
-                          className="h-8 w-8"
-                          resizeMode="contain"
-                        />
-                      </View>
-                      <View className="ml-4 flex-1">
-                        <Text
-                          className={`font-main-bold text-sm ${isWinner ? "text-indigo-400" : "text-white"}`}
-                        >
-                          {item.name}
-                        </Text>
-                        <Text className="text-[8px] uppercase tracking-widest text-white/20">
-                          {index === 0
-                            ? "Grand Champion"
-                            : `Rank #${index + 1}`}
-                        </Text>
-                      </View>
+            {standings.map((item, index) => {
+              const isTop = index === 0;
+              const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : null;
+              return (
+                <View
+                  key={item.playerId}
+                  className={`mb-3 flex-row items-center justify-between rounded-2xl border p-4 ${
+                    isTop
+                      ? "border-indigo-500/30 bg-indigo-500/10"
+                      : "border-white/5 bg-white/5"
+                  }`}
+                >
+                  <View className="flex-1 flex-row items-center">
+                    {/* Rank */}
+                    <View className="w-8 items-center">
+                      {medal ? (
+                        <Text style={{ fontSize: 18 }}>{medal}</Text>
+                      ) : (
+                        <Text className="font-main-bold text-xs text-white/25">#{index + 1}</Text>
+                      )}
                     </View>
-
-                    <View className="items-end">
-                      <Text className="font-main-bold text-lg text-white">
-                        {item.correctCount}
+                    {/* Square avatar */}
+                    <View
+                      style={{ width: wp(10), height: wp(10) }}
+                      className="ml-2 items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-white/10"
+                    >
+                      <Image
+                        source={getAvatarSource(item.avatarId)}
+                        style={{ width: wp(8), height: wp(8) }}
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text
+                        className={`font-main-bold text-sm ${isTop ? "text-indigo-400" : "text-white"}`}
+                      >
+                        {item.name}
                       </Text>
-                      <Text className="text-[8px] uppercase text-white/20">
-                        Answers
+                      <Text className="text-[8px] uppercase tracking-widest text-white/20">
+                        {index === 0
+                          ? "Grand Champion"
+                          : `Rank #${index + 1}`}
                       </Text>
                     </View>
                   </View>
-                );
-              })}
+
+                  <View className="items-end">
+                    <Text className="font-main-bold text-lg text-white">
+                      {item.correctCount}
+                    </Text>
+                    <Text className="text-[8px] uppercase text-white/20">
+                      Correct
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         )}
 

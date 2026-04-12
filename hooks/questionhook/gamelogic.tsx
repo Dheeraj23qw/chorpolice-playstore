@@ -359,6 +359,12 @@ export const useQuizGameLogic = () => {
     if (questionIndex + 1 >= NUM_QUESTIONS) {
       dispatch(setCorrectAnswers(correctAnswer));
       AudioEngine.stop("timer");
+      clearTimer();
+      // Kill bots before navigating — prevents late packets crashing QuizResult
+      if (isMultiplayer) {
+        const { BotEngine } = require("@/service/BotEngine");
+        BotEngine.reset();
+      }
       router.push({ pathname: "/quiz-result" } as any);
       return;
     }

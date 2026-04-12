@@ -24,17 +24,6 @@ export const optionsGameMode: GameModeType[] = [
     buttonText: "PLAY SOLO",
   },
   {
-    id: "think_offline",
-    title: "THINK & COUNT (OFFLINE)",
-    subtitle: "Train your brain with calculations",
-    difficulty: "SMART",
-    route: "/level-select",
-    image: require("@/assets/images/bg/gamemode/2.png"),
-    accentColor: "#6366F1",
-    icon: "infinite",
-    buttonText: "LEVEL UP",
-  },
-  {
     id: "chor_online",
     title: "CHOR POLICE (ONLINE)",
     subtitle: "Play with your friends locally",

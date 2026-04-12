@@ -34,15 +34,33 @@ export const QuizEngine = {
   },
 
   /**
+   * 🧹 Full state reset — MUST be called before every new session.
+   * WHY: Without this, playerScores, currentRound, totalPot, etc.
+   * carry over from the previous game into the new lobby.
+   */
+  reset: () => {
+    console.log("🧹 [QuizEngine] Full state reset.");
+    QuizEngine.state.difficulty = "easy";
+    QuizEngine.state.currentRound = 1;
+    QuizEngine.state.totalRounds = 7;
+    QuizEngine.state.playerScores = {};
+    QuizEngine.state.roundAnswersReceived = 0;
+    QuizEngine.state.roundAnsweredIds = {};
+    QuizEngine.state.isFinalRound = false;
+    QuizEngine.state.currentQuestion = null;
+    QuizEngine.state.stake = 0;
+    QuizEngine.state.totalPot = 0;
+  },
+
+  /**
    * Initializes the engine for a new session.
    */
   init: (players: any[], difficulty: any, stake: number = 0) => {
+    // Always reset first to wipe any stale state
+    QuizEngine.reset();
+
     console.log("🎮 [QuizEngine] Initializing Timer-Enabled Session.");
     QuizEngine.state.difficulty = difficulty;
-    QuizEngine.state.currentRound = 1;
-    QuizEngine.state.roundAnswersReceived = 0;
-    QuizEngine.state.roundAnsweredIds = {};
-     QuizEngine.state.playerScores = {};
     QuizEngine.state.stake = stake;
     QuizEngine.state.totalPot = stake * players.length;
     
@@ -88,6 +106,12 @@ export const QuizEngine = {
    */
   handleAnswer: (packet: any) => {
     const { playerId, isCorrect, timeTaken } = packet;
+
+    // 🛡️ GAME OVER GUARD: Reject answers after all rounds are complete
+    if (QuizEngine.state.currentRound > QuizEngine.state.totalRounds) {
+      console.log(`🛡️ [QuizEngine] Game over — ignoring late answer from: ${playerId}`);
+      return;
+    }
     
     // 🛡️ User Request Fix: No multiple answers per round
     if (!QuizEngine.state.playerScores[playerId] || QuizEngine.state.roundAnsweredIds[playerId]) {

@@ -14,12 +14,12 @@ import { hp, wp, rf } from "@/utils/responsive";
 import GameTable from "../../components/thinkAndCountScreen/GameTable";
 import { QuizButton } from "../../components/thinkAndCountScreen/QuizButtons";
 import Timer from "../../components/thinkAndCountScreen/Timer";
-import HintSection from "../../components/thinkAndCountScreen/HintSection";
+
 import QuestionSection from "../../components/thinkAndCountScreen/QuestionSection";
 import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
-import { Lightbulb } from "lucide-react-native";
+
 import { Text } from "@/components/Text";
 import { MultiplayerLeaderboard } from "../../components/QuizScreen/MultiplayerLeaderboard";
 import { QuizEngine } from "@/service/QuizEngine";
@@ -38,7 +38,6 @@ const QuizScreen = () => {
     mediaType,
     remainingOptions,
     isFiftyFiftyActive,
-    showHint,
     handleFiftyFifty,
     handleNextQuestion,
     handleAnswerSelection,
@@ -48,9 +47,7 @@ const QuizScreen = () => {
     table,
     question,
     playerMessage,
-    setShowHint,
-    isHintButtonVisible,
-    setIsHintButtonVisible,
+
     handleQuitInMiddle,
     handleQuit,
     isLeaderboardVisible,
@@ -153,21 +150,6 @@ const QuizScreen = () => {
         </View>
       ) : (
         <>
-          {!isMultiplayer && (
-            <HintSection
-              isVisible={showHint}
-              hint={question?.hint}
-              onClose={() => {
-                setShowHint(false);
-                setIsHintButtonVisible(true);
-              }}
-              onNext={() => {
-                setIsHintButtonVisible(false);
-                handleNextQuestion();
-              }}
-            />
-          )}
-
           <View
             style={{
               flex: 1,
@@ -225,24 +207,21 @@ const QuizScreen = () => {
                 <View>
                   <QuestionSection question={question?.question} />
 
-                  {!isMultiplayer && (
-                    <View
-                      style={{ marginTop: hp(1), marginBottom: hp(1) }}
-                      className="items-center"
+                  <View
+                    style={{ marginTop: hp(1), marginBottom: hp(1) }}
+                    className="items-center"
+                  >
+                    <View className="mb-4 h-[1px] w-20 bg-white/10" />
+                    <Text
+                      style={{ fontSize: rf(1.4) }}
+                      className="text-center font-main-md uppercase tracking-widest text-white/40"
                     >
-                      <View className="mb-4 h-[1px] w-20 bg-white/10" />
-                      <Text
-                        style={{ fontSize: rf(1.4) }}
-                        className="text-center font-main-md uppercase tracking-widest text-white/40"
-                      >
-                        Consult the Quiz table to solve
-                      </Text>
-                    </View>
-                  )}
+                      Consult the Quiz table to solve
+                    </Text>
+                  </View>
 
-                  {!isHintButtonVisible && (
-                    <View style={{ marginTop: hp(4) }}>
-                      <OptionsSection
+                  <View style={{ marginTop: hp(4) }}>
+                    <OptionsSection
                         options={
                           isFiftyFiftyActive
                             ? remainingOptions
@@ -250,25 +229,11 @@ const QuizScreen = () => {
                         }
                         handleAnswerSelection={onOptionPress}
                       />
-                    </View>
-                  )}
-
-                  {isHintButtonVisible && !isMultiplayer && (
-                    <TouchableOpacity
-                      onPress={() => setShowHint(true)}
-                      activeOpacity={0.8}
-                      className="mt-8 flex-row items-center justify-center rounded-3xl border border-white/10 bg-white/5 py-5 backdrop-blur-md"
-                    >
-                      <Lightbulb size={20} color="#818cf8" strokeWidth={2} />
-                      <Text className="ml-3 font-main-bold text-[12px] uppercase tracking-[2px] text-indigo-400">
-                        View Solution Hint
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  </View>
 
                   <View style={{ marginTop: hp(1) }}>
                     <QuizButton
-                      showHint={isHintButtonVisible}
+                      showHint={false}
                       setIsTableOpen={setIsTableOpen}
                       handleNextQuestion={handleNextQuestion}
                       handleFiftyFifty={handleFiftyFifty}
