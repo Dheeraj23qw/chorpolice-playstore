@@ -1,5 +1,11 @@
-import React, { useEffect, memo, useMemo, useState } from "react";
-import { View, BackHandler, Image, ScrollView, TouchableOpacity } from "react-native";
+import React, { useEffect, memo, useMemo, useState, useCallback } from "react";
+import {
+  View,
+  BackHandler,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useChorPoliceMultiplayer } from "@/hooks/useChorPoliceMultiplayer";
@@ -137,11 +143,11 @@ const FinalResultView: React.FC<{
               />
               {/* 💰 Bid Won Message */}
               {totalPot > 0 && (
-                <View className="items-center mt-2 pb-2">
-                  <View className="bg-emerald-500/15 border border-emerald-500/30 px-5 py-2 rounded-full">
+                <View className="mt-2 items-center pb-2">
+                  <View className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-5 py-2">
                     <Text
                       style={{ fontSize: rf(1.3) }}
-                      className="font-main-bold text-emerald-400 tracking-wider"
+                      className="font-main-bold tracking-wider text-emerald-400"
                     >
                       🎉 Won the pot of {totalPot} coins!
                     </Text>
@@ -261,7 +267,9 @@ const ChorPoliceMultiplayerScreen = () => {
 
     /* ─── ROUND VIDEO: Play intro video between rounds ─── */
     if (gamePhase === "round_video") {
-      return <VideoPlayerComponent videoIndex={1} onVideoEnd={g.handleVideoEnd} />;
+      return (
+        <VideoPlayerComponent videoIndex={1} onVideoEnd={g.handleVideoEnd} />
+      );
     }
 
     /* ─── RESULT: ALL see the board ─── */
@@ -340,13 +348,13 @@ const ChorPoliceMultiplayerScreen = () => {
               <View className="mt-2 items-center">
                 <Text
                   style={{ fontSize: rf(2) }}
-                  className="font-main-bold text-white tracking-wider"
+                  className="font-main-bold tracking-wider text-white"
                 >
                   {currentPlayer.name}
                 </Text>
                 <Text
                   style={{ fontSize: rf(1) }}
-                  className="font-main-bold text-white/40 uppercase tracking-[4px] mt-1"
+                  className="mt-1 font-main-bold uppercase tracking-[4px] text-white/40"
                 >
                   Player {g.quizPlayerIndex + 1} of {players.length}
                 </Text>
@@ -380,7 +388,7 @@ const ChorPoliceMultiplayerScreen = () => {
                   </Text>
                   <Text
                     style={{ fontSize: rf(1.2) }}
-                    className="font-main-md text-white/30 mt-3"
+                    className="mt-3 font-main-md text-white/30"
                   >
                     Wait for {currentPlayer.name} to guess their score
                   </Text>
@@ -404,7 +412,7 @@ const ChorPoliceMultiplayerScreen = () => {
                   </Text>
                   <Text
                     style={{ fontSize: rf(1.2) }}
-                    className="font-main-md text-white/30 mt-3"
+                    className="mt-3 font-main-md text-white/30"
                   >
                     You can't click — wait for their turn to finish
                   </Text>
@@ -480,7 +488,9 @@ const ChorPoliceMultiplayerScreen = () => {
             flippedStates={g.flippedStates}
             clickedCards={g.clickedCards}
             handleCardClick={g.canInteract ? g.handleCardClick : () => {}}
-            handleCardClickWithBounce={g.canInteract ? g.handleCardClickWithBounce : () => {}}
+            handleCardClickWithBounce={
+              g.canInteract ? g.handleCardClickWithBounce : () => {}
+            }
             toggleModal={g.toggleModal}
             round={g.round}
             message={
@@ -509,7 +519,10 @@ const ChorPoliceMultiplayerScreen = () => {
       />
       <View className="absolute h-full w-full bg-black/70" />
 
-      <View className="flex-1" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+      <View
+        className="flex-1"
+        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      >
         {renderContent()}
       </View>
 
