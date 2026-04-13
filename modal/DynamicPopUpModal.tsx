@@ -98,7 +98,12 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
               style={styles.avatar}
             />
           )}
-          <Text style={styles.headerText} className="font-main-bold">{playerData.message}</Text>
+          <View style={{ marginLeft: 16, flexShrink: 1 }}>
+            {playerData.name ? (
+              <Text style={styles.nameText} className="font-main-bold">{playerData.name}</Text>
+            ) : null}
+            <Text style={styles.messageText} className="font-main-bold">{playerData.message}</Text>
+          </View>
         </View>
 
         {/* Media Section */}
@@ -191,12 +196,17 @@ const styles = StyleSheet.create({
     borderColor: "#e4e4e7",
   },
 
-  headerText: {
-    marginLeft: 16,
-    color: "#52525b",
-    fontSize: 16,
+  nameText: {
+    color: "#18181b",
+    fontSize: 18,
     textTransform: "uppercase",
+    marginBottom: 2,
+  },
 
+  messageText: {
+    color: "#52525b",
+    fontSize: 14,
+    textTransform: "uppercase",
   },
 
   mediaContainer: {

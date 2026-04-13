@@ -18,6 +18,8 @@ import {
 } from "@/service/lanGameService";
 import { BotEngine } from "@/service/BotEngine";
 import { QuizEngine } from "@/service/QuizEngine";
+import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
+import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
 
 export interface Player {
   id: string;
@@ -48,17 +50,20 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
   );
 
   // 🔥 HANDLERS (Defined early for use in effects)
-  const handleDifficultyChange = useCallback((newLevel: DifficultyOption) => {
-    if (!isHost) return;
-    setDifficultyState(newLevel);
-    const table = generateTable(newLevel);
-    dispatch(setDifficulty({ level: newLevel, table }));
-    handleIncomingPacket({
-      type: MODES.THINK_AND_COUNT.DIFFICULTY_CHANGE,
-      difficulty: newLevel,
-      table,
-    });
-  }, [isHost]);
+  const handleDifficultyChange = useCallback(
+    (newLevel: DifficultyOption) => {
+      if (!isHost) return;
+      setDifficultyState(newLevel);
+      const table = generateTable(newLevel);
+      dispatch(setDifficulty({ level: newLevel, table }));
+      handleIncomingPacket({
+        type: MODES.THINK_AND_COUNT.DIFFICULTY_CHANGE,
+        difficulty: newLevel,
+        table,
+      });
+    },
+    [isHost],
+  );
 
   // 🔥 INIT — Fresh state every time the lobby mounts
   useEffect(() => {
@@ -70,6 +75,8 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
      */
     BotEngine.reset();
     QuizEngine.reset();
+    ChorPoliceEngine.reset();
+    ChorPoliceBotBehavior.reset();
     clearAllListeners(); // Kill ghost listeners from crashed sessions
 
     // STEP 2: Start fresh — only the host player, zero bots
@@ -83,15 +90,17 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     // STEP 3: Initialize session
     if (isHost) {
       startHeartbeat(true, []);
-      
+
       if (gameType === "QUIZ") {
-        // Bots will join via PLAYER_JOIN packets (same as real players)
-        // This ensures setPlayers picks them up through the subscription
         BotEngine.spawn(3);
-        
-        // Set default difficulty after listeners are ready
         const t = setTimeout(() => handleDifficultyChange("easy"), 800);
         return () => clearTimeout(t);
+      }
+
+      if (gameType === "CHOR_POLICE") {
+        // Chor Police needs exactly 4 players — spawn 3 bots by default.
+        // If real players join, bots will be trimmed before game start.
+        BotEngine.spawn(3);
       }
     }
 
@@ -100,6 +109,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
       if (isHost) {
         stopHeartbeat();
         BotEngine.reset();
+        ChorPoliceBotBehavior.reset();
       }
     };
   }, [isHost, gameType]);
@@ -137,6 +147,9 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     debugState.connectionCount = isHost ? players.length - 1 : allHosts.length;
   }, [players, allHosts, isHost]);
 
+  // Max player cap based on game type
+  const maxPlayers = gameType === "CHOR_POLICE" ? 4 : 10;
+
   // 🔥 SUBSCRIPTIONS
   useEffect(() => {
     const unsubscribe = subscribeToPackets((packet) => {
@@ -145,7 +158,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
         if (packet.type === NETWORK.PLAYER_JOIN) {
           setPlayers((prev) => {
             if (prev.find((p) => p.id === packet.player.id)) return prev;
-            if (prev.length >= 10) return prev;
+            if (prev.length >= maxPlayers) return prev;
             return [...prev, packet.player];
           });
         }
@@ -153,23 +166,33 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
         // Clients care about Sync
         if (packet.type === MODES.THINK_AND_COUNT.DIFFICULTY_CHANGE) {
           setDifficultyState(packet.difficulty);
-          dispatch(setDifficulty({ level: packet.difficulty, table: packet.table }));
+          dispatch(
+            setDifficulty({ level: packet.difficulty, table: packet.table }),
+          );
         } else if (packet.type === MODES.THINK_AND_COUNT.GAME_START) {
           setTimeout(() => {
             router.push("/think-count-quiz" as any);
+          }, 300);
+        } else if (packet.type === MODES.CHOR_POLICE.GAME_START) {
+          setTimeout(() => {
+            router.push("/chor-police-mp" as any);
           }, 300);
         }
       }
     });
 
     return unsubscribe;
-  }, [isHost, router]);
+  }, [isHost, router, maxPlayers]);
 
   // 🔥 HANDLERS
   const handleJoinSystemServer = useCallback(() => {
     router.replace({
       pathname: "/(game)/lobby",
-      params: { isHost: "true", gameType: gameType || "QUIZ", isSystem: "true" },
+      params: {
+        isHost: "true",
+        gameType: gameType || "QUIZ",
+        isSystem: "true",
+      },
     } as any);
   }, [router, gameType]);
 
@@ -178,63 +201,117 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
    * For VIRTUAL hosts (system bots): re-mount as host with bots.
    * For REAL LAN hosts: send a PLAYER_JOIN packet so the host adds us.
    */
-  const handleJoin = useCallback((host: any) => {
-    if (host.type === "VIRTUAL") {
-      // System Server — become the host with bots
-      handleJoinSystemServer();
-      return;
-    }
+  const handleJoin = useCallback(
+    (host: any) => {
+      if (host.type === "VIRTUAL") {
+        // System Server — become the host with bots
+        handleJoinSystemServer();
+        return;
+      }
 
-    // Real LAN host — notify them we're joining
-    const joinPacket = {
-      type: NETWORK.PLAYER_JOIN,
-      player: {
-        id: `client_${Date.now()}`,
-        name: userName,
-        avatarId: selectedImages[0] || 1,
-      },
-    };
-    handleIncomingPacket(joinPacket, host.ip);
-    toast.success("Joining", `Connecting to ${host.deviceName}...`);
-  }, [userName, selectedImages, handleJoinSystemServer]);
+      // Real LAN host — notify them we're joining
+      const joinPacket = {
+        type: NETWORK.PLAYER_JOIN,
+        player: {
+          id: `client_${Date.now()}`,
+          name: userName,
+          avatarId: selectedImages[0] || 1,
+        },
+      };
+      handleIncomingPacket(joinPacket, host.ip);
+      toast.success("Joining", `Connecting to ${host.deviceName}...`);
+    },
+    [userName, selectedImages, handleJoinSystemServer],
+  );
+
+  const selectedRounds = useSelector(
+    (state: RootState) => state.player.gameRound,
+  );
 
   const [isStarting, setIsStarting] = useState(false);
-  const handleConfirmStake = useCallback((stake: number) => {
-    if (isStarting) return; 
-    setIsStarting(true);
+  const handleConfirmStake = useCallback(
+    (stake: number) => {
+      if (isStarting) return;
+      setIsStarting(true);
 
-    setIsBettingModalVisible(false);
-    toast.success("Stake Added", `💰 ${stake} coins added to pot!`);
+      setIsBettingModalVisible(false);
+      toast.success("Stake Added", `💰 ${stake} coins added to pot!`);
 
-    if (gameType === "QUIZ") {
-      QuizEngine.init(players, difficulty, stake);
-      handleIncomingPacket({
-        type: MODES.THINK_AND_COUNT.GAME_START,
-        hostName: userName,
-        timestamp: Date.now(),
-        difficulty,
-        betAmount: stake,
-        playerCount: players.length,
-      });
+      if (gameType === "QUIZ") {
+        QuizEngine.init(players, difficulty, stake);
+        handleIncomingPacket({
+          type: MODES.THINK_AND_COUNT.GAME_START,
+          hostName: userName,
+          timestamp: Date.now(),
+          difficulty,
+          betAmount: stake,
+          playerCount: players.length,
+        });
 
-      setTimeout(() => {
-        router.push("/think-count-quiz" as any);
-      }, 500);
-    }
-  }, [players, difficulty, gameType, userName, isStarting, router]);
-
-  const handleAvatarSelect = useCallback((id: number) => {
-    setPlayers(currentPlayers => {
-      const isTaken = currentPlayers.some((p) => p.avatarId === id);
-      if (isTaken) {
-        toast.error("Taken!", "🚫 Character already taken! Please pick another kid.");
-        return currentPlayers;
+        setTimeout(() => {
+          router.push("/think-count-quiz" as any);
+        }, 500);
       }
-      dispatch(setSelectedImages([id]));
-      setShowAvatarGrid(false);
-      return currentPlayers;
-    });
-  }, [dispatch]);
+
+      if (gameType === "CHOR_POLICE") {
+        // Ensure exactly 4 players (trim bots if real players joined)
+        const finalPlayers = players.slice(0, 4);
+
+        // Bridge lobby players → Redux so PlayerCard can find avatar images
+        dispatch(setSelectedImages(finalPlayers.map((p) => p.avatarId)));
+
+        ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 5);
+
+        // Initialize bot behavior for bots in the player list
+        const bots = finalPlayers.filter((p) => p.isBot);
+        ChorPoliceBotBehavior.init(bots);
+
+        handleIncomingPacket({
+          type: MODES.CHOR_POLICE.GAME_START,
+          hostName: userName,
+          timestamp: Date.now(),
+          betAmount: stake,
+          playerCount: finalPlayers.length,
+        });
+
+        setTimeout(() => {
+          router.push("/chor-police-mp" as any);
+        }, 500);
+      }
+    },
+    [
+      players,
+      difficulty,
+      gameType,
+      userName,
+      isStarting,
+      router,
+      selectedRounds,
+    ],
+  );
+
+  const handleAvatarSelect = useCallback(
+    (id: number) => {
+      setPlayers((currentPlayers) => {
+        const isTaken = currentPlayers.some((p) => p.avatarId === id);
+        if (isTaken) {
+          toast.error(
+            "Taken!",
+            "🚫 Character already taken! Please pick another kid.",
+          );
+          return currentPlayers;
+        }
+        dispatch(setSelectedImages([id]));
+        setShowAvatarGrid(false);
+
+        // Update the host player's avatar in the player list so the UI reflects it
+        return currentPlayers.map((p, i) =>
+          i === 0 ? { ...p, avatarId: id } : p,
+        );
+      });
+    },
+    [dispatch],
+  );
 
   const handleNameChange = useCallback((name: string) => {
     const sanitized = name.replace(/[^a-zA-Z0-9 ]/g, "").substring(0, 12);
@@ -256,6 +333,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     isBettingModalVisible,
     setIsBettingModalVisible,
     selectedImages,
+    maxPlayers,
     handleJoin,
     handleJoinSystemServer,
     handleDifficultyChange,

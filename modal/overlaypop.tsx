@@ -37,11 +37,11 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
   const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const playerNames = useSelector(selectPlayerNames).map((p) => p.name);
+  const playerNames = useSelector(selectPlayerNames).map((p) => p?.name);
 
-  const kingName = kingIndex !== null ? playerNames[kingIndex] : "King";
-  const policeName = policeIndex !== null ? playerNames[policeIndex] : "Police";
-  const thiefName = thiefIndex !== null ? playerNames[thiefIndex] : "Thief";
+  const kingName = (kingIndex !== null && playerNames[kingIndex]) ? playerNames[kingIndex] : "King";
+  const policeName = (policeIndex !== null && playerNames[policeIndex]) ? playerNames[policeIndex] : "Police";
+  const thiefName = (thiefIndex !== null && playerNames[thiefIndex]) ? playerNames[thiefIndex] : "Thief";
 
   const [showConfetti, setShowConfetti] = useState(false);
 

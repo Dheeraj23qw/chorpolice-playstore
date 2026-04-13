@@ -3,6 +3,7 @@ import { View, Pressable, TextInput, Image } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Text } from "@/components/Text";
 import { DIFFICULTY_OPTIONS } from "@/constants/difficultyConfig";
+import RoundSelector from "@/screens/RoundSelector";
 
 export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
   return (
@@ -33,6 +34,7 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
         </Pressable>
       </View>
 
+      {/* QUIZ: Difficulty selector */}
       {lobby.isHost && lobby.gameType === "QUIZ" && (
         <View className="mt-2">
           <Text className="mb-3 text-[10px] text-white/30">
@@ -58,6 +60,13 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
               </Pressable>
             ))}
           </View>
+        </View>
+      )}
+
+      {/* CHOR POLICE: Round selector */}
+      {lobby.isHost && lobby.gameType === "CHOR_POLICE" && (
+        <View className="mt-4">
+          <RoundSelector />
         </View>
       )}
     </Animated.View>

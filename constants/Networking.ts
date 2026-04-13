@@ -34,10 +34,13 @@ export const NETWORK = {
 export const MODES = {
   CHOR_POLICE: {
     ID: "CHOR_POLICE",
-    GAME_START: "CP_GAME_START",
-    GAME_END: "CP_GAME_END",
-    ACTION_PREFIX: "CP_ACTION_",
-    TURN_SYNC: "CP_TURN_SYNC",
+    GAME_START:    "CP_GAME_START",
+    GAME_END:      "CP_GAME_END",
+    ROLE_ASSIGN:   "CP_ROLE_ASSIGN",      // Private: { playerId, role, playerIndex }
+    PUBLIC_REVEAL: "CP_PUBLIC_REVEAL",    // Broadcast: { kingId, policeId, kingName, policeName, players }
+    POLICE_GUESS:  "CP_POLICE_GUESS",    // Police clicks: { targetIndex, guessedRole }
+    ROUND_RESULT:  "CP_ROUND_RESULT",    // Broadcast: { correct, scores, allRoles, round }
+    ROUND_START:   "CP_ROUND_START",     // Broadcast: { round }
   },
   THINK_AND_COUNT: {
     ID: "THINK_AND_COUNT",
