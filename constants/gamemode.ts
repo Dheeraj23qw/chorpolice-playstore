@@ -14,17 +14,6 @@ export interface GameModeType {
 }
 export const optionsGameMode: GameModeType[] = [
   {
-    id: "chor_offline",
-    title: "CHOR POLICE (OFFLINE)",
-    subtitle: "Find the thief before it's too late",
-    difficulty: "ELITE",
-    route: "/player-name",
-    image: require("@/assets/modalImages/intro.png"),
-    accentColor: "#EF4444",
-    icon: "trophy",
-    buttonText: "PLAY SOLO",
-  },
-  {
     id: "chor_online",
     title: "CHOR POLICE (ONLINE)",
     subtitle: "Play with your friends locally",
