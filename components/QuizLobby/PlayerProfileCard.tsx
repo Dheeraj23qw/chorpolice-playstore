@@ -14,8 +14,6 @@ import { Text } from "@/components/Text";
 import { CollapsibleCard } from "../CollapsibleCard";
 import { DIFFICULTY_OPTIONS } from "@/constants/difficultyConfig";
 import RoundSelector from "@/screens/RoundSelector";
-
-// Adjust this import path to where your actual ImageGrid component lives
 import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -31,18 +29,12 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
       withSpring(1.06),
       withSpring(1),
     );
-    lobby.setShowAvatarGrid(true); // Open the grid
+    lobby.setShowAvatarGrid(true);
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
-
-  // Handle closing the grid
-  const closeGrid = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    lobby.setShowAvatarGrid(false);
-  };
 
   return (
     <>
@@ -55,7 +47,7 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
         <View className="mb-8 flex-row items-center justify-between">
           <View className="mr-6 flex-1">
             <Text className="font-main-bold text-[10px] uppercase tracking-[3px] text-indigo-400">
-              Enter Your Name
+              Player Identity
             </Text>
             <TextInput
               value={lobby.userName}
@@ -75,7 +67,6 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
             style={animatedStyle}
             className="relative h-24 w-24 overflow-visible rounded-full"
           >
-            {/* Main Avatar Image */}
             <View className="h-24 w-24 overflow-hidden rounded-full border-2 border-white/20 bg-indigo-600/20 shadow-xl shadow-indigo-500">
               <Image
                 source={getAvatarSource(lobby.selectedImages[0] || 1)}
@@ -83,8 +74,6 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
                 resizeMode="cover"
               />
             </View>
-
-            {/* Camera Badge pinned to the side border */}
             <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center rounded-full border-[3px] border-[#121212] bg-indigo-500 shadow-lg">
               <Ionicons name="camera" size={14} color="white" />
             </View>
@@ -109,26 +98,31 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
         >
           {lobby.gameType === "QUIZ" ? (
             <View className="flex-row rounded-2xl bg-black/40 p-1.5">
-              {DIFFICULTY_OPTIONS.map((opt: any) => (
-                <Pressable
-                  key={opt}
-                  onPress={() => {
-                    lobby.handleDifficultyChange(opt);
-                    Haptics.notificationAsync(
-                      Haptics.NotificationFeedbackType.Success,
-                    );
-                  }}
-                  className={`flex-1 items-center rounded-xl py-2 ${
-                    lobby.difficulty === opt ? "bg-indigo-600 shadow-md" : ""
-                  }`}
-                >
-                  <Text
-                    className={`font-main-bold ${lobby.difficulty === opt ? "text-white" : "text-white/30"}`}
+              {/* PRE-CALCULATE THE STYLES OUTSIDE THE RENDER-TRAP */}
+              {DIFFICULTY_OPTIONS.map((opt: any) => {
+                const isSelected = lobby.difficulty === opt;
+
+                return (
+                  <Pressable
+                    key={opt}
+                    onPress={() => {
+                      // Use a stable reference
+                      lobby.handleDifficultyChange(opt);
+                      Haptics.notificationAsync(
+                        Haptics.NotificationFeedbackType.Success,
+                      );
+                    }}
+                    // Keep className simple. Complex dynamic classes can sometimes confuse the interop engine
+                    className={`flex-1 items-center rounded-xl py-2 ${isSelected ? "bg-indigo-600" : ""}`}
                   >
-                    {opt}
-                  </Text>
-                </Pressable>
-              ))}
+                    <Text
+                      className={`font-main-bold ${isSelected ? "text-white" : "text-white/30"}`}
+                    >
+                      {opt}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           ) : (
             <RoundSelector />
@@ -136,38 +130,34 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
         </CollapsibleCard>
       </Animated.View>
 
-      {/* --- SIMPLE AVATAR GRID MODAL --- */}
+      {/* --- AVATAR SELECTION MODAL --- */}
       <Modal
         visible={lobby.showAvatarGrid}
         transparent={true}
-        animationType="slide" // Slide up from bottom
-        onRequestClose={closeGrid} // Handle hardware back button on Android
+        animationType="slide"
+        onRequestClose={() => lobby.setShowAvatarGrid(false)}
       >
-        {/* Full screen main container with slightly dimmed background */}
         <View className="flex-1 justify-end bg-black/50">
-          {/* Main Grid Content Area (like a bottom sheet) */}
           <View className="h-[80%] rounded-t-[32px] border-t border-white/10 bg-[#121212] p-6">
-            {/* Header Area with Close Cross */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text className="font-main-bold text-lg text-white">
                 Select Avatar
               </Text>
-
-              {/* SIMPLE CROSS TO CLOSE */}
-              <Pressable onPress={closeGrid} className="p-1">
+              <Pressable
+                onPress={() => lobby.setShowAvatarGrid(false)}
+                className="p-1"
+              >
                 <Ionicons name="close" size={28} color="white" />
               </Pressable>
             </View>
-
-            {/* The Actual Image Grid (Interactable inside the modal) */}
             <View className="flex-1">
               <ImageGrid
                 selectedImages={lobby.selectedImages}
                 handleImageSelect={(imgId: any) => {
                   lobby.handleImageSelect(imgId);
-                  closeGrid(); // Close grid after selection
+                  lobby.setShowAvatarGrid(false);
                 }}
-                gameMode="ONLINE" // Or whatever mode is relevant
+                gameMode="ONLINE"
               />
             </View>
           </View>

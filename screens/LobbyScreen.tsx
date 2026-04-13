@@ -47,22 +47,34 @@ const LobbyScreen: React.FC = () => {
       <LobbyHeader onBack={() => router.back()} />
 
       {/* 📦 Main Content */}
+      {/* 📦 Main Content */}
       <View className="flex-1 px-6">
         <PlayerProfileCard lobby={lobby} getAvatarSource={getAvatarSource} />
 
-        {!lobby.showAvatarGrid ? (
+        {/* Always keep PlayersList in the tree, just hide it to preserve the Navigation Context */}
+        <View className={lobby.showAvatarGrid ? "hidden" : "flex-1"}>
           <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
-        ) : (
-          <View className="flex-1 rounded-3xl border border-white/10 bg-white/5 p-4">
-            <ImageGrid
-              selectedImages={lobby.selectedImages}
-              handleImageSelect={(id) => lobby.handleAvatarSelect(id)}
-              gameMode="ONLINE"
-            />
-          </View>
-        )}
-      </View>
+        </View>
 
+        {/* Always keep ImageGrid in the tree, just hide it to preserve the Navigation Context */}
+        <View
+          className={
+            !lobby.showAvatarGrid
+              ? "hidden"
+              : "flex-1 rounded-3xl border border-white/10 bg-white/5 p-4"
+          }
+        >
+          <ImageGrid
+            selectedImages={lobby.selectedImages}
+            handleImageSelect={(id) => {
+              lobby.handleAvatarSelect(id);
+              // Add this to auto-close after selection
+              lobby.setShowAvatarGrid(false);
+            }}
+            gameMode="ONLINE"
+          />
+        </View>
+      </View>
       {/* 🚀 Start Button */}
       <StartButton lobby={lobby} />
 
