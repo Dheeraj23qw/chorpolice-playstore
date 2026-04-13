@@ -153,8 +153,8 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
             <View className="flex-1">
               <ImageGrid
                 selectedImages={lobby.selectedImages}
-                handleImageSelect={(imgId: any) => {
-                  lobby.handleImageSelect(imgId);
+                handleImageSelect={(id) => {
+                  lobby.handleAvatarSelect(id); // <--- Matches the function used in LobbyScreen.tsx
                   lobby.setShowAvatarGrid(false);
                 }}
                 gameMode="ONLINE"
