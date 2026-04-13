@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { AppDispatch, RootState } from "@/redux/store";
 import { resetDifficulty } from "@/redux/reducers/quiz";
-import { setPlayerNames as setReduxPlayerNames } from "@/redux/reducers/playerReducer";
+import { setPlayerNames as setReduxPlayerNames, updatePlayerScores as updateReduxScores } from "@/redux/reducers/playerReducer";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
@@ -28,7 +28,7 @@ import { revealAllCards } from "./useRajaMantriGame/utils/revealAllCardsUtils";
  * which would kill pending animation timers.
  */
 
-type GamePhase = "waiting" | "dealing" | "police_turn" | "result" | "finished" | "round_video";
+type GamePhase = "waiting" | "dealing" | "police_turn" | "result" | "finished" | "round_video" | "score_quiz" | "final_result";
 type Role = "King" | "Police" | "Thief" | "Advisor";
 
 const D = "🎭 [CPHook]";
@@ -96,6 +96,13 @@ export const useChorPoliceMultiplayer = () => {
   });
   const [areCardsClickable, setAreCardsClickable] = useState(false);
   const [firstCardClicked, setFirstCardClicked] = useState(false);
+
+  // ─── Score Quiz state ───
+  const [quizPlayerIndex, setQuizPlayerIndex] = useState(0);
+  const [quizOptions, setQuizOptions] = useState<number[]>([]);
+  const [quizOptionDisabled, setQuizOptionDisabled] = useState(false);
+  const quizOptionDisabledRef = useRef(false); // ref to avoid stale closure in bot timeouts
+  const [quizDone, setQuizDone] = useState(false);
   const [message, setMessage] = useState("");
 
   // ─── Phase + Role ───
@@ -382,8 +389,13 @@ export const useChorPoliceMultiplayer = () => {
           setShowTableButton(true);
 
           if (packet.isLastRound) {
-            console.log(`${D} 🏁 LAST ROUND — game ending`);
-            setGamePhase("finished");
+            console.log(`${D} 🏁 LAST ROUND — transitioning to score quiz`);
+            // ✅ Instead of "finished", go to score_quiz so players guess their total score
+            setQuizPlayerIndex(0);
+            setQuizDone(false);
+            setQuizOptionDisabled(false);
+            quizOptionDisabledRef.current = false;
+            setGamePhase("score_quiz");
           } else {
             console.log(`${D} ▶️ Ready for next round — playing round video`);
             setFlipAnims(
@@ -410,7 +422,7 @@ export const useChorPoliceMultiplayer = () => {
       /* ── 4. GAME END (completed) ── */
       if (packet.type === CP.GAME_END && packet.reason === "completed") {
         console.log(`${D} 🏁 GAME END — completed`);
-        setGamePhase("finished");
+        setGamePhase("final_result");
 
         if (
           packet.leaderboard?.[0]?.id === localPlayerId &&
@@ -428,15 +440,7 @@ export const useChorPoliceMultiplayer = () => {
             `You won the pot of ${packet.totalPot} coins!`,
           );
         }
-
-        const t7 = setTimeout(() => {
-          ChorPoliceEngine.reset();
-          ChorPoliceBotBehavior.reset();
-          dispatch(resetDifficulty());
-          router.dismissAll();
-          router.replace("/mode-select" as any);
-        }, 5000);
-        timerRefs.current.push(t7);
+        // Don't auto-navigate — let the final_result screen handle it
       }
 
       /* ── 5. HOST QUIT ── */
@@ -595,6 +599,207 @@ export const useChorPoliceMultiplayer = () => {
     setGamePhase("waiting");
   }, []);
 
+  /* ═══════════════════════════════════════════════════════
+     SCORE QUIZ — After all rounds, each player guesses their total score
+     Correct = +2000, Wrong = -2000
+     Uses DynamicOverlayPopUp (user's existing popup) for win/lose feedback.
+     Refs used to avoid stale-closure bugs with bot timeouts.
+  ═══════════════════════════════════════════════════════ */
+
+  // Core quiz answer processor — called by both human tap and bot auto-answer
+  const processQuizAnswer = useCallback((selectedScore: number, playerIdx: number) => {
+    const players = ChorPoliceEngine.state.players;
+    const scores = ChorPoliceEngine.state.scores;
+    const player = players[playerIdx];
+    if (!player) return;
+
+    const correctScore = scores[player.id]?.totalScore ?? 0;
+    const isCorrect = selectedScore === correctScore;
+    const bonus = isCorrect ? 2000 : -2000;
+
+    // Apply bonus to engine scores
+    if (scores[player.id]) {
+      scores[player.id].totalScore += bonus;
+    }
+
+    // Update local playerScores
+    setPlayerScores((prev) =>
+      prev.map((p) =>
+        p.playerName === player.name
+          ? { ...p, scores: [...p.scores, bonus] }
+          : p,
+      ),
+    );
+
+    console.log(`${D} 🎯 ${player.name} guessed ${selectedScore} (correct: ${correctScore}) → ${isCorrect ? "+2000 ✅" : "-2000 ❌"}`);
+
+    // Show feedback using existing DynamicOverlayPopUp
+    const pImg = playerImagesRef.current;
+    const sImg = selectedImagesRef.current;
+    AudioEngine.play(isCorrect ? "win" : "lose", "gameplay");
+    setMediaId(isCorrect ? 2 : 1);
+    setMediaType("gif");
+    setPlayerData({
+      image: pImg[sImg[playerIdx]]?.src ?? null,
+      message: isCorrect
+        ? `${player.name} guessed correctly! +2000 🎉`
+        : `${player.name} guessed wrong! -2000 😢`,
+      name: player.name,
+      imageType: pImg[sImg[playerIdx]]?.type ?? null,
+    });
+    setIsDynamicPopUp(true);
+
+    // Auto-dismiss popup → move to next player
+    const t1 = setTimeout(() => {
+      setIsDynamicPopUp(false);
+    }, 3500);
+    const t2 = setTimeout(() => {
+      setQuizPlayerIndex((prev) => prev + 1);
+    }, 4000);
+    timerRefs.current.push(t1, t2);
+  }, []);
+
+  // Generate quiz options when quizPlayerIndex changes during score_quiz phase
+  useEffect(() => {
+    if (gamePhase !== "score_quiz") return;
+    if (quizDone) return;
+
+    const players = ChorPoliceEngine.state.players;
+    const scores = ChorPoliceEngine.state.scores;
+    if (quizPlayerIndex >= players.length) {
+      // All players have guessed — end the game
+      console.log(`${D} 🎯 All players finished quiz — ending game`);
+      setQuizDone(true);
+
+      // Sync final scores to Redux for result screen
+      const finalScores = players.map((p) => ({
+        playerName: p.name,
+        totalScore: scores[p.id]?.totalScore ?? 0,
+      }));
+      dispatch(updateReduxScores(finalScores));
+
+      // Trigger game end after a short delay
+      const t = setTimeout(() => {
+        handleIncomingPacket({
+          type: MODES.CHOR_POLICE.GAME_END,
+          reason: "completed",
+        });
+      }, 1500);
+      timerRefs.current.push(t);
+      return;
+    }
+
+    const player = players[quizPlayerIndex];
+    const correctScore = scores[player.id]?.totalScore ?? 0;
+
+    console.log(`${D} 🎯 Quiz for player ${player.name} (score: ${correctScore})`);
+
+    // Generate 3 options: correct + 2 nearby wrong answers
+    const variations = [500, 800, 1000, 1500];
+    const opts = new Set<number>();
+    opts.add(correctScore);
+    while (opts.size < 3) {
+      const v = variations[Math.floor(Math.random() * variations.length)];
+      const wrong = Math.max(0, correctScore + (Math.random() < 0.5 ? -v : v));
+      if (!opts.has(wrong)) opts.add(wrong);
+    }
+    const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+    setQuizOptions(shuffled);
+    setQuizOptionDisabled(false);
+    quizOptionDisabledRef.current = false;
+    setIsDynamicPopUp(false);
+
+    // If this player is a bot, auto-answer after a delay
+    if (player.isBot) {
+      const currentIdx = quizPlayerIndex; // capture for closure
+      const botDelay = 1500 + Math.floor(Math.random() * 2000);
+      const t = setTimeout(() => {
+        // ✅ FIX: Check ref (not stale state) so bot isn't blocked
+        if (quizOptionDisabledRef.current) return;
+        quizOptionDisabledRef.current = true;
+        setQuizOptionDisabled(true);
+        // Bots have 40% chance of guessing correctly
+        const botGuess = Math.random() < 0.4
+          ? correctScore
+          : shuffled.find((s) => s !== correctScore) ?? correctScore;
+        processQuizAnswer(botGuess, currentIdx);
+      }, botDelay);
+      timerRefs.current.push(t);
+    }
+  }, [gamePhase, quizPlayerIndex, quizDone, processQuizAnswer]);
+
+  // Human player quiz handler
+  const handleQuizOption = useCallback((selectedScore: number) => {
+    // ✅ FIX: Use ref for guard to avoid stale closure
+    if (quizOptionDisabledRef.current || gamePhase !== "score_quiz") return;
+    quizOptionDisabledRef.current = true;
+    setQuizOptionDisabled(true);
+    processQuizAnswer(selectedScore, quizPlayerIndex);
+  }, [gamePhase, quizPlayerIndex, processQuizAnswer]);
+
+  /* ─── FINAL RESULT EXIT ─── */
+  const handleFinalExit = useCallback(() => {
+    ChorPoliceEngine.reset();
+    ChorPoliceBotBehavior.reset();
+    dispatch(resetDifficulty());
+    router.dismissAll();
+    router.replace("/mode-select" as any);
+  }, [dispatch, router]);
+
+  /* ─── PLAY AGAIN — same players, same photos, same bid ─── */
+  const handlePlayAgain = useCallback(() => {
+    // Save current session config before reset
+    const prevPlayers = [...ChorPoliceEngine.state.players];
+    const prevStake = ChorPoliceEngine.state.stake;
+    const prevRounds = ChorPoliceEngine.state.totalRounds;
+
+    // Reset engine + bots
+    ChorPoliceEngine.reset();
+    ChorPoliceBotBehavior.reset();
+
+    // Re-init with same players/stake/rounds
+    ChorPoliceEngine.init(prevPlayers, prevStake, prevRounds);
+    const bots = prevPlayers.filter((p) => p.isBot);
+    ChorPoliceBotBehavior.init(bots);
+
+    // Reset all hook state
+    timerRefs.current.forEach(clearTimeout);
+    timerRefs.current = [];
+    setFlipAnims(Array(4).fill(null).map(() => new Animated.Value(0)));
+    setFlippedStates([false, false, false, false]);
+    setClickedCards([false, false, false, false]);
+    setRoles(["King", "Advisor", "Thief", "Police"]);
+    setPlayerNames(prevPlayers.map((p) => p.name));
+    setIsPlayButtonDisabled(false);
+    setPoliceIndex(null);
+    setKingIndex(null);
+    setAdvisorIndex(null);
+    setThiefIndex(null);
+    setPlayerScores(prevPlayers.map((p) => ({ playerName: p.name, scores: [] })));
+    setRound(1);
+    setTotalRounds(prevRounds);
+    setShowTableButton(false);
+    setPopupIndex(null);
+    setIsDynamicPopUp(false);
+    setMediaId(null);
+    setMediaType(null);
+    setPlayerData({ image: null, message: null, imageType: null, name: null });
+    setAreCardsClickable(false);
+    setFirstCardClicked(false);
+    setQuizPlayerIndex(0);
+    setQuizOptions([]);
+    setQuizOptionDisabled(false);
+    quizOptionDisabledRef.current = false;
+    setQuizDone(false);
+    setMessage("");
+    setMyRole(null);
+    setPopupTable(false);
+    hasGuessedRef.current = false;
+    setGamePhase("waiting");
+
+    console.log(`${D} 🔁 PLAY AGAIN — same ${prevPlayers.length} players, stake: ${prevStake}, rounds: ${prevRounds}`);
+  }, [dispatch]);
+
   /* ─── EXIT ─── */
   const handleQuitInMiddle = useCallback(() => setIsExitModalVisible(true), []);
   const handleCancelExit = useCallback(() => setIsExitModalVisible(false), []);
@@ -668,6 +873,14 @@ export const useChorPoliceMultiplayer = () => {
     handleCancelExit,
     handleConfirmExit,
     handleVideoEnd,
+    // Score quiz
+    quizPlayerIndex,
+    quizOptions,
+    quizOptionDisabled,
+    quizDone,
+    handleQuizOption,
+    handleFinalExit,
+    handlePlayAgain,
     isHost,
     localPlayerId,
   };
