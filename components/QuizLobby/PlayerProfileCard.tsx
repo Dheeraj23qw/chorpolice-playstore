@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Pressable, TextInput, Image } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Text } from "@/components/Text";
 import { DIFFICULTY_OPTIONS } from "@/constants/difficultyConfig";
 import RoundSelector from "@/screens/RoundSelector";
+import GameDurationSelector from "../GameDurationSelector";
 
 export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
+  const [showRoundTable, setShowRoundTable] = useState(false);
   return (
     <Animated.View
       entering={FadeInUp.delay(100).duration(500)}
@@ -66,7 +68,11 @@ export const PlayerProfileCard = ({ lobby, getAvatarSource }: any) => {
       {/* CHOR POLICE: Round selector */}
       {lobby.isHost && lobby.gameType === "CHOR_POLICE" && (
         <View className="mt-4">
-          <RoundSelector />
+          <GameDurationSelector
+            showRoundTable={showRoundTable}
+            setShowRoundTable={setShowRoundTable}
+            renderSelector={<RoundSelector />}
+          />
         </View>
       )}
     </Animated.View>
