@@ -4,7 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { AppDispatch, RootState } from "@/redux/store";
 import { resetDifficulty } from "@/redux/reducers/quiz";
-import { setPlayerNames as setReduxPlayerNames, updatePlayerScores as updateReduxScores } from "@/redux/reducers/playerReducer";
+import {
+  setPlayerNames as setReduxPlayerNames,
+  updatePlayerScores as updateReduxScores,
+} from "@/redux/reducers/playerReducer";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
@@ -28,7 +31,15 @@ import { revealAllCards } from "./useRajaMantriGame/utils/revealAllCardsUtils";
  * which would kill pending animation timers.
  */
 
-type GamePhase = "waiting" | "dealing" | "police_turn" | "result" | "finished" | "round_video" | "score_quiz" | "final_result";
+type GamePhase =
+  | "waiting"
+  | "dealing"
+  | "police_turn"
+  | "result"
+  | "finished"
+  | "round_video"
+  | "score_quiz"
+  | "final_result";
 type Role = "King" | "Police" | "Thief" | "Advisor";
 
 const D = "🎭 [CPHook]";
@@ -205,7 +216,11 @@ export const useChorPoliceMultiplayer = () => {
         // Set state
         setPlayerNames(names);
         // ✅ FIX: Dispatch names to Redux so OverlayPopUp can read them
-        dispatch(setReduxPlayerNames(names.map((n: string, i: number) => ({ id: i, name: n }))));
+        dispatch(
+          setReduxPlayerNames(
+            names.map((n: string, i: number) => ({ id: i, name: n })),
+          ),
+        );
         setRoles(engineRoles);
         setPoliceIndex(pIdx);
         setKingIndex(kIdx);
@@ -431,13 +446,13 @@ export const useChorPoliceMultiplayer = () => {
           dispatch(
             applyTransaction({
               amount: packet.totalPot,
-              reason: "Chor Police Win - Total Pot",
+              reason: "Chor Police Win - Total Coins",
               source: "cp_reward",
             }),
           );
           toast.success(
             "CHAMPION! 🏆",
-            `You won the pot of ${packet.totalPot} coins!`,
+            `You won the coins of ${packet.totalPot} coins!`,
           );
         }
         // Don't auto-navigate — let the final_result screen handle it
@@ -607,57 +622,62 @@ export const useChorPoliceMultiplayer = () => {
   ═══════════════════════════════════════════════════════ */
 
   // Core quiz answer processor — called by both human tap and bot auto-answer
-  const processQuizAnswer = useCallback((selectedScore: number, playerIdx: number) => {
-    const players = ChorPoliceEngine.state.players;
-    const scores = ChorPoliceEngine.state.scores;
-    const player = players[playerIdx];
-    if (!player) return;
+  const processQuizAnswer = useCallback(
+    (selectedScore: number, playerIdx: number) => {
+      const players = ChorPoliceEngine.state.players;
+      const scores = ChorPoliceEngine.state.scores;
+      const player = players[playerIdx];
+      if (!player) return;
 
-    const correctScore = scores[player.id]?.totalScore ?? 0;
-    const isCorrect = selectedScore === correctScore;
-    const bonus = isCorrect ? 2000 : -2000;
+      const correctScore = scores[player.id]?.totalScore ?? 0;
+      const isCorrect = selectedScore === correctScore;
+      const bonus = isCorrect ? 2000 : -2000;
 
-    // Apply bonus to engine scores
-    if (scores[player.id]) {
-      scores[player.id].totalScore += bonus;
-    }
+      // Apply bonus to engine scores
+      if (scores[player.id]) {
+        scores[player.id].totalScore += bonus;
+      }
 
-    // Update local playerScores
-    setPlayerScores((prev) =>
-      prev.map((p) =>
-        p.playerName === player.name
-          ? { ...p, scores: [...p.scores, bonus] }
-          : p,
-      ),
-    );
+      // Update local playerScores
+      setPlayerScores((prev) =>
+        prev.map((p) =>
+          p.playerName === player.name
+            ? { ...p, scores: [...p.scores, bonus] }
+            : p,
+        ),
+      );
 
-    console.log(`${D} 🎯 ${player.name} guessed ${selectedScore} (correct: ${correctScore}) → ${isCorrect ? "+2000 ✅" : "-2000 ❌"}`);
+      console.log(
+        `${D} 🎯 ${player.name} guessed ${selectedScore} (correct: ${correctScore}) → ${isCorrect ? "+2000 ✅" : "-2000 ❌"}`,
+      );
 
-    // Show feedback using existing DynamicOverlayPopUp
-    const pImg = playerImagesRef.current;
-    const sImg = selectedImagesRef.current;
-    AudioEngine.play(isCorrect ? "win" : "lose", "gameplay");
-    setMediaId(isCorrect ? 2 : 1);
-    setMediaType("gif");
-    setPlayerData({
-      image: pImg[sImg[playerIdx]]?.src ?? null,
-      message: isCorrect
-        ? `${player.name} guessed correctly! +2000 🎉`
-        : `${player.name} guessed wrong! -2000 😢`,
-      name: player.name,
-      imageType: pImg[sImg[playerIdx]]?.type ?? null,
-    });
-    setIsDynamicPopUp(true);
+      // Show feedback using existing DynamicOverlayPopUp
+      const pImg = playerImagesRef.current;
+      const sImg = selectedImagesRef.current;
+      AudioEngine.play(isCorrect ? "win" : "lose", "gameplay");
+      setMediaId(isCorrect ? 2 : 1);
+      setMediaType("gif");
+      setPlayerData({
+        image: pImg[sImg[playerIdx]]?.src ?? null,
+        message: isCorrect
+          ? `${player.name} guessed correctly! +2000 🎉`
+          : `${player.name} guessed wrong! -2000 😢`,
+        name: player.name,
+        imageType: pImg[sImg[playerIdx]]?.type ?? null,
+      });
+      setIsDynamicPopUp(true);
 
-    // Auto-dismiss popup → move to next player
-    const t1 = setTimeout(() => {
-      setIsDynamicPopUp(false);
-    }, 3500);
-    const t2 = setTimeout(() => {
-      setQuizPlayerIndex((prev) => prev + 1);
-    }, 4000);
-    timerRefs.current.push(t1, t2);
-  }, []);
+      // Auto-dismiss popup → move to next player
+      const t1 = setTimeout(() => {
+        setIsDynamicPopUp(false);
+      }, 3500);
+      const t2 = setTimeout(() => {
+        setQuizPlayerIndex((prev) => prev + 1);
+      }, 4000);
+      timerRefs.current.push(t1, t2);
+    },
+    [],
+  );
 
   // Generate quiz options when quizPlayerIndex changes during score_quiz phase
   useEffect(() => {
@@ -692,7 +712,9 @@ export const useChorPoliceMultiplayer = () => {
     const player = players[quizPlayerIndex];
     const correctScore = scores[player.id]?.totalScore ?? 0;
 
-    console.log(`${D} 🎯 Quiz for player ${player.name} (score: ${correctScore})`);
+    console.log(
+      `${D} 🎯 Quiz for player ${player.name} (score: ${correctScore})`,
+    );
 
     // Generate 3 options: correct + 2 nearby wrong answers
     const variations = [500, 800, 1000, 1500];
@@ -719,9 +741,10 @@ export const useChorPoliceMultiplayer = () => {
         quizOptionDisabledRef.current = true;
         setQuizOptionDisabled(true);
         // Bots have 40% chance of guessing correctly
-        const botGuess = Math.random() < 0.4
-          ? correctScore
-          : shuffled.find((s) => s !== correctScore) ?? correctScore;
+        const botGuess =
+          Math.random() < 0.4
+            ? correctScore
+            : (shuffled.find((s) => s !== correctScore) ?? correctScore);
         processQuizAnswer(botGuess, currentIdx);
       }, botDelay);
       timerRefs.current.push(t);
@@ -729,13 +752,16 @@ export const useChorPoliceMultiplayer = () => {
   }, [gamePhase, quizPlayerIndex, quizDone, processQuizAnswer]);
 
   // Human player quiz handler
-  const handleQuizOption = useCallback((selectedScore: number) => {
-    // ✅ FIX: Use ref for guard to avoid stale closure
-    if (quizOptionDisabledRef.current || gamePhase !== "score_quiz") return;
-    quizOptionDisabledRef.current = true;
-    setQuizOptionDisabled(true);
-    processQuizAnswer(selectedScore, quizPlayerIndex);
-  }, [gamePhase, quizPlayerIndex, processQuizAnswer]);
+  const handleQuizOption = useCallback(
+    (selectedScore: number) => {
+      // ✅ FIX: Use ref for guard to avoid stale closure
+      if (quizOptionDisabledRef.current || gamePhase !== "score_quiz") return;
+      quizOptionDisabledRef.current = true;
+      setQuizOptionDisabled(true);
+      processQuizAnswer(selectedScore, quizPlayerIndex);
+    },
+    [gamePhase, quizPlayerIndex, processQuizAnswer],
+  );
 
   /* ─── FINAL RESULT EXIT ─── */
   const handleFinalExit = useCallback(() => {
@@ -765,7 +791,11 @@ export const useChorPoliceMultiplayer = () => {
     // Reset all hook state
     timerRefs.current.forEach(clearTimeout);
     timerRefs.current = [];
-    setFlipAnims(Array(4).fill(null).map(() => new Animated.Value(0)));
+    setFlipAnims(
+      Array(4)
+        .fill(null)
+        .map(() => new Animated.Value(0)),
+    );
     setFlippedStates([false, false, false, false]);
     setClickedCards([false, false, false, false]);
     setRoles(["King", "Advisor", "Thief", "Police"]);
@@ -775,7 +805,9 @@ export const useChorPoliceMultiplayer = () => {
     setKingIndex(null);
     setAdvisorIndex(null);
     setThiefIndex(null);
-    setPlayerScores(prevPlayers.map((p) => ({ playerName: p.name, scores: [] })));
+    setPlayerScores(
+      prevPlayers.map((p) => ({ playerName: p.name, scores: [] })),
+    );
     setRound(1);
     setTotalRounds(prevRounds);
     setShowTableButton(false);
@@ -797,7 +829,9 @@ export const useChorPoliceMultiplayer = () => {
     hasGuessedRef.current = false;
     setGamePhase("waiting");
 
-    console.log(`${D} 🔁 PLAY AGAIN — same ${prevPlayers.length} players, stake: ${prevStake}, rounds: ${prevRounds}`);
+    console.log(
+      `${D} 🔁 PLAY AGAIN — same ${prevPlayers.length} players, stake: ${prevStake}, rounds: ${prevRounds}`,
+    );
   }, [dispatch]);
 
   /* ─── EXIT ─── */

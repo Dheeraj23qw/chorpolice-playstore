@@ -8,24 +8,24 @@ Also includes a **Think & Count** (Quiz) multiplayer mode.
 
 ## 🎮 Game Modes
 
-| Mode | Players | Description |
-|---|:---:|---|
-| **Chor Police (Offline)** | 1 | Solo play against local state. Tap cards to reveal roles. |
-| **Chor Police (Online)** | 4 | LAN multiplayer. Each player sees only their own role. Police guesses the Thief. Bots fill empty slots. |
-| **Think & Count (Online)** | 2-10 | LAN multiplayer quiz. Timed rounds with synchronized leaderboards. |
+| Mode                       | Players | Description                                                                                             |
+| -------------------------- | :-----: | ------------------------------------------------------------------------------------------------------- |
+| **Chor Police (Offline)**  |    1    | Solo play against local state. Tap cards to reveal roles.                                               |
+| **Chor Police (Online)**   |    4    | LAN multiplayer. Each player sees only their own role. Police guesses the Thief. Bots fill empty slots. |
+| **Think & Count (Online)** |  2-10   | LAN multiplayer quiz. Timed rounds with synchronized leaderboards.                                      |
 
 ---
 
 ## 🏗️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [Expo](https://expo.dev) (SDK 54) + [expo-router](https://docs.expo.dev/router/introduction/) |
-| UI | React Native 0.81, [NativeWind](https://www.nativewind.dev/) (Tailwind for RN) |
-| Animations | [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/) + RN `Animated` API |
-| State | [Redux Toolkit](https://redux-toolkit.js.org/) + [MMKV](https://github.com/mrousavy/react-native-mmkv) |
+| Layer      | Technology                                                                                                                                            |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework  | [Expo](https://expo.dev) (SDK 54) + [expo-router](https://docs.expo.dev/router/introduction/)                                                         |
+| UI         | React Native 0.81, [NativeWind](https://www.nativewind.dev/) (Tailwind for RN)                                                                        |
+| Animations | [react-native-reanimated](https://docs.swmansion.com/react-native-reanimated/) + RN `Animated` API                                                    |
+| State      | [Redux Toolkit](https://redux-toolkit.js.org/) + [MMKV](https://github.com/mrousavy/react-native-mmkv)                                                |
 | Networking | [react-native-tcp-socket](https://github.com/nickhillzz/react-native-tcp-socket) + [react-native-udp](https://github.com/nickhillzz/react-native-udp) |
-| Audio | expo-audio |
+| Audio      | expo-audio                                                                                                                                            |
 
 ---
 
@@ -126,12 +126,12 @@ Engine broadcasts result → PacketRouter → lanGameService → All Hooks
 
 ### Role-Based Visibility (Chor Police)
 
-| Role | Sees Board? | Can Click? | During Police Turn |
-|:---:|:---:|:---:|---|
-| **Police** | ✅ | ✅ | Taps hidden cards to find the Thief |
-| **King** | ✅ | ❌ | Watches the investigation (spectator) |
-| **Thief** | ❌ | ❌ | Sees private 🦹 card → "Stay hidden!" |
-| **Advisor** | ❌ | ❌ | Sees private 🧠 card → "Police is investigating..." |
+|    Role     | Sees Board? | Can Click? | During Police Turn                                  |
+| :---------: | :---------: | :--------: | --------------------------------------------------- |
+| **Police**  |     ✅      |     ✅     | Taps hidden cards to find the Thief                 |
+|  **King**   |     ✅      |     ❌     | Watches the investigation (spectator)               |
+|  **Thief**  |     ❌      |     ❌     | Sees private 🦹 card → "Stay hidden!"               |
+| **Advisor** |     ❌      |     ❌     | Sees private 🧠 card → "Police is investigating..." |
 
 ---
 
@@ -186,12 +186,12 @@ npm run update:preview
 
 ## 🎯 Scoring (Chor Police)
 
-| Outcome | 👑 King | 🧠 Advisor | 🚔 Police | 🦹 Thief |
-|:---:|:---:|:---:|:---:|:---:|
-| Police catches Thief | 1000 | 800 | 500 | 0 |
-| Thief escapes | 1000 | 800 | 0 | 500 |
+|       Outcome        | 👑 King | 🧠 Advisor | 🚔 Police | 🦹 Thief |
+| :------------------: | :-----: | :--------: | :-------: | :------: |
+| Police catches Thief |  1000   |    800     |    500    |    0     |
+|    Thief escapes     |  1000   |    800     |     0     |   500    |
 
-Scores accumulate across rounds. Winner gets the betting pot.
+Scores accumulate across rounds. Winner gets the betting coins.
 
 ---
 
@@ -210,13 +210,13 @@ When no real players are nearby, bots fill the lobby to exactly 4 players:
 
 In `__DEV__` mode, every component logs with tagged prefixes:
 
-| Tag | Source |
-|---|---|
-| `🎭 [CPEngine]` | Game engine state transitions |
-| `🤖 [CPBots]` | Bot decisions and timing |
-| `🎭 [CPHook]` | UI state changes and guard rejections |
-| `[DEBUG]` | Raw packet audit trail |
-| `🧩 [Router]` | Engine registration |
+| Tag             | Source                                |
+| --------------- | ------------------------------------- |
+| `🎭 [CPEngine]` | Game engine state transitions         |
+| `🤖 [CPBots]`   | Bot decisions and timing              |
+| `🎭 [CPHook]`   | UI state changes and guard rejections |
+| `[DEBUG]`       | Raw packet audit trail                |
+| `🧩 [Router]`   | Engine registration                   |
 
 > **Tip**: Search for `═══` in the console to find major state changes (role shuffles, guess evaluations).
 

@@ -14,7 +14,6 @@ import { useChorPoliceMultiplayer } from "@/hooks/useChorPoliceMultiplayer";
 import OverlayPopUp from "@/modal/overlaypop";
 import ScoreTable from "@/modal/ShowTableModal";
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
-import { GamePlaySection } from "@/screens/RajaMantriGameScreen/GameplaySection";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import QuizExitModal from "@/modal/QuizExitModal";
 
@@ -36,6 +35,7 @@ import { RootState } from "@/redux/store";
 
 // Role-specific view for Thief/Advisor (big role image after King/Police reveal)
 import { RoleRevealView } from "./views/RoleRevealView";
+import { GamePlaySection } from "./GamePlaySection";
 
 /**
  * --- FINAL RESULT VIEW (extracted as real component for hooks) ---
@@ -149,7 +149,7 @@ const FinalResultView: React.FC<{
                       style={{ fontSize: rf(1.3) }}
                       className="font-main-bold tracking-wider text-emerald-400"
                     >
-                      🎉 Won the pot of {totalPot} coins!
+                      🎉 you won {totalPot} coins!
                     </Text>
                   </View>
                 </View>

@@ -37,9 +37,11 @@ export const ChorPoliceBotBehavior = {
       return;
     }
 
-    console.log(`🤖 [CPBots] Initializing behavior for ${bots.length} bots: [${bots.map(b => b.name).join(", ")}]`);
+    console.log(
+      `🤖 [CPBots] Initializing behavior for ${bots.length} bots: [${bots.map((b) => b.name).join(", ")}]`,
+    );
 
-    const botIds = new Set(bots.map(b => b.id));
+    const botIds = new Set(bots.map((b) => b.id));
 
     const unsub = subscribeToPackets((packet) => {
       const CP = MODES.CHOR_POLICE;
@@ -48,23 +50,31 @@ export const ChorPoliceBotBehavior = {
       if (packet.type === CP.PUBLIC_REVEAL) {
         const policeId = packet.policeId;
 
-        console.log(`🤖 [CPBots] PUBLIC_REVEAL received — Police ID: ${policeId}`);
-        console.log(`🤖 [CPBots]   Is Police a bot? ${botIds.has(policeId) ? "YES ✅" : "NO ❌"}`);
+        console.log(
+          `🤖 [CPBots] PUBLIC_REVEAL received — Police ID: ${policeId}`,
+        );
+        console.log(
+          `🤖 [CPBots]   Is Police a bot? ${botIds.has(policeId) ? "YES ✅" : "NO ❌"}`,
+        );
 
         // Is the police a bot?
         if (botIds.has(policeId)) {
-          const botName = bots.find(b => b.id === policeId)?.name || "Bot";
+          const botName = bots.find((b) => b.id === policeId)?.name || "Bot";
 
           // Determine which indices are hidden (not King, not Police)
           const kingIdx = packet.kingIndex;
           const policeIdx = packet.policeIndex;
           const hiddenIndices = [0, 1, 2, 3].filter(
-            (i) => i !== kingIdx && i !== policeIdx
+            (i) => i !== kingIdx && i !== policeIdx,
           );
 
           console.log(`🤖 [CPBots]   Bot "${botName}" IS the Police!`);
-          console.log(`🤖 [CPBots]   King idx: ${kingIdx}, Police idx: ${policeIdx}`);
-          console.log(`🤖 [CPBots]   Hidden indices (Thief/Advisor): [${hiddenIndices.join(", ")}]`);
+          console.log(
+            `🤖 [CPBots]   King idx: ${kingIdx}, Police idx: ${policeIdx}`,
+          );
+          console.log(
+            `🤖 [CPBots]   Hidden indices (Thief/Advisor): [${hiddenIndices.join(", ")}]`,
+          );
 
           // IMPORTANT: The dealing animation takes 11.5s (flip + popups).
           // Bot must wait for that to finish, then add a realistic "thinking" delay.
@@ -72,19 +82,24 @@ export const ChorPoliceBotBehavior = {
           // for a meaningful amount of time (7.5-12.5s) before the bot guesses.
           // Total: 19-24 seconds after PUBLIC_REVEAL
           const ANIMATION_DURATION = 16000; // 11.5s animation + 4.5s buffer for role reveal
-          const THINKING_DELAY = 3000 + Math.floor(Math.random() * 5000); // 3-8s
+          const THINKING_DELAY = 1000 + Math.floor(Math.random() * 5000); // 3-8s
           const delay = ANIMATION_DURATION + THINKING_DELAY;
-          console.log(`🤖 [CPBots]   Will guess in ${delay}ms (${ANIMATION_DURATION}ms anim + ${THINKING_DELAY}ms thinking)`);
+          console.log(
+            `🤖 [CPBots]   Will guess in ${delay}ms (${ANIMATION_DURATION}ms anim + ${THINKING_DELAY}ms thinking)`,
+          );
 
           const timer = setTimeout(() => {
             // Safety: Are bots still active?
             if (ChorPoliceBotBehavior._bots.length === 0) {
-              console.log(`🤖 [CPBots]   ⚠️ Bot was cleared before guess — aborting`);
+              console.log(
+                `🤖 [CPBots]   ⚠️ Bot was cleared before guess — aborting`,
+              );
               return;
             }
 
             // 50/50 random pick between the 2 hidden cards
-            const pick = hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
+            const pick =
+              hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
 
             console.log(`🤖 [CPBots] ═══════════════════════════════════`);
             console.log(`🤖 [CPBots] BOT "${botName}" GUESSING index ${pick}`);
@@ -99,7 +114,9 @@ export const ChorPoliceBotBehavior = {
 
           ChorPoliceBotBehavior._guessTimers.push(timer);
         } else {
-          console.log(`🤖 [CPBots]   Police is a HUMAN player — bots idle (passive roles)`);
+          console.log(
+            `🤖 [CPBots]   Police is a HUMAN player — bots idle (passive roles)`,
+          );
         }
       }
     });
@@ -118,7 +135,7 @@ export const ChorPoliceBotBehavior = {
     ChorPoliceBotBehavior._guessTimers = [];
 
     // Unsubscribe packet listeners
-    ChorPoliceBotBehavior._listeners.forEach(unsub => unsub());
+    ChorPoliceBotBehavior._listeners.forEach((unsub) => unsub());
     ChorPoliceBotBehavior._listeners = [];
 
     ChorPoliceBotBehavior._bots = [];

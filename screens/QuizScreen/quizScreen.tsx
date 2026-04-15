@@ -1,11 +1,5 @@
 import React, { memo, useCallback, useEffect } from "react";
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  BackHandler,
-} from "react-native";
+import { View, ScrollView, Image, BackHandler } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
 
@@ -21,11 +15,11 @@ import QuizExitModal from "@/modal/QuizExitModal";
 import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 import { Text } from "@/components/Text";
-import { MultiplayerLeaderboard } from "../../components/QuizScreen/MultiplayerLeaderboard";
 import { QuizEngine } from "@/service/QuizEngine";
 import { NUM_QUESTIONS } from "@/constants/quizConstants";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { QuizLeaderboard } from "@/components/MultiPlayerQuizLeaderboard/QuizLeaderboard";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -181,7 +175,7 @@ const QuizScreen = () => {
               }}
             >
               {isLeaderboardVisible ? (
-                <MultiplayerLeaderboard
+                <QuizLeaderboard
                   round={questionIndex + 1}
                   data={leaderboardData}
                   roundProgress={roundProgress}
@@ -214,13 +208,13 @@ const QuizScreen = () => {
 
                   <View style={{ marginTop: hp(4) }}>
                     <OptionsSection
-                        options={
-                          isFiftyFiftyActive
-                            ? remainingOptions
-                            : question?.options
-                        }
-                        handleAnswerSelection={onOptionPress}
-                      />
+                      options={
+                        isFiftyFiftyActive
+                          ? remainingOptions
+                          : question?.options
+                      }
+                      handleAnswerSelection={onOptionPress}
+                    />
                   </View>
 
                   <View style={{ marginTop: hp(1) }}>

@@ -11,10 +11,17 @@ import { toast } from "@/components/feedback/toast";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 import { loadUsername } from "@/features/Avatar";
 
-import { handleIncomingPacket, subscribeToPackets } from "@/service/lanGameService";
+import {
+  handleIncomingPacket,
+  subscribeToPackets,
+} from "@/service/lanGameService";
 import { MODES } from "@/constants/Networking";
 import { QuizEngine } from "@/service/QuizEngine";
-import { NUM_QUESTIONS, POPUP_DELAY, TIMER_BY_DIFFICULTY } from "@/constants/quizConstants";
+import {
+  NUM_QUESTIONS,
+  POPUP_DELAY,
+  TIMER_BY_DIFFICULTY,
+} from "@/constants/quizConstants";
 
 interface PlayerMessage {
   message?: string | null;
@@ -52,7 +59,9 @@ export const useQuizGameLogic = () => {
 
   useEffect(() => {
     if (isMultiplayer) {
-      const myPlayer = Object.values(QuizEngine.state.playerScores).find(p => p.name === userName);
+      const myPlayer = Object.values(QuizEngine.state.playerScores).find(
+        (p) => p.name === userName,
+      );
       if (myPlayer) setLocalPlayerId(myPlayer.id);
     }
   }, [userName, isMultiplayer]);
@@ -79,23 +88,34 @@ export const useQuizGameLogic = () => {
   const [leaderboardData, setLeaderboardData] = useState<any>(null);
 
   // 🔄 UI Live Sync: Track who is finished vs thinking
-  const [roundProgress, setRoundProgress] = useState<Record<string, { id: string, name: string, isFinished: boolean, correctCount: number, avatarId: number }>>({});
+  const [roundProgress, setRoundProgress] = useState<
+    Record<
+      string,
+      {
+        id: string;
+        name: string;
+        isFinished: boolean;
+        correctCount: number;
+        avatarId: number;
+      }
+    >
+  >({});
 
   const [question, setQuestion] = useState(() => getRandomQuestion());
 
   // Initialize progress for the round
   const initRoundProgress = useCallback(() => {
-     const progress: any = {};
-     Object.values(QuizEngine.state.playerScores).forEach(p => {
-       progress[p.id] = { 
-         id: p.id, 
-         name: p.name, 
-         isFinished: false, 
-         correctCount: 0, // Placeholder, updated by Round Summary or live packets
-         avatarId: p.avatarId 
-       };
-     });
-     setRoundProgress(progress);
+    const progress: any = {};
+    Object.values(QuizEngine.state.playerScores).forEach((p) => {
+      progress[p.id] = {
+        id: p.id,
+        name: p.name,
+        isFinished: false,
+        correctCount: 0, // Placeholder, updated by Round Summary or live packets
+        avatarId: p.avatarId,
+      };
+    });
+    setRoundProgress(progress);
   }, []);
 
   useEffect(() => {
@@ -127,13 +147,13 @@ export const useQuizGameLogic = () => {
 
     // 📡 Inform engine that this player timed out so the round counter advances
     if (isMultiplayer) {
-       handleIncomingPacket({
-         type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
-         playerId: localPlayerId,
-         isCorrect: false,
-         timeTaken: timeLimit * 1000,
-         timestamp: Date.now(),
-       });
+      handleIncomingPacket({
+        type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
+        playerId: localPlayerId,
+        isCorrect: false,
+        timeTaken: timeLimit * 1000,
+        timestamp: Date.now(),
+      });
     }
 
     setTimeout(() => {
@@ -190,13 +210,16 @@ export const useQuizGameLogic = () => {
     lastQuestionRef.current = next;
 
     // 📡 If Host, broadcast the question to sync everyone
-    if (isMultiplayer && localPlayerId === "host_id") { 
-       console.log("📡 [GameLogic] Host: Syncing question to all clients for Round:", questionIndex + 1);
-       handleIncomingPacket({
-         type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
-         question: next,
-         round: questionIndex + 1
-       });
+    if (isMultiplayer && localPlayerId === "host_id") {
+      console.log(
+        "📡 [GameLogic] Host: Syncing question to all clients for Round:",
+        questionIndex + 1,
+      );
+      handleIncomingPacket({
+        type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
+        question: next,
+        round: questionIndex + 1,
+      });
     }
 
     return next;
@@ -208,21 +231,25 @@ export const useQuizGameLogic = () => {
       const stake = QuizEngine.state.stake;
       if (stake > 0 && questionIndex === 0) {
         console.log("💰 [GameLogic] Debiting stake:", stake);
-        dispatch(applyTransaction({
-          amount: -stake,
-          reason: "Quiz Game Stake",
-          source: "quiz_penalty"
-        }));
+        dispatch(
+          applyTransaction({
+            amount: -stake,
+            reason: "Quiz Game Stake",
+            source: "quiz_penalty",
+          }),
+        );
       }
 
       // 📡 Trigger first sync for bots if Host
       if (localPlayerId === "host_id" && questionIndex === 0) {
-          console.log("📡 [GameLogic] Host: Triggering first round sync for bots");
-          handleIncomingPacket({
-            type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
-            question: question, // Current initial question
-            round: 1
-          });
+        console.log(
+          "📡 [GameLogic] Host: Triggering first round sync for bots",
+        );
+        handleIncomingPacket({
+          type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
+          question: question, // Current initial question
+          round: 1,
+        });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -294,7 +321,11 @@ export const useQuizGameLogic = () => {
 
   const handleFiftyFifty = () => {
     if (fiftyFiftyUsageCount >= 2) {
-      toast.error("Empty!", "You've used all 50-50 lifelines for this game.", 2000);
+      toast.error(
+        "Empty!",
+        "You've used all 50-50 lifelines for this game.",
+        2000,
+      );
       return;
     }
 
@@ -323,7 +354,11 @@ export const useQuizGameLogic = () => {
     }
 
     if (nextCount === 2) {
-      toast.warning("Final Lifeline!", "No 50-50 lifelines left. Use it wisely!", 3000);
+      toast.warning(
+        "Final Lifeline!",
+        "No 50-50 lifelines left. Use it wisely!",
+        3000,
+      );
     }
   };
 
@@ -362,17 +397,16 @@ export const useQuizGameLogic = () => {
 
   useEffect(() => {
     const unsubscribe = subscribeToPackets((packet) => {
-
       // 🔄 LIVE ANSWER PROGRESS: Mark individual player as done in real-time
       if (packet.type === MODES.THINK_AND_COUNT.ANSWER_SUBMITTED) {
-        setRoundProgress(prev => {
+        setRoundProgress((prev) => {
           if (!prev[packet.playerId]) return prev;
           return {
             ...prev,
             [packet.playerId]: {
               ...prev[packet.playerId],
               isFinished: true,
-            }
+            },
           };
         });
       }
@@ -380,15 +414,22 @@ export const useQuizGameLogic = () => {
       // 🏆 ROUND SUMMARY: Authoritative signal that ALL players have answered.
       // This is the ONLY place where we show the leaderboard.
       if (packet.type === "TC_ROUND_SUMMARY") {
-        console.log("🏆 [GameLogic] Received Leaderboard Summary for Round:", packet.round);
+        console.log(
+          "🏆 [GameLogic] Received Leaderboard Summary for Round:",
+          packet.round,
+        );
 
         setLeaderboardData(packet.leaderboard);
 
         // Update progress with final correctCount from authoritative summary
-        setRoundProgress(prev => {
+        setRoundProgress((prev) => {
           const updated = { ...prev };
           packet.leaderboard.forEach((item: any) => {
-            updated[item.id] = { ...updated[item.id], isFinished: true, correctCount: item.correctCount };
+            updated[item.id] = {
+              ...updated[item.id],
+              isFinished: true,
+              correctCount: item.correctCount,
+            };
           });
           return updated;
         });
@@ -400,21 +441,26 @@ export const useQuizGameLogic = () => {
 
         // 💰 WINNER PAYOUT: Only on the final round and only for the top player
         if (packet.isLastRound && packet.leaderboard[0]?.id === localPlayerId) {
-          const pot = QuizEngine.state.totalPot;
-          if (pot > 0) {
-            dispatch(applyTransaction({
-              amount: pot,
-              reason: "Quiz Win - Total Pot",
-              source: "quiz_reward"
-            }));
-            toast.success("CHAMPION!", `You won the pot of ${pot} coins!`);
+          const coins = QuizEngine.state.totalPot;
+          if (coins > 0) {
+            dispatch(
+              applyTransaction({
+                amount: coins,
+                reason: "Quiz Win - Total Coins",
+                source: "quiz_reward",
+              }),
+            );
+            toast.success("CHAMPION!", `You won the coins of ${coins} coins!`);
           }
         }
       }
 
       // 📡 QUESTION SYNC: Only apply if we are NOT already on leaderboard
       // (prevents a late sync overwriting the leaderboard state)
-      if (packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC && !isLeaderboardVisible) {
+      if (
+        packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC &&
+        !isLeaderboardVisible
+      ) {
         setQuestion(packet.question);
         if (packet.round > questionIndex + 1) {
           setQuestionIndex(packet.round - 1);
@@ -422,18 +468,29 @@ export const useQuizGameLogic = () => {
       }
 
       // 🚪 GAME END: Host quit — refund innocent non-host players
-      if (packet.type === MODES.THINK_AND_COUNT.GAME_END && packet.reason === "host_quit") {
+      if (
+        packet.type === MODES.THINK_AND_COUNT.GAME_END &&
+        packet.reason === "host_quit"
+      ) {
         if (!isHost) {
           const refund = packet.stake || 0;
-          console.log(`💰 [GameLogic] Host quit — refunding ${refund} coins to innocent player.`);
+          console.log(
+            `💰 [GameLogic] Host quit — refunding ${refund} coins to innocent player.`,
+          );
 
           if (refund > 0) {
-            dispatch(applyTransaction({
-              amount: refund,
-              reason: "Refund — Host left the game",
-              source: "quiz_refund"
-            }));
-            toast.success("Coins Refunded!", `${refund} coins returned because the host left the game.`, 4000);
+            dispatch(
+              applyTransaction({
+                amount: refund,
+                reason: "Refund — Host left the game",
+                source: "quiz_refund",
+              }),
+            );
+            toast.success(
+              "Coins Refunded!",
+              `${refund} coins returned because the host left the game.`,
+              4000,
+            );
           }
 
           // Navigate back to home
@@ -471,23 +528,35 @@ export const useQuizGameLogic = () => {
     setQuestion(getNextQuestion());
   }, [clearTimer, getNextQuestion]);
 
-  const handleNavigation = useCallback((targetRoute: string) => {
-    try {
-      resetGame();
-      dispatch(resetDifficulty());
+  const handleNavigation = useCallback(
+    (targetRoute: string) => {
+      try {
+        resetGame();
+        dispatch(resetDifficulty());
 
-      requestAnimationFrame(() => {
-        router.dismissAll();
-        router.replace(targetRoute as any);
-      });
-    } catch (err) {
-      console.error("Navigation failed:", err);
-    }
-  }, [dispatch, resetGame, router]);
+        requestAnimationFrame(() => {
+          router.dismissAll();
+          router.replace(targetRoute as any);
+        });
+      } catch (err) {
+        console.error("Navigation failed:", err);
+      }
+    },
+    [dispatch, resetGame, router],
+  );
 
-  const handleQuit = useCallback(() => handleNavigation("/mode-select"), [handleNavigation]);
-  const handleStats = useCallback(() => handleNavigation("/stats"), [handleNavigation]);
-  const handleEarn = useCallback(() => handleNavigation("/earn"), [handleNavigation]);
+  const handleQuit = useCallback(
+    () => handleNavigation("/mode-select"),
+    [handleNavigation],
+  );
+  const handleStats = useCallback(
+    () => handleNavigation("/stats"),
+    [handleNavigation],
+  );
+  const handleEarn = useCallback(
+    () => handleNavigation("/earn"),
+    [handleNavigation],
+  );
 
   /**
    * 🛡️ Double-tap guarded exit handler.
@@ -515,10 +584,16 @@ export const useQuizGameLogic = () => {
         if (isHost) {
           // HOST: End the entire session
           // Stake was already cut at game start — no double deduction.
-          console.log(`🚪 [GameLogic] Host leaving — stake (${stake}) already deducted, ending session.`);
+          console.log(
+            `🚪 [GameLogic] Host leaving — stake (${stake}) already deducted, ending session.`,
+          );
 
           if (stake > 0) {
-            toast.error("Stake Lost!", `Your ${stake} coins are lost because you left the game in the middle.`, 4000);
+            toast.error(
+              "Stake Lost!",
+              `Your ${stake} coins are lost because you left the game in the middle.`,
+              4000,
+            );
           }
 
           // 📡 Broadcast TC_GAME_END so non-host players get refunded
@@ -533,10 +608,16 @@ export const useQuizGameLogic = () => {
           QuizEngine.reset();
         } else {
           // NON-HOST exits by choice: Stake already deducted at start — it's lost.
-          console.log(`🚪 [GameLogic] Player ${localPlayerId} leaving — stake (${stake}) lost.`);
+          console.log(
+            `🚪 [GameLogic] Player ${localPlayerId} leaving — stake (${stake}) lost.`,
+          );
 
           if (stake > 0) {
-            toast.warning("Stake Lost", `Your ${stake} coins are lost because you left the game.`, 3000);
+            toast.warning(
+              "Stake Lost",
+              `Your ${stake} coins are lost because you left the game.`,
+              3000,
+            );
           }
 
           QuizEngine.removePlayer(localPlayerId);
@@ -556,7 +637,15 @@ export const useQuizGameLogic = () => {
     } finally {
       isQuittingRef.current = false;
     }
-  }, [clearTimer, isMultiplayer, isHost, localPlayerId, dispatch, resetGame, router]);
+  }, [
+    clearTimer,
+    isMultiplayer,
+    isHost,
+    localPlayerId,
+    dispatch,
+    resetGame,
+    router,
+  ]);
 
   /**
    * Opens the exit modal — immediately pauses the timer and kills the

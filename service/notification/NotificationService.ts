@@ -17,7 +17,7 @@ import { AppNotificationData } from "./types";
 if (Platform.OS !== "web") {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,   // ← backward-compat, DO NOT remove
+      shouldShowAlert: true, // ← backward-compat, DO NOT remove
       shouldShowBanner: true,
       shouldShowList: true,
       shouldPlaySound: true,
@@ -40,16 +40,21 @@ class NotificationService {
     // 🛡️ Physical device check — emulators can't receive FCM in production
     const isRealDevice = Device.isDevice;
     if (!isRealDevice && !__DEV__) {
-      console.log("🚫 [Notifications] Blocked: requires a physical device in production.");
+      console.log(
+        "🚫 [Notifications] Blocked: requires a physical device in production.",
+      );
       return false;
     }
 
     if (__DEV__) {
-      console.log("🧪 [Notifications] Dev mode: bypassing physical device check.");
+      console.log(
+        "🧪 [Notifications] Dev mode: bypassing physical device check.",
+      );
     }
 
     // Request permission (prompts user once if not yet decided)
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
@@ -72,7 +77,8 @@ class NotificationService {
         sound: "default",
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#A855F7",
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        lockscreenVisibility:
+          Notifications.AndroidNotificationVisibility.PUBLIC,
         enableLights: true,
         enableVibrate: true,
         showBadge: true,
@@ -86,14 +92,17 @@ class NotificationService {
         sound: "default",
         vibrationPattern: [0, 500, 200, 500],
         lightColor: "#EF4444",
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        lockscreenVisibility:
+          Notifications.AndroidNotificationVisibility.PUBLIC,
         enableLights: true,
         enableVibrate: true,
         showBadge: true,
       });
     }
 
-    console.log("✅ [Notifications] Permissions granted & channels initialized.");
+    console.log(
+      "✅ [Notifications] Permissions granted & channels initialized.",
+    );
     return true;
   }
 
@@ -112,7 +121,9 @@ class NotificationService {
     if (Platform.OS === "web") return;
 
     const safeSeconds = Math.max(1, Math.floor(params.seconds));
-    console.log(`⏳ [Notifications] Scheduling "${params.title}" in ${safeSeconds}s...`);
+    console.log(
+      `⏳ [Notifications] Scheduling "${params.title}" in ${safeSeconds}s...`,
+    );
 
     try {
       // Always cancel previous notification with the same ID to prevent duplicates
@@ -127,9 +138,10 @@ class NotificationService {
           sound: true,
           // Channel ID links this notification to the correct Android channel
           // This is what ensures delivery on Android 8+ in production
-          ...(Platform.OS === "android" && {
-            // expo-notifications reads channelId from content on Android
-          }),
+          ...(Platform.OS === "android" &&
+            {
+              // expo-notifications reads channelId from content on Android
+            }),
           color: params.color ?? "#A855F7",
           priority: "max",
           sticky: false,
@@ -146,7 +158,9 @@ class NotificationService {
         } as any,
       });
 
-      console.log(`✨ [Notifications] "${params.title}" scheduled for ${safeSeconds}s from now.`);
+      console.log(
+        `✨ [Notifications] "${params.title}" scheduled for ${safeSeconds}s from now.`,
+      );
     } catch (error) {
       console.error("🔥 [Notifications] Schedule failed:", error);
     }
@@ -193,14 +207,14 @@ class NotificationService {
     this.receivedListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         console.log(
-          `📩 [Notifications] Received in foreground: "${notification.request.content.title}"`
+          `📩 [Notifications] Received in foreground: "${notification.request.content.title}"`,
         );
-      }
+      },
     );
 
     // Tap listener — fires when user taps a notification
-    this.responseListener = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+    this.responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
         const content = response.notification.request.content;
         const data = content.data as AppNotificationData;
 
@@ -217,8 +231,7 @@ class NotificationService {
             }
           }, 300);
         }
-      }
-    );
+      });
   }
 
   /**
@@ -231,20 +244,30 @@ class NotificationService {
       const response = await Notifications.getLastNotificationResponseAsync();
       if (!response) return;
 
-      const data = response.notification.request.content.data as AppNotificationData;
-      console.log(`🚀 [Notifications] App opened via notification. Data:`, data);
+      const data = response.notification.request.content
+        .data as AppNotificationData;
+      console.log(
+        `🚀 [Notifications] App opened via notification. Data:`,
+        data,
+      );
 
       if (data?.screen) {
         setTimeout(() => {
           try {
             router.push(data.screen as any);
           } catch (err) {
-            console.error("❌ [Notifications] Cold-start navigation failed:", err);
+            console.error(
+              "❌ [Notifications] Cold-start navigation failed:",
+              err,
+            );
           }
         }, 500); // Delay ensures router is fully mounted
       }
     } catch (error) {
-      console.error("🔥 [Notifications] handleInitialNotification failed:", error);
+      console.error(
+        "🔥 [Notifications] handleInitialNotification failed:",
+        error,
+      );
     }
   }
 
@@ -262,6 +285,15 @@ class NotificationService {
       color: "#22c55e",
       data: { screen: "/" },
     });
+  }
+  /**
+   * Silent check: Returns true if permission is already granted.
+   * Does NOT trigger the OS system popup.
+   */
+  async checkPermission(): Promise<boolean> {
+    if (Platform.OS === "web") return false;
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === "granted";
   }
 
   /**

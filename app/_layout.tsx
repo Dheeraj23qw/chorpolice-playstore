@@ -1,5 +1,4 @@
 import "../styles/global.css";
-
 import React, { useEffect, useCallback } from "react";
 import { Provider } from "react-redux";
 import { SplashScreen, Stack } from "expo-router";
@@ -16,10 +15,10 @@ import { notificationService } from "@/service/notification/NotificationService"
 import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { runAfterUI } from "@/utils/runAfterUI";
 
+// Prevent splash from hiding until we are ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
-
   useAppExit();
 
   /* ---------------- 🎧 Audio Restore ---------------- */
@@ -29,33 +28,35 @@ function AppLayout() {
         AudioEngine.ensureQuizGlobal?.();
       }
     };
-
     const sub = AppState.addEventListener("change", handleAppState);
 
-    // ✅ Non-blocking restore
     runAfterUI(() => {
-      if (!AudioEngine.isMuted()) {
-        AudioEngine.ensureQuizGlobal?.();
-      }
+      if (!AudioEngine.isMuted()) AudioEngine.ensureQuizGlobal?.();
     });
 
     return () => sub.remove();
   }, []);
 
-  /* ---------------- 🔔 Notifications ---------------- */
+  // src/app/_layout.tsx
+
+  /* ---------------- 🔔 Notifications (Silent Flow) ---------------- */
   useEffect(() => {
     let mounted = true;
 
     runAfterUI(async () => {
       try {
-        const granted = await notificationService.registerPermissions();
+        // 1. SILENT CHECK: No popup triggered here.
+        // This ensures a fast, non-intrusive launch.
+        const hasPermission = await notificationService.checkPermission();
 
-        if (!mounted || !granted) return;
-
-        notificationService.listen();
-        await notificationService.handleInitialNotification();
+        // 2. ONLY initialize listeners if the user ALREADY granted permission
+        // in a previous session.
+        if (mounted && hasPermission) {
+          notificationService.listen();
+          await notificationService.handleInitialNotification();
+        }
       } catch (e) {
-        console.log("Notification setup error:", e);
+        console.log("Notification silent setup error:", e);
       }
     });
 
@@ -105,7 +106,7 @@ export default function RootLayout() {
 
   useSystemUI();
 
-  /* ---------------- 🚀 Smooth Splash ---------------- */
+  /* ---------------- 🚀 Smooth Splash Hide ---------------- */
   useEffect(() => {
     if (fontsLoaded || fontError) {
       runAfterUI(() => {
@@ -120,10 +121,7 @@ export default function RootLayout() {
     <Provider store={store}>
       <SafeAreaProvider>
         <StatusBar hidden translucent backgroundColor="transparent" />
-
         <AppLayout />
-
-        {/* 🔥 Custom Toast System */}
         <ToastProvider />
       </SafeAreaProvider>
     </Provider>

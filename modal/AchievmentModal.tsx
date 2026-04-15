@@ -1,6 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { Modal, TouchableOpacity, View, Animated, Easing } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  Modal,
+  TouchableOpacity,
+  View,
+  Animated,
+  Easing,
+  BackHandler,
+} from "react-native";
 import * as LucideIcons from "lucide-react-native";
 import { claimAward } from "@/features/awards/awardsSlice";
 import { ACHIEVEMENT_DATA } from "@/constants/achievements";
@@ -10,13 +17,12 @@ export default function UnlockedAwardModal() {
   const dispatch = useDispatch();
   const unlocked = useSelector((state: any) => state.awards.unlocked);
 
-  // Animation values
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (unlocked.length > 0) {
-      // Entrance "Pop" effect
+      // Sequence: Scale in, then start rotation loop
       Animated.spring(scaleAnim, {
         toValue: 1,
         tension: 50,
@@ -24,17 +30,25 @@ export default function UnlockedAwardModal() {
         useNativeDriver: true,
       }).start();
 
-      // Continuous Sunburst Rotation
       Animated.loop(
         Animated.timing(rotateAnim, {
           toValue: 1,
-          duration: 10000,
+          duration: 15000, // Slightly slower rotation feels more "premium"
           easing: Easing.linear,
           useNativeDriver: true,
-        })
+        }),
       ).start();
     }
   }, [unlocked.length]);
+
+  // Prevent back button from closing modal without triggering "Claim"
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => true,
+    );
+    return () => backHandler.remove();
+  }, []);
 
   if (unlocked.length === 0) return null;
 
@@ -43,17 +57,21 @@ export default function UnlockedAwardModal() {
   if (!award) return null;
 
   const handleClose = () => {
-    // Exit animation before dispatching
+    // 1. Shrink effect
     Animated.timing(scaleAnim, {
       toValue: 0,
       duration: 200,
+      easing: Easing.ease,
       useNativeDriver: true,
-    }).start(() => dispatch(claimAward(awardId)));
+    }).start(() => {
+      // 2. Dispatch only after animation completes
+      dispatch(claimAward(awardId));
+    });
   };
 
-  const IconComponent = (LucideIcons as any)[award.iconName] || LucideIcons.Trophy;
+  const IconComponent =
+    (LucideIcons as any)[award.iconName] || LucideIcons.Trophy;
 
-  // Dynamic colors for that "Glow"
   const theme = {
     Legendary: { color: "#fcd34d", glow: "shadow-yellow-500/50" },
     Epic: { color: "#c084fc", glow: "shadow-purple-500/50" },
@@ -67,73 +85,65 @@ export default function UnlockedAwardModal() {
   });
 
   return (
-    <Modal transparent visible={true} animationType="none">
+    <Modal transparent visible={true} animationType="fade">
       <View className="flex-1 items-center justify-center bg-black/80 p-6">
-        
-        {/* Animated Container */}
-        <Animated.View 
+        <Animated.View
           style={{ transform: [{ scale: scaleAnim }] }}
           className="w-full max-w-sm items-center"
         >
-          {/* BACKGROUND SUNBURST (Arcade rays) */}
-          <Animated.View 
+          {/* SUNBURST */}
+          <Animated.View
             style={{ transform: [{ rotate: spin }] }}
             className="absolute -top-10 h-80 w-80 opacity-20"
           >
-             {/* Simple Ray Effect using Borders */}
-            <View className="absolute h-full w-full border-[60px] border-dashed border-white/40 rounded-full" />
+            <View className="absolute h-full w-full rounded-full border-[60px] border-dashed border-white/40" />
           </Animated.View>
 
           {/* MAIN CARD */}
-          <View className={`w-full items-center rounded-[40px] border-4 border-white/20 bg-slate-900 p-8 shadow-2xl ${theme.glow}`}>
-            
-            <View className="absolute -top-12 self-center">
-                <View className="rounded-full bg-slate-900 p-2 border-4 border-white/10">
-                    <View 
-                        style={{ backgroundColor: theme.color }}
-                        className="h-24 w-24 items-center justify-center rounded-full shadow-lg"
-                    >
-                        <IconComponent size={48} color="white" strokeWidth={2.5} />
-                    </View>
+          <View
+            className={`w-full items-center rounded-[40px] border-4 border-white/20 bg-slate-900 p-8 shadow-2xl ${theme.glow}`}
+          >
+            <View className="absolute -top-12">
+              <View className="rounded-full border-4 border-white/10 bg-slate-900 p-2">
+                <View
+                  style={{ backgroundColor: theme.color }}
+                  className="h-24 w-24 items-center justify-center rounded-full shadow-lg"
+                >
+                  <IconComponent size={48} color="white" />
                 </View>
+              </View>
             </View>
 
             <View className="mt-12 items-center">
-              <Text className="text-xs font-main-bold uppercase tracking-widest text-white/50">
+              <Text className="font-main-bold text-xs uppercase tracking-widest text-white/50">
                 {award.rarity} Unlocked
               </Text>
-              
-              <Text className="mt-2 text-center text-3xl font-main-bold text-white">
+              <Text className="mt-2 text-center font-main-bold text-3xl text-white">
                 CONGRATS!
               </Text>
-
               <View className="my-4 h-[2px] w-12 bg-white/10" />
-
-              <Text style={{ color: theme.color }} className="text-xl font-main-bold text-center">
+              <Text
+                style={{ color: theme.color }}
+                className="text-center font-main-bold text-xl"
+              >
                 {award.title}
               </Text>
-              
-              <Text className="mt-2 text-center text-slate-400 font-main-md leading-5">
+              <Text className="mt-2 text-center font-main-md leading-5 text-slate-400">
                 {award.desc}
               </Text>
             </View>
 
-            {/* HIGH-GLOSS CLAIM BUTTON */}
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleClose}
               className="mt-8 w-full overflow-hidden rounded-2xl bg-green-500 py-4 shadow-lg shadow-green-500/40"
             >
-              <View className="absolute top-0 left-0 right-0 h-1/2 bg-white/20" /> 
-              <Text className="text-center text-lg font-main-bold uppercase tracking-tighter text-white">
+              <View className="absolute left-0 right-0 top-0 h-1/2 bg-white/20" />
+              <Text className="text-center font-main-bold text-lg uppercase tracking-tighter text-white">
                 Tap to Claim
               </Text>
             </TouchableOpacity>
           </View>
-
-          <Text className="mt-6 text-slate-500 font-main-bold animate-pulse">
-            SHINY NEW ITEM!
-          </Text>
         </Animated.View>
       </View>
     </Modal>
