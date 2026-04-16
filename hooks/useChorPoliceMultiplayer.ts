@@ -120,8 +120,7 @@ export const useChorPoliceMultiplayer = () => {
   const [gamePhase, setGamePhase] = useState<GamePhase>("waiting");
   const [myRole, setMyRole] = useState<Role | null>(null);
 
-  const canSeeBoard =
-    myRole === "Police" || myRole === "King" || myRole === null;
+  const canSeeBoard = myRole === "Police" || myRole === null;
   const canInteract = myRole === "Police";
 
   // ─── Exit modal ───
@@ -313,10 +312,6 @@ export const useChorPoliceMultiplayer = () => {
           if (hostRole === "Police") {
             console.log(`${D} ✅ Police: Cards NOW CLICKABLE`);
             setAreCardsClickable(true);
-            setShowTableButton(true);
-          } else if (hostRole === "King") {
-            console.log(`${D} 🚫 King: Spectator — cards LOCKED`);
-            setAreCardsClickable(false);
             setShowTableButton(true);
           } else {
             console.log(

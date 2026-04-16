@@ -14,6 +14,7 @@ import { StartButton } from "@/components/Lobby/StartButton";
 
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
+import VideoPlayerComponent from "@/components/IntroVideo";
 
 const LobbyScreen: React.FC = () => {
   const router = useRouter();
@@ -29,6 +30,22 @@ const LobbyScreen: React.FC = () => {
   };
 
   const isModalOpen = lobby.isBettingModalVisible;
+  const isTransitioning = lobby.isTransitioning;
+  const gameType = lobby.gameType;
+
+  if (isTransitioning) {
+    return (
+      <VideoPlayerComponent
+        videoIndex={1}
+        onVideoEnd={() => {
+          // Navigate based on game type after video
+          const route =
+            gameType === "QUIZ" ? "/think-count-quiz" : "/chor-police-mp";
+          router.push(route as any);
+        }}
+      />
+    );
+  }
 
   return (
     <KeyboardAvoidingView

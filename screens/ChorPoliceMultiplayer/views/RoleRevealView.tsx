@@ -41,12 +41,12 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   Advisor: {
     color: "#8B5CF6",
-    subtitle: "Your wits are your greatest weapon.",
+    subtitle: "Stay hidden until the thief is caught.",
     label: "THE ADVISOR",
   },
   King: {
     color: "#F59E0B",
-    subtitle: "Command the realm with wisdom.",
+    subtitle: "Lead your friends with kindness.",
     label: "THE KING",
   },
   Police: {

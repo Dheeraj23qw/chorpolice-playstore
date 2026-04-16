@@ -45,6 +45,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
   const [difficulty, setDifficultyState] = useState<DifficultyOption>("easy");
   const [isBettingModalVisible, setIsBettingModalVisible] = useState(false);
 
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const selectedImages = useSelector(
     (state: RootState) => state.player.selectedImages,
   );
@@ -247,10 +248,11 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
           betAmount: stake,
           playerCount: players.length,
         });
+        setIsTransitioning(true);
 
-        setTimeout(() => {
-          router.push("/think-count-quiz" as any);
-        }, 500);
+        // setTimeout(() => {
+        //   router.push("/think-count-quiz" as any);
+        // }, 500);
       }
 
       if (gameType === "CHOR_POLICE") {
@@ -274,9 +276,11 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
           playerCount: finalPlayers.length,
         });
 
-        setTimeout(() => {
-          router.push("/chor-police-mp" as any);
-        }, 500);
+        setIsTransitioning(true);
+
+        // setTimeout(() => {
+        //   router.push("/chor-police-mp" as any);
+        // }, 500);
       }
     },
     [
@@ -321,6 +325,16 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     }
   }, []);
 
+  // Proposed: A single point of truth for cleanup
+  const resetAllEngines = () => {
+    [BotEngine, QuizEngine, ChorPoliceEngine, ChorPoliceBotBehavior].forEach(
+      (engine) => {
+        if (typeof engine.reset === "function") engine.reset();
+      },
+    );
+    clearAllListeners();
+  };
+
   return {
     isHost,
     gameType,
@@ -340,5 +354,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     handleConfirmStake,
     handleAvatarSelect,
     handleNameChange,
+    resetAllEngines,
+    isTransitioning,
   };
 };

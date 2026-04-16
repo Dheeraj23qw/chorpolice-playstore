@@ -37,7 +37,10 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 }) => {
   return (
     // Changed to transparent so the parent's Background Image shows through
-    <View className="flex-1 bg-transparent">
+    <View
+      className="flex-1 bg-transparent      
+       style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom }}"
+    >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
@@ -70,7 +73,6 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
               disabled={false}
               onPress={toggleModal}
               buttonText="Show Score Table"
-              variant="secondary"
             />
           ) : (
             <PlayButton
@@ -83,7 +85,6 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                     : `Round ${round}`
                   : `Press me to play!`
               }
-              variant="primary"
             />
           )}
         </View>

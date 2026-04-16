@@ -1,9 +1,11 @@
-export type DifficultyOption = "EASY" | "MEDIUM" | "HARD";
+// 1. Updated to match the lowercase keys in difficultyConfig
+export type DifficultyOption = "easy" | "medium" | "hard";
 
+// 2. Updated array values to be lowercase
 export const DIFFICULTY_OPTIONS: DifficultyOption[] = [
-  "EASY",
-  "MEDIUM",
-  "HARD",
+  "easy",
+  "medium",
+  "hard",
 ];
 
 export const difficultyConfig = {

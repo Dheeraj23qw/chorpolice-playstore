@@ -75,12 +75,7 @@ const ChorPoliceMultiplayerScreen = () => {
       <View className="absolute h-full w-full bg-black/70" />
 
       {/* Content */}
-      <View
-        className="flex-1"
-        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
-      >
-        {renderView()}
-      </View>
+      <View className="flex-1">{renderView()}</View>
 
       {/* Exit Modal */}
       <QuizExitModal
