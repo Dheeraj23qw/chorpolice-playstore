@@ -376,29 +376,24 @@ export const useChorPoliceMultiplayer = () => {
         }, 2000);
         timerRefs.current.push(t4);
 
-        // Win/Lose GIF — use refs for current policeIndex
+        // Win/Lose Overlay Logic
         const t5 = setTimeout(() => {
+          console.log(`${D} 🎬 Triggering Win/Lose Overlay`);
+
+          const winIndex = packet.correct ? 4 : 3;
+
+          setPopupIndex(winIndex);
+
           const curPI = policeIndexRef.current;
           const curPN = playerNamesRef.current;
-          const curPImg = playerImagesRef.current;
-          const curSI = selectedImagesRef.current;
 
-          console.log(`${D} 🎬 Win/Lose GIF overlay`);
-          setMediaType("gif");
-          setIsDynamicPopUp(true);
-          setMediaId(packet.correct ? 4 : 3);
-          setPlayerData({
-            image: curPI !== null ? curPImg[curSI[curPI]]?.src : null,
-            message: packet.correct
-              ? randomMessageWinRef.current
-              : randomMessageLoseRef.current,
-            imageType: curPI !== null ? curPImg[curSI[curPI]]?.type : null,
-            name: curPI !== null ? curPN[curPI] : "",
-          });
+          console.log(
+            `${D} Winner is: ${curPI !== null ? curPN[curPI] : "Unknown"}`,
+          );
         }, 4000);
+
         timerRefs.current.push(t5);
 
-        // Close GIF→ next round or end
         const t6 = setTimeout(() => {
           setIsDynamicPopUp(false);
           setShowTableButton(true);
@@ -447,7 +442,6 @@ export const useChorPoliceMultiplayer = () => {
             applyTransaction({
               amount: packet.totalPot,
               reason: "Chor Police Win - Total Coins",
-              source: "cp_reward",
             }),
           );
           toast.success(
@@ -470,7 +464,6 @@ export const useChorPoliceMultiplayer = () => {
             applyTransaction({
               amount: refund,
               reason: "Refund — Host left",
-              source: "cp_refund",
             }),
           );
           toast.success("Refunded!", `${refund} coins returned.`);

@@ -20,16 +20,16 @@ export const data: DataItem[] = [
     message: "You are the Police! Find the thief.",
     point: "",
   },
-  // {
-  //   id: 3,
-  //   image: require("@/assets/modalImages/chor_win.png"),
-  //   message: "Thief wins this round!",
-  //   point: "500 POINTS",
-  // },
-  // {
-  //   id: 4,
-  //   image: require("@/assets/modalImages/police_win.png"),
-  //   message: "Police caught the thief!",
-  //   point: "500 POINTS",
-  // },
+  {
+    id: 3,
+    image: require("@/assets/modalImages/chor_win.png"),
+    message: "The Thief Escaped the Trap! 🕶️",
+    point: "500 POINTS",
+  },
+  {
+    id: 4,
+    image: require("@/assets/modalImages/police_win.png"),
+    message: "Justice Has Been Served! 🚔",
+    point: "500 POINTS",
+  },
 ];

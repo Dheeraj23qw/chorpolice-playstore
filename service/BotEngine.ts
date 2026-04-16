@@ -20,15 +20,30 @@ export const BotEngine = {
   spawn: (count: number) => {
     BotEngine.reset();
 
+    let usedAvatars = new Set<number>();
+
+    const getAvatar = () => {
+      if (usedAvatars.size >= 13) {
+        usedAvatars.clear(); // ✅ prevent infinite loop
+      }
+
+      let id;
+      do {
+        id = Math.floor(Math.random() * 13) + 1;
+      } while (usedAvatars.has(id));
+
+      usedAvatars.add(id);
+      return id;
+    };
+
     for (let i = 0; i < count; i++) {
-      // ✅ Now instant, thanks to preloading!
       const botName = getBotName(i);
       const botId = `bot_${botName.toLowerCase()}_${Math.random().toString(36).substr(2, 5)}`;
 
       const botPlayer = {
         id: botId,
         name: botName,
-        avatarId: (i % 13) + 1,
+        avatarId: getAvatar(),
         isBot: true,
       };
 
@@ -47,7 +62,6 @@ export const BotEngine = {
 
     BotEngine.initializeListeners();
   },
-
   initializeListeners: () => {
     const unsub = subscribeToPackets((packet) => {
       if (packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC) {

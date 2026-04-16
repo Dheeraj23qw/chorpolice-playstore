@@ -17,12 +17,13 @@ const BoardWithPopups = ({ g }: any) => {
   // Full screen popup (win/lose GIF etc.)
   if (g.isDynamicPopUp && g.mediaId != null) {
     return (
-      <DynamicOverlayPopUp
-        isPopUp={g.isDynamicPopUp}
-        mediaId={g.mediaId}
-        mediaType={g.mediaType}
-        closeVisibleDelay={3000}
-        playerData={g.playerData}
+      <OverlayPopUp
+        index={g.popupIndex}
+        policeIndex={g.policeIndex}
+        kingIndex={g.kingIndex}
+        advisorIndex={g.advisorIndex}
+        thiefIndex={g.thiefIndex}
+        displayDuration={3000}
       />
     );
   }

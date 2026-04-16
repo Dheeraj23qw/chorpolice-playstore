@@ -62,7 +62,7 @@ const FinalResultView = ({ onExit, onPlayAgain }: any) => {
   }, []);
 
   return (
-    <View className="flex-1 bg-gray-950">
+    <View className="flex-1">
       {showCelebration && (
         <VictoryCelebration type="GOLD" intensity="MEDIUM" duration={4000} />
       )}
@@ -84,7 +84,7 @@ const FinalResultView = ({ onExit, onPlayAgain }: any) => {
           className="mb-3 items-center"
         >
           {/* Simple Pill Border */}
-          <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-950/20 px-6 py-3">
+          <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-950/20 px-3 py-3">
             <Text className="text-base font-medium text-indigo-100">
               You won
             </Text>

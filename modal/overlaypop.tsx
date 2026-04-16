@@ -1,12 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, memo } from "react";
-import {
-  View,
-  Image,
-  Modal,
-  TouchableWithoutFeedback,
-  Animated,
-  Easing,
-} from "react-native";
+import { View, Image, Modal, Animated, Easing } from "react-native";
 import { data } from "@/constants/popupData";
 import { useSelector } from "react-redux";
 import { selectPlayerNames } from "@/redux/selectors/playerDataSelector";
@@ -15,7 +8,6 @@ import { Text } from "@/components/Text";
 import { hp, wp, rf } from "@/utils/responsive";
 import { VictoryCelebration } from "@/components/VictoryCelebration";
 
-// Added onStateChange to notify parent to hide/show game cards
 interface ExtendedProps extends OverlayPopUpProps {
   onStateChange?: (isVisible: boolean) => void;
 }
@@ -30,6 +22,7 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -39,11 +32,31 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
   const playerNames = useSelector(selectPlayerNames).map((p) => p?.name);
 
-  const kingName = (kingIndex !== null && playerNames[kingIndex]) ? playerNames[kingIndex] : "King";
-  const policeName = (policeIndex !== null && playerNames[policeIndex]) ? playerNames[policeIndex] : "Police";
-  const thiefName = (thiefIndex !== null && playerNames[thiefIndex]) ? playerNames[thiefIndex] : "Thief";
+  const kingName =
+    kingIndex !== null && playerNames[kingIndex]
+      ? playerNames[kingIndex]
+      : "King";
 
-  const [showConfetti, setShowConfetti] = useState(false);
+  const policeName =
+    policeIndex !== null && playerNames[policeIndex]
+      ? playerNames[policeIndex]
+      : "Police";
+
+  // 🔥 Dynamic duration (GLOBAL access)
+  const getDuration = () => {
+    switch (index) {
+      case 1:
+      case 2:
+        return 3000;
+      case 3:
+      case 4:
+        return 6000;
+      default:
+        return displayDuration;
+    }
+  };
+
+  const duration = getDuration();
 
   const closeModal = useCallback(() => {
     if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
@@ -55,9 +68,8 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
     }).start(() => {
       setModalVisible(false);
       setModalData(null);
-      setShowConfetti(false); // Reset confetti
-      // Notify parent that modal is gone (Show cards again)
-      if (onStateChange) onStateChange(false);
+      setShowConfetti(false);
+      onStateChange?.(false);
     });
   }, [opacityAnim, onStateChange]);
 
@@ -65,8 +77,10 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
     if (index != null && index >= 1 && index <= data.length) {
       const selectedItem = data[index - 1];
 
-      const shouldCelebrate = index === 1 || index === 2;
+      // ✅ Confetti only for WIN screens (better UX)
+      const shouldCelebrate = index === 3 || index === 4;
       setShowConfetti(shouldCelebrate);
+
       let title = "";
       let accentColor = "#FFD700";
 
@@ -75,14 +89,22 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
           title = `THE MIGHTY\n${kingName.toUpperCase()}`;
           accentColor = "#FACC15";
           break;
+
         case 2:
           title = `THE CHIEF\n${policeName.toUpperCase()}`;
           accentColor = "#3B82F6";
           break;
+
         case 3:
-          title = `THE THIEF\n${thiefName.toUpperCase()}`;
-          accentColor = "#EF4444";
+          title = "Thief Escaped! 😈";
+          accentColor = "#8B5CF6";
           break;
+
+        case 4:
+          title = "Case Solved! 🔍";
+          accentColor = "#3B82F6";
+          break;
+
         default:
           title = "GET READY";
           accentColor = "#A855F7";
@@ -90,9 +112,12 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
       setModalData({ ...selectedItem, roleTitle: title, theme: accentColor });
       setModalVisible(true);
+      onStateChange?.(true);
 
-      // Notify parent that modal is active (Hide cards)
-      if (onStateChange) onStateChange(true);
+      // ✅ Reset animations (IMPORTANT)
+      scaleAnim.setValue(0.8);
+      opacityAnim.setValue(0);
+      rayRotation.setValue(0);
 
       Animated.parallel([
         Animated.timing(opacityAnim, {
@@ -118,21 +143,13 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
       autoCloseTimer.current = setTimeout(() => {
         closeModal();
-      }, displayDuration);
+      }, duration);
     }
 
     return () => {
       if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
     };
-  }, [
-    index,
-    kingName,
-    policeName,
-    thiefName,
-    closeModal,
-    displayDuration,
-    onStateChange,
-  ]);
+  }, [index, kingName, policeName, closeModal, duration, onStateChange]);
 
   if (!modalData) return null;
 
@@ -143,108 +160,100 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
   return (
     <Modal visible={modalVisible} transparent animationType="none">
-      <TouchableWithoutFeedback onPress={closeModal}>
+      <Animated.View
+        style={{ opacity: opacityAnim }}
+        className="flex-1 items-center justify-center bg-[#050508]"
+      >
+        {showConfetti && modalVisible && (
+          <VictoryCelebration
+            type="THEME"
+            intensity="LOW"
+            duration={duration - 500} // ✅ synced
+            onComplete={() => setShowConfetti(false)}
+          />
+        )}
+
+        {/* Background Rays */}
         <Animated.View
-          style={{ opacity: opacityAnim }}
-          className="flex-1 bg-[#050508] justify-center items-center"
+          style={{
+            transform: [{ rotate: spin }],
+            position: "absolute",
+            width: wp(140),
+            height: wp(140),
+            opacity: 0.1,
+          }}
         >
-          {showConfetti && modalVisible && (
-            <VictoryCelebration
-              type={index === 1 ? "GOLD" : "THEME"}
-              intensity="LOW"
-              duration={displayDuration - 500}
-              onComplete={() => setShowConfetti(false)}
-            />
-          )}
-
-          {/* Background Rays */}
-          <Animated.View
-            style={{
-              transform: [{ rotate: spin }],
-              position: "absolute",
-              width: wp(140),
-              height: wp(140),
-              opacity: 0.1,
-            }}
-          >
-            {[...Array(12)].map((_, i) => (
-              <View
-                key={i}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  width: 1,
-                  height: hp(100),
-                  backgroundColor: modalData.theme,
-                  transform: [
-                    { rotate: `${i * 30}deg` },
-                    { translateY: -hp(50) },
-                  ],
-                }}
-              />
-            ))}
-          </Animated.View>
-
-          {/* Content Card */}
-          <Animated.View
-            style={{ transform: [{ scale: scaleAnim }], width: wp(85) }}
-            className="items-center"
-          >
-            <Text className="text-white/20 font-main-bold uppercase tracking-[8px] text-[9px] mb-4">
-              Identity Revealed
-            </Text>
-
-            <Text
+          {[...Array(12)].map((_, i) => (
+            <View
+              key={i}
               style={{
-                color: modalData.theme,
-                textShadowColor: modalData.theme,
-                textShadowRadius: 15,
-                fontSize: rf(4.5),
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: 1,
+                height: hp(100),
+                backgroundColor: modalData.theme,
+                transform: [
+                  { rotate: `${i * 30}deg` },
+                  { translateY: -hp(50) },
+                ],
               }}
-              className="text-center font-main-bold mb-8 tracking-tighter leading-[50px]"
+            />
+          ))}
+        </Animated.View>
+
+        {/* Content */}
+        <Animated.View
+          style={{ transform: [{ scale: scaleAnim }], width: wp(85) }}
+          className="items-center"
+        >
+          <Text className="mb-4 font-main-bold text-[9px] uppercase tracking-[8px] text-white/20">
+            Identity Revealed
+          </Text>
+
+          <Text
+            style={{
+              color: modalData.theme,
+              textShadowColor: modalData.theme,
+              textShadowRadius: 15,
+              fontSize: rf(4.5),
+            }}
+            className="mb-8 text-center font-main-bold leading-[50px] tracking-tighter"
+          >
+            {modalData.roleTitle}
+          </Text>
+
+          <View className="relative items-center justify-center">
+            <View
+              style={{ backgroundColor: modalData.theme }}
+              className="absolute h-64 w-64 rounded-full opacity-[0.08] blur-3xl"
+            />
+            <Image
+              source={modalData.image}
+              style={{ width: wp(85), height: hp(38) }}
+              resizeMode="contain"
+            />
+          </View>
+
+          {modalData.point && (
+            <View
+              style={{ borderColor: `${modalData.theme}20` }}
+              className="mt-8 px-14 py-3"
             >
-              {modalData.roleTitle}
-            </Text>
-
-            <View className="relative items-center justify-center">
-              <View
-                style={{ backgroundColor: modalData.theme }}
-                className="absolute w-64 h-64 rounded-full opacity-[0.08] blur-3xl"
-              />
-              <Image
-                source={modalData.image}
-                style={{ width: wp(85), height: hp(38) }}
-                resizeMode="contain"
-              />
-            </View>
-
-            {modalData.point && (
-              <View
-                style={{ borderColor: `${modalData.theme}20` }}
-                className="mt-8 py-3 px-14"
+              <Text
+                style={{ color: modalData.theme }}
+                className="font-main-bold text-2xl tracking-[4px]"
               >
-                <Text
-                  style={{ color: modalData.theme }}
-                  className="font-main-bold text-2xl tracking-[4px]"
-                >
-                  {modalData.point}
-                </Text>
-              </View>
-            )}
-
-            <Text className="text-slate-500 font-main-md text-center mt-10 px-8 text-xl leading-6 ">
-              "{modalData.message}"
-            </Text>
-
-            <View className="mt-14 opacity-30">
-              <Text className="text-white font-main-bold uppercase tracking-[3px] text-[8px]">
-                Tap anywhere to continue
+                {modalData.point}
               </Text>
             </View>
-          </Animated.View>
+          )}
+
+          <Text className="mt-10 px-8 text-center font-main-md text-xl leading-6 text-slate-500">
+            {modalData.message}
+          </Text>
         </Animated.View>
-      </TouchableWithoutFeedback>
+      </Animated.View>
     </Modal>
   );
 };
