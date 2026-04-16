@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { Pressable, View, Animated } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { rf } from "@/utils/responsive";
 import { Text } from "../Text";
 
@@ -7,143 +8,169 @@ interface PlayButtonProps {
   disabled: boolean;
   onPress: () => void;
   buttonText: string;
-  variant?: "primary" | "secondary";
 }
-
-/* ===============================
-   🔥 Variant Config (Clean Architecture)
-================================== */
-
-const BUTTON_VARIANTS = {
-  primary: {
-    containerEnabled: "bg-indigo-600 border border-indigo-400/40",
-    containerDisabled: "bg-[#08080c] border border-white/5",
-    textEnabled: "text-white",
-    textDisabled: "text-white/25",
-    bottomWidth: 6,
-    bottomColorEnabled: "#312e81",
-    bottomColorDisabled: "#141418",
-    showGlow: true,
-  },
-  secondary: {
-    containerEnabled: "bg-white/5 border border-white/15",
-    containerDisabled: "bg-white/5 border border-white/10",
-    textEnabled: "text-indigo-300",
-    textDisabled: "text-white/25",
-    bottomWidth: 2,
-    bottomColorEnabled: "#ffffff20",
-    bottomColorDisabled: "#ffffff10",
-    showGlow: false,
-  },
-} as const;
-
-/* =============================== */
 
 const PlayButton: React.FC<PlayButtonProps> = ({
   disabled,
   onPress,
   buttonText,
-  variant = "primary",
 }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0.3)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  const glow = useRef(new Animated.Value(0.3)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
+  const core = useRef(new Animated.Value(0)).current;
 
-  const config = BUTTON_VARIANTS[variant];
-
-  /* 🌊 Glow breathing (only if enabled for variant) */
+  /* ⚡ ENERGY LOOP */
   useEffect(() => {
-    if (!disabled && config.showGlow) {
-      const loop = Animated.loop(
+    if (disabled) return;
+
+    const loop = Animated.loop(
+      Animated.parallel([
         Animated.sequence([
-          Animated.timing(glowAnim, {
+          Animated.timing(glow, {
             toValue: 1,
-            duration: 1800,
-            useNativeDriver: true,
+            duration: 1100,
+            useNativeDriver: false,
           }),
-          Animated.timing(glowAnim, {
-            toValue: 0.35,
-            duration: 1800,
-            useNativeDriver: true,
+          Animated.timing(glow, {
+            toValue: 0.3,
+            duration: 1100,
+            useNativeDriver: false,
           }),
-        ])
-      );
+        ]),
 
-      loop.start();
-      return () => loop.stop();
-    }
-  }, [disabled, variant,config.showGlow,glowAnim]);
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 1300,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 1300,
+            useNativeDriver: false,
+          }),
+        ]),
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.965,
+        Animated.sequence([
+          Animated.timing(core, {
+            toValue: 1,
+            duration: 900,
+            useNativeDriver: false,
+          }),
+          Animated.timing(core, {
+            toValue: 0,
+            duration: 900,
+            useNativeDriver: false,
+          }),
+        ]),
+      ]),
+    );
+
+    loop.start();
+    return () => loop.stop();
+  }, [disabled]);
+
+  /* 🎮 PRESS FEEL */
+  const pressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.92,
+      friction: 7,
+      tension: 160,
       useNativeDriver: true,
-      tension: 120,
-      friction: 8,
     }).start();
   };
 
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
+  const pressOut = () => {
+    Animated.spring(scale, {
       toValue: 1,
-      useNativeDriver: true,
       friction: 6,
+      useNativeDriver: true,
     }).start();
-    onPress();
   };
 
   return (
     <Pressable
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPress={onPress}
+      onPressIn={pressIn}
+      onPressOut={pressOut}
       disabled={disabled}
-      className="w-full pt-8 px-2"
+      className="w-full px-2 pt-8"
     >
-      <Animated.View
-        style={{ transform: [{ scale: scaleAnim }] }}
-        className="w-full"
-      >
-        {/* 🌟 Glow (Primary Only) */}
-        {!disabled && config.showGlow && (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        {/* 🌌 OUTER ENERGY FIELD */}
+        {!disabled && (
           <Animated.View
             pointerEvents="none"
-            style={{ opacity: glowAnim }}
-            className="absolute -inset-3 rounded-[36px] bg-indigo-500/30 blur-3xl"
+            style={{
+              opacity: glow,
+              transform: [
+                {
+                  scale: pulse.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.3],
+                  }),
+                },
+              ],
+            }}
+            className="absolute -inset-8 rounded-[42px] bg-indigo-500/20 blur-3xl"
           />
         )}
 
-        {/* 🧊 Button Body */}
-        <View
-          className={`rounded-[30px] overflow-hidden ${
+        {/* 💠 MAIN BUTTON BODY */}
+        <LinearGradient
+          colors={
             disabled
-              ? config.containerDisabled
-              : config.containerEnabled
-          }`}
+              ? ["#0a0a0f", "#050507"]
+              : ["#6366f1", "#4338ca", "#1e1b4b"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="overflow-hidden rounded-[36px] border border-white/10"
           style={{
-            borderBottomWidth: config.bottomWidth,
-            borderBottomColor: disabled
-              ? config.bottomColorDisabled
-              : config.bottomColorEnabled,
+            shadowColor: "#6366f1",
+            shadowOpacity: disabled ? 0 : 0.7,
+            shadowRadius: 22,
+            elevation: 14,
           }}
         >
-          <View className="py-6 items-center justify-center">
+          {/* ✨ top light streak */}
+          <View className="absolute left-6 right-6 top-2 h-[1px] bg-white/30" />
+
+          {/* ⚡ inner energy core */}
+          {!disabled && (
+            <Animated.View
+              pointerEvents="none"
+              style={{
+                opacity: core,
+              }}
+              className="absolute inset-0 bg-white/5"
+            />
+          )}
+
+          <View className="items-center justify-center py-6">
             <Text
-              style={{ fontSize: rf(1.9) }}
-              className={`font-main-bold uppercase tracking-[4px] ${
-                disabled
-                  ? config.textDisabled
-                  : config.textEnabled
-              }`}
+              style={{ fontSize: rf(2.1) }}
+              className="font-main-bold uppercase tracking-[6px] text-white"
             >
               {buttonText}
             </Text>
 
-            {!disabled && variant === "primary" && (
-              <Text className="mt-1 text-[9px] tracking-[3px] uppercase text-indigo-300/60 font-main-md">
-                Tap to continue
+            {!disabled && (
+              <Text className="mt-1 text-[10px] uppercase tracking-[4px] text-indigo-200/70">
+                Tap to deploy
               </Text>
             )}
           </View>
-        </View>
+        </LinearGradient>
+
+        {/* 🔻 grounded shadow (integrated feel) */}
+        <Animated.View
+          style={{
+            opacity: glow,
+          }}
+          className="mx-8 h-4 rounded-b-[36px] bg-black/50 blur-2xl"
+        />
       </Animated.View>
     </Pressable>
   );

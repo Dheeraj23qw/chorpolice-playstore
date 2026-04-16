@@ -7,10 +7,10 @@ import { playerImages } from "@/constants/playerData";
 import { DebugOverlay } from "@/components/DebugOverlay";
 import { BettingModal } from "@/modal/BettingModal";
 import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
-import { LobbyHeader } from "@/components/QuizLobby/LobbyHeader";
-import { PlayerProfileCard } from "@/components/QuizLobby/PlayerProfileCard";
-import { PlayersList } from "@/components/QuizLobby/PlayersList";
-import { StartButton } from "@/components/QuizLobby/StartButton";
+import { LobbyHeader } from "@/components/Lobby/LobbyHeader";
+import { PlayerProfileCard } from "@/components/Lobby/PlayerProfileCard";
+import { PlayersList } from "@/components/Lobby/PlayersList";
+import { StartButton } from "@/components/Lobby/StartButton";
 
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";

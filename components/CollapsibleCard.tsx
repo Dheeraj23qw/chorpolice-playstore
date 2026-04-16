@@ -37,7 +37,7 @@ export const CollapsibleCard = ({
             <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white/40">
               {label}
             </Text>
-            <Text className="font-main-bold text-base text-white">
+            <Text className="uppercasetext-base font-main-bold text-white">
               {isOpen ? "CLOSE SELECTOR" : title}
             </Text>
           </View>

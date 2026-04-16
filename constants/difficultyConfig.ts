@@ -1,9 +1,9 @@
-export type DifficultyOption = "easy" | "medium" | "hard";
+export type DifficultyOption = "EASY" | "MEDIUM" | "HARD";
 
 export const DIFFICULTY_OPTIONS: DifficultyOption[] = [
-  "easy",
-  "medium",
-  "hard",
+  "EASY",
+  "MEDIUM",
+  "HARD",
 ];
 
 export const difficultyConfig = {
