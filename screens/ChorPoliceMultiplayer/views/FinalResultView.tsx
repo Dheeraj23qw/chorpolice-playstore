@@ -78,30 +78,30 @@ const FinalResultView = ({ onExit, onPlayAgain }: any) => {
         </Animated.View>
       )}
 
+      {totalPot > 0 && (
+        <Animated.View
+          entering={FadeIn.delay(200)}
+          className="mb-3 items-center"
+        >
+          {/* Simple Pill Border */}
+          <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-950/20 px-6 py-3">
+            <Text className="text-base font-medium text-indigo-100">
+              You won
+            </Text>
+            <Text className="mx-2 text-base font-bold text-white">
+              + {Number(totalPot || 0).toLocaleString()} coins
+            </Text>
+            <Text className="text-base">💰⚡</Text>
+          </View>
+        </Animated.View>
+      )}
+
       {/* LIST SECTION: Scrolls independently underneath the winner */}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false} // Clean premium look
         removeClippedSubviews={true}
       >
-        {totalPot > 0 && (
-          <Animated.View
-            entering={FadeIn.delay(200)}
-            className="my-6 items-center"
-          >
-            {/* Simple Pill Border */}
-            <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-950/20 px-6 py-4">
-              <Text className="text-base font-medium text-indigo-100">
-                You won
-              </Text>
-              <Text className="mx-2 text-base font-bold text-white">
-                +{Number(totalPot || 0).toLocaleString()} coins
-              </Text>
-              <Text className="text-base">💰⚡</Text>
-            </View>
-          </Animated.View>
-        )}
-
         <MemoizedLeaderboard
           sortedScores={sortedScores}
           playerNames={playerNamesList}
