@@ -18,8 +18,8 @@ export const DebugOverlay: React.FC = () => {
 
   if (isMinimized) {
     return (
-      <TouchableOpacity 
-        style={styles.minimizedContainer} 
+      <TouchableOpacity
+        style={styles.minimizedContainer}
         onPress={() => setIsMinimized(false)}
         activeOpacity={0.8}
       >
@@ -34,10 +34,14 @@ export const DebugOverlay: React.FC = () => {
         <View style={styles.headerRow}>
           <Text style={styles.header}>📡 DIAGNOSTICS</Text>
           <TouchableOpacity onPress={() => setIsMinimized(true)}>
-            <Ionicons name="close-circle-outline" size={rf(1.8)} color="rgba(255,255,255,0.3)" />
+            <Ionicons
+              name="close-circle-outline"
+              size={rf(1.8)}
+              color="rgba(255,255,255,0.3)"
+            />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.row}>
           <Text style={styles.label}>Peers:</Text>
           <Text style={styles.value}>{debug.connectionCount}</Text>
@@ -45,25 +49,37 @@ export const DebugOverlay: React.FC = () => {
 
         <View style={styles.row}>
           <Text style={styles.label}>Last Pkt:</Text>
-          <Text style={styles.value} numberOfLines={1}>{debug.lastPacketType}</Text>
+          <Text style={styles.value} numberOfLines={1}>
+            {debug.lastPacketType}
+          </Text>
         </View>
 
         <View style={styles.row}>
           <Text style={styles.label}>Ping:</Text>
-          <Text style={[styles.value, { color: debug.latency > 100 ? "#ef4444" : "#22c55e" }]}>
+          <Text
+            style={[
+              styles.value,
+              { color: debug.latency > 100 ? "#ef4444" : "#22c55e" },
+            ]}
+          >
             {debug.latency}ms
           </Text>
         </View>
 
         <View style={styles.row}>
           <Text style={styles.label}>Hb:</Text>
-          <Text style={[styles.value, { color: debug.isHeartbeatActive ? "#a855f7" : "#4b5563" }]}>
+          <Text
+            style={[
+              styles.value,
+              { color: debug.isHeartbeatActive ? "#a855f7" : "#4b5563" },
+            ]}
+          >
             {debug.isHeartbeatActive ? "ON" : "OFF"}
           </Text>
         </View>
 
-        <TouchableOpacity 
-          style={styles.notifButton} 
+        <TouchableOpacity
+          style={styles.notifButton}
           onPress={() => notificationService.triggerTestNotification()}
         >
           <Ionicons name="notifications-outline" size={rf(1.2)} color="white" />

@@ -67,19 +67,6 @@ export const GameModeCard = ({ item, index, onPress }: Props) => {
 
           {/* 🧠 CONTENT SECTION */}
           <View className="z-30 flex-1 py-4 pl-6">
-            <Text
-              className="font-main-bold uppercase text-white"
-              style={{
-                fontSize: rf(2.8),
-                letterSpacing: 2,
-                textShadowColor: "rgba(0,0,0,0.8)",
-                textShadowOffset: { width: 0, height: 2 },
-                textShadowRadius: 6,
-              }}
-            >
-              {item.title}
-            </Text>
-
             <View
               className="mt-auto flex-row items-center self-start rounded-xl px-4 py-2"
               style={{

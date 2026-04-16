@@ -4,6 +4,8 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "../Text";
 import { rf } from "@/utils/responsive";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface GameModeModalProps {
   isVisible: boolean;
@@ -28,86 +30,130 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
   };
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      {/* Darkened Overlay */}
+    <Modal visible={isVisible} transparent animationType="fade">
+      {/* CLICKABLE BACKGROUND */}
       <Pressable
-        className="flex-1 items-center justify-center bg-black/60 backdrop-blur-sm"
         onPress={onClose}
+        className="flex-1 items-center justify-center"
       >
-        {/* Main Glass Container */}
-        <View
-          className="w-[85%] overflow-hidden rounded-[40px] border border-white/10 bg-[#121212]/90 shadow-2xl"
-          onStartShouldSetResponder={() => true}
-        >
-          {/* Glass Header with subtle gradient feel */}
-          <View className="items-center border-b border-white/5 bg-white/5 py-8">
-            <View className="mb-3 h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-gradient-to-tr from-purple-500/30 to-blue-500/30">
-              <Ionicons name="globe-outline" size={rf(4)} color="#E5E7EB" />
-            </View>
-            <Text className="font-main-bold text-2xl tracking-tight text-white">
-              CHOOSE ROLE
-            </Text>
-          </View>
+        {/* 🔹 LIGHT BLUR (keeps your night background visible) */}
+        <BlurView
+          intensity={30}
+          tint="dark"
+          className="absolute h-full w-full"
+        />
 
-          <View className="p-6">
-            {/* Host Button */}
+        {/* 🔹 TOP SHADE */}
+        <LinearGradient
+          colors={["rgba(0,0,0,0.25)", "transparent"]}
+          className="absolute top-0 h-[25%] w-full"
+        />
+
+        {/* 🔥 CENTER GLOW (main highlight focus) */}
+        <LinearGradient
+          colors={[
+            "rgba(124,58,237,0.28)",
+            "rgba(37,99,235,0.22)",
+            "transparent",
+          ]}
+          className="absolute h-[600px] w-[600px] rounded-full blur-3xl"
+        />
+
+        {/* 🔹 BOTTOM SHADE */}
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.15)"]}
+          className="absolute bottom-0 h-[15%] w-full"
+        />
+
+        {/* 🧊 GLASS CARD */}
+        <Pressable
+          onPress={() => {}}
+          className="w-[85%] overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.06]"
+        >
+          <BlurView intensity={70} tint="dark" className="p-6">
+            {/* HEADER */}
+            <View className="mb-6 items-center">
+              <View className="mb-3 h-20 w-20 items-center justify-center rounded-full bg-white/10">
+                <Ionicons
+                  name="game-controller-outline"
+                  size={rf(4)}
+                  color="#E5E7EB"
+                />
+              </View>
+
+              <Text className="font-main-bold text-2xl text-white">
+                CHOOSE MODE
+              </Text>
+
+              <Text className="mt-1 text-sm text-white/40">
+                Play with friends or join others
+              </Text>
+            </View>
+
+            {/* HOST BUTTON */}
             <Pressable
               onPress={() => handleSelection(true)}
-              className="mb-4 flex-row items-center rounded-3xl border border-white/5 bg-white/[0.03] p-5 active:bg-white/[0.08]"
+              className="mb-4 overflow-hidden rounded-3xl"
             >
-              <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10">
-                <Ionicons name="wifi-outline" size={rf(3)} color="#C084FC" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-main-bold text-lg text-white">
-                  HOST GAME
-                </Text>
-                <Text className="font-main-regular text-sm text-white/40">
-                  Create a new lobby
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={rf(2)}
-                color="rgba(255,255,255,0.5)"
-              />
+              <LinearGradient
+                colors={["#7C3AED33", "#7C3AED10"]}
+                className="flex-row items-center border border-purple-400/20 p-5"
+              >
+                <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/20">
+                  <Ionicons name="wifi-outline" size={rf(3)} color="#C084FC" />
+                </View>
+
+                <View className="flex-1">
+                  <Text className="font-main-bold text-lg text-white">
+                    HOST GAME
+                  </Text>
+                  <Text className="text-sm text-white/40">
+                    Create your own lobby
+                  </Text>
+                </View>
+
+                <Ionicons name="arrow-forward" size={rf(2)} color="#C084FC" />
+              </LinearGradient>
             </Pressable>
 
-            {/* Join Button */}
+            {/* JOIN BUTTON */}
             <Pressable
               onPress={() => handleSelection(false)}
-              className="flex-row items-center rounded-3xl border border-white/5 bg-white/[0.03] p-5 active:bg-white/[0.08]"
+              className="overflow-hidden rounded-3xl"
             >
-              <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/10">
-                <Ionicons name="search-outline" size={rf(3)} color="#60A5FA" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-main-bold text-lg text-white">
-                  JOIN GAME
-                </Text>
-                <Text className="font-main-regular text-sm text-white/40">
-                  Search nearby lobbies
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={rf(2)}
-                color="rgba(255,255,255,0.5)"
-              />
-            </Pressable>
-          </View>
+              <LinearGradient
+                colors={["#2563EB33", "#2563EB10"]}
+                className="flex-row items-center border border-blue-400/20 p-5"
+              >
+                <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/20">
+                  <Ionicons
+                    name="search-outline"
+                    size={rf(3)}
+                    color="#60A5FA"
+                  />
+                </View>
 
-          <Pressable onPress={onClose} className="mb-8 self-center">
-            <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white/20">
-              Close Menu
-            </Text>
-          </Pressable>
-        </View>
+                <View className="flex-1">
+                  <Text className="font-main-bold text-lg text-white">
+                    JOIN GAME
+                  </Text>
+                  <Text className="text-sm text-white/40">
+                    Find nearby players
+                  </Text>
+                </View>
+
+                <Ionicons name="arrow-forward" size={rf(2)} color="#60A5FA" />
+              </LinearGradient>
+            </Pressable>
+
+            {/* CLOSE TEXT */}
+            <View className="mt-6 items-center">
+              <Text className="text-xs uppercase tracking-widest text-white/30">
+                Tap outside to close
+              </Text>
+            </View>
+          </BlurView>
+        </Pressable>
       </Pressable>
     </Modal>
   );
