@@ -1,132 +1,174 @@
-import React from "react";
-import { View, Image } from "react-native";
+import React, { useMemo, useEffect } from "react";
+import { View, Image, Platform, StyleSheet } from "react-native";
 import { Text } from "@/components/Text";
-import Animated, { FadeIn, ZoomIn, FadeInDown } from "react-native-reanimated";
-import { wp, hp, rf } from "@/utils/responsive";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
+  Easing,
+} from "react-native-reanimated";
+import { wp, hp } from "@/utils/responsive";
 
-/**
- * Full-screen private role reveal.
- * Shows the ACTUAL role image (thief.png, advisor.png, etc.)
- * Displayed AFTER both King and Police are publicly revealed.
- * Only Thief and Advisor see this — Police/King stay on the board.
- */
+// --- Types & Constants ---
+interface RoleConfig {
+  color: string;
+  subtitle: string;
+  label: string;
+}
 
-const roleImages: Record<string, any> = {
+interface Props {
+  role: "King" | "Thief" | "Advisor" | "Police";
+  round: number;
+}
+
+const ROLE_ASSETS: Record<string, any> = {
   King: require("@/assets/images/chorsipahi/king.png"),
   Advisor: require("@/assets/images/chorsipahi/advisor.png"),
   Thief: require("@/assets/images/chorsipahi/thief.png"),
   Police: require("@/assets/images/chorsipahi/police.png"),
 };
 
-const ROLE_CONFIG: Record<string, { color: string; subtitle: string; label: string }> = {
+const ROLE_CONFIGS: Record<string, RoleConfig> = {
   Thief: {
     color: "#EF4444",
-    subtitle: "Stay hidden! The Police is looking for you...",
+    subtitle: "Stay in the shadows. Don't get caught.",
     label: "THE THIEF",
   },
   Advisor: {
-    color: "#A78BFA",
-    subtitle: "Your identity is hidden. Wait for the Police's guess.",
+    color: "#8B5CF6",
+    subtitle: "Your wits are your greatest weapon.",
     label: "THE ADVISOR",
   },
   King: {
-    color: "#FACC15",
-    subtitle: "You rule the kingdom.",
+    color: "#F59E0B",
+    subtitle: "Command the realm with wisdom.",
     label: "THE KING",
   },
   Police: {
-    color: "#60A5FA",
-    subtitle: "Find the Thief!",
+    color: "#3B82F6",
+    subtitle: "Justice is in your hands.",
     label: "THE POLICE",
   },
 };
 
-interface Props {
-  role: string;
-  playerName?: string;
-  round: number;
-}
+export const RoleRevealView: React.FC<Props> = React.memo(({ role, round }) => {
+  // Memoize configs to prevent re-instantiation
+  const config = useMemo(
+    () => ROLE_CONFIGS[role] || ROLE_CONFIGS.Thief,
+    [role],
+  );
+  const image = useMemo(() => ROLE_ASSETS[role] || ROLE_ASSETS.Thief, [role]);
 
-export const RoleRevealView: React.FC<Props> = ({ role, playerName, round }) => {
-  const config = ROLE_CONFIG[role] || ROLE_CONFIG.Thief;
-  const image = roleImages[role] || roleImages.Thief;
+  // Float animation: Using linear timing for performance consistency
+  const float = useSharedValue(0);
+  useEffect(() => {
+    float.value = withRepeat(
+      withSequence(
+        withTiming(-15, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+    );
+  }, []);
+
+  const floatStyle = useAnimatedStyle(
+    () => ({
+      transform: [{ translateY: float.value }],
+    }),
+    [],
+  );
 
   return (
-    <View className="flex-1 items-center justify-center bg-[#050508]">
-      {/* Round tag */}
-      <Animated.View entering={FadeIn.delay(100).duration(400)}>
-        <View className="mb-6 rounded-full border border-white/10 bg-white/5 px-5 py-1.5">
-          <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-white/40">
-            Round {round}
-          </Text>
+    <View
+      style={styles.container}
+      // Performance optimization for Android
+      renderToHardwareTextureAndroid={Platform.OS === "android"}
+      // Performance optimization for iOS
+      shouldRasterizeIOS={Platform.OS === "ios"}
+    >
+      {/* Round Badge */}
+      <Animated.View entering={FadeIn.duration(800)}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>ROUND {round}</Text>
         </View>
       </Animated.View>
 
-      {/* "Your Secret Role" label */}
-      <Animated.View entering={FadeIn.delay(200).duration(400)}>
-        <Text className="font-main-bold text-[9px] uppercase tracking-[8px] text-white/20 mb-4">
-          Your Secret Role
-        </Text>
-      </Animated.View>
-
-      {/* Role title with glow */}
-      <Animated.View entering={FadeInDown.delay(300).duration(500)}>
-        <Text
-          style={{
-            color: config.color,
-            textShadowColor: config.color,
-            textShadowRadius: 20,
-            fontSize: rf(4),
-          }}
-          className="font-main-bold text-center tracking-[6px] mb-6"
-        >
+      {/* Role Title */}
+      <Animated.View entering={FadeInDown.delay(200).duration(600)}>
+        <Text style={[styles.title, { color: config.color }]}>
           {config.label}
         </Text>
       </Animated.View>
 
-      {/* BIG role image (thief.png / advisor.png) */}
-      <Animated.View
-        entering={ZoomIn.delay(400).duration(600).springify()}
-        className="items-center justify-center"
-      >
-        {/* Colored glow behind image */}
-        <View
-          style={{ backgroundColor: config.color, opacity: 0.08 }}
-          className="absolute w-72 h-72 rounded-full"
-        />
-
-        <Image
-          source={image}
-          style={{ width: wp(75), height: hp(35) }}
-          resizeMode="contain"
-        />
+      {/* Optimized Floating Image */}
+      <Animated.View style={[styles.imageContainer, floatStyle]}>
+        <Image source={image} style={styles.image} resizeMode="contain" />
       </Animated.View>
 
-      {/* Subtitle */}
-      <Animated.View entering={FadeIn.delay(800).duration(400)} className="mt-8 px-10">
-        <Text
-          className="text-center font-main-regular text-sm leading-5"
-          style={{ color: `${config.color}90` }}
-        >
-          {config.subtitle}
-        </Text>
-      </Animated.View>
-
-      {/* Police investigating indicator */}
+      {/* Glassmorphism Card */}
       <Animated.View
-        entering={FadeIn.delay(1200).duration(400)}
-        className="mt-10 flex-row items-center rounded-2xl border border-blue-500/15 bg-blue-500/8 px-5 py-3"
+        entering={FadeInDown.delay(400).duration(600)}
+        style={styles.card}
       >
-        <Text style={{ fontSize: 18 }}>🔍</Text>
-        <View className="ml-3">
-          <Text className="font-main-bold text-xs text-blue-400">
-            Police is investigating...
-          </Text>
-          <Text className="font-main-regular text-[10px] text-white/30 mt-0.5">
-            Waiting for their guess
-          </Text>
-        </View>
+        <Text style={styles.subtitle}>{config.subtitle}</Text>
       </Animated.View>
     </View>
   );
-};
+});
+
+// Production-grade styles: Separated to reduce render cycles
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#050508",
+  },
+  badge: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 99,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    marginBottom: 40,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 4,
+    color: "rgba(255,255,255,0.5)",
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "900",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  imageContainer: {
+    marginVertical: 40,
+  },
+  image: {
+    width: wp(75),
+    height: hp(35),
+  },
+  card: {
+    width: "80%",
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "rgba(255,255,255,0.7)",
+    textAlign: "center",
+    lineHeight: 24,
+  },
+});
