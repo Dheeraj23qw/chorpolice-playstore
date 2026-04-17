@@ -50,7 +50,7 @@ const BoardWithPopups = ({ g }: any) => {
       )}
 
       {/* Game Board */}
-      <View className="flex-1">
+      <View className="flex-1 bg-transparent">
         <GamePlaySection
           isPlayButtonDisabled={g.isPlayButtonDisabled}
           handlePlay={g.handlePlay}

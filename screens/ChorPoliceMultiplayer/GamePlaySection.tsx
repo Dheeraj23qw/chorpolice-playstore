@@ -37,10 +37,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 }) => {
   return (
     // Changed to transparent so the parent's Background Image shows through
-    <View
-      className="flex-1 bg-transparent      
-       style={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom }}"
-    >
+    <View className="flex-1 bg-transparent">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}

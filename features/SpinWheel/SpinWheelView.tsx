@@ -1,73 +1,68 @@
 import React, { memo } from "react";
 import { View, Image } from "react-native";
-// ✅ Import from reanimated
-import Animated, { useAnimatedStyle } from "react-native-reanimated"; 
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { Trophy } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { SpinWheelViewProps } from "./types";
 
-const SpinWheelView: React.FC<SpinWheelViewProps> = ({ spinAnim, segments }) => {
-  
-  // ✅ Define the animated style hook
+const SpinWheelView: React.FC<SpinWheelViewProps> = ({
+  spinAnim,
+  segments,
+}) => {
   const wheelStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { 
-          // Reanimated handles strings/degrees directly from the value
-          rotate: `${spinAnim.value}deg` 
-        },
-      ],
+      transform: [{ rotate: `${spinAnim.value}deg` }],
     };
   });
 
   return (
-    <View className="relative items-center justify-center my-10">
-      {/* 🌌 Background Ambient Glow */}
-      <View className="absolute h-[320px] w-[320px] rounded-full bg-indigo-500/10 blur-3xl" />
+    <View className="relative my-10 items-center justify-center">
+      {/* Glow */}
+      <View className="absolute h-[320px] w-[320px] rounded-full bg-indigo-500/10" />
 
-      {/* 🎡 Rotating Wheel Container */}
+      {/* WHEEL */}
       <Animated.View
-        style={wheelStyle} // ✅ Apply the hook here
-        className="w-[300px] h-[300px] rounded-full bg-zinc-900 border-[10px] border-zinc-950 overflow-hidden shadow-2xl"
+        style={wheelStyle}
+        className="h-[300px] w-[300px] overflow-hidden rounded-full border-[10px] border-zinc-950 bg-zinc-900"
       >
-        {segments.map((seg, i) => (
-          <View
-            key={i}
-            className="absolute w-1/2 h-1/2 items-center justify-center border-[0.5px] border-white/10"
-            style={{
-              top: i < 2 ? 0 : "50%",
-              left: i % 2 === 0 ? 0 : "50%",
-              backgroundColor: seg.bg,
-            }}
-          >
+        {/* GRID WRAPPER */}
+        <View className="flex-1 flex-row flex-wrap">
+          {segments.map((seg, i) => (
             <View
-              className="w-16 h-16 rounded-full items-center justify-center border-2 bg-white/5 shadow-lg"
-              style={{ borderColor: seg.color }}
+              key={i}
+              className="h-1/2 w-1/2 items-center justify-center"
+              style={{ backgroundColor: seg.bg }}
             >
-              <Image
-                source={seg.img}
-                className="w-11 h-11 rounded-full"
-                resizeMode="contain"
-              />
-            </View>
+              {/* Inner circle */}
+              <View
+                className="h-16 w-16 items-center justify-center rounded-full border-2 bg-white/5"
+                style={{ borderColor: seg.color }}
+              >
+                <Image
+                  source={seg.img}
+                  className="h-11 w-11 rounded-full"
+                  resizeMode="cover"
+                />
+              </View>
 
-            <Text className="text-[10px] font-main-bold text-white mt-2 tracking-[2px] uppercase">
-              {seg.label}
-            </Text>
-          </View>
-        ))}
+              <Text className="mt-2 font-main-bold text-[10px] uppercase tracking-[2px] text-white">
+                {seg.label}
+              </Text>
+            </View>
+          ))}
+        </View>
       </Animated.View>
 
-      {/* 🏆 Center Hub */}
-      <View className="absolute z-20 w-16 h-16 bg-zinc-950 rounded-full border-2 border-indigo-500 items-center justify-center shadow-2xl shadow-indigo-500/50">
+      {/* CENTER HUB */}
+      <View className="absolute z-20 h-16 w-16 items-center justify-center rounded-full border-2 border-indigo-500 bg-zinc-950">
         <Trophy size={rf(3.5)} color="#818cf8" />
       </View>
 
-      {/* 📍 Pointer */}
-      <View className="absolute -top-5 z-30 items-center" pointerEvents="none">
-        <View className="w-2 h-12 bg-white rounded-full shadow-sm" />
-        <View className="w-5 h-5 bg-indigo-500 rounded-full absolute -top-2 border-2 border-white shadow-md" />
+      {/* POINTER */}
+      <View className="pointer-events-none absolute -top-5 z-30 items-center">
+        <View className="h-12 w-2 rounded-full bg-white" />
+        <View className="absolute -top-2 h-5 w-5 rounded-full border-2 border-white bg-indigo-500" />
       </View>
     </View>
   );

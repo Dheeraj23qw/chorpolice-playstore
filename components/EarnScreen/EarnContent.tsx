@@ -28,29 +28,33 @@ export const EarnContent = ({
 }: Props) => {
   return (
     <>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        className="flex-1 bg-slate-950"
-        contentContainerClassName="pb-12 pt-4 px-5"
-      >
-        <WalletCard balance={coins} />
+      {/* ✅ HIDE CONTENT WHEN MODAL IS OPEN */}
+      {!isSpinModalVisible && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          className="flex-1 bg-slate-950"
+          contentContainerClassName="pb-12 pt-4 px-5"
+        >
+          <WalletCard balance={coins} />
 
-        <MilestonesSection
-          tiers={REWARD_TIERS}
-          coins={coins}
-          cardWidth={cardWidth}
-          onClaim={handleClaim}
-        />
+          <MilestonesSection
+            tiers={REWARD_TIERS}
+            coins={coins}
+            cardWidth={cardWidth}
+            onClaim={handleClaim}
+          />
 
-        <SpinToWinCard
-          isLocked={isLocked}
-          formattedTime={formattedTime}
-          onPress={() => {
-            if (!isLocked) toggleSpinModal();
-          }}
-        />
-      </ScrollView>
+          <SpinToWinCard
+            isLocked={isLocked}
+            formattedTime={formattedTime}
+            onPress={() => {
+              if (!isLocked) toggleSpinModal();
+            }}
+          />
+        </ScrollView>
+      )}
 
+      {/* MODAL ALWAYS RENDERS */}
       <SpinToWinModal
         isVisible={isSpinModalVisible}
         onClose={toggleSpinModal}

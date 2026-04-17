@@ -6,7 +6,6 @@ import { useFonts } from "expo-font";
 import store from "@/redux/store";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { useAppExit } from "@/hooks/useAppExit";
 import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
 import { AppState, View } from "react-native";
@@ -14,12 +13,14 @@ import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { notificationService } from "@/service/notification/NotificationService";
 import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { runAfterUI } from "@/utils/runAfterUI";
+import AppExitModal from "@/modal/AppExitModal";
+import { useAppExit } from "@/hooks/useAppExit";
 
 // Prevent splash from hiding until we are ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
-  useAppExit();
+  const { exitVisible, hideExitModal, exitApp } = useAppExit();
 
   /* ---------------- 🎧 Audio Restore ---------------- */
   useEffect(() => {
@@ -91,6 +92,12 @@ function AppLayout() {
         <Stack.Screen name="(social)" />
         <Stack.Screen name="(info)" />
       </Stack>
+
+      <AppExitModal
+        visible={exitVisible}
+        onCancel={hideExitModal}
+        onConfirm={exitApp}
+      />
     </View>
   );
 }
