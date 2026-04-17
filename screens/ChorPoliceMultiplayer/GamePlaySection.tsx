@@ -3,7 +3,7 @@ import { ScrollView, View } from "react-native";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
 import { Text } from "@/components/Text";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 interface GamePlaySectionProps {
   isPlayButtonDisabled: boolean;
   handlePlay: () => void;
@@ -36,8 +36,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   toggleModal,
 }) => {
   return (
-    // Changed to transparent so the parent's Background Image shows through
-    <View className="flex-1 bg-transparent">
+    <SafeAreaView className="flex-1 bg-transparent">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
@@ -125,6 +124,6 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
