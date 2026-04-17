@@ -8,10 +8,14 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+
 import { AppDispatch } from "@/redux/store";
 import { BotEngine } from "@/service/BotEngine";
 import { AudioEngine } from "@/audio/audioEngine";
 import { setIsGameReset } from "@/redux/reducers/playerReducer";
+
 import HeaderSection from "@/components/GameModeScreen/HeaderSection";
 import UserProfilecard from "@/components/GameModeScreen/UserProfilecard";
 import GameModeList from "@/components/GameModeScreen/GameModeList";
@@ -23,7 +27,6 @@ const GameModeScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
 
-  // Consolidate shared values
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.98);
   const bgScale = useSharedValue(1.1);
@@ -31,8 +34,6 @@ const GameModeScreen: React.FC = () => {
   useEffect(() => {
     BotEngine.prepareEngine(10);
     AudioEngine.stopAllExceptQuiz();
-
-    // Animation trigger
     opacity.value = withTiming(1, { duration: 600 });
     scale.value = withTiming(1, {
       duration: 600,
@@ -42,12 +43,10 @@ const GameModeScreen: React.FC = () => {
       duration: 1200,
       easing: Easing.out(Easing.ease),
     });
-
     const timer = setTimeout(() => dispatch(setIsGameReset(false)), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Optimized Consolidated Styles
   const contentStyle = useAnimatedStyle(() => ({
     opacity: isAnyModalOpen ? withTiming(0, { duration: 300 }) : opacity.value,
     transform: [{ scale: isAnyModalOpen ? 0.95 : scale.value }],
@@ -59,7 +58,7 @@ const GameModeScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-black">
-      {/* 🌌 BACKGROUND */}
+      {/* 1. BACKGROUND */}
       <Animated.Image
         source={require("@/assets/images/bg/image.png")}
         className="absolute h-full w-full"
@@ -67,10 +66,30 @@ const GameModeScreen: React.FC = () => {
         style={bgStyle}
       />
 
-      {/* 🌑 DARK OVERLAY - NativeWind utility */}
-      <View className="absolute h-full w-full bg-black/40" />
+      {/* 2. FULL-SCREEN ATMOSPHERIC FADE (Indigo Edition) */}
+      <BlurView intensity={25} tint="dark" className="absolute h-full w-full" />
+      <LinearGradient
+        colors={[
+          "rgba(15, 23, 42, 0.4)", // Subtle top dark
+          "transparent", // Clear mid
+          "rgba(99, 102, 241, 0.2)", // Mid-bottom indigo
+          "rgba(0, 0, 0, 0.95)", // Deep bottom focus
+        ]}
+        locations={[0, 0.25, 0.65, 1]}
+        className="absolute h-full w-full"
+      />
 
-      {/* 🎬 MAIN CONTENT */}
+      {/* 3. CENTER GLOW (Indigo Neon) */}
+      <LinearGradient
+        colors={[
+          "rgba(99, 102, 241, 0.22)",
+          "rgba(59, 130, 246, 0.12)",
+          "transparent",
+        ]}
+        className="absolute h-[800px] w-[800px] self-center rounded-full opacity-90 blur-3xl"
+      />
+
+      {/* 4. CONTENT */}
       <Animated.View
         style={[{ paddingTop: insets.top }, contentStyle]}
         className="flex-1"
