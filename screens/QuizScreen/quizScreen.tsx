@@ -20,6 +20,7 @@ import { NUM_QUESTIONS } from "@/constants/quizConstants";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { QuizLeaderboard } from "@/components/MultiPlayerQuizLeaderboard/QuizLeaderboard";
+import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -101,18 +102,7 @@ const QuizScreen = () => {
             className="absolute h-full w-full opacity-20"
             resizeMode="cover"
           />
-          <View className="items-center rounded-3xl border border-white/10 bg-white/5 p-8">
-            <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20">
-              <Ionicons name="people-outline" size={32} color="#818cf8" />
-            </View>
-            <Text className="font-main-bold text-lg text-white">
-              Waiting for Friends
-            </Text>
-            <Text className="font-main-regular mt-2 text-center text-xs uppercase tracking-widest text-white/40">
-              Other players are still{"\n"}answering the question...
-            </Text>
-            <View className="mt-6 h-1 w-20 rounded-full bg-indigo-500/50" />
-          </View>
+          <WaitingState />
         </View>
       )}
 
