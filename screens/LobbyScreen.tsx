@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useEffect } from "react";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { playerImages } from "@/constants/playerData";
-import { DebugOverlay } from "@/components/DebugOverlay";
+// import { DebugOverlay } from "@/components/DebugOverlay";
 import { BettingModal } from "@/modal/BettingModal";
 import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
 import { LobbyHeader } from "@/components/Lobby/LobbyHeader";
@@ -61,11 +61,9 @@ const LobbyScreen: React.FC = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-black"
     >
-      {/* 🧪 Debug */}
-      <DebugOverlay />
+      {/* <DebugOverlay /> */}
 
-      {/* 🌌 BACKGROUND (ALWAYS VISIBLE) */}
-      {/* 🌌 BACKGROUND (PREMIUM) */}
+
       <View className="absolute h-full w-full">
         {/* IMAGE */}
         <Image

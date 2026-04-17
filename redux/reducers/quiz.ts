@@ -24,7 +24,10 @@ const difficultySlice = createSlice({
   reducers: {
     setDifficulty: (
       state,
-      action: PayloadAction<{ level: "easy" | "medium" | "hard", table?: (number | string)[][] }>,
+      action: PayloadAction<{
+        level: "easy" | "medium" | "hard";
+        table?: (number | string)[][];
+      }>,
     ) => {
       const { level, table } = action.payload;
       state.level = level;
@@ -43,13 +46,9 @@ const difficultySlice = createSlice({
     },
     setCorrectAnswers: (state, action: PayloadAction<number>) => {
       state.correctQuestions = action.payload;
-
-      // Check if all questions are correct
-      if (state.correctQuestions === state.totalQuestions) {
-        state.isWinner = true;
-      } else {
-        state.isWinner = false;
-      }
+    },
+    setWinner: (state, action: PayloadAction<boolean>) => {
+      state.isWinner = action.payload;
     },
   },
 });
@@ -133,7 +132,7 @@ const getTotalScoreUpToRound = (
   return total;
 };
 
-export const { setDifficulty, resetDifficulty, setCorrectAnswers } =
+export const { setDifficulty, resetDifficulty, setCorrectAnswers, setWinner } =
   difficultySlice.actions;
 
 export default difficultySlice.reducer;

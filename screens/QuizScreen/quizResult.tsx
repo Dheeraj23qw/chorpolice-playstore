@@ -9,7 +9,7 @@ import { Text } from "@/components/Text";
 import useRandomMessage from "@/hooks/useRandomMessage";
 import { AppDispatch, RootState } from "@/redux/store";
 import { playerImages } from "@/constants/playerData";
-import { resetDifficulty } from "@/redux/reducers/quiz";
+import { resetDifficulty, setWinner } from "@/redux/reducers/quiz";
 
 import { ResultInfo } from "./components/reseltInfo";
 import { AudioEngine } from "@/audio/audioEngine";
@@ -65,6 +65,16 @@ export default function QuizResult() {
             b.correctCount - a.correctCount || a.totalTime - b.totalTime,
         )
     : [];
+
+  useEffect(() => {
+    if (standings.length > 0) {
+      const MY_PLAYER_ID = "host_id";
+      const winnerId = standings[0].playerId;
+
+      // Dispatch the winner status
+      dispatch(setWinner(MY_PLAYER_ID === winnerId));
+    }
+  }, [standings, dispatch]);
 
   const handleNavigation = useCallback(
     (targetRoute: string) => {

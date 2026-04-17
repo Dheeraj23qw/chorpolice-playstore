@@ -18,37 +18,42 @@ export function useQuizReward() {
 
     const accuracy = correctQuestions / totalQuestions;
 
-    // Define maximum rewards per difficulty
     const maxRewardTable = {
       easy: 30,
       medium: 80,
       hard: 200,
     };
 
-    // Calculate reward: accuracy (0.0 to 1.0) * max reward
-    // Math.floor ensures you get a whole number of coins
-    const totalReward = Math.floor(accuracy * maxRewardTable[level]);
+    const baseReward = maxRewardTable[level];
+    let totalReward: number;
+
+    if (accuracy < 0.5) {
+      // 📉 NEGATIVE MARKING: 
+      // If accuracy < 50%, deduct 50% of the max potential reward as a penalty
+      totalReward = Math.floor(baseReward * -0.5);
+    } else {
+      // ✅ POSITIVE MARKING:
+      // Accuracy 50% to 100% scales the reward proportionally
+      totalReward = Math.floor(accuracy * baseReward);
+    }
 
     return { totalReward, accuracy };
   }, [level, correctQuestions, totalQuestions]);
 
   useEffect(() => {
     if (!level || hasRecorded.current) return;
-
     hasRecorded.current = true;
 
     const { totalReward, accuracy } = rewardData;
 
-    // Only dispatch if reward is greater than 0
-    if (totalReward > 0) {
-      dispatch(
-        applyTransaction({
-          amount: totalReward,
-          reason: "Quiz Accuracy Reward",
-          source: "quiz_reward",
-        }),
-      );
-    }
+    // Dispatch even if reward is negative to update the user's wallet balance (deduction)
+    dispatch(
+      applyTransaction({
+        amount: totalReward, // If totalReward is negative, this will decrease balance
+        reason: totalReward >= 0 ? "Quiz Accuracy Reward" : "Quiz Penalty",
+        source: "quiz_reward",
+      }),
+    );
 
     const entry: QuizStatsEntry = {
       id: Date.now().toString(),
