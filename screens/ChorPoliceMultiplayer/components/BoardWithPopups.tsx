@@ -68,7 +68,7 @@ const BoardWithPopups = ({ g }: any) => {
             g.gamePhase === "result"
               ? "Round Complete!"
               : g.canInteract
-                ? "Tap a card to reveal the Thief 🔍"
+                ? "Tap a card to find the Thief 🔍"
                 : "Watching..."
           }
           getCardStyle={g.getCardStyle}

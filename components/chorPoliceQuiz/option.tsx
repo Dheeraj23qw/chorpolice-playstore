@@ -1,116 +1,87 @@
-import React, { useEffect, useState, memo } from "react";
+import React from "react";
 import { View, TouchableOpacity } from "react-native";
 import { rf, hp } from "@/utils/responsive";
 import { Text } from "../Text";
+import { WaitingState } from "../MultiPlayerQuizLeaderboard/WaitingState";
 
 type QuizOptionsProps = {
   playerName: string;
   options: number[];
   onOptionPress: (score: number) => void;
-  isOptionDisabled: boolean;
+  isActivePlayer: boolean;
 };
 
 const QuizOptions: React.FC<QuizOptionsProps> = ({
   playerName,
   options,
   onOptionPress,
-  isOptionDisabled,
+  isActivePlayer,
 }) => {
-  const [isOptionsDisabledForSeconds, setIsOptionsDisabledForSeconds] =
-    useState(true);
-
-  const optionsDisabled = isOptionDisabled || isOptionsDisabledForSeconds;
-
-  useEffect(() => {
-    setIsOptionsDisabledForSeconds(true);
-    const timer = setTimeout(() => {
-      setIsOptionsDisabledForSeconds(false);
-    }, 700);
-
-    return () => clearTimeout(timer);
-  }, [playerName]);
-
   const handleOptionPress = (score: number) => {
-    if (!optionsDisabled) {
-      onOptionPress(score);
-    }
+    if (!isActivePlayer) return;
+    onOptionPress(score);
   };
+
+  // 🕒 FULL REPLACEMENT STATE
+  if (!isActivePlayer) {
+    return (
+      <>
+        <View className="mb-8 items-center">
+          <Text
+            style={{ fontSize: rf(2.1) }}
+            className="text-center font-main-bold tracking-wide text-white/90"
+          >
+            <Text className="font-main-bold text-indigo-400">{playerName}</Text>
+            {" guess your score ✨"}
+          </Text>
+        </View>
+        <WaitingState />
+      </>
+    );
+  }
 
   return (
     <View className="w-full px-5">
-      {/* 🎯 Header */}
+      {/* Header */}
       <View className="mb-8 items-center">
         <Text
           style={{ fontSize: rf(2.1) }}
-          className="text-white/90 text-center font-main-bold tracking-wide"
+          className="text-center font-main-bold tracking-wide text-white/90"
         >
-          <Text className="text-indigo-400 font-main-bold ">
-            {playerName}
-          </Text>
-          , guess your score ✨
+          <Text className="font-main-bold text-indigo-400">{playerName}</Text>
+          {" guess your score ✨"}
         </Text>
       </View>
 
-      {/* 🎮 Options */}
+      {/* OPTIONS */}
       <View>
-        {options.map((score, index) => {
-          const isDisabled = optionsDisabled;
-
-          return (
-            <TouchableOpacity
-              key={`${playerName}-${index}`}
-              activeOpacity={0.85}
-              onPress={() => handleOptionPress(score)}
-              disabled={isDisabled}
-              style={{
-                marginBottom: hp(2.4),
-                minHeight: hp(9),
-                shadowColor: isDisabled ? "transparent" : "#6366F1",
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.25,
-                shadowRadius: 18,
-                elevation: isDisabled ? 0 : 6,
-              }}
-              className={`
-                relative overflow-hidden
-                w-full rounded-[36px] items-center justify-center
-                border
-                ${
-                  isDisabled
-                    ? "bg-white/[0.03] border-white/5 opacity-40"
-                    : "bg-white/[0.10] border-white/20"
-                }
-              `}
+        {options.map((score, index) => (
+          <TouchableOpacity
+            key={`${playerName}-${index}`}
+            activeOpacity={0.85}
+            onPress={() => handleOptionPress(score)}
+            style={{
+              marginBottom: hp(2.4),
+              minHeight: hp(9),
+              shadowColor: "#6366F1",
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.25,
+              shadowRadius: 18,
+              elevation: 6,
+            }}
+            className="w-full items-center justify-center rounded-[36px] border border-white/20 bg-white/[0.10]"
+          >
+            <Text
+              style={{ fontSize: rf(3.4) }}
+              className="font-main-bold tracking-wider text-white"
             >
-              {/* ✨ Top Glass Shine */}
-              {!isDisabled && (
-                <View className="absolute top-[6px] left-10 right-10 h-[2px] rounded-full bg-white/30" />
-              )}
-
-              {/* 🌈 Inner Glow */}
-              {!isDisabled && (
-                <View className="absolute inset-0 rounded-[36px] border border-indigo-400/10" />
-              )}
-
-              {/* 🔢 Score */}
-              <Text
-                style={{ fontSize: rf(3.4) }}
-                className={`
-                  font-main-bold  tracking-wider
-                  ${isDisabled ? "text-white/25" : "text-white"}
-                `}
-              >
-                {score}
-              </Text>
-
-              {/* 🪞 Bottom Bevel */}
-              <View className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/15" />
-            </TouchableOpacity>
-          );
-        })}
+              {score}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
 };
 
-export default memo(QuizOptions);
+export default React.memo(QuizOptions);

@@ -1,58 +1,33 @@
-import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
+import React, { useMemo, useCallback, memo } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
-import Animated, { FadeIn, ZoomIn, Layout } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { RootState } from "@/redux/store";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
 import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
 import { ActionButtons } from "@/components/leaderBoardScreen/ActionButtons";
-import { VictoryCelebration } from "@/components/VictoryCelebration";
 import { playerImages } from "@/constants/playerData";
 import { Text } from "@/components/Text";
-import { hp } from "@/utils/responsive";
-import { BlurView } from "expo-blur";
 
-// Memoize to ensure premium, stutter-free performance
 const MemoizedLeaderboard = memo(Leaderboard);
 const MemoizedWinnerSection = memo(WinnerSection);
 
 const FinalResultView = ({ onExit, onPlayAgain }: any) => {
-  const playerScoresRedux = useSelector(
-    (state: RootState) => state.player.playerScores,
-  );
-  const selectedImages = useSelector(
-    (state: RootState) => state.player.selectedImages,
-  );
-  const playerNamesList = useSelector(
-    (state: RootState) => state.player.playerNames,
-  );
+  const playerScoresRedux = useSelector((state: RootState) => state.player.playerScores);
+  const selectedImages = useSelector((state: RootState) => state.player.selectedImages);
+  const playerNamesList = useSelector((state: RootState) => state.player.playerNames);
 
   const sortedScores = useMemo(() => {
     if (!playerScoresRedux?.length) return [];
-    return [...playerScoresRedux].sort(
-      (a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0),
-    );
+    return [...playerScoresRedux].sort((a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0));
   }, [playerScoresRedux]);
 
   const winner = sortedScores[0];
-  const winnerIdx = playerNamesList.findIndex(
-    (p) => p.name === winner?.playerName,
-  );
-  const winnerImage =
-    winnerIdx >= 0
-      ? playerImages[selectedImages[winnerIdx]]?.src
-      : playerImages[1]?.src;
-  const totalPot =
-    ChorPoliceEngine.state.totalPot || ChorPoliceEngine.state.stake * 4;
-
-  const [showCelebration, setShowCelebration] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setShowCelebration(false), 4000);
-    return () => clearTimeout(timer);
-  }, []);
+  const winnerIdx = playerNamesList.findIndex((p) => p.name === winner?.playerName);
+  const winnerImage = winnerIdx >= 0 ? playerImages[selectedImages[winnerIdx]]?.src : playerImages[1]?.src;
+  const totalPot = ChorPoliceEngine.state.totalPot || ChorPoliceEngine.state.stake * 4;
 
   const handleShare = useCallback(async () => {
     const { captureScreen } = require("react-native-view-shot");
@@ -62,44 +37,37 @@ const FinalResultView = ({ onExit, onPlayAgain }: any) => {
   }, []);
 
   return (
-    <View className="flex-1">
-      {showCelebration && (
-        <VictoryCelebration type="GOLD" intensity="MEDIUM" duration={4000} />
-      )}
-
-      {/* WINNER SECTION: Pinned outside the ScrollView */}
+    // SafeAreaView handles the top notch and bottom home indicator automatically
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      
+      {/* WINNER SECTION */}
       {winner && (
-        <Animated.View entering={ZoomIn.duration(500)} className="pt-4">
+        <View style={styles.winnerContainer}>
           <MemoizedWinnerSection
             winnerName={winner.playerName}
             winnerImage={winnerImage}
             winner={winner}
           />
-        </Animated.View>
+        </View>
       )}
 
+      {/* POT SECTION */}
       {totalPot > 0 && (
-        <Animated.View
-          entering={FadeIn.delay(200)}
-          className="mb-3 items-center"
-        >
-          {/* Simple Pill Border */}
-          <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-500/30 bg-indigo-950/20 px-3 py-3">
-            <Text className="text-base font-medium text-indigo-100">
-              You won
-            </Text>
-            <Text className="mx-2 text-base font-bold text-white">
+        <View style={styles.potContainer}>
+          <View style={styles.potPill}>
+            <Text style={styles.potText}>You won</Text>
+            <Text style={styles.potAmount}>
               + {Number(totalPot || 0).toLocaleString()} coins
             </Text>
-            <Text className="text-base">💰⚡</Text>
+            <Text style={styles.potEmoji}>💰⚡</Text>
           </View>
-        </Animated.View>
+        </View>
       )}
 
-      {/* LIST SECTION: Scrolls independently underneath the winner */}
+      {/* LIST SECTION */}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false} // Clean premium look
+        showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
       >
         <MemoizedLeaderboard
@@ -107,24 +75,53 @@ const FinalResultView = ({ onExit, onPlayAgain }: any) => {
           playerNames={playerNamesList}
           selectedImages={selectedImages}
         />
-        <Animated.View entering={FadeIn.delay(600)} className="mb-10 mt-8">
+        <View style={styles.buttonContainer}>
           <ActionButtons
             handlePlayAgain={onPlayAgain}
             handleShare={handleShare}
             isButtonDisabled={false}
           />
-        </Animated.View>
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a', // Set background color here to avoid flashing
+  },
+  winnerContainer: {
+    paddingTop: 16,
+  },
+  potContainer: {
+    marginBottom: 12,
+    alignItems: "center",
+  },
+  potPill: {
+    width: "92%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.3)",
+    backgroundColor: "rgba(30, 27, 75, 0.4)",
+    paddingVertical: 12,
+  },
+  potText: { fontSize: 16, fontWeight: "500", color: "#e0e7ff" },
+  potAmount: { marginHorizontal: 8, fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
+  potEmoji: { fontSize: 16 },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
   },
+  buttonContainer: {
+    marginBottom: 40,
+    marginTop: 32,
+  },
 });
 
-export default FinalResultView;
+export default memo(FinalResultView);

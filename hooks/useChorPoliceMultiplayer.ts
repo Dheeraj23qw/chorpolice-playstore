@@ -656,7 +656,7 @@ export const useChorPoliceMultiplayer = () => {
         image: pImg[sImg[playerIdx]]?.src ?? null,
         message: isCorrect
           ? `guessed correctly! +2000 🎉`
-          : `$guessed wrong! -2000 😢`,
+          : `guessed wrong! -2000 😢`,
         name: player.name,
         imageType: pImg[sImg[playerIdx]]?.type ?? null,
       });

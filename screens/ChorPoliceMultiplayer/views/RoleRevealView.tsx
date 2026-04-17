@@ -46,7 +46,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   King: {
     color: "#F59E0B",
-    subtitle: "Lead your friends with kindness.",
+    subtitle: "Help police to catch the  real thief.",
     label: "THE KING",
   },
   Police: {
