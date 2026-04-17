@@ -3,7 +3,6 @@ import { View } from "react-native";
 
 import ScoreTable from "@/modal/ShowTableModal";
 import OverlayPopUp from "@/modal/overlaypop";
-import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 
 import { GamePlaySection } from "../GamePlaySection";
 

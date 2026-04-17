@@ -15,6 +15,7 @@ import ResultView from "./views/ResultView";
 import RoundVideoView from "./views/RoundVideoView";
 import ScoreQuizView from "./views/ScoreQuizView";
 import FinalResultView from "./views/FinalResultView";
+import VideoPlayerComponent from "@/components/IntroVideo";
 
 const ChorPoliceMultiplayerScreen = () => {
   const insets = useSafeAreaInsets();
@@ -31,6 +32,17 @@ const ChorPoliceMultiplayerScreen = () => {
 
   /* ───────── PHASE ROUTER ───────── */
   const renderView = () => {
+    if (g.gamePhase === "video_transition") {
+      return (
+        <VideoPlayerComponent
+          videoIndex={1}
+          onVideoEnd={() => {
+            // Move to whichever phase was queued
+            g.setGamePhase(g.nextPhase);
+          }}
+        />
+      );
+    }
     switch (g.gamePhase) {
       case "waiting":
         return <WaitingView g={g} />;

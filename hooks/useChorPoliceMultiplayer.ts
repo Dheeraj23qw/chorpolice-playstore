@@ -32,6 +32,7 @@ import { revealAllCards } from "./useRajaMantriGame/utils/revealAllCardsUtils";
  */
 
 type GamePhase =
+  | "video_transition"
   | "waiting"
   | "dealing"
   | "police_turn"
@@ -50,7 +51,11 @@ export const useChorPoliceMultiplayer = () => {
 
   const localPlayerId = "host_id";
   const isHost = true;
-
+  const [nextPhase, setNextPhase] = useState<GamePhase>("score_quiz");
+  const playTransition = useCallback((afterPhase: GamePhase) => {
+    setNextPhase(afterPhase);
+    setGamePhase("video_transition");
+  }, []);
   // ─── Card / Flip state ───
   const [flipAnims, setFlipAnims] = useState<Animated.Value[]>(() =>
     Array(4)
@@ -401,6 +406,7 @@ export const useChorPoliceMultiplayer = () => {
             setQuizOptionDisabled(false);
             quizOptionDisabledRef.current = false;
             setGamePhase("score_quiz");
+            playTransition("score_quiz");
           } else {
             console.log(`${D} ▶️ Ready for next round — playing round video`);
             setFlipAnims(
@@ -428,6 +434,7 @@ export const useChorPoliceMultiplayer = () => {
       if (packet.type === CP.GAME_END && packet.reason === "completed") {
         console.log(`${D} 🏁 GAME END — completed`);
         setGamePhase("final_result");
+        playTransition("final_result");
 
         if (
           packet.leaderboard?.[0]?.id === localPlayerId &&
@@ -648,8 +655,8 @@ export const useChorPoliceMultiplayer = () => {
       setPlayerData({
         image: pImg[sImg[playerIdx]]?.src ?? null,
         message: isCorrect
-          ? `${player.name} guessed correctly! +2000 🎉`
-          : `${player.name} guessed wrong! -2000 😢`,
+          ? `guessed correctly! +2000 🎉`
+          : `$guessed wrong! -2000 😢`,
         name: player.name,
         imageType: pImg[sImg[playerIdx]]?.type ?? null,
       });
@@ -674,19 +681,17 @@ export const useChorPoliceMultiplayer = () => {
 
     const players = ChorPoliceEngine.state.players;
     const scores = ChorPoliceEngine.state.scores;
+
     if (quizPlayerIndex >= players.length) {
-      // All players have guessed — end the game
       console.log(`${D} 🎯 All players finished quiz — ending game`);
       setQuizDone(true);
 
-      // Sync final scores to Redux for result screen
       const finalScores = players.map((p) => ({
         playerName: p.name,
         totalScore: scores[p.id]?.totalScore ?? 0,
       }));
       dispatch(updateReduxScores(finalScores));
 
-      // Trigger game end after a short delay
       const t = setTimeout(() => {
         handleIncomingPacket({
           type: MODES.CHOR_POLICE.GAME_END,
@@ -704,16 +709,30 @@ export const useChorPoliceMultiplayer = () => {
       `${D} 🎯 Quiz for player ${player.name} (score: ${correctScore})`,
     );
 
-    // Generate 3 options: correct + 2 nearby wrong answers
-    const variations = [500, 800, 1000, 1500];
-    const opts = new Set<number>();
-    opts.add(correctScore);
-    while (opts.size < 3) {
-      const v = variations[Math.floor(Math.random() * variations.length)];
-      const wrong = Math.max(0, correctScore + (Math.random() < 0.5 ? -v : v));
-      if (!opts.has(wrong)) opts.add(wrong);
+    // --- YOUR CUSTOM LOGIC ---
+    const generateRandomScore = (baseScore: number) => {
+      const variations = [500, 800];
+      const variation =
+        variations[Math.floor(Math.random() * variations.length)];
+      return Math.max(
+        0,
+        baseScore + (Math.random() < 0.5 ? -variation : variation),
+      );
+    };
+
+    const randomOptions = new Set<number>();
+    randomOptions.add(correctScore);
+
+    while (randomOptions.size < 3) {
+      const randomScore = generateRandomScore(correctScore);
+      if (!randomOptions.has(randomScore)) {
+        randomOptions.add(randomScore);
+      }
     }
-    const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+
+    const shuffled = Array.from(randomOptions).sort(() => Math.random() - 0.5);
+    // -------------------------
+
     setQuizOptions(shuffled);
     setQuizOptionDisabled(false);
     quizOptionDisabledRef.current = false;
@@ -721,13 +740,13 @@ export const useChorPoliceMultiplayer = () => {
 
     // If this player is a bot, auto-answer after a delay
     if (player.isBot) {
-      const currentIdx = quizPlayerIndex; // capture for closure
+      const currentIdx = quizPlayerIndex;
       const botDelay = 1500 + Math.floor(Math.random() * 2000);
       const t = setTimeout(() => {
-        // ✅ FIX: Check ref (not stale state) so bot isn't blocked
         if (quizOptionDisabledRef.current) return;
         quizOptionDisabledRef.current = true;
         setQuizOptionDisabled(true);
+
         // Bots have 40% chance of guessing correctly
         const botGuess =
           Math.random() < 0.4
@@ -738,11 +757,9 @@ export const useChorPoliceMultiplayer = () => {
       timerRefs.current.push(t);
     }
   }, [gamePhase, quizPlayerIndex, quizDone, processQuizAnswer]);
-
   // Human player quiz handler
   const handleQuizOption = useCallback(
     (selectedScore: number) => {
-      // ✅ FIX: Use ref for guard to avoid stale closure
       if (quizOptionDisabledRef.current || gamePhase !== "score_quiz") return;
       quizOptionDisabledRef.current = true;
       setQuizOptionDisabled(true);
@@ -753,11 +770,20 @@ export const useChorPoliceMultiplayer = () => {
 
   /* ─── FINAL RESULT EXIT ─── */
   const handleFinalExit = useCallback(() => {
+    // 1. Immediate Engine/Bot Cleanup
     ChorPoliceEngine.reset();
     ChorPoliceBotBehavior.reset();
     dispatch(resetDifficulty());
-    router.dismissAll();
-    router.replace("/mode-select" as any);
+
+    // 2. Clear all active timers to prevent lingering 'bot' actions
+    timerRefs.current.forEach(clearTimeout);
+    timerRefs.current = [];
+
+    // 3. Navigate after the current UI frame is finished
+    requestAnimationFrame(() => {
+      router.dismissAll();
+      router.replace("/mode-select" as any);
+    });
   }, [dispatch, router]);
 
   /* ─── PLAY AGAIN — same players, same photos, same bid ─── */
@@ -895,7 +921,6 @@ export const useChorPoliceMultiplayer = () => {
     handleCancelExit,
     handleConfirmExit,
     handleVideoEnd,
-    // Score quiz
     quizPlayerIndex,
     quizOptions,
     quizOptionDisabled,
@@ -905,5 +930,8 @@ export const useChorPoliceMultiplayer = () => {
     handlePlayAgain,
     isHost,
     localPlayerId,
+    nextPhase,
+    playTransition,
+    setGamePhase,
   };
 };
