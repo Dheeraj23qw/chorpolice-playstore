@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { toast } from "@/components/feedback/toast";
 import { useLanDiscovery } from "@/hooks/useLanDiscovery";
-import { loadUsername, saveUsername } from "@/features/Avatar";
+import { loadUsername, saveUsername } from "@/storage/userStorage";
 import { setSelectedImages } from "@/redux/reducers/playerReducer";
 import { setDifficulty, generateTable } from "@/redux/reducers/quiz";
 import { MODES, NETWORK } from "@/constants/Networking";
@@ -20,6 +20,7 @@ import { BotEngine } from "@/service/BotEngine";
 import { QuizEngine } from "@/service/QuizEngine";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
+import { storage } from "@/storage/mmkv";
 
 export interface Player {
   id: string;

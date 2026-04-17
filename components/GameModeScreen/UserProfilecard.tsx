@@ -14,7 +14,7 @@ import {
   saveAvatar,
   loadUsername,
   saveUsername,
-} from "@/features/Avatar";
+} from "@/storage/userStorage";
 import { useEarnLogic } from "@/hooks/useEarnLogic";
 
 const UserProfileCard = () => {

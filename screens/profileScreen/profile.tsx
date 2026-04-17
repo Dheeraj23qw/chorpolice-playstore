@@ -19,7 +19,7 @@ import AvatarWithLevel from "@/components/ProfileScreen/AvatarWithLevel";
 import LevelProgressBar from "@/components/ProfileScreen/LevelProgressBar";
 import StatCard from "@/components/ProfileScreen/StatCard";
 import AchievementCard from "@/components/ProfileScreen/AchievementCard";
-import { loadAvatar, saveAvatar } from "@/features/Avatar";
+import { loadAvatar, saveAvatar } from "@/storage/userStorage";
 
 const USER_IMAGE =
   "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1000&auto=format&fit=crop";
@@ -141,18 +141,18 @@ export default function UserProfile() {
         <AvatarWithLevel
           imageUri={avatarUri || USER_IMAGE}
           level={level}
-          onPress={changeAvatar} 
+          onPress={changeAvatar}
         />
         <LevelProgressBar xp={USER.xp} nextLevelXp={USER.nextLevelXp} />
 
-        <View className="flex-row flex-wrap justify-between px-6 mt-8">
+        <View className="mt-8 flex-row flex-wrap justify-between px-6">
           {stats.map((stat, i) => (
             <StatCard key={i} {...stat} />
           ))}
         </View>
 
         <View className="mt-6 px-6">
-          <Text className="text-[12px] font-main-bold uppercase tracking-widest text-slate-400 mb-4">
+          <Text className="mb-4 font-main-bold text-[12px] uppercase tracking-widest text-slate-400">
             Collection ({myAwards.length})
           </Text>
 
@@ -166,8 +166,8 @@ export default function UserProfile() {
               renderItem={({ item }) => <AchievementCard achievement={item} />}
             />
           ) : (
-            <View className="h-24 w-full rounded-3xl border-2 border-dashed border-white/5 items-center justify-center bg-white/5">
-              <Text className="text-slate-600 font-main-bold text-[10px] uppercase">
+            <View className="h-24 w-full items-center justify-center rounded-3xl border-2 border-dashed border-white/5 bg-white/5">
+              <Text className="font-main-bold text-[10px] uppercase text-slate-600">
                 No medals won yet
               </Text>
             </View>

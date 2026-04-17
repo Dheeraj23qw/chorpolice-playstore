@@ -9,7 +9,7 @@ import useRandomMessage from "../useRandomMessage";
 import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
 import { toast } from "@/components/feedback/toast";
 import { applyTransaction } from "@/features/wallet/walletSlice";
-import { loadUsername } from "@/features/Avatar";
+import { loadUsername } from "@/storage/userStorage";
 
 import {
   handleIncomingPacket,

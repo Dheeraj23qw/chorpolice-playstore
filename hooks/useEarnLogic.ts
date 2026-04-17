@@ -1,10 +1,15 @@
 // hooks/useEarnLogic.ts
-import { useState, useCallback, useMemo } from "react";
-import { Alert, useWindowDimensions } from "react-native";
+
+import { useState, useCallback, useMemo, useRef } from "react";
+import { useWindowDimensions } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { applyTransaction } from "@/features/wallet/walletSlice";
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
+
+import { RewardTier } from "@/constants/RewardsConst";
+import { markRewardClaimed, getClaimedRewards } from "@/storage/rewardStorage";
+import { Alerts } from "@/utils/alert";
 
 export const useEarnLogic = () => {
   const { width } = useWindowDimensions();
@@ -14,55 +19,88 @@ export const useEarnLogic = () => {
   const coins = useSelector((state: RootState) => state.wallet.coins);
   const [isSpinModalVisible, setIsSpinModalVisible] = useState(false);
 
+  // 🔒 Prevent double-tap / spam
+  const isProcessingRef = useRef(false);
+
+  // 📏 Card width
   const cardWidth = useMemo(() => {
     return Math.min(width * 0.78, 300);
   }, [width]);
 
+  // 🎡 Spin modal toggle
   const toggleSpinModal = useCallback(() => {
     setIsSpinModalVisible((prev) => !prev);
   }, []);
 
+  /**
+   * 🎯 ROBUST CLAIM HANDLER
+   */
   const handleClaim = useCallback(
-    (rewardName: string, cost: number) => {
-      if (coins < cost) {
-        Alert.alert(
-          "Insufficient Balance",
-          `You need ${(cost - coins).toLocaleString()} more coins.`
-        );
-        return;
-      }
+    (tier: RewardTier) => {
+      // 🚫 prevent spam taps
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
 
-      Alert.alert(
-        "Confirm Redemption",
-        `Spend ${cost.toLocaleString()} 🪙 for ${rewardName}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Redeem",
-            onPress: () => {
-              dispatch(
-                applyTransaction({
-                  amount: -cost,
-                  reason: `Reward: ${rewardName}`,
-                  source: "rewards_claim",
-                  metadata: {
-                    rewardName,
-                    timestamp: new Date().toISOString(),
-                  },
-                })
-              );
+      try {
+        const claimedRewards = getClaimedRewards();
 
-              Alert.alert(
-                "Success 🎉",
-                `${rewardName} redemption successful.`
-              );
+        // ❌ Already claimed
+        if (claimedRewards.includes(tier.id)) {
+          Alerts.error("Already Claimed", "You already redeemed this reward.");
+          return;
+        }
+
+        // ❌ Invalid data safety
+        if (!tier?.coinsRequired || tier.coinsRequired <= 0) {
+          Alerts.error("Error", "Invalid reward configuration.");
+          return;
+        }
+
+        // ❌ Not enough coins
+        if (coins < tier.coinsRequired) {
+          const remaining = tier.coinsRequired - coins;
+
+          Alerts.error(
+            "Insufficient Coins",
+            `You need ${remaining.toLocaleString()} more coins`,
+          );
+          return;
+        }
+
+        // ✅ Deduct coins
+        dispatch(
+          applyTransaction({
+            amount: -tier.coinsRequired,
+            reason: `Reward: ${tier.reward}`,
+            source: "rewards_claim",
+            metadata: {
+              rewardId: tier.id,
+              rewardName: tier.reward,
+              timestamp: new Date().toISOString(),
             },
-          },
-        ],
-        { cancelable: true }
-      );
+          }),
+        );
+
+        // ✅ Mark as claimed (atomic behavior)
+        markRewardClaimed(tier.id);
+
+        // 🎉 Success
+        Alerts.success(
+          "Reward Claimed 🎉",
+          `${tier.reward} unlocked successfully`,
+        );
+      } catch (err) {
+        console.error("Claim failed:", err);
+
+        Alerts.error("Something went wrong", "Please try again.");
+      } finally {
+        // 🔓 unlock after small delay (prevents spam)
+        setTimeout(() => {
+          isProcessingRef.current = false;
+        }, 500);
+      }
     },
-    [coins, dispatch]
+    [coins, dispatch],
   );
 
   return {

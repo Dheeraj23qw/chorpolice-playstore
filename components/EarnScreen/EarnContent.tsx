@@ -5,7 +5,7 @@ import { WalletCard } from "@/components/EarnScreen/WalletCard";
 import { MilestonesSection } from "@/components/EarnScreen/MilestonesSection";
 import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
 import SpinToWinModal from "@/modal/SpinToWinModal";
-import { REWARD_TIERS } from "@/constants/RewardsConst";
+import { REWARD_TIERS, RewardTier } from "@/constants/RewardsConst";
 
 interface Props {
   coins: number;
@@ -14,7 +14,7 @@ interface Props {
   formattedTime: string;
   isSpinModalVisible: boolean;
   toggleSpinModal: () => void;
-  handleClaim: (rewardName: string, cost: number) => void;
+  handleClaim: (tier: RewardTier) => void;
 }
 
 export const EarnContent = ({
