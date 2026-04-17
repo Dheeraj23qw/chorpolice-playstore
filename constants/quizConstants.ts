@@ -6,7 +6,7 @@
  */
 
 /** Total number of rounds per game session. Must match QuizEngine.state.totalRounds. */
-export const NUM_QUESTIONS = 7;
+export const NUM_QUESTIONS = 1;
 
 /** Delay (ms) before transitioning away from the answer feedback popup. */
 export const POPUP_DELAY = 3000;

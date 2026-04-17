@@ -13,7 +13,7 @@ import CustomRatingModal from "@/modal/RatingModal";
 import { CircleBtn } from "./CircleBtn"; // Import from new chunk
 import { useHeaderActions } from "@/hooks/useHeaderActions";
 
-const SLATE_TRANSPARENT = "rgba(0, 0, 0, 0.8)";
+const SLATE_TRANSPARENT = "rgba(0, 0, 0, 0.1)";
 const ICON_COLOR = "#FFFFFF";
 
 const OptionHeader = memo(function OptionHeader() {

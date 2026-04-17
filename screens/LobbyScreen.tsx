@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Image, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-
+import { useEffect } from "react";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { playerImages } from "@/constants/playerData";
 import { DebugOverlay } from "@/components/DebugOverlay";
@@ -15,6 +15,7 @@ import { StartButton } from "@/components/Lobby/StartButton";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import VideoPlayerComponent from "@/components/IntroVideo";
+import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
 
 const LobbyScreen: React.FC = () => {
   const router = useRouter();
@@ -32,7 +33,15 @@ const LobbyScreen: React.FC = () => {
   const isModalOpen = lobby.isBettingModalVisible;
   const isTransitioning = lobby.isTransitioning;
   const gameType = lobby.gameType;
+  const [showWaiting, setShowWaiting] = useState(true);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWaiting(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
   if (isTransitioning) {
     return (
       <VideoPlayerComponent
@@ -120,7 +129,13 @@ const LobbyScreen: React.FC = () => {
                 lobby.showAvatarGrid || isSettingsOpen ? "hidden" : "flex-1"
               }
             >
-              <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
+              {showWaiting ? (
+                <View className="flex-1 items-center justify-center">
+                  <WaitingState />
+                </View>
+              ) : (
+                <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
+              )}
             </View>
 
             {/* Avatar Grid */}
@@ -142,8 +157,7 @@ const LobbyScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* 🚀 Start */}
-          <StartButton lobby={lobby} />
+          {!showWaiting && <StartButton lobby={lobby} />}
         </>
       )}
 

@@ -14,26 +14,22 @@ export function useQuizReward() {
   );
 
   const rewardData = useMemo(() => {
-    if (!level || totalQuestions === 0)
-      return { totalReward: 0, baseReward: 0, bonus: 0, accuracy: 0 };
+    if (!level || totalQuestions === 0) return { totalReward: 0, accuracy: 0 };
+
     const accuracy = correctQuestions / totalQuestions;
 
-    const baseTable = {
-      easy: { full: 500, half: 250, fail: -50 },
-      medium: { full: 1500, half: 750, fail: -70 },
-      hard: { full: 3000, half: 1500, fail: -100 },
+    // Define maximum rewards per difficulty
+    const maxRewardTable = {
+      easy: 30,
+      medium: 80,
+      hard: 200,
     };
 
-    let baseReward =
-      accuracy === 1
-        ? baseTable[level].full
-        : accuracy >= 0.5
-          ? baseTable[level].half
-          : baseTable[level].fail;
-    let bonus =
-      accuracy === 1 ? 500 : accuracy >= 0.9 ? 300 : accuracy >= 0.8 ? 150 : 0;
+    // Calculate reward: accuracy (0.0 to 1.0) * max reward
+    // Math.floor ensures you get a whole number of coins
+    const totalReward = Math.floor(accuracy * maxRewardTable[level]);
 
-    return { totalReward: baseReward + bonus, baseReward, bonus, accuracy };
+    return { totalReward, accuracy };
   }, [level, correctQuestions, totalQuestions]);
 
   useEffect(() => {
@@ -41,21 +37,15 @@ export function useQuizReward() {
 
     hasRecorded.current = true;
 
-    const { totalReward, baseReward, bonus, accuracy } = rewardData;
+    const { totalReward, accuracy } = rewardData;
 
-    if (totalReward !== 0) {
+    // Only dispatch if reward is greater than 0
+    if (totalReward > 0) {
       dispatch(
         applyTransaction({
           amount: totalReward,
-          reason: totalReward > 0 ? "Quiz Performance Reward" : "Quiz Penalty",
+          reason: "Quiz Accuracy Reward",
           source: "quiz_reward",
-          metadata: {
-            level,
-            correctQuestions,
-            totalQuestions,
-            baseReward,
-            bonus,
-          },
         }),
       );
     }
@@ -65,22 +55,12 @@ export function useQuizReward() {
       result: isWinner ? "win" : "fail",
       accuracy,
       coinsEarned: totalReward,
-      date: new Date().toISOString().slice(0, 10),
+      date: new Date().toISOString().split("T")[0],
       metadata: { difficulty: level },
     };
 
     dispatch(addQuizEntry(entry));
   }, [rewardData, level, isWinner, dispatch]);
 
-  const message = useMemo(() => {
-    const { totalReward, bonus } = rewardData;
-    if (totalReward > 0)
-      return bonus > 0
-        ? `You earned ${totalReward} coins 🎉 (+${bonus} bonus)`
-        : `You earned ${totalReward} coins 🎉`;
-    if (totalReward < 0) return `Penalty: ${totalReward} coins ⚠️`;
-    return "";
-  }, [rewardData]);
-
-  return { reward: rewardData.totalReward, message };
+  return { reward: rewardData.totalReward };
 }

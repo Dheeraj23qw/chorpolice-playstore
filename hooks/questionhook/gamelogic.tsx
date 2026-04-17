@@ -483,7 +483,6 @@ export const useQuizGameLogic = () => {
               applyTransaction({
                 amount: refund,
                 reason: "Refund — Host left the game",
-                source: "quiz_refund",
               }),
             );
             toast.success(
