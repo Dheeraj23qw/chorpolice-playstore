@@ -1,134 +1,115 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { QuizStatsState, QuizStatsEntry } from "./quizStatsTypes";
-import {
-  cancelDailyStreakReminder,
-  scheduleDailyStreakReminder,
-} from "@/service/notification/notication_types/quiz.daily_streak.notifications";
-import { storage } from "@/storage/mmkv";
+import { QuizStatsState } from "./quizStatsTypes";
 
-const QUIZ_STATS_KEY = "QuizStats";
-const MAX_HISTORY = 200;
+/* ─── Payload Types ─── */
+
+type AddQuizPayload = {
+  result: "win" | "fail";
+  accuracy: number;
+  difficulty?: "easy" | "medium" | "hard";
+};
+
+type AddChorPolicePayload = {
+  isWinner: boolean;
+  totalRounds: number;
+  correctGuesses: number;
+  coinsEarned: number;
+};
+
+/* ─── Defaults ─── */
 
 export const defaultQuizStats: QuizStatsState = {
-  currentStreak: 0,
-  highestStreak: 0,
   totalWins: 0,
   totalQuizzes: 0,
   averageAccuracy: 0,
-  monthlyActivity: {},
-  history: [],
+
   easyWins: 0,
   mediumWins: 0,
   hardWins: 0,
+
   easyLosses: 0,
   mediumLosses: 0,
   hardLosses: 0,
+
   easyTotal: 0,
   mediumTotal: 0,
   hardTotal: 0,
-  dailyStreak: 0,
-  highestDailyStreak: 0,
-  lastPlayedDate: null,
+
+  // Streaks
+  currentStreak: 0,
+  highestStreak: 0,
+
+  // Chor Police
+  cpGamesPlayed: 0,
+  cpGamesWon: 0,
+  cpTotalRounds: 0,
+  cpCorrectGuesses: 0,
+  cpCoinsEarned: 0,
 };
-
-// -------------------- STORAGE HELPERS --------------------
-
-export const saveQuizStats = (stats: QuizStatsState) => {
-  try {
-    storage.set(QUIZ_STATS_KEY, JSON.stringify(stats));
-  } catch (e) {
-    console.error("❌ [QuizStats] Save failed", e);
-  }
-};
-
-
-export const loadQuizStats = (): QuizStatsState | undefined => {
-  try {
-    const jsonValue = storage.getString(QUIZ_STATS_KEY);
-    if (jsonValue) {
-      return JSON.parse(jsonValue);
-    }
-  } catch (e) {
-    console.error("❌ [QuizStats] Load failed", e);
-  }
-  return undefined;
-};
-
-// -------------------- SLICE --------------------
 
 const quizStatsSlice = createSlice({
   name: "quizStats",
   initialState: defaultQuizStats,
   reducers: {
-    addQuizEntry: (state, action: PayloadAction<QuizStatsEntry>) => {
-      const entry = action.payload;
-      const difficulty = entry.metadata?.difficulty;
-      const today = entry.date; 
-      const lastDate = state.lastPlayedDate;
+    /**
+     * Record a completed quiz game (Think & Count)
+     */
+    addQuizEntry: (state, action: PayloadAction<AddQuizPayload>) => {
+      const { result, accuracy, difficulty } = action.payload;
 
-      // 1. Daily Streak Logic
-      if (!lastDate) {
-        state.dailyStreak = 1;
-      } else if (lastDate !== today) {
-        const todayDate = new Date(today + "T00:00:00");
-        const lastPlayed = new Date(lastDate + "T00:00:00");
-        const diffDays = (todayDate.getTime() - lastPlayed.getTime()) / (1000 * 60 * 60 * 24);
+      const d = difficulty ?? "easy";
 
-        if (diffDays === 1) {
-          state.dailyStreak += 1;
-        } else if (diffDays > 1) {
-          state.dailyStreak = 1;
+      // 📊 TOTAL
+      state.totalQuizzes++;
+      (state as any)[`${d}Total`]++;
+
+      // 🏆 WIN / LOSS + STREAK
+      if (result === "win") {
+        state.totalWins++;
+        (state as any)[`${d}Wins`]++;
+        state.currentStreak++;
+        if (state.currentStreak > state.highestStreak) {
+          state.highestStreak = state.currentStreak;
         }
-      }
-
-      state.lastPlayedDate = today;
-      if (state.dailyStreak > state.highestDailyStreak) {
-        state.highestDailyStreak = state.dailyStreak;
-      }
-
-   
-
-      // 2. History
-      state.history.unshift(entry);
-      if (state.history.length > MAX_HISTORY) state.history.pop();
-
-      // 3. Totals & Stats
-      state.totalQuizzes += 1;
-      if (difficulty === "easy") state.easyTotal += 1;
-      else if (difficulty === "medium") state.mediumTotal += 1;
-      else if (difficulty === "hard") state.hardTotal += 1;
-
-      if (entry.result === "win") {
-        state.totalWins += 1;
-        if (difficulty === "easy") state.easyWins += 1;
-        else if (difficulty === "medium") state.mediumWins += 1;
-        else if (difficulty === "hard") state.hardWins += 1;
-
-        state.currentStreak += 1;
-        if (state.currentStreak > state.highestStreak) state.highestStreak = state.currentStreak;
       } else {
-        if (difficulty === "easy") state.easyLosses += 1;
-        else if (difficulty === "medium") state.mediumLosses += 1;
-        else if (difficulty === "hard") state.hardLosses += 1;
-        state.currentStreak = 0;
+        (state as any)[`${d}Losses`]++;
+        state.currentStreak = 0; // Reset streak on loss
       }
 
+      // 🎯 ACCURACY (running average)
       state.averageAccuracy =
-        (state.averageAccuracy * (state.totalQuizzes - 1) + entry.accuracy) / state.totalQuizzes;
-
-      state.monthlyActivity[today] = true;
+        (state.averageAccuracy * (state.totalQuizzes - 1) + accuracy) /
+        state.totalQuizzes;
     },
 
-    resetQuizStats: () => {
-      storage.remove(QUIZ_STATS_KEY);
-      return defaultQuizStats;
+    /**
+     * Record a completed Chor Police game
+     */
+    addChorPoliceEntry: (
+      state,
+      action: PayloadAction<AddChorPolicePayload>,
+    ) => {
+      const { isWinner, totalRounds, correctGuesses, coinsEarned } =
+        action.payload;
+
+      state.cpGamesPlayed++;
+      if (isWinner) state.cpGamesWon++;
+      state.cpTotalRounds += totalRounds;
+      state.cpCorrectGuesses += correctGuesses;
+      state.cpCoinsEarned += coinsEarned;
     },
 
+    // 🔄 RESET
+    resetQuizStats: () => defaultQuizStats,
+
+    // 🔁 HYDRATE (used by storage loader)
     setQuizStats: (_, action: PayloadAction<QuizStatsState>) => {
       return action.payload;
     },
   },
 });
 
-export const { addQuizEntry, resetQuizStats, setQuizStats } = quizStatsSlice.actions;
+export const { addQuizEntry, addChorPoliceEntry, resetQuizStats, setQuizStats } =
+  quizStatsSlice.actions;
+
 export default quizStatsSlice.reducer;

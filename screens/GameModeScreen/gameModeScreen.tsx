@@ -21,16 +21,18 @@ import UserProfilecard from "@/components/GameModeScreen/UserProfilecard";
 import GameModeList from "@/components/GameModeScreen/GameModeList";
 import UnlockedAwardModal from "@/modal/AchievmentModal";
 import { hasUnclaimedAwards } from "@/features/awards/awardsSlice";
+import { LowCoinModal, useLowCoinRewardModal } from "@/features/lowCoinReward";
 
 const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
   const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
-
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.98);
   const bgScale = useSharedValue(1.1);
-
+  
+  const { visible, onShare, onRate, onClose, onDisableForever}=
+    useLowCoinRewardModal();
   useEffect(() => {
     BotEngine.prepareEngine(10);
     AudioEngine.stopAllExceptQuiz();
@@ -100,6 +102,13 @@ const GameModeScreen: React.FC = () => {
       </Animated.View>
 
       {useSelector(hasUnclaimedAwards) && <UnlockedAwardModal />}
+      <LowCoinModal
+        visible={visible}
+        onShare={onShare}
+        onRate={onRate}
+        onClose={onClose}
+        onDisable={onDisableForever}
+      />
     </View>
   );
 };

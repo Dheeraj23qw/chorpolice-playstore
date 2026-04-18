@@ -2,13 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Animated } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
-import { AppDispatch, RootState } from "@/redux/store";
+import store, { AppDispatch, RootState } from "@/redux/store";
 import { resetDifficulty } from "@/redux/reducers/quiz";
 import {
   setPlayerNames as setReduxPlayerNames,
   updatePlayerScores as updateReduxScores,
 } from "@/redux/reducers/playerReducer";
 import { applyTransaction } from "@/features/wallet/walletSlice";
+import { addChorPoliceEntry } from "@/features/quizStats/quizStatsSlice";
+import { saveQuizStats } from "@/storage/quizStatsStorage";
 import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
 import useRandomMessage from "./useRandomMessage";
@@ -123,6 +125,9 @@ export const useChorPoliceMultiplayer = () => {
 
   // ─── Phase + Role ───
   const [gamePhase, setGamePhase] = useState<GamePhase>("waiting");
+  const gamePhaseRef = useRef<GamePhase>(gamePhase);
+  // Keep gamePhaseRef always in sync
+  gamePhaseRef.current = gamePhase;
   const [myRole, setMyRole] = useState<Role | null>(null);
 
   const canSeeBoard = myRole === "Police" || myRole === null;
@@ -400,12 +405,11 @@ export const useChorPoliceMultiplayer = () => {
 
           if (packet.isLastRound) {
             console.log(`${D} 🏁 LAST ROUND — transitioning to score quiz`);
-            // ✅ Instead of "finished", go to score_quiz so players guess their total score
+            // Prepare quiz state, then use ONLY playTransition (don't set gamePhase directly — that causes a flash)
             setQuizPlayerIndex(0);
             setQuizDone(false);
             setQuizOptionDisabled(false);
             quizOptionDisabledRef.current = false;
-            setGamePhase("score_quiz");
             playTransition("score_quiz");
           } else {
             console.log(`${D} ▶️ Ready for next round — playing round video`);
@@ -433,24 +437,42 @@ export const useChorPoliceMultiplayer = () => {
       /* ── 4. GAME END (completed) ── */
       if (packet.type === CP.GAME_END && packet.reason === "completed") {
         console.log(`${D} 🏁 GAME END — completed`);
-        setGamePhase("final_result");
+        // Use ONLY playTransition to avoid flash — playTransition sets phase to "video_transition"
+        // and queues "final_result" as nextPhase, which is applied after video ends.
         playTransition("final_result");
 
-        if (
-          packet.leaderboard?.[0]?.id === localPlayerId &&
-          packet.totalPot > 0
-        ) {
+        const isWinner = packet.leaderboard?.[0]?.id === localPlayerId;
+        const totalPot = packet.totalPot ?? 0;
+
+        if (isWinner && totalPot > 0) {
           dispatch(
             applyTransaction({
-              amount: packet.totalPot,
+              amount: totalPot,
               reason: "Chor Police Win - Total Coins",
+              source: "chor_police",
             }),
           );
           toast.success(
             "CHAMPION! 🏆",
-            `You won the coins of ${packet.totalPot} coins!`,
+            `You won the coins of ${totalPot} coins!`,
           );
         }
+
+        // 📊 Record Chor Police stats
+        const cpRounds = ChorPoliceEngine.state.totalRounds;
+        const cpCorrectGuesses = ChorPoliceEngine.state.correctGuesses ?? 0;
+        dispatch(
+          addChorPoliceEntry({
+            isWinner,
+            totalRounds: cpRounds,
+            correctGuesses: cpCorrectGuesses,
+            coinsEarned: isWinner ? totalPot : 0,
+          }),
+        );
+        // Persist stats immediately (middleware only catches addQuizEntry)
+        const state = store.getState() as any;
+        if (state?.quizStats) saveQuizStats(state.quizStats);
+
         // Don't auto-navigate — let the final_result screen handle it
       }
 
@@ -466,6 +488,7 @@ export const useChorPoliceMultiplayer = () => {
             applyTransaction({
               amount: refund,
               reason: "Refund — Host left",
+              source: "chor_police",
             }),
           );
           toast.success("Refunded!", `${refund} coins returned.`);
@@ -770,6 +793,9 @@ export const useChorPoliceMultiplayer = () => {
 
   /* ─── FINAL RESULT EXIT ─── */
   const handleFinalExit = useCallback(() => {
+    if (isQuittingRef.current) return;
+    isQuittingRef.current = true;
+
     // 1. Immediate Engine/Bot Cleanup
     ChorPoliceEngine.reset();
     ChorPoliceBotBehavior.reset();
@@ -783,6 +809,8 @@ export const useChorPoliceMultiplayer = () => {
     requestAnimationFrame(() => {
       router.dismissAll();
       router.replace("/mode-select" as any);
+      // Reset guard in case component isn't unmounted immediately
+      setTimeout(() => { isQuittingRef.current = false; }, 500);
     });
   }, [dispatch, router]);
 
@@ -857,8 +885,15 @@ export const useChorPoliceMultiplayer = () => {
     isQuittingRef.current = true;
     try {
       setIsExitModalVisible(false);
-      const stake = ChorPoliceEngine.state.stake;
-      if (isHost) {
+      const currentPhase = gamePhaseRef.current;
+      const isGameOver = currentPhase === "final_result" || currentPhase === "finished";
+
+      if (isGameOver) {
+        // Game is already finished — just clean up and navigate, NO penalty
+        console.log(`${D} 🏁 Exit from finished game — no penalty`);
+      } else if (isHost) {
+        // Game is still in progress — host quit penalty applies
+        const stake = ChorPoliceEngine.state.stake;
         if (stake > 0)
           toast.error("Stake Lost!", `Your ${stake} coins are lost.`, 4000);
         handleIncomingPacket({
@@ -866,9 +901,10 @@ export const useChorPoliceMultiplayer = () => {
           reason: "host_quit",
           stake,
         });
-        ChorPoliceBotBehavior.reset();
-        ChorPoliceEngine.reset();
       }
+
+      ChorPoliceBotBehavior.reset();
+      ChorPoliceEngine.reset();
       timerRefs.current.forEach(clearTimeout);
       timerRefs.current = [];
       dispatch(resetDifficulty());
@@ -882,6 +918,26 @@ export const useChorPoliceMultiplayer = () => {
       isQuittingRef.current = false;
     }
   }, [isHost, dispatch, router]);
+
+  /**
+   * Phase-aware back button handler.
+   * - final_result / finished → clean exit (no penalty, same as quiz result screen)
+   * - video_transition → block back press (video playing)
+   * - everything else → show exit confirmation modal
+   */
+  const handleBackPress = useCallback(() => {
+    const phase = gamePhaseRef.current;
+    if (phase === "final_result" || phase === "finished") {
+      // Game over — just go home cleanly (same as quiz result back behavior)
+      handleFinalExit();
+    } else if (phase === "video_transition") {
+      // Block back during video transitions — don't do anything
+      console.log(`${D} 🛡️ Back blocked during video transition`);
+    } else {
+      // Mid-game — show exit modal
+      handleQuitInMiddle();
+    }
+  }, [handleFinalExit, handleQuitInMiddle]);
 
   return {
     flipAnims,
@@ -928,6 +984,7 @@ export const useChorPoliceMultiplayer = () => {
     handleQuizOption,
     handleFinalExit,
     handlePlayAgain,
+    handleBackPress,
     isHost,
     localPlayerId,
     nextPhase,

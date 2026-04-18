@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { applyTransaction } from "@/features/wallet/walletSlice";
-import { QuizStatsEntry } from "@/features/quizStats/quizStatsTypes";
 import { addQuizEntry } from "@/features/quizStats/quizStatsSlice";
 
 export function useQuizReward() {
@@ -55,16 +54,14 @@ export function useQuizReward() {
       }),
     );
 
-    const entry: QuizStatsEntry = {
-      id: Date.now().toString(),
-      result: isWinner ? "win" : "fail",
-      accuracy,
-      coinsEarned: totalReward,
-      date: new Date().toISOString().split("T")[0],
-      metadata: { difficulty: level },
-    };
-
-    dispatch(addQuizEntry(entry));
+    // Record quiz stats with correct payload shape
+    dispatch(
+      addQuizEntry({
+        result: isWinner ? "win" : "fail",
+        accuracy,
+        difficulty: level,
+      }),
+    );
   }, [rewardData, level, isWinner, dispatch]);
 
   return { reward: rewardData.totalReward };

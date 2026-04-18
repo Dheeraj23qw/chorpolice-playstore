@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { storage } from "@/storage/mmkv";
 
 export type WalletSource =
   | "quiz_reward"
@@ -18,7 +17,6 @@ export interface Transaction {
   amount: number;
   reason: string;
   source: WalletSource;
-  metadata?: Record<string, any>;
   timestamp: number;
 }
 
@@ -36,13 +34,14 @@ export interface WalletState {
   locks: WalletLocks;
 }
 
-const MAX_TRANSACTIONS = 100;
-const STORAGE_KEY = "WalletState";
-
-const initialState: WalletState = {
+/**
+ * ✅ SINGLE SOURCE OF TRUTH (NO STORAGE HERE)
+ */
+export const initialWalletState: WalletState = {
   coins: 0,
   transactions: [],
   initialized: false,
+
   totalBySource: {
     quiz_reward: 0,
     quiz_penalty: 0,
@@ -54,6 +53,7 @@ const initialState: WalletState = {
     other: 0,
     rewards_claim: 0,
   },
+
   locks: {
     spin: { lastUsedTimestamp: null, countToday: 0 },
     daily_bonus: { lastUsedTimestamp: null, countToday: 0 },
@@ -65,36 +65,14 @@ type CoinPayload = {
   amount: number;
   reason: string;
   source?: WalletSource;
-  metadata?: Record<string, any>;
 };
 
-// ------------------ STORAGE HELPERS ------------------
-
-
-export const loadWallet = (): WalletState | undefined => {
-  try {
-    const json = storage.getString(STORAGE_KEY);
-    return json ? JSON.parse(json) : undefined; 
-  } catch (e) {
-    console.error("❌ [Wallet] Load failed", e);
-    return undefined;
-  }
-};
-
-export const saveWallet = (wallet: WalletState) => {
-  try {
-    storage.set(STORAGE_KEY, JSON.stringify(wallet));
-    if (__DEV__) console.log("💾 [Wallet] Saved successfully");
-  } catch (e) {
-    console.error("❌ [Wallet] Save failed", e);
-  }
-};
-
-// ------------------ SLICE ------------------
+const MAX_TRANSACTIONS = 100;
 
 const walletSlice = createSlice({
   name: "wallet",
-  initialState,
+  initialState: initialWalletState,
+
   reducers: {
     setWallet: (_, action: PayloadAction<WalletState>) => {
       return action.payload;
@@ -105,27 +83,26 @@ const walletSlice = createSlice({
     },
 
     applyTransaction: (state, action: PayloadAction<CoinPayload>) => {
-      const { amount, reason, source = "other", metadata } = action.payload;
+      const { amount, reason, source = "other" } = action.payload;
       if (amount === 0) return;
 
       const timestamp = Date.now();
+
       state.coins += amount;
 
-      const transaction: Transaction = {
+      state.transactions.unshift({
         id: timestamp.toString(),
         type: amount >= 0 ? "CREDIT" : "DEBIT",
         amount: Math.abs(amount),
         reason,
         source,
-        metadata,
         timestamp,
-      };
+      });
 
-      state.transactions.unshift(transaction);
-      if (state.transactions.length > MAX_TRANSACTIONS)
+      if (state.transactions.length > MAX_TRANSACTIONS) {
         state.transactions.pop();
+      }
 
-      if (!state.totalBySource[source]) state.totalBySource[source] = 0;
       state.totalBySource[source] += amount;
     },
 
@@ -137,6 +114,7 @@ const walletSlice = createSlice({
       if (amount === 0) return;
 
       const timestamp = Date.now();
+
       state.coins += amount;
 
       state.transactions.unshift({
@@ -148,17 +126,16 @@ const walletSlice = createSlice({
         timestamp,
       });
 
-      if (state.transactions.length > MAX_TRANSACTIONS)
+      if (state.transactions.length > MAX_TRANSACTIONS) {
         state.transactions.pop();
+      }
 
       state.totalBySource.spin_reward += amount;
       state.locks.spin.lastUsedTimestamp = timestamp;
     },
 
     resetWallet: () => {
-      // ✅ Corrected to .remove() as per V4 Nitro Docs
-      storage.remove(STORAGE_KEY);
-      return initialState;
+      return initialWalletState;
     },
   },
 });

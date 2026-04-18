@@ -1,17 +1,28 @@
 import { configureStore } from "@reduxjs/toolkit";
+
 import playerReducer from "./reducers/playerReducer";
 import soundSlice from "./reducers/soundReducer";
 import playerImagesReducer from "./reducers/dynamicImagesReducer";
 import difficultyReducer from "@/redux/reducers/quiz";
 import popupReducer from "./reducers/popupReducer";
 import awardsReducer from "@/features/awards/awardsSlice";
-import walletReducer, { loadWallet, WalletState } from "@/features/wallet/walletSlice";
-import quizStatsReducer, { loadQuizStats } from "@/features/quizStats/quizStatsSlice";
-import { QuizStatsState } from "@/features/quizStats/quizStatsTypes";
-import { listenerMiddleware } from "./middleware"; 
 
-const preloadedWallet = loadWallet();
-const preloadedQuizStats = loadQuizStats();
+import walletReducer, {
+  initialWalletState,
+} from "@/features/wallet/walletSlice";
+import quizStatsReducer, {
+  defaultQuizStats,
+} from "@/features/quizStats/quizStatsSlice";
+
+import { listenerMiddleware } from "./middleware";
+import { loadQuizStats } from "@/storage/quizStatsStorage";
+import { loadWallet } from "@/storage/walletStorage";
+
+/**
+ * ✅ SAFE LOADERS — Hydrate from MMKV on startup
+ */
+const preloadedWallet = loadWallet() ?? initialWalletState;
+const preloadedQuizStats = loadQuizStats() ?? defaultQuizStats;
 
 const store = configureStore({
   reducer: {
@@ -24,12 +35,13 @@ const store = configureStore({
     quizStats: quizStatsReducer,
     awards: awardsReducer,
   },
+
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(listenerMiddleware.middleware),
-  
+
   preloadedState: {
-    wallet: preloadedWallet as WalletState,
-    quizStats: preloadedQuizStats as QuizStatsState,
+    wallet: preloadedWallet,
+    quizStats: preloadedQuizStats,
   },
 });
 

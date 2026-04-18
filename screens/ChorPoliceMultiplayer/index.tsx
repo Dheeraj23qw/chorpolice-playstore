@@ -24,11 +24,11 @@ const ChorPoliceMultiplayerScreen = () => {
   /* ───────── HANDLE BACK PRESS ───────── */
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      g.handleQuitInMiddle();
+      g.handleBackPress();
       return true;
     });
     return () => sub.remove();
-  }, [g.handleQuitInMiddle]);
+  }, [g.handleBackPress]);
 
   /* ───────── PHASE ROUTER ───────── */
   const renderView = () => {
