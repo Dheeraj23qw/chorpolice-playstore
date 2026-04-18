@@ -10,7 +10,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/Text";
 import { useSelector } from "react-redux";
-import { selectCoins } from "@/features/wallet/walletSelectors";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -29,7 +28,7 @@ export const BettingModal: React.FC<BettingModalProps> = ({
   onClose,
   playerCount,
 }) => {
-  const userCoins = useSelector(selectCoins);
+  const userCoins = useSelector((state: any) => state.wallet.coins);
   const [selectedCoins, setSelectedCoins] = useState<number>(COIN_OPTIONS[0]);
 
   /* ---------------- ANIMATION ---------------- */

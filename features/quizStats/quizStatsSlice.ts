@@ -1,22 +1,45 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { QuizStatsState } from "./quizStatsTypes";
 
-/* ─── Payload Types ─── */
+/* ─── Types ─── */
+
+type Difficulty = "easy" | "medium" | "hard";
 
 type AddQuizPayload = {
   result: "win" | "fail";
   accuracy: number;
-  difficulty?: "easy" | "medium" | "hard";
+  difficulty?: Difficulty;
 };
 
 type AddChorPolicePayload = {
   isWinner: boolean;
-  totalRounds: number;
-  correctGuesses: number;
-  coinsEarned: number;
 };
 
-/* ─── Defaults ─── */
+/* ─── State ─── */
+
+export interface QuizStatsState {
+  totalWins: number;
+  totalQuizzes: number;
+  averageAccuracy: number;
+
+  easyWins: number;
+  mediumWins: number;
+  hardWins: number;
+
+  easyLosses: number;
+  mediumLosses: number;
+  hardLosses: number;
+
+  easyTotal: number;
+  mediumTotal: number;
+  hardTotal: number;
+
+  // Chor Police
+  cpGamesPlayed: number;
+  cpGamesWon: number;
+  cpGamesLoss: number;
+}
+
+/* ─── Initial State ─── */
 
 export const defaultQuizStats: QuizStatsState = {
   totalWins: 0,
@@ -35,81 +58,77 @@ export const defaultQuizStats: QuizStatsState = {
   mediumTotal: 0,
   hardTotal: 0,
 
-  // Streaks
-  currentStreak: 0,
-  highestStreak: 0,
-
-  // Chor Police
   cpGamesPlayed: 0,
   cpGamesWon: 0,
-  cpTotalRounds: 0,
-  cpCorrectGuesses: 0,
-  cpCoinsEarned: 0,
+  cpGamesLoss: 0,
 };
+
+/* ─── Slice ─── */
 
 const quizStatsSlice = createSlice({
   name: "quizStats",
   initialState: defaultQuizStats,
+
   reducers: {
-    /**
-     * Record a completed quiz game (Think & Count)
-     */
+    /* 🎯 QUIZ GAME ENTRY */
     addQuizEntry: (state, action: PayloadAction<AddQuizPayload>) => {
-      const { result, accuracy, difficulty } = action.payload;
+      const { result, accuracy, difficulty = "easy" } = action.payload;
 
-      const d = difficulty ?? "easy";
+      const totalKey = `${difficulty}Total` as keyof QuizStatsState;
+      const winKey = `${difficulty}Wins` as keyof QuizStatsState;
+      const lossKey = `${difficulty}Losses` as keyof QuizStatsState;
 
-      // 📊 TOTAL
+      // Total games
       state.totalQuizzes++;
-      (state as any)[`${d}Total`]++;
+      state[totalKey]++;
 
-      // 🏆 WIN / LOSS + STREAK
+      // Win / Loss
       if (result === "win") {
         state.totalWins++;
-        (state as any)[`${d}Wins`]++;
-        state.currentStreak++;
-        if (state.currentStreak > state.highestStreak) {
-          state.highestStreak = state.currentStreak;
-        }
+        state[winKey]++;
       } else {
-        (state as any)[`${d}Losses`]++;
-        state.currentStreak = 0; // Reset streak on loss
+        state[lossKey]++;
       }
 
-      // 🎯 ACCURACY (running average)
+      // Running average accuracy
       state.averageAccuracy =
         (state.averageAccuracy * (state.totalQuizzes - 1) + accuracy) /
         state.totalQuizzes;
     },
 
-    /**
-     * Record a completed Chor Police game
-     */
+    /* 🎭 CHOR POLICE ENTRY */
     addChorPoliceEntry: (
       state,
       action: PayloadAction<AddChorPolicePayload>,
     ) => {
-      const { isWinner, totalRounds, correctGuesses, coinsEarned } =
-        action.payload;
+      const { isWinner } = action.payload;
 
       state.cpGamesPlayed++;
-      if (isWinner) state.cpGamesWon++;
-      state.cpTotalRounds += totalRounds;
-      state.cpCorrectGuesses += correctGuesses;
-      state.cpCoinsEarned += coinsEarned;
+
+      if (isWinner) {
+        state.cpGamesWon++;
+      } else {
+        state.cpGamesLoss++;
+      }
     },
 
-    // 🔄 RESET
-    resetQuizStats: () => defaultQuizStats,
+    /* 🔄 RESET */
+    resetQuizStats: () => ({ ...defaultQuizStats }),
 
-    // 🔁 HYDRATE (used by storage loader)
+    /* 🔁 HYDRATE FROM STORAGE */
     setQuizStats: (_, action: PayloadAction<QuizStatsState>) => {
       return action.payload;
     },
   },
 });
 
-export const { addQuizEntry, addChorPoliceEntry, resetQuizStats, setQuizStats } =
-  quizStatsSlice.actions;
+/* ─── Exports ─── */
+
+export const {
+  addQuizEntry,
+  addChorPoliceEntry,
+  resetQuizStats,
+  setQuizStats,
+} = quizStatsSlice.actions;
 
 export default quizStatsSlice.reducer;

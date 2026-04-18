@@ -6,6 +6,8 @@ import { Text } from "../Text";
 import { rf } from "@/utils/responsive";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "react-native";
+import WifiHint from "../WifiHint";
 
 interface GameModeModalProps {
   isVisible: boolean;
@@ -63,6 +65,8 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
 
         {/* 4. MODAL CONTENT CONTAINER */}
         <View className="flex-1 justify-center px-6">
+          <WifiHint />
+
           {/* STOP PROPAGATION ON THE CARD ITSELF */}
           <Pressable
             onPress={(e) => e.stopPropagation()}

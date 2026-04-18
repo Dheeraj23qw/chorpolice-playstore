@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { SpinSegment, SpinStatus } from "./types";
 import { segments } from "@/constants/spinwheel";
 import { AudioEngine } from "@/audio/audioEngine";
-import { claimSpinReward } from "../wallet/walletSlice";
 import { useTimeoutManager } from "@/hooks/useTimeOutManager";
 import { AppDispatch, RootState } from "@/redux/store";
 import { formatTime } from "@/utils/TimeFormat";
@@ -23,6 +22,8 @@ import {
   cancelSpinNotification,
   scheduleSpinUnlock,
 } from "@/service/notification/notication_types/spin.notification";
+import { updateCoins } from "../wallet/walletSlice";
+import { useSpin } from "../locks/lockSlice";
 
 export const useSpinWheel = () => {
   const [status, setStatus] = useState<SpinStatus>("IDLE");
@@ -33,10 +34,7 @@ export const useSpinWheel = () => {
   const { clearAllTimeouts } = useTimeoutManager(status === "IDLE");
   const dispatch = useDispatch<AppDispatch>();
 
-  const spinLock = useSelector(
-    (state: RootState) =>
-      state.wallet.locks.spin ?? { lastUsedTimestamp: null },
-  );
+  const spinLock = useSelector((state: RootState) => state.lock.spin);
   const COOLDOWN = 12 * 60 * 60 * 1000;
 
   const isLocked = remainingTime > 0;
@@ -115,12 +113,8 @@ export const useSpinWheel = () => {
       setStatus("DONE");
 
       if (selected.value) {
-        dispatch(
-          claimSpinReward({
-            amount: selected.value,
-            reason: `Spin Reward - ${selected.label}`,
-          }),
-        );
+        dispatch(updateCoins(selected.value)); // 💰 add coins
+        dispatch(useSpin());
         setShowVictory(true);
         Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
       }

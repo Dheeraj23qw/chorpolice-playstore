@@ -4,12 +4,12 @@ import { useState, useCallback, useMemo, useRef } from "react";
 import { useWindowDimensions } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
-import { applyTransaction } from "@/features/wallet/walletSlice";
 import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
 
 import { RewardTier } from "@/constants/RewardsConst";
 import { markRewardClaimed, getClaimedRewards } from "@/storage/rewardStorage";
 import { Alerts } from "@/utils/alert";
+import { updateCoins } from "@/features/wallet/walletSlice";
 
 export const useEarnLogic = () => {
   const { width } = useWindowDimensions();
@@ -67,19 +67,7 @@ export const useEarnLogic = () => {
           return;
         }
 
-        // ✅ Deduct coins
-        dispatch(
-          applyTransaction({
-            amount: -tier.coinsRequired,
-            reason: `Reward: ${tier.reward}`,
-            source: "rewards_claim",
-            metadata: {
-              rewardId: tier.id,
-              rewardName: tier.reward,
-              timestamp: new Date().toISOString(),
-            },
-          }),
-        );
+        dispatch(updateCoins(-tier.coinsRequired));
 
         // ✅ Mark as claimed (atomic behavior)
         markRewardClaimed(tier.id);

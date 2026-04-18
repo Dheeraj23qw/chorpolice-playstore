@@ -6,10 +6,8 @@ import playerImagesReducer from "./reducers/dynamicImagesReducer";
 import difficultyReducer from "@/redux/reducers/quiz";
 import popupReducer from "./reducers/popupReducer";
 import awardsReducer from "@/features/awards/awardsSlice";
-
-import walletReducer, {
-  initialWalletState,
-} from "@/features/wallet/walletSlice";
+import lockReducer from "@/features/locks/lockSlice";
+import walletReducer from "@/features/wallet/walletSlice";
 import quizStatsReducer, {
   defaultQuizStats,
 } from "@/features/quizStats/quizStatsSlice";
@@ -21,8 +19,16 @@ import { loadWallet } from "@/storage/walletStorage";
 /**
  * ✅ SAFE LOADERS — Hydrate from MMKV on startup
  */
-const preloadedWallet = loadWallet() ?? initialWalletState;
-const preloadedQuizStats = loadQuizStats() ?? defaultQuizStats;
+
+// WALLET (simple → fine)
+const preloadedWallet = loadWallet() ?? { coins: 0 };
+
+// QUIZ STATS (IMPORTANT → merge with defaults)
+const storedStats = loadQuizStats();
+
+const preloadedQuizStats = storedStats
+  ? { ...defaultQuizStats, ...storedStats } // ✅ merge fix
+  : defaultQuizStats;
 
 const store = configureStore({
   reducer: {
@@ -34,6 +40,7 @@ const store = configureStore({
     wallet: walletReducer,
     quizStats: quizStatsReducer,
     awards: awardsReducer,
+    lock: lockReducer,
   },
 
   middleware: (getDefaultMiddleware) =>

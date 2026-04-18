@@ -8,7 +8,6 @@ import {
   setPlayerNames as setReduxPlayerNames,
   updatePlayerScores as updateReduxScores,
 } from "@/redux/reducers/playerReducer";
-import { applyTransaction } from "@/features/wallet/walletSlice";
 import { addChorPoliceEntry } from "@/features/quizStats/quizStatsSlice";
 import { saveQuizStats } from "@/storage/quizStatsStorage";
 import { toast } from "@/components/feedback/toast";
@@ -24,6 +23,7 @@ import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
 import { flipCard } from "./useRajaMantriGame/utils/flipCardUtil";
 import { revealAllCards } from "./useRajaMantriGame/utils/revealAllCardsUtils";
+import { updateCoins } from "@/features/wallet/walletSlice";
 
 /**
  * --- CHOR POLICE MULTIPLAYER HOOK ---
@@ -445,35 +445,12 @@ export const useChorPoliceMultiplayer = () => {
         const totalPot = packet.totalPot ?? 0;
 
         if (isWinner && totalPot > 0) {
-          dispatch(
-            applyTransaction({
-              amount: totalPot,
-              reason: "Chor Police Win - Total Coins",
-              source: "chor_police",
-            }),
-          );
-          toast.success(
-            "CHAMPION! 🏆",
-            `You won the coins of ${totalPot} coins!`,
-          );
+          dispatch(updateCoins(totalPot));
+
+          toast.success("CHAMPION! 🏆", `You won ${totalPot} coins!`);
         }
 
-        // 📊 Record Chor Police stats
-        const cpRounds = ChorPoliceEngine.state.totalRounds;
-        const cpCorrectGuesses = ChorPoliceEngine.state.correctGuesses ?? 0;
-        dispatch(
-          addChorPoliceEntry({
-            isWinner,
-            totalRounds: cpRounds,
-            correctGuesses: cpCorrectGuesses,
-            coinsEarned: isWinner ? totalPot : 0,
-          }),
-        );
-        // Persist stats immediately (middleware only catches addQuizEntry)
-        const state = store.getState() as any;
-        if (state?.quizStats) saveQuizStats(state.quizStats);
-
-        // Don't auto-navigate — let the final_result screen handle it
+        dispatch(addChorPoliceEntry({ isWinner }));
       }
 
       /* ── 5. HOST QUIT ── */
@@ -484,13 +461,7 @@ export const useChorPoliceMultiplayer = () => {
       ) {
         const refund = packet.stake || 0;
         if (refund > 0) {
-          dispatch(
-            applyTransaction({
-              amount: refund,
-              reason: "Refund — Host left",
-              source: "chor_police",
-            }),
-          );
+          dispatch(updateCoins(refund));
           toast.success("Refunded!", `${refund} coins returned.`);
         }
         router.dismissAll();
@@ -810,7 +781,9 @@ export const useChorPoliceMultiplayer = () => {
       router.dismissAll();
       router.replace("/mode-select" as any);
       // Reset guard in case component isn't unmounted immediately
-      setTimeout(() => { isQuittingRef.current = false; }, 500);
+      setTimeout(() => {
+        isQuittingRef.current = false;
+      }, 500);
     });
   }, [dispatch, router]);
 
@@ -886,7 +859,8 @@ export const useChorPoliceMultiplayer = () => {
     try {
       setIsExitModalVisible(false);
       const currentPhase = gamePhaseRef.current;
-      const isGameOver = currentPhase === "final_result" || currentPhase === "finished";
+      const isGameOver =
+        currentPhase === "final_result" || currentPhase === "finished";
 
       if (isGameOver) {
         // Game is already finished — just clean up and navigate, NO penalty
