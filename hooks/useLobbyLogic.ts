@@ -20,7 +20,10 @@ import { BotEngine } from "@/service/BotEngine";
 import { QuizEngine } from "@/service/QuizEngine";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
-import { storage } from "@/storage/mmkv";
+import { getBotName } from "@/utils/nameGenerator";
+
+/** Max players for Chor Police is always 4 */
+const CP_MAX_PLAYERS = 4;
 
 export interface Player {
   id: string;
@@ -158,10 +161,49 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
       if (isHost) {
         // Host only cares about Joins
         if (packet.type === NETWORK.PLAYER_JOIN) {
+          const joiningPlayer: Player = packet.player;
+          const isHumanJoining = !joiningPlayer.isBot;
+
           setPlayers((prev) => {
-            if (prev.find((p) => p.id === packet.player.id)) return prev;
+            // Duplicate guard
+            if (prev.find((p) => p.id === joiningPlayer.id)) return prev;
+
+            /**
+             * CHOR POLICE AUTO-TRIM:
+             * When a human joins, remove one bot to keep total at CP_MAX_PLAYERS.
+             * Humans ALWAYS have priority over bots.
+             */
+            if (gameType === "CHOR_POLICE" && isHumanJoining) {
+              const humanCount = prev.filter((p) => !p.isBot).length;
+
+              // Already at max humans (4) → reject with warning
+              if (humanCount >= CP_MAX_PLAYERS) {
+                console.log(`🛡️ [Lobby] Rejecting human join — max humans reached (${humanCount})`);
+                toast.error("Room Full!", "🚫 Maximum 4 players allowed. No more can join.", 3000);
+                return prev;
+              }
+
+              // If lobby is full (4), remove one bot to make room for the human
+              if (prev.length >= CP_MAX_PLAYERS) {
+                const botIndex = prev.findIndex((p) => p.isBot);
+                if (botIndex === -1) {
+                  // No bots to trim — lobby is full of humans, reject with warning
+                  console.log(`🛡️ [Lobby] Rejecting human join — no bots to replace`);
+                  toast.error("Room Full!", "🚫 Maximum 4 players allowed. No more can join.", 3000);
+                  return prev;
+                }
+                const updated = [...prev];
+                const trimmedBot = updated.splice(botIndex, 1)[0];
+                console.log(`🤖 [Lobby] Auto-trimmed bot "${trimmedBot.name}" to make room for human "${joiningPlayer.name}"`);
+                // Also remove from BotEngine's active list
+                BotEngine.activeBots = BotEngine.activeBots.filter((b) => b.id !== trimmedBot.id);
+                return [...updated, joiningPlayer];
+              }
+            }
+
+            // Default: append if under max
             if (prev.length >= maxPlayers) return prev;
-            return [...prev, packet.player];
+            return [...prev, joiningPlayer];
           });
         }
       } else {
@@ -184,7 +226,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     });
 
     return unsubscribe;
-  }, [isHost, router, maxPlayers]);
+  }, [isHost, router, maxPlayers, gameType]);
 
   // 🔥 HANDLERS
   const handleJoinSystemServer = useCallback(() => {
@@ -257,15 +299,55 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
       }
 
       if (gameType === "CHOR_POLICE") {
-        // Ensure exactly 4 players (trim bots if real players joined)
-        const finalPlayers = players.slice(0, 4);
+        /**
+         * BUILD FINAL 4-PLAYER ROSTER:
+         * 1. Separate humans and bots from the current player list.
+         * 2. Take up to 4 humans (humans always have priority).
+         * 3. If fewer than 4 humans, dynamically fill remaining slots with bots.
+         * 4. This guarantees exactly CP_MAX_PLAYERS (4) every time.
+         */
+        const humans = players.filter((p) => !p.isBot);
+        const existingBots = players.filter((p) => p.isBot);
+
+        // Take at most CP_MAX_PLAYERS humans
+        const selectedHumans = humans.slice(0, CP_MAX_PLAYERS);
+        const botsNeeded = CP_MAX_PLAYERS - selectedHumans.length;
+
+        // Reuse existing bots first, dynamically create more if needed
+        let selectedBots = existingBots.slice(0, botsNeeded);
+
+        // If we don't have enough existing bots, spawn fresh ones
+        if (selectedBots.length < botsNeeded) {
+          const extraNeeded = botsNeeded - selectedBots.length;
+          const usedAvatars = new Set([...selectedHumans, ...selectedBots].map((p) => p.avatarId));
+
+          for (let i = 0; i < extraNeeded; i++) {
+            let avatarId: number;
+            do {
+              avatarId = Math.floor(Math.random() * 13) + 1;
+            } while (usedAvatars.has(avatarId));
+            usedAvatars.add(avatarId);
+
+            const botName = getBotName(selectedBots.length + i);
+            selectedBots.push({
+              id: `bot_${botName.toLowerCase()}_${Math.random().toString(36).substr(2, 5)}`,
+              name: botName,
+              avatarId,
+              isBot: true,
+            });
+          }
+        }
+
+        const finalPlayers = [...selectedHumans, ...selectedBots];
+
+        console.log(`🎮 [Lobby] Final roster: ${finalPlayers.map((p) => `${p.name}(${p.isBot ? 'BOT' : 'HUMAN'})`).join(', ')}`);
 
         // Bridge lobby players → Redux so PlayerCard can find avatar images
         dispatch(setSelectedImages(finalPlayers.map((p) => p.avatarId)));
 
         ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 5);
 
-        // Initialize bot behavior for bots in the player list
+        // Initialize bot behavior for bots in the final roster
         const bots = finalPlayers.filter((p) => p.isBot);
         ChorPoliceBotBehavior.init(bots);
 
@@ -278,10 +360,6 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
         });
 
         setIsTransitioning(true);
-
-        // setTimeout(() => {
-        //   router.push("/chor-police-mp" as any);
-        // }, 500);
       }
     },
     [

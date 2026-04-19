@@ -4,7 +4,15 @@ import { Text } from "@/components/Text";
 import { LinearGradient } from "expo-linear-gradient";
 
 export const StartButton = ({ lobby }: any) => {
+  /**
+   * Ready when lobby has 4 players (humans + bots combined).
+   * Bots auto-spawn at mount so count hits 4 within ~1s.
+   * When humans join, bots are auto-trimmed to keep count at 4.
+   */
   const isReady = lobby.players.length >= 4;
+  const buttonText = isReady
+    ? "LETS GO!"
+    : `WAITING (${lobby.players.length}/4)`;
 
   return (
     <View className="absolute bottom-0 w-full px-6 pb-12 pt-10">
@@ -42,7 +50,7 @@ export const StartButton = ({ lobby }: any) => {
                 isReady ? "text-white" : "text-white/40"
               }`}
             >
-              {isReady ? "LETS GO!" : `WAITING (${lobby.players.length}/4)`}
+              {buttonText}
             </Text>
           </LinearGradient>
         </Pressable>

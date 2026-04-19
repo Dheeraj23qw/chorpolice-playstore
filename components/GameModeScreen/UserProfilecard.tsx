@@ -134,7 +134,7 @@ const UserProfileCard = () => {
                     source={
                       avatar
                         ? { uri: avatar }
-                        : require("@/assets/images/chorsipahi/king.png")
+                        : require("@/assets/images/chorsipahi/thief.png")
                     }
                     style={{ width: "100%", height: "100%" }}
                     resizeMode="cover"

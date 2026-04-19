@@ -30,8 +30,8 @@ const GameModeScreen: React.FC = () => {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.98);
   const bgScale = useSharedValue(1.1);
-  
-  const { visible, onShare, onRate, onClose, onDisableForever}=
+
+  const { visible, onShare, onRate, onClose, onDisableForever } =
     useLowCoinRewardModal();
   useEffect(() => {
     BotEngine.prepareEngine(10);

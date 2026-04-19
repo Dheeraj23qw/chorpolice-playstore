@@ -2,12 +2,12 @@ import React from "react";
 import { View, Modal, Pressable, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Text } from "../Text";
+import { Text } from "../components/Text";
 import { rf } from "@/utils/responsive";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "react-native";
-import WifiHint from "../WifiHint";
+import WifiHint from "../components/WifiHint";
 
 interface GameModeModalProps {
   isVisible: boolean;

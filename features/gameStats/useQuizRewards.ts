@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
-import { applyTransaction } from "@/features/wallet/walletSlice";
-import { addQuizEntry } from "@/features/quizStats/quizStatsSlice";
+import { addQuizEntry } from "@/features/gameStats/gameStatsSlice";
+import { updateCoins } from "@/features/wallet/walletSlice";
 
 export function useQuizReward() {
   const dispatch: AppDispatch = useDispatch();
@@ -15,7 +15,8 @@ export function useQuizReward() {
   const rewardData = useMemo(() => {
     if (!level || totalQuestions === 0) return { totalReward: 0, accuracy: 0 };
 
-    const accuracy = correctQuestions / totalQuestions;
+    // ✅ FIX: proper percentage
+    const accuracy = (correctQuestions / totalQuestions) * 100;
 
     const maxRewardTable = {
       easy: 30,
@@ -24,37 +25,28 @@ export function useQuizReward() {
     };
 
     const baseReward = maxRewardTable[level];
+
     let totalReward: number;
 
-    if (accuracy < 0.5) {
-      // 📉 NEGATIVE MARKING: 
-      // If accuracy < 50%, deduct 50% of the max potential reward as a penalty
+    // ❌ FIXED CONDITION (0–100 scale)
+    if (accuracy < 50) {
       totalReward = Math.floor(baseReward * -0.5);
     } else {
-      // ✅ POSITIVE MARKING:
-      // Accuracy 50% to 100% scales the reward proportionally
-      totalReward = Math.floor(accuracy * baseReward);
+      totalReward = Math.floor((accuracy / 100) * baseReward);
     }
 
     return { totalReward, accuracy };
   }, [level, correctQuestions, totalQuestions]);
 
   useEffect(() => {
-    if (!level || hasRecorded.current) return;
+    if (!level || totalQuestions === 0 || hasRecorded.current) return;
+
     hasRecorded.current = true;
 
     const { totalReward, accuracy } = rewardData;
 
-    // Dispatch even if reward is negative to update the user's wallet balance (deduction)
-    dispatch(
-      applyTransaction({
-        amount: totalReward, // If totalReward is negative, this will decrease balance
-        reason: totalReward >= 0 ? "Quiz Accuracy Reward" : "Quiz Penalty",
-        source: "quiz_reward",
-      }),
-    );
+    dispatch(updateCoins(totalReward));
 
-    // Record quiz stats with correct payload shape
     dispatch(
       addQuizEntry({
         result: isWinner ? "win" : "fail",
@@ -62,7 +54,7 @@ export function useQuizReward() {
         difficulty: level,
       }),
     );
-  }, [rewardData, level, isWinner, dispatch]);
+  }, [rewardData, level, totalQuestions, isWinner, dispatch]);
 
   return { reward: rewardData.totalReward };
 }

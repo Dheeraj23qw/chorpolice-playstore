@@ -16,7 +16,7 @@ type AddChorPolicePayload = {
 
 /* ─── State ─── */
 
-export interface QuizStatsState {
+export interface GameStatsState {
   totalWins: number;
   totalQuizzes: number;
   averageAccuracy: number;
@@ -41,7 +41,7 @@ export interface QuizStatsState {
 
 /* ─── Initial State ─── */
 
-export const defaultQuizStats: QuizStatsState = {
+export const defaultQuizStats: GameStatsState = {
   totalWins: 0,
   totalQuizzes: 0,
   averageAccuracy: 0,
@@ -70,13 +70,13 @@ const quizStatsSlice = createSlice({
   initialState: defaultQuizStats,
 
   reducers: {
-    /* 🎯 QUIZ GAME ENTRY */
     addQuizEntry: (state, action: PayloadAction<AddQuizPayload>) => {
       const { result, accuracy, difficulty = "easy" } = action.payload;
 
-      const totalKey = `${difficulty}Total` as keyof QuizStatsState;
-      const winKey = `${difficulty}Wins` as keyof QuizStatsState;
-      const lossKey = `${difficulty}Losses` as keyof QuizStatsState;
+      const totalKey = `${difficulty}Total` as keyof GameStatsState;
+      const winKey = `${difficulty}Wins` as keyof GameStatsState;
+      const lossKey = `${difficulty}Losses` as keyof GameStatsState;
+      const safeAccuracy = Math.max(0, Math.min(100, accuracy));
 
       // Total games
       state.totalQuizzes++;
@@ -90,9 +90,8 @@ const quizStatsSlice = createSlice({
         state[lossKey]++;
       }
 
-      // Running average accuracy
       state.averageAccuracy =
-        (state.averageAccuracy * (state.totalQuizzes - 1) + accuracy) /
+        (state.averageAccuracy * (state.totalQuizzes - 1) + safeAccuracy) /
         state.totalQuizzes;
     },
 
@@ -116,7 +115,7 @@ const quizStatsSlice = createSlice({
     resetQuizStats: () => ({ ...defaultQuizStats }),
 
     /* 🔁 HYDRATE FROM STORAGE */
-    setQuizStats: (_, action: PayloadAction<QuizStatsState>) => {
+    setQuizStats: (_, action: PayloadAction<GameStatsState>) => {
       return action.payload;
     },
   },

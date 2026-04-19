@@ -4,7 +4,7 @@ import { updateCoins, setCoins } from "@/features/wallet/walletSlice";
 import {
   addQuizEntry,
   addChorPoliceEntry,
-} from "@/features/quizStats/quizStatsSlice";
+} from "@/features/gameStats/gameStatsSlice";
 
 import { saveWallet } from "@/storage/walletStorage";
 import { saveQuizStats } from "@/storage/quizStatsStorage";

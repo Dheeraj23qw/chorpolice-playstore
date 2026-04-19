@@ -2,17 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Animated } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
-import store, { AppDispatch, RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { resetDifficulty } from "@/redux/reducers/quiz";
 import {
   setPlayerNames as setReduxPlayerNames,
   updatePlayerScores as updateReduxScores,
 } from "@/redux/reducers/playerReducer";
-import { addChorPoliceEntry } from "@/features/quizStats/quizStatsSlice";
-import { saveQuizStats } from "@/storage/quizStatsStorage";
 import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
-import useRandomMessage from "./useRandomMessage";
+import useRandomMessage from "../useRandomMessage";
 
 import {
   handleIncomingPacket,
@@ -21,10 +19,10 @@ import {
 import { MODES } from "@/constants/Networking";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
-import { flipCard } from "./useRajaMantriGame/utils/flipCardUtil";
-import { revealAllCards } from "./useRajaMantriGame/utils/revealAllCardsUtils";
+import { flipCard } from "./helpers/flipCardUtil";
 import { updateCoins } from "@/features/wallet/walletSlice";
-
+import { recordCPGame } from "@/features/gameStats/gameStatsActions";
+import { revealAllCards } from "./helpers/revealAllCardsUtils";
 /**
  * --- CHOR POLICE MULTIPLAYER HOOK ---
  *
@@ -450,7 +448,7 @@ export const useChorPoliceMultiplayer = () => {
           toast.success("CHAMPION! 🏆", `You won ${totalPot} coins!`);
         }
 
-        dispatch(addChorPoliceEntry({ isWinner }));
+        recordCPGame(dispatch, isWinner, "completed");
       }
 
       /* ── 5. HOST QUIT ── */

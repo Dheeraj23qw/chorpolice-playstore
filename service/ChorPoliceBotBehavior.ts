@@ -82,7 +82,7 @@ export const ChorPoliceBotBehavior = {
           // for a meaningful amount of time (7.5-12.5s) before the bot guesses.
           // Total: 19-24 seconds after PUBLIC_REVEAL
           const ANIMATION_DURATION = 16000; // 11.5s animation + 4.5s buffer for role reveal
-          const THINKING_DELAY = 1000 + Math.floor(Math.random() * 5000); // 3-8s
+          const THINKING_DELAY = 3000 + Math.floor(Math.random() * 5000); // 3-8s
           const delay = ANIMATION_DURATION + THINKING_DELAY;
           console.log(
             `🤖 [CPBots]   Will guess in ${delay}ms (${ANIMATION_DURATION}ms anim + ${THINKING_DELAY}ms thinking)`,

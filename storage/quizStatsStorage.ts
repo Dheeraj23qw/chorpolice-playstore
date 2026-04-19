@@ -1,13 +1,15 @@
 import { storage } from "@/storage/mmkv";
-import { QuizStatsState } from "@/features/quizStats/quizStatsTypes";
-import { defaultQuizStats } from "@/features/quizStats/quizStatsSlice";
+import {
+  defaultQuizStats,
+  GameStatsState,
+} from "@/features/gameStats/gameStatsSlice";
 
 const QUIZ_STATS_KEY = "quiz_stats_v1"; // ✅ versioned key (important)
 
 /**
  * 💾 Save stats
  */
-export const saveQuizStats = (stats: QuizStatsState) => {
+export const saveQuizStats = (stats: GameStatsState) => {
   try {
     storage.set(QUIZ_STATS_KEY, JSON.stringify(stats));
   } catch (e) {
@@ -20,7 +22,7 @@ export const saveQuizStats = (stats: QuizStatsState) => {
  * If new fields were added (streaks, CP stats), they'll be filled with defaults
  * instead of crashing or returning undefined values.
  */
-export const loadQuizStats = (): QuizStatsState | null => {
+export const loadQuizStats = (): GameStatsState | null => {
   try {
     const data = storage.getString(QUIZ_STATS_KEY);
 
@@ -34,7 +36,7 @@ export const loadQuizStats = (): QuizStatsState | null => {
     }
 
     // ✅ Migration: merge with defaults so new fields get filled automatically
-    return { ...defaultQuizStats, ...parsed } as QuizStatsState;
+    return { ...defaultQuizStats, ...parsed } as GameStatsState;
   } catch (e) {
     console.error("❌ [QuizStats] Load failed", e);
     return null;

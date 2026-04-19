@@ -10,48 +10,36 @@ import {
   Trophy,
   Target,
   TrendingUp,
-  Flame,
-  Star,
   Activity,
+  Star,
 } from "lucide-react-native";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
 import { usePlayerLevel } from "@/service/usePlayerLevel";
+import { selectUserQuizStats } from "@/features/gameStats/gameStatsSelector";
+import { loadUsername } from "@/storage/userStorage";
 
 export default function StatsScreen() {
-  
-  const quizStats = useSelector((state: RootState) => state.quizStats);
+  const username = loadUsername();
 
   const { level, xp, nextLevelXp } = usePlayerLevel();
+  const USER_STATS = useSelector(selectUserQuizStats);
 
+  // 📊 derived stats
+  const winRate =
+    USER_STATS.total_quizzes === 0
+      ? 0
+      : Math.round((USER_STATS.wins / USER_STATS.total_quizzes) * 100);
 
-  const USER_STATS = {
-    username: "PlayerOne",
-    level: level,
-    xp: xp,
-    nextLevelXp: nextLevelXp,
+  const levelProgress = nextLevelXp === 0 ? 0 : (xp / nextLevelXp) * 100;
 
-    total_quizzes: quizStats.totalQuizzes,
-    wins: quizStats.totalWins,
-    losses: quizStats.totalQuizzes - quizStats.totalWins,
+  const accuracy = USER_STATS.averageAccuracy || 0;
 
-    currentStreak: quizStats.currentStreak,
-    highestStreak: quizStats.highestStreak,
-
-    easyWins: quizStats.easyWins,
-    mediumWins: quizStats.mediumWins,
-    hardWins: quizStats.hardWins,
-
-    easyPlayed: quizStats.easyTotal,
-    mediumPlayed: quizStats.mediumTotal,
-    hardPlayed: quizStats.hardTotal,
+  const playerData = {
+    username,
+    level,
+    xp,
+    nextLevelXp,
   };
-
-  const winRate = Math.round(
-    (USER_STATS.wins / (USER_STATS.total_quizzes || 1)) * 100,
-  );
-  const levelProgress = (USER_STATS.xp / (USER_STATS.nextLevelXp || 1)) * 100;
-
   return (
     <ScreenWrapper
       title="Statistics"
@@ -62,16 +50,12 @@ export default function StatsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-12 px-5 bg-slate-950"
       >
-        {/* Player Info */}
-        <PlayerCard user={USER_STATS} progress={levelProgress} />
+        {/* ================= Player Card ================= */}
+        <PlayerCard user={playerData} progress={levelProgress} />
 
-        {/* ================= Quick Stats Section ================= */}
+        {/* ================= Quick Stats ================= */}
         <Section title="Quick Stats">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 5 }}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row space-x-4">
               <StatCard
                 label="Matches"
@@ -97,26 +81,31 @@ export default function StatsScreen() {
           </ScrollView>
         </Section>
 
-        {/* ================= Played by Difficulty Section ================= */}
+        {/* ================= Accuracy ================= */}
+        <Section title="Performance">
+          <StatCard
+            label="Average Accuracy"
+            value={`${accuracy}%`}
+            icon={<Star size={20} color="#fbbf24" />}
+          />
+        </Section>
+
+        {/* ================= Difficulty Played ================= */}
         <Section title="Played by Difficulty">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 5 }}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row space-x-4">
               <StatCard
-                label="Easy Played"
+                label="Easy"
                 value={USER_STATS.easyPlayed}
                 icon={<Activity size={20} color="#34d399" />}
               />
               <StatCard
-                label="Medium Played"
+                label="Medium"
                 value={USER_STATS.mediumPlayed}
                 icon={<Activity size={20} color="#fbbf24" />}
               />
               <StatCard
-                label="Hard Played"
+                label="Hard"
                 value={USER_STATS.hardPlayed}
                 icon={<Activity size={20} color="#f87171" />}
               />
@@ -124,36 +113,68 @@ export default function StatsScreen() {
           </ScrollView>
         </Section>
 
-        {/* ================= Elite Streaks Section ================= */}
-        <Section title="Elite Streaks">
-          <Row
-            label="Current Win Streak"
-            value={USER_STATS.currentStreak}
-            icon={<Flame size={18} color="#f97316" />}
-          />
-          <Row
-            label="All-Time Highest"
-            value={USER_STATS.highestStreak}
-            icon={<Star size={18} color="#facc15" />}
-          />
+        {/* ================= Chor Police Stats ================= */}
+        <Section title="Chor Police Stats">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 5 }}
+          >
+            <View className="flex-row space-x-4">
+              <StatCard
+                label="Played"
+                value={USER_STATS.cpPlayed}
+                icon={<Gamepad2 size={20} color="#60a5fa" />}
+              />
+              <StatCard
+                label="Wins"
+                value={USER_STATS.cpWins}
+                icon={<Trophy size={20} color="#10b981" />}
+              />
+              <StatCard
+                label="Losses"
+                value={USER_STATS.cpLosses}
+                icon={<Target size={20} color="#f43f5e" />}
+              />
+            </View>
+          </ScrollView>
         </Section>
 
-        {/* ================= Quiz Wins by Difficulty Section ================= */}
-        <Section title="Quiz Wins by Difficulty">
+        {/* ================= Wins by Difficulty ================= */}
+        <Section title="Wins by Difficulty">
           <Row
-            label="Easy Mode Wins"
+            label="Easy Wins"
             value={USER_STATS.easyWins}
             icon={<Activity size={18} color="#34d399" />}
           />
           <Row
-            label="Medium Mode Wins"
+            label="Medium Wins"
             value={USER_STATS.mediumWins}
             icon={<Activity size={18} color="#fbbf24" />}
           />
           <Row
-            label="Hard Mode Wins"
+            label="Hard Wins"
             value={USER_STATS.hardWins}
             icon={<Activity size={18} color="#f87171" />}
+          />
+        </Section>
+
+        {/* ================= Losses by Difficulty ================= */}
+        <Section title="Losses by Difficulty">
+          <Row
+            label="Easy Losses"
+            value={USER_STATS.easyLosses}
+            icon={<Target size={18} color="#34d399" />}
+          />
+          <Row
+            label="Medium Losses"
+            value={USER_STATS.mediumLosses}
+            icon={<Target size={18} color="#fbbf24" />}
+          />
+          <Row
+            label="Hard Losses"
+            value={USER_STATS.hardLosses}
+            icon={<Target size={18} color="#f87171" />}
           />
         </Section>
       </ScrollView>

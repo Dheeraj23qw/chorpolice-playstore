@@ -8,7 +8,6 @@ import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
 import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
 import { toast } from "@/components/feedback/toast";
-import { applyTransaction } from "@/features/wallet/walletSlice";
 import { loadUsername } from "@/storage/userStorage";
 
 import {
@@ -22,6 +21,7 @@ import {
   POPUP_DELAY,
   TIMER_BY_DIFFICULTY,
 } from "@/constants/quizConstants";
+import { updateCoins } from "@/features/wallet/walletSlice";
 
 interface PlayerMessage {
   message?: string | null;
@@ -231,13 +231,7 @@ export const useQuizGameLogic = () => {
       const stake = QuizEngine.state.stake;
       if (stake > 0 && questionIndex === 0) {
         console.log("💰 [GameLogic] Debiting stake:", stake);
-        dispatch(
-          applyTransaction({
-            amount: -stake,
-            reason: "Quiz Game Stake",
-            source: "quiz_penalty",
-          }),
-        );
+        dispatch(updateCoins(-stake));
       }
 
       // 📡 Trigger first sync for bots if Host
@@ -443,13 +437,7 @@ export const useQuizGameLogic = () => {
         if (packet.isLastRound && packet.leaderboard[0]?.id === localPlayerId) {
           const coins = QuizEngine.state.totalPot;
           if (coins > 0) {
-            dispatch(
-              applyTransaction({
-                amount: coins,
-                reason: "Quiz Win - Total Coins",
-                source: "quiz_reward",
-              }),
-            );
+            dispatch(updateCoins(coins));
             toast.success("CHAMPION!", `You won the coins of ${coins} coins!`);
           }
         }
@@ -479,12 +467,7 @@ export const useQuizGameLogic = () => {
           );
 
           if (refund > 0) {
-            dispatch(
-              applyTransaction({
-                amount: refund,
-                reason: "Refund — Host left the game",
-              }),
-            );
+            dispatch(updateCoins(refund));
             toast.success(
               "Coins Refunded!",
               `${refund} coins returned because the host left the game.`,

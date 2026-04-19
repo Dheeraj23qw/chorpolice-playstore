@@ -63,6 +63,9 @@ const WifiHint = () => {
           2. One player taps <Text className="text-green-300">Host Game</Text>
           {"\n"}
           3. Others tap <Text className="text-blue-300">Join Game</Text>
+          {"\n"}
+          4. No friends?{" "}
+          <Text className="text-yellow-300">Just tap Host or Join 😉</Text>
         </Text>
 
         {/* ⚠️ Warning */}

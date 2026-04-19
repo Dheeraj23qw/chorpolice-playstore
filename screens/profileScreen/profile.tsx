@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  ScrollView,
-  Image,
-  FlatList,
-  TouchableOpacity,
-} from "react-native";
+import { View, ScrollView, FlatList } from "react-native";
 import * as LucideIcons from "lucide-react-native";
 import { Text } from "@/components/Text";
 import ScreenWrapper from "@/components/screenwrapper";
@@ -14,7 +8,7 @@ import { usePlayerLevel } from "@/service/usePlayerLevel";
 import { RootState } from "@/redux/store";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
 import { selectEarnedAwards } from "@/features/awards/awardsSlice";
-import { Achievement, ACHIEVEMENT_DATA } from "@/constants/achievements";
+import { ACHIEVEMENT_DATA, Achievement } from "@/constants/achievements";
 import AvatarWithLevel from "@/components/ProfileScreen/AvatarWithLevel";
 import LevelProgressBar from "@/components/ProfileScreen/LevelProgressBar";
 import StatCard from "@/components/ProfileScreen/StatCard";
@@ -27,20 +21,14 @@ const USER_IMAGE =
 export default function UserProfile() {
   const quizStats = useSelector((state: RootState) => state.quizStats);
   const coins = useSelector((state: RootState) => state.wallet.coins);
-  const earnedAwardIds = useSelector(selectEarnedAwards); // Use corrected selector
+  const earnedAwardIds = useSelector(selectEarnedAwards);
 
   const { level, xp, nextLevelXp } = usePlayerLevel();
   const { pickImage } = useGalleryPicker();
 
-  // Map permanent IDs to actual achievement objects
-  const myAwards = useMemo(() => {
-    return earnedAwardIds
-      .map((id) => ACHIEVEMENT_DATA.find((a) => a.id === id))
-      .filter((a): a is any => !!a);
-  }, [earnedAwardIds]);
-
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
+  /* ---------------- Avatar Load ---------------- */
   useEffect(() => {
     const saved = loadAvatar();
     if (saved) setAvatarUri(saved);
@@ -54,19 +42,33 @@ export default function UserProfile() {
     }
   };
 
+  /* ---------------- Awards Mapping (SAFE + FAST) ---------------- */
+  const myAwards = useMemo((): Achievement[] => {
+    const idSet = new Set(earnedAwardIds);
+    return ACHIEVEMENT_DATA.filter((a) => idSet.has(a.id));
+  }, [earnedAwardIds]);
+
+  /* ---------------- User Stats ---------------- */
   const USER = {
-    xp: xp,
-    nextLevelXp: nextLevelXp,
-    total_quizzes: quizStats.totalQuizzes,
-    wins: quizStats.totalWins,
-    currentDailyStreak: quizStats.currentStreak,
-    highestDailyStreak: quizStats.highestDailyStreak,
-    accuracy: Math.round((quizStats.averageAccuracy || 0) * 100),
+    xp,
+    nextLevelXp,
+    total_quizzes: quizStats.totalQuizzes || 0,
+    wins: quizStats.totalWins || 0,
+    accuracy: Math.round(quizStats.averageAccuracy || 0),
+    // 🎯 Chor Police
+    cpPlayed: quizStats.cpGamesPlayed || 0,
+    cpWins: quizStats.cpGamesWon || 0,
   };
 
-  const winRate = Math.round(
-    ((USER.wins || 0) / (USER.total_quizzes || 1)) * 100,
-  );
+  const winRate =
+    USER.total_quizzes === 0
+      ? 0
+      : Math.round((USER.wins / USER.total_quizzes) * 100);
+
+  const cpWinRate =
+    USER.cpPlayed === 0 ? 0 : Math.round((USER.cpWins / USER.cpPlayed) * 100);
+
+  /* ---------------- Stat Cards ---------------- */
   const stats: {
     label: string;
     value: string | number;
@@ -89,14 +91,14 @@ export default function UserProfile() {
       bg: "#fef9c3",
     },
     {
-      label: "WINS",
+      label: "QUIZ WINS",
       value: USER.wins,
       icon: "Trophy",
       color: "#f97316",
       bg: "#fee2e2",
     },
     {
-      label: "MATCHES",
+      label: "QUIZ MATCHES",
       value: USER.total_quizzes,
       icon: "Gamepad",
       color: "#6366f1",
@@ -110,25 +112,34 @@ export default function UserProfile() {
       bg: "#d1fae5",
     },
     {
-      label: "WIN RATE",
+      label: "QUIZ WIN RATE",
       value: `${winRate}%`,
       icon: "Zap",
       color: "#fbbf24",
       bg: "#fef3c7",
     },
+
+    // 🔥 Chor Police Section
     {
-      label: "STREAK",
-      value: USER.currentDailyStreak,
-      icon: "Sun",
-      color: "#f43f5e",
-      bg: "#ffe4e6",
+      label: "CP MATCHES",
+      value: USER.cpPlayed,
+      icon: "Users",
+      color: "#60a5fa",
+      bg: "#dbeafe",
     },
     {
-      label: "BEST STREAK",
-      value: USER.highestDailyStreak,
-      icon: "Flame",
-      color: "#f43f5e",
-      bg: "#ffe4e6",
+      label: "CP WINS",
+      value: USER.cpWins,
+      icon: "Shield",
+      color: "#34d399",
+      bg: "#d1fae5",
+    },
+    {
+      label: "CP WIN RATE",
+      value: `${cpWinRate}%`,
+      icon: "TrendingUp",
+      color: "#818cf8",
+      bg: "#e0e7ff",
     },
   ];
 
@@ -138,19 +149,24 @@ export default function UserProfile() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
+        {/* Avatar */}
         <AvatarWithLevel
           imageUri={avatarUri || USER_IMAGE}
           level={level}
           onPress={changeAvatar}
         />
+
+        {/* Level Progress */}
         <LevelProgressBar xp={USER.xp} nextLevelXp={USER.nextLevelXp} />
 
+        {/* Stats Grid */}
         <View className="mt-8 flex-row flex-wrap justify-between px-6">
           {stats.map((stat, i) => (
             <StatCard key={i} {...stat} />
           ))}
         </View>
 
+        {/* Achievements */}
         <View className="mt-6 px-6">
           <Text className="mb-4 font-main-bold text-[12px] uppercase tracking-widest text-slate-400">
             Collection ({myAwards.length})

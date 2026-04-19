@@ -2,7 +2,7 @@ import React, { useEffect, memo } from "react";
 import { View, BackHandler, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useChorPoliceMultiplayer } from "@/hooks/useChorPoliceMultiplayer";
+import { useChorPoliceMultiplayer } from "@/hooks/useChorPoliceMultiplayer/useChorPoliceMultiplayer";
 
 // Views
 

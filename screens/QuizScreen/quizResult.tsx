@@ -13,7 +13,7 @@ import { resetDifficulty, setWinner } from "@/redux/reducers/quiz";
 
 import { ResultInfo } from "./components/reseltInfo";
 import { AudioEngine } from "@/audio/audioEngine";
-import { useQuizReward } from "@/hooks/useQuizRewards";
+import { useQuizReward } from "@/features/gameStats/useQuizRewards";
 import { ActionButtons } from "./components/renderButtons";
 import { StandingsDropdown } from "./components/StandingsDropdown";
 import { QuizEngine } from "@/service/QuizEngine";

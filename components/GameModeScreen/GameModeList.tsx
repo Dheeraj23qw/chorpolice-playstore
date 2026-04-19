@@ -6,7 +6,7 @@ import { router } from "expo-router"; // 👈 Ensure this is imported
 import { hp, wp } from "@/utils/responsive";
 import { optionsGameMode } from "@/constants/gamemode";
 import { GameModeCard } from "./GameModeCard";
-import GameModeModal from "./GameModeModal";
+import GameModeModal from "../../modal/GameModeModal";
 
 interface GameModeListProps {
   onModalToggle: (status: boolean) => void;

@@ -1,7 +1,18 @@
-import React, { useEffect, useRef } from "react";
-import { Modal, View, TouchableOpacity, Animated, Easing } from "react-native";
+import React, { useEffect } from "react";
+import { Modal, View, TouchableOpacity, Image } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+  ZoomIn,
+  withDelay,
+} from "react-native-reanimated";
 import { Text } from "@/components/Text";
-import { FontAwesome5 } from "@expo/vector-icons";
 
 interface WelcomeProps {
   isVisible: boolean;
@@ -12,46 +23,42 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
   isVisible,
   onClaim,
 }) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  const shineAnim = useRef(new Animated.Value(-100)).current;
+  const floatY = useSharedValue(0);
+  const shimmerX = useSharedValue(-200);
 
   useEffect(() => {
     if (isVisible) {
-      // Bounce Entrance
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 5,
-        useNativeDriver: true,
-      }).start();
-
-      // Floating Crown
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(floatAnim, {
-            toValue: -12,
+      // Floating Thief
+      floatY.value = withRepeat(
+        withSequence(
+          withTiming(-15, {
             duration: 1500,
-            useNativeDriver: true,
+            easing: Easing.inOut(Easing.quad),
           }),
-          Animated.timing(floatAnim, {
-            toValue: 0,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
+          withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
+        ),
+        -1,
+        true,
+      );
 
-      // Infinite "Shine" flash across the button
-      Animated.loop(
-        Animated.timing(shineAnim, {
-          toValue: 400,
-          duration: 2000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ).start();
+      // Glass Shimmer
+      shimmerX.value = withRepeat(
+        withDelay(
+          500,
+          withTiming(400, { duration: 2000, easing: Easing.linear }),
+        ),
+        -1,
+        false,
+      );
     }
   }, [isVisible]);
+
+  const thiefStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmerX.value }],
+  }));
 
   return (
     <Modal
@@ -60,69 +67,69 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
       statusBarTranslucent
       animationType="fade"
     >
-      <View className="flex-1 items-center justify-center bg-black/80 px-6">
-        {/* Outer Neon Glow */}
-        <View className="absolute h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
-
+      {/* REMOVED BLACK BACKGROUND: 
+          The flex-1 container is now completely transparent. 
+      */}
+      <View className="flex-1 items-center justify-center px-6">
         <Animated.View
-          style={{ transform: [{ scale: scaleAnim }] }}
-          className="w-full max-w-sm"
+          entering={ZoomIn.springify().damping(15)}
+          className="w-full max-w-sm overflow-hidden rounded-[50px] border border-white/40 shadow-2xl"
+          style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
         >
-          {/* THE GLASS CARD */}
-          <View
-            style={{ backgroundColor: "rgba(24, 24, 27, 0.8)" }} // Deep Zinc with alpha
-            className="overflow-hidden rounded-[40px] border border-white/20 p-1 shadow-2xl"
-          >
-            <View className="items-center rounded-[36px] bg-zinc-900/50 p-8">
-              {/* Floating Game Icon */}
-              <Animated.View
-                style={{ transform: [{ translateY: floatAnim }] }}
-                className="mb-4"
-              >
-                <View className="h-24 w-24 items-center justify-center rounded-3xl border-2 border-indigo-400/50 bg-indigo-500/10 shadow-lg">
-                  <FontAwesome5 name="gem" size={48} color="#6366f1" />
-                </View>
-              </Animated.View>
+          {/* HIGH INTENSITY BLUR: This makes the game screen behind it look like frosted glass */}
+          <BlurView intensity={95} tint="dark" className="items-center p-10">
+            {/* FLOATING THIEF */}
+            <Animated.View style={thiefStyle} className="mb-4">
+              <Image
+                source={require("@/assets/images/chorsipahi/thief.png")}
+                className="h-32 w-32"
+                resizeMode="contain"
+              />
+            </Animated.View>
 
-              {/* Header Text */}
-              <Text className="font-main-bold text-4xl tracking-tighter text-white">
-                LEVEL UP!
+            <Text className="font-main-bold text-4xl tracking-tighter text-white">
+              BIG WIN!
+            </Text>
+
+            {/* COIN BOX */}
+            <View className="my-8 w-full items-center rounded-[30px] border border-white/10 bg-white/5 py-6">
+              <Text className="font-main-bold text-6xl text-yellow-400">
+                10000
               </Text>
-
-              {/* Reward Amount with Glassy Background */}
-              <View className="my-8 w-full items-center rounded-2xl border border-white/10 bg-white/5 py-4">
-                <Text className="font-main-bold text-6xl tracking-tight text-white">
-                  1,000
-                </Text>
-                <Text className="font-main-bold text-lg uppercase text-indigo-500">
-                  Bonus Points
-                </Text>
-              </View>
-
-              {/* THE ARCADE BUTTON */}
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={onClaim}
-                className="w-full overflow-hidden rounded-2xl border-b-4 border-indigo-800 bg-indigo-500 shadow-xl"
-              >
-                {/* Animated Shine Effect */}
-                <Animated.View
-                  style={{ transform: [{ translateX: shineAnim }] }}
-                  className="absolute h-full w-20 -skew-x-12 bg-white/20"
-                />
-
-                <View className="items-center py-4">
-                  <Text className="font-main-bold text-xl tracking-widest text-white">
-                    COLLECT NOW
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              <Text className="mt-4 font-main-bold text-[10px] uppercase tracking-widest text-zinc-500">
-                Tap to claim
+              <Text className="mt-1 font-main-bold text-sm tracking-[6px] text-white/70">
+                COINS
               </Text>
             </View>
-          </View>
+
+            {/* CRYSTAL BUTTON */}
+            <TouchableOpacity
+              onPress={onClaim}
+              activeOpacity={0.9}
+              className="w-full"
+            >
+              <View className="overflow-hidden rounded-2xl border-t border-white/30 shadow-xl">
+                <BlurView intensity={40} tint="light">
+                  <LinearGradient
+                    colors={[
+                      "rgba(99, 102, 241, 0.7)",
+                      "rgba(67, 56, 202, 0.7)",
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    className="items-center py-5"
+                  >
+                    <Text className="font-main-bold text-xl tracking-[2px] text-white">
+                      ADD TO BAG
+                    </Text>
+                  </LinearGradient>
+                </BlurView>
+              </View>
+            </TouchableOpacity>
+
+            <Text className="mt-6 font-main-md text-[9px] uppercase tracking-[4px] text-white/20">
+              TAP TO CONTINUE
+            </Text>
+          </BlurView>
         </Animated.View>
       </View>
     </Modal>

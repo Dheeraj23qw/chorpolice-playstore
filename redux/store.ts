@@ -10,7 +10,7 @@ import lockReducer from "@/features/locks/lockSlice";
 import walletReducer from "@/features/wallet/walletSlice";
 import quizStatsReducer, {
   defaultQuizStats,
-} from "@/features/quizStats/quizStatsSlice";
+} from "@/features/gameStats/gameStatsSlice";
 
 import { listenerMiddleware } from "./middleware";
 import { loadQuizStats } from "@/storage/quizStatsStorage";

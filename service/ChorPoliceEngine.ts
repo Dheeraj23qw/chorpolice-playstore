@@ -95,7 +95,16 @@ export const ChorPoliceEngine = {
   init: (players: CPPlayer[], stake: number, totalRounds: number = 5): void => {
     ChorPoliceEngine.reset();
 
+    // 🛡️ VALIDATION: Chor Police requires EXACTLY 4 players
+    if (players.length !== 4) {
+      console.error(
+        `🚨 [CPEngine] CRITICAL: init() called with ${players.length} players — expected exactly 4! Game will not function correctly.`,
+      );
+    }
+
     console.log(`🎭 [CPEngine] Initializing session — ${players.length} players, stake: ${stake}, rounds: ${totalRounds}`);
+    console.log(`🎭 [CPEngine]   Humans: ${players.filter((p) => !p.isBot).map((p) => p.name).join(', ') || 'none'}`);
+    console.log(`🎭 [CPEngine]   Bots: ${players.filter((p) => p.isBot).map((p) => p.name).join(', ') || 'none'}`);
 
     ChorPoliceEngine.state.players = [...players];
     ChorPoliceEngine.state.stake = stake;
@@ -121,6 +130,12 @@ export const ChorPoliceEngine = {
 
     if (currentRound > totalRounds) {
       ChorPoliceEngine.endGame();
+      return;
+    }
+
+    // 🛡️ GUARD: Must have exactly 4 players for role assignment
+    if (players.length !== 4) {
+      console.error(`🚨 [CPEngine] startRound aborted — ${players.length} players (need 4)`);
       return;
     }
 
