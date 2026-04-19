@@ -1,25 +1,34 @@
 export const ONBOARDING_SLIDES = [
   {
     id: "1",
-    title: "Welcome to the Game Universe 🎮",
+    title: "Welcome to Chor Police!",
     description:
-      "Play real-time multiplayer games with friends and win rewards.",
-    image: require("@/assets/images/chorsipahi/thief.png"),
+      "Your childhood favorite game is now on your phone with a fresh new look and exciting features.",
+    image: require("@/assets/modalImages/intro.png"),
     accent: "#A78BFA",
   },
   {
     id: "2",
-    title: "Connect Instantly ⚡",
+    title: "Tap. Connect. Play. ⚡",
     description:
-      "Join via WiFi or invite friends with a single tap and start playing.",
+      "Play with friends, family, or anyone around you—no setup, just instant fun.",
     image: require("@/assets/images/chorsipahi/thief.png"),
     accent: "#34D399",
   },
   {
     id: "3",
-    title: "Win Rewards 🏆",
-    description: "Complete challenges, streaks and unlock exclusive rewards.",
-    image: require("@/assets/images/chorsipahi/thief.png"),
+    title: "Play Anywhere 🌍",
+    description:
+      "No internet needed. Enjoy the game anytime, anywhere without interruptions.",
+    image: require("@/assets/images/chorsipahi/police.png"),
     accent: "#60A5FA",
+  },
+  {
+    id: "4",
+    title: "Win Rewards 🏆",
+    description:
+      "Earn daily rewards, collect coins, and unlock exciting limited-time offers.",
+    image: require("@/assets/images/chorsipahi/king.png"),
+    accent: "#FBBF24",
   },
 ];

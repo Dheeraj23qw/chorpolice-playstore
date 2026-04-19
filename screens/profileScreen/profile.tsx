@@ -84,13 +84,6 @@ export default function UserProfile() {
       bg: "#fef3c7",
     },
     {
-      label: "AWARDS",
-      value: myAwards.length,
-      icon: "Star",
-      color: "#facc15",
-      bg: "#fef9c3",
-    },
-    {
       label: "QUIZ WINS",
       value: USER.wins,
       icon: "Trophy",
@@ -104,22 +97,7 @@ export default function UserProfile() {
       color: "#6366f1",
       bg: "#e0e7ff",
     },
-    {
-      label: "ACCURACY",
-      value: `${USER.accuracy}%`,
-      icon: "Target",
-      color: "#22c55e",
-      bg: "#d1fae5",
-    },
-    {
-      label: "QUIZ WIN RATE",
-      value: `${winRate}%`,
-      icon: "Zap",
-      color: "#fbbf24",
-      bg: "#fef3c7",
-    },
 
-    // 🔥 Chor Police Section
     {
       label: "CP MATCHES",
       value: USER.cpPlayed,
@@ -133,13 +111,6 @@ export default function UserProfile() {
       icon: "Shield",
       color: "#34d399",
       bg: "#d1fae5",
-    },
-    {
-      label: "CP WIN RATE",
-      value: `${cpWinRate}%`,
-      icon: "TrendingUp",
-      color: "#818cf8",
-      bg: "#e0e7ff",
     },
   ];
 

@@ -143,10 +143,16 @@ export const ChorPoliceEngine = {
     console.log(`🎭 [CPEngine] Starting Round ${currentRound}/${totalRounds}`);
     console.log(`🎭 [CPEngine] Players: [${players.map(p => `${p.name}(${p.id}${p.isBot ? ",bot" : ""})`).join(", ")}]`);
 
-    // Fisher-Yates shuffle
+    // Fisher-Yates shuffle (deterministic per round)
     const shuffled: Role[] = [...ROLES];
+    const seed = ChorPoliceEngine.state.currentRound * 7919 + ChorPoliceEngine.state.players.length * 104729;
+    let s = seed;
+    const rand = (): number => {
+      s = (1664525 * s + 1013904223) % 4294967296;
+      return s / 4294967296;
+    };
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(rand() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 

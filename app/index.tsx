@@ -16,6 +16,7 @@ import { AudioEngine } from "@/audio/audioEngine";
 import { loadSounds } from "@/redux/reducers/soundReducer";
 import { useWelcomeBonus } from "@/service/useWelcomeBonus";
 import { runAfterUI } from "@/utils/runAfterUI";
+import UIViewer from "@/screens/UISandboxScreen";
 
 export default function Index() {
   const navigation = useNavigation();

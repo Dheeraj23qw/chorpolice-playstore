@@ -1,4 +1,5 @@
 import { LowCoinModal } from "@/features/lowCoinReward";
+import { OnboardingSwiper } from "@/features/Onboarding";
 import React, { useState, useEffect } from "react";
 import { View, StatusBar } from "react-native";
 
@@ -13,19 +14,7 @@ export default function UIViewer() {
 
   return (
     <View className="flex-1 items-center justify-center bg-black">
-      <StatusBar hidden />
-
-      <LowCoinModal
-        visible={showUI}
-        onClose={() => {
-          // Restart to see entrance animation again
-          setShowUI(false);
-          setTimeout(() => setShowUI(true), 800);
-        }}
-        onShare={() => console.log("Share Pressed")}
-        onRate={() => console.log("Rate Pressed")}
-        onDisable={() => setShowUI(false)}
-      />
+      <OnboardingSwiper />
     </View>
   );
 }

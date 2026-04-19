@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, Dimensions } from "react-native";
+import { Dimensions, StyleSheet } from "react-native";
 import Animated, {
   useAnimatedStyle,
   interpolate,
@@ -26,39 +26,55 @@ const AnimatedSlideImage: React.FC<Props> = ({ index, scrollX, image }) => {
     const scale = interpolate(
       scrollX.value,
       inputRange,
-      [0.8, 1, 0.8],
+      [0.7, 1.1, 0.7],
       Extrapolation.CLAMP,
     );
-
-    const translateY = interpolate(
+    const rotateY = `${interpolate(scrollX.value, inputRange, [60, 0, -60], Extrapolation.CLAMP)}deg`;
+    const rotateZ = `${interpolate(scrollX.value, inputRange, [-10, 0, 10], Extrapolation.CLAMP)}deg`;
+    const translateX = interpolate(
       scrollX.value,
       inputRange,
-      [30, 0, 30],
+      [60, 0, -60],
       Extrapolation.CLAMP,
     );
-
     const opacity = interpolate(
       scrollX.value,
       inputRange,
-      [0.4, 1, 0.4],
+      [0, 1, 0],
       Extrapolation.CLAMP,
     );
 
     return {
-      transform: [{ scale }, { translateY }],
       opacity,
+      transform: [
+        { perspective: 1200 },
+        { scale },
+        { translateX },
+        { rotateY },
+        { rotateZ },
+      ],
     };
   });
 
   return (
-    <Animated.View style={animatedStyle}>
-      <Image
+    <Animated.View style={[styles.container, animatedStyle]}>
+      <Animated.Image
         source={image}
-        style={{ width: 240, height: 240 }}
+        style={styles.image}
         resizeMode="contain"
       />
     </Animated.View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    width: 280,
+    height: 280,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  image: { width: "100%", height: "100%" },
+});
 
 export default AnimatedSlideImage;
