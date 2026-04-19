@@ -170,6 +170,7 @@ export const useChorPoliceMultiplayer = () => {
   const roundStartPendingRef = useRef(false);
   const scoreQuizStartedRef = useRef(false);
   const currentQuizPlayerIdRef = useRef<string | null>(null);
+  const stakeDeductedRef = useRef(false);
   myRoleRef.current = myRole;
 
   // ═══════════════════════════════════════════════════════
@@ -237,6 +238,20 @@ export const useChorPoliceMultiplayer = () => {
     }, 300);
     timerRefs.current.push(startTimer);
   }, [gamePhase, isHost, queueScoreQuizTurn]);
+
+  useEffect(() => {
+    if (stakeDeductedRef.current) {
+      return;
+    }
+
+    const stake = ChorPoliceEngine.state.stake;
+    if (stake <= 0) {
+      return;
+    }
+
+    stakeDeductedRef.current = true;
+    dispatch(updateCoins(-stake));
+  }, [dispatch]);
 
   function queueScoreQuizTurn(playerIndex: number) {
     if (!isHost) {

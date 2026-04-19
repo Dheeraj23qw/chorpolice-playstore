@@ -317,8 +317,10 @@ export const ChorPoliceEngine = {
       isLastRound: currentRound >= ChorPoliceEngine.state.totalRounds,
     });
 
-    // Advance round counter
-    ChorPoliceEngine.state.currentRound++;
+    // The ROUND_RESULT packet is also processed locally on the host via the
+    // packet router, so currentRound is advanced there exactly once for both
+    // host and clients. Do not increment it again here or the host will skip
+    // rounds and may jump past the score-quiz handoff.
   },
 
   /* ─── End game ─── */
