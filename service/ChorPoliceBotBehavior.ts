@@ -23,6 +23,7 @@ export const ChorPoliceBotBehavior = {
   _bots: [] as BotPlayer[],
   _listeners: [] as (() => void)[],
   _guessTimers: [] as ReturnType<typeof setTimeout>[],
+  _lastRevealKey: null as string | null,
 
   /**
    * Initialize bot behavior listeners for a set of bot players.
@@ -48,6 +49,15 @@ export const ChorPoliceBotBehavior = {
 
       // When a bot is assigned the Police role, auto-guess after a delay
       if (packet.type === CP.PUBLIC_REVEAL) {
+        const revealKey = `${packet.round ?? 0}:${packet.policeId ?? "unknown"}`;
+        if (ChorPoliceBotBehavior._lastRevealKey === revealKey) {
+          return;
+        }
+
+        ChorPoliceBotBehavior._lastRevealKey = revealKey;
+        ChorPoliceBotBehavior._guessTimers.forEach(clearTimeout);
+        ChorPoliceBotBehavior._guessTimers = [];
+
         const policeId = packet.policeId;
 
         console.log(
@@ -81,8 +91,8 @@ export const ChorPoliceBotBehavior = {
           // ✅ FIX: Increased delay so Thief/Advisor players see their RoleRevealView
           // for a meaningful amount of time (7.5-12.5s) before the bot guesses.
           // Total: 19-24 seconds after PUBLIC_REVEAL
-          const ANIMATION_DURATION = 16000; // 11.5s animation + 4.5s buffer for role reveal
-          const THINKING_DELAY = 3000 + Math.floor(Math.random() * 5000); // 3-8s
+          const ANIMATION_DURATION = 11500;
+          const THINKING_DELAY = 1800 + Math.floor(Math.random() * 2600);
           const delay = ANIMATION_DURATION + THINKING_DELAY;
           console.log(
             `🤖 [CPBots]   Will guess in ${delay}ms (${ANIMATION_DURATION}ms anim + ${THINKING_DELAY}ms thinking)`,
@@ -133,6 +143,7 @@ export const ChorPoliceBotBehavior = {
     // Clear guess timers
     ChorPoliceBotBehavior._guessTimers.forEach(clearTimeout);
     ChorPoliceBotBehavior._guessTimers = [];
+    ChorPoliceBotBehavior._lastRevealKey = null;
 
     // Unsubscribe packet listeners
     ChorPoliceBotBehavior._listeners.forEach((unsub) => unsub());

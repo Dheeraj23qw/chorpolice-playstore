@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
  */
 const WaitingView = ({ g }: any) => {
   const insets = useSafeAreaInsets();
+  const isWaitingForHost = !g.isHost;
 
   return (
     <View
@@ -16,7 +17,7 @@ const WaitingView = ({ g }: any) => {
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
     >
       <GamePlaySection
-        isPlayButtonDisabled={g.isPlayButtonDisabled}
+        isPlayButtonDisabled={isWaitingForHost || g.isPlayButtonDisabled}
         handlePlay={g.handlePlay}
         roles={g.roles}
         playerNames={g.playerNames}
@@ -26,7 +27,7 @@ const WaitingView = ({ g }: any) => {
         handleCardClickWithBounce={() => {}}
         toggleModal={g.toggleModal}
         round={g.round}
-        message={g.message || null}
+        message={isWaitingForHost ? "Waiting for host..." : (g.message || null)}
         getCardStyle={g.getCardStyle}
         showTableButton={g.showTableButton}
       />

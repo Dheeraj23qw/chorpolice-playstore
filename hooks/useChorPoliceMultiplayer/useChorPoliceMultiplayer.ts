@@ -49,6 +49,8 @@ type Role = "King" | "Police" | "Thief" | "Advisor";
 
 const D = "🎭 [CPHook]";
 
+const HOST_TIMEOUT_MS = 10000;
+
 export const useChorPoliceMultiplayer = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
@@ -95,7 +97,13 @@ export const useChorPoliceMultiplayer = () => {
     "Thief",
     "Police",
   ]);
-  const [playerNames, setPlayerNames] = useState<string[]>(["", "", "", ""]);
+  const [playerNames, setPlayerNames] = useState<string[]>(() => {
+    const players = ChorPoliceEngine.state.players;
+    if (players.length === 4) {
+      return players.map((player) => player.name);
+    }
+    return ["", "", "", ""];
+  });
   const [isPlayButtonDisabled, setIsPlayButtonDisabled] = useState(false);
 
   // ─── Role indices ───
@@ -107,9 +115,17 @@ export const useChorPoliceMultiplayer = () => {
   // ─── Score / Round ───
   const [playerScores, setPlayerScores] = useState<
     Array<{ playerId: string; playerName: string; scores: (number | string)[] }>
-  >([]);
+  >(() =>
+    ChorPoliceEngine.state.players.map((player) => ({
+      playerId: player.id,
+      playerName: player.name,
+      scores: [],
+    })),
+  );
   const [round, setRound] = useState(1);
-  const [totalRounds, setTotalRounds] = useState(5);
+  const [totalRounds, setTotalRounds] = useState(
+    ChorPoliceEngine.state.totalRounds || 5,
+  );
   const [showTableButton, setShowTableButton] = useState(false);
 
   // ─── Popups ───
@@ -171,6 +187,8 @@ export const useChorPoliceMultiplayer = () => {
   const scoreQuizStartedRef = useRef(false);
   const currentQuizPlayerIdRef = useRef<string | null>(null);
   const stakeDeductedRef = useRef(false);
+  const lastHostSignalAtRef = useRef(Date.now());
+  const hostDisconnectHandledRef = useRef(false);
   myRoleRef.current = myRole;
 
   // ═══════════════════════════════════════════════════════
@@ -253,6 +271,28 @@ export const useChorPoliceMultiplayer = () => {
     dispatch(updateCoins(-stake));
   }, [dispatch]);
 
+  useEffect(() => {
+    const players = ChorPoliceEngine.state.players;
+    if (!players.length) {
+      return;
+    }
+
+    setRound(ChorPoliceEngine.state.currentRound || 1);
+    setTotalRounds(ChorPoliceEngine.state.totalRounds || 5);
+    setPlayerNames((prev) =>
+      prev.some(Boolean) ? prev : players.map((player) => player.name),
+    );
+    setPlayerScores((prev) =>
+      prev.length > 0
+        ? prev
+        : players.map((player) => ({
+            playerId: player.id,
+            playerName: player.name,
+            scores: [],
+          })),
+    );
+  }, []);
+
   function queueScoreQuizTurn(playerIndex: number) {
     if (!isHost) {
       return;
@@ -296,6 +336,17 @@ export const useChorPoliceMultiplayer = () => {
     console.log(`${D} 📡 Subscribing to CP_* packets (ONE TIME)`);
 
     const unsubscribe = subscribeToPackets((packet) => {
+      if (!packet?.type) {
+        return;
+      }
+
+      if (
+        !isHost &&
+        (packet.type === NETWORK.PING || packet.type.startsWith("CP_"))
+      ) {
+        lastHostSignalAtRef.current = Date.now();
+      }
+
       /* ── 1. ROLE ASSIGNMENT ── */
       if (packet.type === CP.ROLE_ASSIGN && packet.playerId === localPlayerId) {
         console.log(`${D} ═══════════════════════════════════`);
@@ -764,18 +815,42 @@ export const useChorPoliceMultiplayer = () => {
         router.replace("/mode-select" as any);
       }
 
+      if (packet.type === CP.GAME_END && packet.reason === "player_left") {
+        const refund = packet.stake || 0;
+        const leaverId = packet.leaverId as string | undefined;
+
+        if (localPlayerId !== leaverId && refund > 0) {
+          dispatch(updateCoins(refund));
+          toast.success("Refunded!", `${refund} coins returned.`, 3000);
+        } else if (localPlayerId !== leaverId) {
+          toast.error("Match Ended", "A player left, so the match was closed.", 3000);
+        }
+
+        timerRefs.current.forEach(clearTimeout);
+        timerRefs.current = [];
+        ChorPoliceBotBehavior.reset();
+        ChorPoliceEngine.reset();
+        stopSession();
+        dispatch(resetDifficulty());
+        router.dismissAll();
+        router.replace("/mode-select" as any);
+        return;
+      }
+
       if (
         packet.type === NETWORK.PLAYER_LEAVE &&
         packet.playerId !== localPlayerId &&
         gamePhaseRef.current !== "final_result"
       ) {
-        if (isHost && packet.reason === "user_exit") {
-          broadcastPacket(packet, { processLocally: false });
+        if (isHost) {
+          broadcastPacket({
+            type: CP.GAME_END,
+            reason: "player_left",
+            leaverId: packet.playerId,
+            stake: ChorPoliceEngine.state.stake,
+          });
         }
-        toast.error("Player disconnected", "Ending the match safely.", 3000);
-        stopSession();
-        router.dismissAll();
-        router.replace("/mode-select" as any);
+        return;
       }
     });
 
@@ -791,6 +866,43 @@ export const useChorPoliceMultiplayer = () => {
     // All mutable values accessed via refs to avoid stale closures.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, router]);
+
+  useEffect(() => {
+    if (isHost) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (hostDisconnectHandledRef.current) {
+        return;
+      }
+
+      if (Date.now() - lastHostSignalAtRef.current < HOST_TIMEOUT_MS) {
+        return;
+      }
+
+      hostDisconnectHandledRef.current = true;
+      const refund = ChorPoliceEngine.state.stake || 0;
+      if (refund > 0) {
+        dispatch(updateCoins(refund));
+      }
+      toast.error(
+        "Host Disconnected",
+        refund > 0
+          ? `${refund} coins returned because the host disconnected.`
+          : "The host connection was lost. Returning to the lobby.",
+        4000,
+      );
+      stopSession();
+      dispatch(resetDifficulty());
+      requestAnimationFrame(() => {
+        router.dismissAll();
+        router.replace("/mode-select" as any);
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [dispatch, isHost, router]);
 
   /* ═══════════════════════════════════════════════════════
      handlePlay — User clicks "Press me to play!"

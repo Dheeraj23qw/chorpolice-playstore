@@ -188,18 +188,6 @@ export const useQuizGameLogic = () => {
     [],
   );
 
-  const removePlayerFromProgress = useCallback((playerId: string) => {
-    setRoundProgress((prev) => {
-      if (!prev[playerId]) return prev;
-      const next = { ...prev };
-      delete next[playerId];
-      return next;
-    });
-    setLeaderboardData((prev: any) =>
-      Array.isArray(prev) ? prev.filter((item) => item.id !== playerId) : prev,
-    );
-  }, []);
-
   const queuePostAnswerTransition = useCallback(() => {
     clearPostAnswerTimeout();
     postAnswerTimeoutRef.current = setTimeout(() => {
@@ -703,42 +691,63 @@ export const useQuizGameLogic = () => {
         applyQuestionSync(packet);
       }
 
-      if (
-        packet.type === MODES.THINK_AND_COUNT.GAME_END &&
-        packet.reason === "host_quit"
-      ) {
-        if (!isHost) {
-          const refund = packet.stake || 0;
-
-          if (refund > 0) {
-            dispatch(updateCoins(refund));
-            toast.success(
-              "Coins Refunded!",
-              `${refund} coins returned because the host left the game.`,
-              4000,
-            );
-          }
-
-          clearTimer();
-          clearPostAnswerTimeout();
-          AudioEngine.stop("timer");
-          QuizEngine.reset();
-          dispatch(resetDifficulty());
-          requestAnimationFrame(() => {
-            router.dismissAll();
-            router.replace("/mode-select" as any);
-          });
+      if (packet.type === MODES.THINK_AND_COUNT.GAME_END) {
+        if (packet.reason === "host_quit" && isHost) {
+          return;
         }
+
+        const refund = packet.stake || 0;
+        const leaverId = packet.leaverId as string | undefined;
+        const shouldRefund =
+          packet.reason === "host_quit"
+            ? !isHost
+            : packet.reason === "player_left"
+              ? localPlayerId !== leaverId
+              : false;
+
+        if (shouldRefund && refund > 0) {
+          dispatch(updateCoins(refund));
+          toast.success(
+            "Coins Refunded!",
+            packet.reason === "host_quit"
+              ? `${refund} coins returned because the host left the game.`
+              : `${refund} coins returned because a player left the game.`,
+            4000,
+          );
+        } else if (packet.reason === "player_left" && leaverId !== localPlayerId) {
+          toast.error("Match Ended", "A player left, so the match was closed.", 3000);
+        }
+
+        clearTimer();
+        clearPostAnswerTimeout();
+        AudioEngine.stop("timer");
+        if (isMultiplayer) {
+          const { BotEngine } = require("@/service/BotEngine");
+          BotEngine.reset();
+        }
+        QuizEngine.reset();
+        dispatch(resetDifficulty());
+        requestAnimationFrame(() => {
+          router.dismissAll();
+          router.replace("/mode-select" as any);
+        });
+        return;
       }
 
       if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId) {
-        removePlayerFromProgress(packet.playerId);
-
-        if (isHost) {
-          QuizEngine.removePlayer(packet.playerId);
+        if (packet.playerId !== localPlayerId) {
+          if (isHost) {
+            broadcastPacket({
+              type: MODES.THINK_AND_COUNT.GAME_END,
+              reason: "player_left",
+              leaverId: packet.playerId,
+              stake: QuizEngine.state.stake,
+            });
+          }
+          return;
         }
 
-        if (packet.playerId === localPlayerId && !isHost) {
+        if (!isHost) {
           clearTimer();
           clearPostAnswerTimeout();
           AudioEngine.stop("timer");
@@ -763,7 +772,6 @@ export const useQuizGameLogic = () => {
     localPlayerId,
     markPlayerFinished,
     questionIndex,
-    removePlayerFromProgress,
     router,
   ]);
 
@@ -785,11 +793,17 @@ export const useQuizGameLogic = () => {
       clearTimer();
       clearPostAnswerTimeout();
       AudioEngine.stop("timer");
+      const refund = QuizEngine.state.stake || 0;
+      if (refund > 0) {
+        dispatch(updateCoins(refund));
+      }
       QuizEngine.reset();
       dispatch(resetDifficulty());
       toast.error(
         "Host Disconnected",
-        "The host connection was lost. Returning to the lobby.",
+        refund > 0
+          ? `${refund} coins returned because the host disconnected.`
+          : "The host connection was lost. Returning to the lobby.",
         4000,
       );
       requestAnimationFrame(() => {

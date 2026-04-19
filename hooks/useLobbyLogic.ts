@@ -23,6 +23,7 @@ import {
   debugState,
   registerRemotePeer,
   sendPacketToHost,
+  sendPacketToPeer,
   setSessionHostIp,
   subscribeToPackets,
   unregisterRemotePeer,
@@ -180,6 +181,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
           const joiningPlayer: Player = packet.player;
           const isHumanJoining = !joiningPlayer.isBot;
           let accepted = false;
+          let rejectionReason: "room_full" | null = null;
 
           setPlayers((prev) => {
             const existingPlayer = prev.find((p) => p.id === joiningPlayer.id);
@@ -202,6 +204,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
 
               // Already at max humans (4) → reject with warning
               if (humanCount >= ROOM_MAX_PLAYERS) {
+                rejectionReason = "room_full";
                 console.log(
                   `🛡️ [Lobby] Rejecting human join — max humans reached (${humanCount})`,
                 );
@@ -217,6 +220,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
               if (prev.length >= ROOM_MAX_PLAYERS) {
                 const botIndex = prev.findIndex((p) => p.isBot);
                 if (botIndex === -1) {
+                  rejectionReason = "room_full";
                   // No bots to trim — lobby is full of humans, reject with warning
                   console.log(
                     `🛡️ [Lobby] Rejecting human join — no bots to replace`,
@@ -243,13 +247,21 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
             }
 
             // Default: append if under max
-            if (prev.length >= maxPlayers) return prev;
+            if (prev.length >= maxPlayers) {
+              rejectionReason = "room_full";
+              return prev;
+            }
             accepted = true;
             return [...prev, joiningPlayer];
           });
 
           if (accepted && sourceIp) {
             registerRemotePeer(joiningPlayer.id, sourceIp);
+          } else if (rejectionReason && sourceIp) {
+            sendPacketToPeer(sourceIp, {
+              type: NETWORK.PLAYER_JOIN_REJECT,
+              reason: rejectionReason,
+            });
           }
         } else if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId) {
           unregisterRemotePeer(packet.playerId);
@@ -313,6 +325,13 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
             },
           } as any);
         }, 300);
+      } else if (packet.type === NETWORK.PLAYER_JOIN_REJECT) {
+        setSessionHostIp(null);
+        toast.error(
+          "Room Full",
+          "This room already has 4 players. Please join another room.",
+          3000,
+        );
       } else if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId === localPlayerId) {
         toast.error("Disconnected", "You were removed from the room.", 3000);
         router.dismissAll();
