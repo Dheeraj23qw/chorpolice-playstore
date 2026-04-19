@@ -33,7 +33,7 @@ const playerSlice = createSlice({
     setPlayerNames(state, action: PayloadAction<PlayerName[]>) {
       state.playerNames = action.payload.filter(
         (player) =>
-          player.id >= 0 &&
+          (typeof player.id === "number" || typeof player.id === "string") &&
           typeof player.name === "string" &&
           player.name.trim().length > 0
       );
@@ -43,6 +43,7 @@ const playerSlice = createSlice({
     updatePlayerScores(state, action: PayloadAction<PlayerScore[]>) {
       state.playerScores = action.payload.filter(
         (score) =>
+          (score.playerId === undefined || typeof score.playerId === "string") &&
           typeof score.playerName === "string" &&
           score.playerName.trim().length > 0 &&
           typeof score.totalScore === "number" &&
@@ -76,6 +77,7 @@ const playerSlice = createSlice({
     playAgain(state) {
       // Reset scores only (cheap map)
       state.playerScores = state.playerNames.map((player) => ({
+        playerId: typeof player.id === "string" ? player.id : undefined,
         playerName: player.name,
         totalScore: 0,
       }));

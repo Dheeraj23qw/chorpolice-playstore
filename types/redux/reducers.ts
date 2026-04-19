@@ -12,7 +12,7 @@ export interface GameState {
     kingIndex: number | null;
     advisorIndex: number | null;
     thiefIndex: number | null;
-    playerScores: { playerName: string; scores: number[] }[];
+    playerScores: { playerId?: string; playerName: string; scores: number[] }[];
     round: number;
     videoIndex: number;
     isPlaying: boolean;
@@ -38,14 +38,16 @@ export interface PlayerData {
 
   // Define the PlayerScore interface
 export interface PlayerScore {
+    playerId?: string;
     playerName: string;
     totalScore: number;
   }
   
   // Define the PlayerName interface with isBot as optional
   export interface PlayerName {
-    id: number;
+    id: number | string;
     name: string;
+    avatarId?: number;
   }
   
   // Define the GameMode type

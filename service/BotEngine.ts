@@ -5,6 +5,9 @@ import { getBotName, preloadBotNames } from "../utils/nameGenerator";
 export const BotEngine = {
   activeBots: [] as any[],
   _listeners: [] as (() => void)[],
+  _joinTimers: [] as ReturnType<typeof setTimeout>[],
+  _answerTimers: [] as ReturnType<typeof setTimeout>[],
+  _lastQuestionId: null as string | null,
 
   // CALL THIS on lobby mount
   prepareEngine: async (botCount: number) => {
@@ -14,7 +17,12 @@ export const BotEngine = {
   reset: () => {
     BotEngine._listeners.forEach((unsub) => unsub());
     BotEngine._listeners = [];
+    BotEngine._joinTimers.forEach(clearTimeout);
+    BotEngine._joinTimers = [];
+    BotEngine._answerTimers.forEach(clearTimeout);
+    BotEngine._answerTimers = [];
     BotEngine.activeBots = [];
+    BotEngine._lastQuestionId = null;
   },
 
   spawn: (count: number) => {
@@ -49,7 +57,7 @@ export const BotEngine = {
 
       BotEngine.activeBots.push(botPlayer);
 
-      setTimeout(
+      const joinTimer = setTimeout(
         () => {
           handleIncomingPacket({
             type: NETWORK.PLAYER_JOIN,
@@ -58,6 +66,7 @@ export const BotEngine = {
         },
         500 + i * 200,
       );
+      BotEngine._joinTimers.push(joinTimer);
     }
 
     BotEngine.initializeListeners();
@@ -65,18 +74,43 @@ export const BotEngine = {
   initializeListeners: () => {
     const unsub = subscribeToPackets((packet) => {
       if (packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC) {
+        const questionId = packet.questionId || `round-${packet.round || 0}`;
+        if (BotEngine._lastQuestionId === questionId) {
+          return;
+        }
+
+        BotEngine._lastQuestionId = questionId;
+        BotEngine._answerTimers.forEach(clearTimeout);
+        BotEngine._answerTimers = [];
+
+        const durationMs = Math.max(1500, packet.durationMs || 10000);
+        const safeAnswerWindowMs = Math.max(1200, durationMs - 1200);
+
         BotEngine.activeBots.forEach((bot) => {
-          const delay = Math.floor(Math.random() * 9000) + 3000;
-          setTimeout(() => {
+          const willAnswerInTime = Math.random() > 0.15;
+          const delay = willAnswerInTime
+            ? Math.max(
+                900,
+                Math.min(
+                  safeAnswerWindowMs,
+                  Math.floor(durationMs * (0.2 + Math.random() * 0.55)),
+                ),
+              )
+            : durationMs + 200;
+
+          const answerTimer = setTimeout(() => {
             if (BotEngine.activeBots.length === 0) return;
             handleIncomingPacket({
               type: MODES.THINK_AND_COUNT.ANSWER_SUBMITTED,
               playerId: bot.id,
-              isCorrect: Math.random() > 0.3,
+              round: packet.round,
+              questionId: packet.questionId,
+              isCorrect: willAnswerInTime ? Math.random() > 0.35 : false,
               timeTaken: delay,
               timestamp: Date.now(),
             });
           }, delay);
+          BotEngine._answerTimers.push(answerTimer);
         });
       }
     });

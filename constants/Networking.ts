@@ -41,6 +41,9 @@ export const MODES = {
     POLICE_GUESS:  "CP_POLICE_GUESS",    // Police clicks: { targetIndex, guessedRole }
     ROUND_RESULT:  "CP_ROUND_RESULT",    // Broadcast: { correct, scores, allRoles, round }
     ROUND_START:   "CP_ROUND_START",     // Broadcast: { round }
+    SCORE_QUIZ_TURN: "CP_SCORE_QUIZ_TURN",
+    SCORE_GUESS: "CP_SCORE_GUESS",
+    SCORE_GUESS_RESULT: "CP_SCORE_GUESS_RESULT",
   },
   THINK_AND_COUNT: {
     ID: "THINK_AND_COUNT",

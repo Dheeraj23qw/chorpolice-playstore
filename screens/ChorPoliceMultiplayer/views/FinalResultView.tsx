@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback, memo } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import React, { useMemo, memo } from "react";
+import { View, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
@@ -7,121 +7,120 @@ import { RootState } from "@/redux/store";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
 import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
-import { ActionButtons } from "@/components/leaderBoardScreen/ActionButtons";
 import { playerImages } from "@/constants/playerData";
 import { Text } from "@/components/Text";
+import { getSessionContext } from "@/service/lanGameService";
+import { ActionButtons } from "@/screens/QuizScreen/components/renderButtons";
 
 const MemoizedLeaderboard = memo(Leaderboard);
 const MemoizedWinnerSection = memo(WinnerSection);
 
-const FinalResultView = ({ onExit, onPlayAgain }: any) => {
-  const playerScoresRedux = useSelector((state: RootState) => state.player.playerScores);
-  const selectedImages = useSelector((state: RootState) => state.player.selectedImages);
-  const playerNamesList = useSelector((state: RootState) => state.player.playerNames);
+const FinalResultView = ({ onExit }: any) => {
+  const playerScoresRedux = useSelector(
+    (state: RootState) => state.player.playerScores,
+  );
+  const selectedImages = useSelector(
+    (state: RootState) => state.player.selectedImages,
+  );
+  const playerNamesList = useSelector(
+    (state: RootState) => state.player.playerNames,
+  );
 
   const sortedScores = useMemo(() => {
     if (!playerScoresRedux?.length) return [];
-    return [...playerScoresRedux].sort((a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0));
+    return [...playerScoresRedux].sort(
+      (a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0),
+    );
   }, [playerScoresRedux]);
 
   const winner = sortedScores[0];
-  const winnerIdx = playerNamesList.findIndex((p) => p.name === winner?.playerName);
-  const winnerImage = winnerIdx >= 0 ? playerImages[selectedImages[winnerIdx]]?.src : playerImages[1]?.src;
-  const totalPot = ChorPoliceEngine.state.totalPot || ChorPoliceEngine.state.stake * 4;
 
-  const handleShare = useCallback(async () => {
-    const { captureScreen } = require("react-native-view-shot");
-    const Sharing = require("expo-sharing");
-    const uri = await captureScreen({ format: "png", quality: 0.9 });
-    await Sharing.shareAsync(uri);
-  }, []);
+  const winnerMeta = playerNamesList.find((player) =>
+    winner?.playerId
+      ? player.id === winner.playerId
+      : player.name === winner?.playerName,
+  );
+
+  const winnerIdx = playerNamesList.findIndex((player) =>
+    winner?.playerId
+      ? player.id === winner.playerId
+      : player.name === winner?.playerName,
+  );
+
+  const winnerAvatarId =
+    winnerMeta?.avatarId ?? (winnerIdx >= 0 ? selectedImages[winnerIdx] : 1);
+
+  const winnerImage = playerImages[winnerAvatarId]?.src ?? playerImages[1]?.src;
+
+  const totalPot =
+    ChorPoliceEngine.state.totalPot || ChorPoliceEngine.state.stake * 4;
+
+  const { localPlayerId } = getSessionContext();
+  const isLocalWinner = winner?.playerId === localPlayerId;
 
   return (
-    // SafeAreaView handles the top notch and bottom home indicator automatically
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      
-      {/* WINNER SECTION */}
-      {winner && (
-        <View style={styles.winnerContainer}>
-          <MemoizedWinnerSection
-            winnerName={winner.playerName}
-            winnerImage={winnerImage}
-            winner={winner}
-          />
-        </View>
-      )}
+    <View className="flex-1 bg-black">
+      {/* 🔥 Background Image */}
+      <Image
+        source={require("@/assets/images/bg/image.png")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
+      />
+      <View className="absolute h-full w-full bg-black/70" />
 
-      {/* POT SECTION */}
-      {totalPot > 0 && (
-        <View style={styles.potContainer}>
-          <View style={styles.potPill}>
-            <Text style={styles.potText}>You won</Text>
-            <Text style={styles.potAmount}>
-              + {Number(totalPot || 0).toLocaleString()} coins
-            </Text>
-            <Text style={styles.potEmoji}>💰⚡</Text>
+      {/* Content */}
+      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+        {/* Winner */}
+        {winner && (
+          <View className="pt-4">
+            <MemoizedWinnerSection
+              winnerName={winner.playerName}
+              winnerImage={winnerImage}
+              winner={winner}
+            />
           </View>
-        </View>
-      )}
+        )}
 
-      {/* LIST SECTION */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-        removeClippedSubviews={true}
-      >
-        <MemoizedLeaderboard
-          sortedScores={sortedScores}
-          playerNames={playerNamesList}
-          selectedImages={selectedImages}
-        />
-        <View style={styles.buttonContainer}>
-          <ActionButtons
-            handlePlayAgain={onPlayAgain}
-            handleShare={handleShare}
-            isButtonDisabled={false}
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        {/* Pot */}
+        {totalPot > 0 && (
+          <View className="mb-3 items-center">
+            <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-400/30 bg-indigo-950/40 py-3">
+              <Text className="text-base font-medium text-indigo-100">
+                {isLocalWinner ? "You won" : "Winner takes"}
+              </Text>
+              <Text className="mx-2 text-base font-bold text-white">
+                + {Number(totalPot || 0).toLocaleString()} coins
+              </Text>
+              <Text className="text-base">💰⚡</Text>
+            </View>
+          </View>
+        )}
+
+        {/* List */}
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="px-5 pt-2">
+            <MemoizedLeaderboard
+              sortedScores={sortedScores}
+              playerNames={playerNamesList}
+              selectedImages={selectedImages}
+            />
+          </View>
+
+          {/* Buttons */}
+          <View className="mt-2 px-4">
+            <ActionButtons
+              onStatsPress={() => onExit("stats")}
+              onEarnPress={() => onExit("earn")}
+              onHomePress={() => onExit("home")}
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0f172a', // Set background color here to avoid flashing
-  },
-  winnerContainer: {
-    paddingTop: 16,
-  },
-  potContainer: {
-    marginBottom: 12,
-    alignItems: "center",
-  },
-  potPill: {
-    width: "92%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 50,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
-    backgroundColor: "rgba(30, 27, 75, 0.4)",
-    paddingVertical: 12,
-  },
-  potText: { fontSize: 16, fontWeight: "500", color: "#e0e7ff" },
-  potAmount: { marginHorizontal: 8, fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
-  potEmoji: { fontSize: 16 },
-  scrollContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  buttonContainer: {
-    marginBottom: 40,
-    marginTop: 32,
-  },
-});
 
 export default memo(FinalResultView);

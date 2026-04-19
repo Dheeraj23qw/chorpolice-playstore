@@ -2,6 +2,10 @@ import { storage } from "@/storage/mmkv";
 
 const AVATAR_KEY = "user_avatar";
 const USERNAME_KEY = "user_name";
+const CLIENT_PLAYER_ID_KEY = "client_player_id";
+
+const createClientPlayerId = () =>
+  `client_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
 export const saveAvatar = (uri: string) => {
   try {
@@ -31,7 +35,23 @@ export const loadUsername = (): string => {
   }
 };
 
+export const loadOrCreateClientPlayerId = (): string => {
+  try {
+    const existing = storage.getString(CLIENT_PLAYER_ID_KEY);
+    if (existing) {
+      return existing;
+    }
+
+    const nextId = createClientPlayerId();
+    storage.set(CLIENT_PLAYER_ID_KEY, nextId);
+    return nextId;
+  } catch {
+    return createClientPlayerId();
+  }
+};
+
 export const resetUserData = () => {
   storage.remove(AVATAR_KEY);
   storage.remove(USERNAME_KEY);
+  storage.remove(CLIENT_PLAYER_ID_KEY);
 };

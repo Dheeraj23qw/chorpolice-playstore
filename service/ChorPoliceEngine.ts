@@ -78,7 +78,37 @@ export const ChorPoliceEngine = {
 
       case CP.ROUND_START:
         console.log(`🎭 [CPEngine] ▶️ ROUND_START received — starting round ${ChorPoliceEngine.state.currentRound}`);
+        if (ChorPoliceEngine.state.isRoundActive) {
+          console.warn(
+            "ðŸ›¡ï¸ [CPEngine] Duplicate ROUND_START ignored â€” round already active.",
+          );
+          break;
+        }
         ChorPoliceEngine.startRound();
+        break;
+
+      case CP.PUBLIC_REVEAL:
+        ChorPoliceEngine.state.currentRound =
+          packet.round ?? ChorPoliceEngine.state.currentRound;
+        ChorPoliceEngine.state.policeIndex =
+          packet.policeIndex ?? ChorPoliceEngine.state.policeIndex;
+        ChorPoliceEngine.state.kingIndex =
+          packet.kingIndex ?? ChorPoliceEngine.state.kingIndex;
+        ChorPoliceEngine.state.isRoundActive = true;
+        break;
+
+      case CP.ROUND_RESULT:
+        ChorPoliceEngine.state.isRoundActive = false;
+        ChorPoliceEngine.state.currentRound =
+          (packet.round ?? ChorPoliceEngine.state.currentRound) + 1;
+        ChorPoliceEngine.state.roles =
+          packet.allRoles?.map((entry: any) => entry.role) ??
+          ChorPoliceEngine.state.roles;
+        ChorPoliceEngine.syncScores(packet.leaderboard);
+        break;
+
+      case CP.SCORE_GUESS_RESULT:
+        ChorPoliceEngine.syncScores(packet.leaderboard);
         break;
 
       case CP.GAME_END:
@@ -96,6 +126,18 @@ export const ChorPoliceEngine = {
     ChorPoliceEngine.reset();
 
     // 🛡️ VALIDATION: Chor Police requires EXACTLY 4 players
+    if (ChorPoliceEngine.state.isRoundActive) {
+      console.warn("ðŸ›¡ï¸ [CPEngine] Duplicate ROUND_START ignored â€” round already active.");
+      return;
+    }
+
+    if (ChorPoliceEngine.state.isRoundActive) {
+      console.warn(
+        "ðŸ›¡ï¸ [CPEngine] Duplicate ROUND_START ignored â€” round already active.",
+      );
+      return;
+    }
+
     if (players.length !== 4) {
       console.error(
         `🚨 [CPEngine] CRITICAL: init() called with ${players.length} players — expected exactly 4! Game will not function correctly.`,
@@ -283,18 +325,41 @@ export const ChorPoliceEngine = {
   endGame: (): void => {
     console.log("🏁 [CPEngine] Game Over!");
 
-    const leaderboard = Object.values(ChorPoliceEngine.state.scores)
-      .sort((a, b) => b.totalScore - a.totalScore);
-
     PacketRouter.broadcast({
       type: MODES.CHOR_POLICE.GAME_END,
       reason: "completed",
-      leaderboard,
+      leaderboard: ChorPoliceEngine.getLeaderboard(),
       totalPot: ChorPoliceEngine.state.totalPot,
     });
   },
 
   /* ─── Full state reset ─── */
+  applyQuizBonus: (playerId: string, bonus: number): void => {
+    const entry = ChorPoliceEngine.state.scores[playerId];
+    if (!entry) {
+      return;
+    }
+
+    entry.totalScore += bonus;
+  },
+
+  syncScores: (leaderboard: CPScoreEntry[] = []): void => {
+    leaderboard.forEach((entry) => {
+      const localEntry = ChorPoliceEngine.state.scores[entry.id];
+      if (!localEntry) {
+        return;
+      }
+
+      localEntry.totalScore = entry.totalScore;
+      localEntry.roundScores = [...entry.roundScores];
+    });
+  },
+
+  getLeaderboard: (): CPScoreEntry[] =>
+    Object.values(ChorPoliceEngine.state.scores).sort(
+      (a, b) => b.totalScore - a.totalScore,
+    ),
+
   reset: (): void => {
     console.log("🧹 [CPEngine] Full state reset.");
     ChorPoliceEngine.state.players = [];

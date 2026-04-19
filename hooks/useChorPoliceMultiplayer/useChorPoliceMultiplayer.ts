@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Animated } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { AppDispatch, RootState } from "@/redux/store";
 import { resetDifficulty } from "@/redux/reducers/quiz";
 import {
@@ -13,10 +13,14 @@ import { AudioEngine } from "@/audio/audioEngine";
 import useRandomMessage from "../useRandomMessage";
 
 import {
+  broadcastPacket,
+  getSessionContext,
   handleIncomingPacket,
+  sendPacketToHost,
+  stopSession,
   subscribeToPackets,
 } from "@/service/lanGameService";
-import { MODES } from "@/constants/Networking";
+import { MODES, NETWORK } from "@/constants/Networking";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
 import { flipCard } from "./helpers/flipCardUtil";
@@ -48,9 +52,20 @@ const D = "🎭 [CPHook]";
 export const useChorPoliceMultiplayer = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    playerId?: string;
+    isHost?: string;
+  }>();
+  const session = getSessionContext();
 
-  const localPlayerId = "host_id";
-  const isHost = true;
+  const localPlayerId =
+    typeof params.playerId === "string"
+      ? params.playerId
+      : session.localPlayerId || "host_id";
+  const isHost =
+    typeof params.isHost === "string"
+      ? params.isHost === "true"
+      : session.isHost;
   const [nextPhase, setNextPhase] = useState<GamePhase>("score_quiz");
   const playTransition = useCallback((afterPhase: GamePhase) => {
     setNextPhase(afterPhase);
@@ -91,7 +106,7 @@ export const useChorPoliceMultiplayer = () => {
 
   // ─── Score / Round ───
   const [playerScores, setPlayerScores] = useState<
-    Array<{ playerName: string; scores: (number | string)[] }>
+    Array<{ playerId: string; playerName: string; scores: (number | string)[] }>
   >([]);
   const [round, setRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(5);
@@ -151,6 +166,11 @@ export const useChorPoliceMultiplayer = () => {
   const hasGuessedRef = useRef(false);
   const isQuittingRef = useRef(false);
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const myRoleRef = useRef<Role | null>(null);
+  const roundStartPendingRef = useRef(false);
+  const scoreQuizStartedRef = useRef(false);
+  const currentQuizPlayerIdRef = useRef<string | null>(null);
+  myRoleRef.current = myRole;
 
   // ═══════════════════════════════════════════════════════
   // REFS for values accessed inside the packet listener.
@@ -187,6 +207,71 @@ export const useChorPoliceMultiplayer = () => {
   const [popupTable, setPopupTable] = useState(false);
   const toggleModal = useCallback(() => setPopupTable((p) => !p), []);
 
+  const buildQuizOptions = useCallback((baseScore: number) => {
+    const variations = [500, 800];
+    const randomOptions = new Set<number>([baseScore]);
+
+    while (randomOptions.size < 3) {
+      const variation =
+        variations[Math.floor(Math.random() * variations.length)];
+      const nextScore = Math.max(
+        0,
+        baseScore + (Math.random() < 0.5 ? -variation : variation),
+      );
+
+      randomOptions.add(nextScore);
+    }
+
+    return Array.from(randomOptions).sort(() => Math.random() - 0.5);
+  }, []);
+
+  useEffect(() => {
+    if (gamePhase !== "score_quiz" || !isHost || scoreQuizStartedRef.current) {
+      return;
+    }
+
+    scoreQuizStartedRef.current = true;
+
+    const startTimer = setTimeout(() => {
+      queueScoreQuizTurn(0);
+    }, 300);
+    timerRefs.current.push(startTimer);
+  }, [gamePhase, isHost, queueScoreQuizTurn]);
+
+  function queueScoreQuizTurn(playerIndex: number) {
+    if (!isHost) {
+      return;
+    }
+
+    const CP = MODES.CHOR_POLICE;
+    const players = ChorPoliceEngine.state.players;
+
+    if (playerIndex >= players.length) {
+      setQuizDone(true);
+      setQuizOptionDisabled(true);
+      quizOptionDisabledRef.current = true;
+      currentQuizPlayerIdRef.current = null;
+
+      const endTimer = setTimeout(() => {
+        ChorPoliceEngine.endGame();
+      }, 1200);
+      timerRefs.current.push(endTimer);
+      return;
+    }
+
+    const player = players[playerIndex];
+    const correctScore =
+      ChorPoliceEngine.state.scores[player.id]?.totalScore ?? 0;
+    const options = buildQuizOptions(correctScore);
+
+    broadcastPacket({
+      type: CP.SCORE_QUIZ_TURN,
+      playerId: player.id,
+      playerIndex,
+      options,
+    });
+  }
+
   /* ═══════════════════════════════════════════════════════
      PACKET LISTENER — runs ONCE on mount. Never re-subscribes.
      All mutable values accessed via refs.
@@ -210,6 +295,11 @@ export const useChorPoliceMultiplayer = () => {
       if (packet.type === CP.PUBLIC_REVEAL) {
         const names = packet.players.map((p: any) => p.name);
         const engineRoles = [...ChorPoliceEngine.state.roles];
+        const publicRoles = packet.players.map((_: any, index: number) => {
+          if (index === packet.kingIndex) return "King";
+          if (index === packet.policeIndex) return "Police";
+          return "Hidden";
+        });
         const kIdx = packet.kingIndex as number;
         const pIdx = packet.policeIndex as number;
 
@@ -221,24 +311,33 @@ export const useChorPoliceMultiplayer = () => {
         console.log(`${D} ─────────────────────────────────`);
 
         // Set state
+        roundStartPendingRef.current = false;
         setPlayerNames(names);
         // ✅ FIX: Dispatch names to Redux so OverlayPopUp can read them
         dispatch(
           setReduxPlayerNames(
-            names.map((n: string, i: number) => ({ id: i, name: n })),
+            packet.players.map((player: any) => ({
+              id: player.id,
+              name: player.name,
+              avatarId: player.avatarId,
+            })),
           ),
         );
-        setRoles(engineRoles);
+        setRoles(isHost ? engineRoles : publicRoles);
         setPoliceIndex(pIdx);
         setKingIndex(kIdx);
-        setAdvisorIndex(ChorPoliceEngine.state.advisorIndex);
-        setThiefIndex(ChorPoliceEngine.state.thiefIndex);
+        setAdvisorIndex(isHost ? ChorPoliceEngine.state.advisorIndex : null);
+        setThiefIndex(isHost ? ChorPoliceEngine.state.thiefIndex : null);
         setTotalRounds(ChorPoliceEngine.state.totalRounds);
         setRound(packet.round);
 
         if (packet.round === 1) {
           setPlayerScores(
-            names.map((n: string) => ({ playerName: n, scores: [] })),
+            packet.players.map((player: any) => ({
+              playerId: player.id,
+              playerName: player.name,
+              scores: [],
+            })),
           );
         }
 
@@ -246,11 +345,11 @@ export const useChorPoliceMultiplayer = () => {
         setGamePhase("dealing");
 
         const hostRole =
-          ChorPoliceEngine.state.roles[
-            ChorPoliceEngine.state.players.findIndex(
-              (p) => p.id === localPlayerId,
-            )
-          ];
+          packet.policeId === localPlayerId
+            ? "Police"
+            : packet.kingId === localPlayerId
+              ? "King"
+              : myRoleRef.current;
         console.log(
           `${D} 🎬 Host role: ${hostRole} — ALL see same board during dealing`,
         );
@@ -336,14 +435,32 @@ export const useChorPoliceMultiplayer = () => {
         console.log(`${D} 📊 ROUND RESULT — correct: ${packet.correct}`);
         console.log(`${D} ═══════════════════════════════════`);
 
+        roundStartPendingRef.current = false;
         setGamePhase("result");
         setAreCardsClickable(false);
+        setRoles(packet.allRoles?.map((info: any) => info.role) ?? roles);
+        setPoliceIndex(
+          packet.allRoles?.findIndex((info: any) => info.role === "Police") ??
+            null,
+        );
+        setKingIndex(
+          packet.allRoles?.findIndex((info: any) => info.role === "King") ??
+            null,
+        );
+        setAdvisorIndex(
+          packet.allRoles?.findIndex((info: any) => info.role === "Advisor") ??
+            null,
+        );
+        setThiefIndex(
+          packet.allRoles?.findIndex((info: any) => info.role === "Thief") ??
+            null,
+        );
 
         // Update scores
         setPlayerScores((prev) => {
           const updated = prev.map((p) => ({ ...p, scores: [...p.scores] }));
           packet.allRoles?.forEach((info: any) => {
-            const entry = updated.find((p) => p.playerName === info.playerName);
+            const entry = updated.find((p) => p.playerId === info.playerId);
             if (entry) {
               const pts: Record<string, number> = packet.correct
                 ? { King: 1000, Advisor: 800, Police: 500, Thief: 0 }
@@ -357,7 +474,9 @@ export const useChorPoliceMultiplayer = () => {
         // Reveal all cards — use refs for current state
         const currentFlipped = flippedStatesRef.current;
         const currentClicked = clickedCardsRef.current;
-        const engineRoles = [...ChorPoliceEngine.state.roles];
+        const engineRoles = packet.allRoles?.map((info: any) => info.role) ?? [
+          ...ChorPoliceEngine.state.roles,
+        ];
 
         setFlipAnims((currentAnims) => {
           revealAllCards(
@@ -404,6 +523,7 @@ export const useChorPoliceMultiplayer = () => {
           if (packet.isLastRound) {
             console.log(`${D} 🏁 LAST ROUND — transitioning to score quiz`);
             // Prepare quiz state, then use ONLY playTransition (don't set gamePhase directly — that causes a flash)
+            scoreQuizStartedRef.current = false;
             setQuizPlayerIndex(0);
             setQuizDone(false);
             setQuizOptionDisabled(false);
@@ -432,11 +552,173 @@ export const useChorPoliceMultiplayer = () => {
         timerRefs.current.push(t6);
       }
 
+      if (packet.type === CP.SCORE_QUIZ_TURN) {
+        const players = ChorPoliceEngine.state.players;
+        const quizPlayer = players[packet.playerIndex];
+
+        if (!quizPlayer || quizPlayer.id !== packet.playerId) {
+          console.warn(
+            `${D} Ignoring malformed SCORE_QUIZ_TURN packet`,
+            packet,
+          );
+          return;
+        }
+
+        scoreQuizStartedRef.current = true;
+        currentQuizPlayerIdRef.current = packet.playerId;
+        setGamePhase("score_quiz");
+        setQuizDone(false);
+        setQuizPlayerIndex(packet.playerIndex);
+        setQuizOptions(Array.isArray(packet.options) ? packet.options : []);
+        setQuizOptionDisabled(false);
+        quizOptionDisabledRef.current = false;
+        setIsDynamicPopUp(false);
+        setMediaId(null);
+        setMediaType(null);
+        setPlayerData({
+          image: null,
+          message: null,
+          imageType: null,
+          name: null,
+        });
+
+        if (isHost && quizPlayer.isBot) {
+          const botDelay = 1500 + Math.floor(Math.random() * 2000);
+          const expectedPlayerId = packet.playerId;
+          const options = Array.isArray(packet.options) ? packet.options : [];
+          const correctScore =
+            ChorPoliceEngine.state.scores[expectedPlayerId]?.totalScore ?? 0;
+
+          const botTimer = setTimeout(() => {
+            if (currentQuizPlayerIdRef.current !== expectedPlayerId) {
+              return;
+            }
+
+            const guessedScore =
+              Math.random() < 0.4
+                ? correctScore
+                : (options.find((score: number) => score !== correctScore) ??
+                  correctScore);
+
+            handleIncomingPacket({
+              type: CP.SCORE_GUESS,
+              playerId: expectedPlayerId,
+              guessedScore,
+            });
+          }, botDelay);
+          timerRefs.current.push(botTimer);
+        }
+      }
+
+      if (packet.type === CP.SCORE_GUESS && isHost) {
+        const expectedPlayerId = currentQuizPlayerIdRef.current;
+
+        if (!expectedPlayerId || packet.playerId !== expectedPlayerId) {
+          console.warn(`${D} Ignoring stale SCORE_GUESS packet`, packet);
+          return;
+        }
+
+        const players = ChorPoliceEngine.state.players;
+        const playerIndex = players.findIndex((p) => p.id === packet.playerId);
+        const player = players[playerIndex];
+        const guessedScore = Number(packet.guessedScore);
+
+        if (!player || !Number.isFinite(guessedScore)) {
+          console.warn(`${D} Ignoring malformed SCORE_GUESS packet`, packet);
+          return;
+        }
+
+        const correctScore =
+          ChorPoliceEngine.state.scores[player.id]?.totalScore ?? 0;
+        const isCorrect = guessedScore === correctScore;
+        const bonus = isCorrect ? 2000 : -2000;
+
+        ChorPoliceEngine.applyQuizBonus(player.id, bonus);
+
+        broadcastPacket({
+          type: CP.SCORE_GUESS_RESULT,
+          playerId: player.id,
+          playerIndex,
+          guessedScore,
+          correctScore,
+          isCorrect,
+          bonus,
+          leaderboard: ChorPoliceEngine.getLeaderboard(),
+        });
+
+        const nextTurnTimer = setTimeout(() => {
+          queueScoreQuizTurn(playerIndex + 1);
+        }, 4000);
+        timerRefs.current.push(nextTurnTimer);
+      }
+
+      if (packet.type === CP.SCORE_GUESS_RESULT) {
+        if (currentQuizPlayerIdRef.current !== packet.playerId) {
+          console.warn(
+            `${D} Ignoring duplicate SCORE_GUESS_RESULT packet`,
+            packet,
+          );
+          return;
+        }
+
+        currentQuizPlayerIdRef.current = null;
+        quizOptionDisabledRef.current = true;
+        setQuizOptionDisabled(true);
+        setQuizPlayerIndex(packet.playerIndex);
+        ChorPoliceEngine.syncScores(packet.leaderboard ?? []);
+
+        setPlayerScores((prev) =>
+          prev.map((entry) =>
+            entry.playerId === packet.playerId
+              ? {
+                  ...entry,
+                  scores: [...entry.scores, packet.bonus],
+                }
+              : entry,
+          ),
+        );
+
+        const player = ChorPoliceEngine.state.players[packet.playerIndex];
+        const avatarId = player?.avatarId ?? 1;
+        const playerImage = playerImagesRef.current[avatarId];
+
+        AudioEngine.play(packet.isCorrect ? "win" : "lose", "gameplay");
+        setMediaId(packet.isCorrect ? 2 : 1);
+        setMediaType("gif");
+        setPlayerData({
+          image: playerImage?.src ?? null,
+          message: packet.isCorrect
+            ? "guessed correctly! +2000"
+            : "guessed wrong! -2000",
+          name: player?.name ?? "",
+          imageType: playerImage?.type ?? null,
+        });
+        setIsDynamicPopUp(true);
+
+        const popupTimer = setTimeout(() => {
+          setIsDynamicPopUp(false);
+        }, 3500);
+        timerRefs.current.push(popupTimer);
+      }
+
       /* ── 4. GAME END (completed) ── */
       if (packet.type === CP.GAME_END && packet.reason === "completed") {
         console.log(`${D} 🏁 GAME END — completed`);
         // Use ONLY playTransition to avoid flash — playTransition sets phase to "video_transition"
         // and queues "final_result" as nextPhase, which is applied after video ends.
+        scoreQuizStartedRef.current = false;
+        roundStartPendingRef.current = false;
+        currentQuizPlayerIdRef.current = null;
+        setQuizDone(true);
+        dispatch(
+          updateReduxScores(
+            (packet.leaderboard ?? []).map((entry: any) => ({
+              playerId: entry.id,
+              playerName: entry.name,
+              totalScore: entry.totalScore,
+            })),
+          ),
+        );
         playTransition("final_result");
 
         const isWinner = packet.leaderboard?.[0]?.id === localPlayerId;
@@ -462,6 +744,21 @@ export const useChorPoliceMultiplayer = () => {
           dispatch(updateCoins(refund));
           toast.success("Refunded!", `${refund} coins returned.`);
         }
+        stopSession();
+        router.dismissAll();
+        router.replace("/mode-select" as any);
+      }
+
+      if (
+        packet.type === NETWORK.PLAYER_LEAVE &&
+        packet.playerId !== localPlayerId &&
+        gamePhaseRef.current !== "final_result"
+      ) {
+        if (isHost && packet.reason === "user_exit") {
+          broadcastPacket(packet, { processLocally: false });
+        }
+        toast.error("Player disconnected", "Ending the match safely.", 3000);
+        stopSession();
         router.dismissAll();
         router.replace("/mode-select" as any);
       }
@@ -485,10 +782,22 @@ export const useChorPoliceMultiplayer = () => {
   ═══════════════════════════════════════════════════════ */
   const handlePlay = useCallback(() => {
     if (!isHost) return;
+    if (gamePhaseRef.current !== "waiting") return;
+    if (roundStartPendingRef.current || ChorPoliceEngine.state.isRoundActive) {
+      return;
+    }
+    if (ChorPoliceEngine.state.players.length !== 4) {
+      toast.warning(
+        "Need 4 players",
+        "Start the round only when all 4 seats are ready.",
+      );
+      return;
+    }
 
     console.log(
       `${D} ▶️ PLAY CLICKED — sending CP_ROUND_START (round ${ChorPoliceEngine.state.currentRound})`,
     );
+    roundStartPendingRef.current = true;
     setIsPlayButtonDisabled(true);
     setMessage("Shuffling cards...");
 
@@ -539,32 +848,41 @@ export const useChorPoliceMultiplayer = () => {
 
       AudioEngine.play("select", "ui");
 
-      flipCard(
-        index,
-        1,
-        1500,
-        flipAnims,
-        setFlippedStates,
-        flippedStates,
-        roles,
-        clickedCards,
-        setRound,
-        () => {},
-        dispatch,
-      );
-      setClickedCards((prev) => {
-        const n = [...prev];
-        n[index] = true;
-        return n;
-      });
-
-      handleIncomingPacket({
+      const guessPacket = {
         type: MODES.CHOR_POLICE.POLICE_GUESS,
         targetIndex: index,
         playerId: localPlayerId,
-      });
+      };
+
+      if (isHost) {
+        flipCard(
+          index,
+          1,
+          1500,
+          flipAnims,
+          setFlippedStates,
+          flippedStates,
+          roles,
+          clickedCards,
+          setRound,
+          () => {},
+          dispatch,
+        );
+        setClickedCards((prev) => {
+          const n = [...prev];
+          n[index] = true;
+          return n;
+        });
+        handleIncomingPacket(guessPacket);
+        return;
+      }
+
+      setMessage("Sending your guess...");
+      sendPacketToHost(guessPacket);
     },
     [
+      isHost,
+      localPlayerId,
       myRole,
       gamePhase,
       areCardsClickable,
@@ -668,6 +986,7 @@ export const useChorPoliceMultiplayer = () => {
 
   // Generate quiz options when quizPlayerIndex changes during score_quiz phase
   useEffect(() => {
+    return;
     if (gamePhase !== "score_quiz") return;
     if (quizDone) return;
 
@@ -749,103 +1068,80 @@ export const useChorPoliceMultiplayer = () => {
       timerRefs.current.push(t);
     }
   }, [gamePhase, quizPlayerIndex, quizDone, processQuizAnswer]);
+
   // Human player quiz handler
   const handleQuizOption = useCallback(
     (selectedScore: number) => {
-      if (quizOptionDisabledRef.current || gamePhase !== "score_quiz") return;
+      if (
+        quizOptionDisabledRef.current ||
+        gamePhaseRef.current !== "score_quiz"
+      ) {
+        return;
+      }
+      if (currentQuizPlayerIdRef.current !== localPlayerId) {
+        return;
+      }
+
       quizOptionDisabledRef.current = true;
       setQuizOptionDisabled(true);
-      processQuizAnswer(selectedScore, quizPlayerIndex);
+
+      const guessPacket = {
+        type: MODES.CHOR_POLICE.SCORE_GUESS,
+        playerId: localPlayerId,
+        guessedScore: selectedScore,
+      };
+
+      if (isHost) {
+        handleIncomingPacket(guessPacket);
+        return;
+      }
+
+      sendPacketToHost(guessPacket);
     },
-    [gamePhase, quizPlayerIndex, processQuizAnswer],
+    [isHost, localPlayerId],
   );
 
   /* ─── FINAL RESULT EXIT ─── */
-  const handleFinalExit = useCallback(() => {
-    if (isQuittingRef.current) return;
-    isQuittingRef.current = true;
+  const handleFinalExit = useCallback(
+    (target?: string) => {
+      if (isQuittingRef.current) return;
+      isQuittingRef.current = true;
 
-    // 1. Immediate Engine/Bot Cleanup
-    ChorPoliceEngine.reset();
-    ChorPoliceBotBehavior.reset();
-    dispatch(resetDifficulty());
+      currentQuizPlayerIdRef.current = null;
+      scoreQuizStartedRef.current = false;
+      roundStartPendingRef.current = false;
 
-    // 2. Clear all active timers to prevent lingering 'bot' actions
-    timerRefs.current.forEach(clearTimeout);
-    timerRefs.current = [];
+      // 🔥 RESET FIRST
+      ChorPoliceEngine.reset();
+      ChorPoliceBotBehavior.reset();
 
-    // 3. Navigate after the current UI frame is finished
-    requestAnimationFrame(() => {
-      router.dismissAll();
-      router.replace("/mode-select" as any);
-      // Reset guard in case component isn't unmounted immediately
-      setTimeout(() => {
-        isQuittingRef.current = false;
-      }, 500);
-    });
-  }, [dispatch, router]);
+      timerRefs.current.forEach(clearTimeout);
+      timerRefs.current = [];
 
-  /* ─── PLAY AGAIN — same players, same photos, same bid ─── */
-  const handlePlayAgain = useCallback(() => {
-    // Save current session config before reset
-    const prevPlayers = [...ChorPoliceEngine.state.players];
-    const prevStake = ChorPoliceEngine.state.stake;
-    const prevRounds = ChorPoliceEngine.state.totalRounds;
+      stopSession();
+      dispatch(resetDifficulty());
 
-    // Reset engine + bots
-    ChorPoliceEngine.reset();
-    ChorPoliceBotBehavior.reset();
+      requestAnimationFrame(() => {
+        router.dismissAll();
 
-    // Re-init with same players/stake/rounds
-    ChorPoliceEngine.init(prevPlayers, prevStake, prevRounds);
-    const bots = prevPlayers.filter((p) => p.isBot);
-    ChorPoliceBotBehavior.init(bots);
+        switch (target) {
+          case "stats":
+            router.replace("/stats" as any);
+            break;
+          case "earn":
+            router.replace("/earn" as any);
+            break;
+          default:
+            router.replace("/mode-select" as any);
+        }
 
-    // Reset all hook state
-    timerRefs.current.forEach(clearTimeout);
-    timerRefs.current = [];
-    setFlipAnims(
-      Array(4)
-        .fill(null)
-        .map(() => new Animated.Value(0)),
-    );
-    setFlippedStates([false, false, false, false]);
-    setClickedCards([false, false, false, false]);
-    setRoles(["King", "Advisor", "Thief", "Police"]);
-    setPlayerNames(prevPlayers.map((p) => p.name));
-    setIsPlayButtonDisabled(false);
-    setPoliceIndex(null);
-    setKingIndex(null);
-    setAdvisorIndex(null);
-    setThiefIndex(null);
-    setPlayerScores(
-      prevPlayers.map((p) => ({ playerName: p.name, scores: [] })),
-    );
-    setRound(1);
-    setTotalRounds(prevRounds);
-    setShowTableButton(false);
-    setPopupIndex(null);
-    setIsDynamicPopUp(false);
-    setMediaId(null);
-    setMediaType(null);
-    setPlayerData({ image: null, message: null, imageType: null, name: null });
-    setAreCardsClickable(false);
-    setFirstCardClicked(false);
-    setQuizPlayerIndex(0);
-    setQuizOptions([]);
-    setQuizOptionDisabled(false);
-    quizOptionDisabledRef.current = false;
-    setQuizDone(false);
-    setMessage("");
-    setMyRole(null);
-    setPopupTable(false);
-    hasGuessedRef.current = false;
-    setGamePhase("waiting");
-
-    console.log(
-      `${D} 🔁 PLAY AGAIN — same ${prevPlayers.length} players, stake: ${prevStake}, rounds: ${prevRounds}`,
-    );
-  }, [dispatch]);
+        setTimeout(() => {
+          isQuittingRef.current = false;
+        }, 500);
+      });
+    },
+    [dispatch, router],
+  );
 
   /* ─── EXIT ─── */
   const handleQuitInMiddle = useCallback(() => setIsExitModalVisible(true), []);
@@ -859,6 +1155,7 @@ export const useChorPoliceMultiplayer = () => {
       const currentPhase = gamePhaseRef.current;
       const isGameOver =
         currentPhase === "final_result" || currentPhase === "finished";
+      let shouldFlushNetwork = false;
 
       if (isGameOver) {
         // Game is already finished — just clean up and navigate, NO penalty
@@ -868,17 +1165,36 @@ export const useChorPoliceMultiplayer = () => {
         const stake = ChorPoliceEngine.state.stake;
         if (stake > 0)
           toast.error("Stake Lost!", `Your ${stake} coins are lost.`, 4000);
-        handleIncomingPacket({
+        broadcastPacket({
           type: MODES.CHOR_POLICE.GAME_END,
           reason: "host_quit",
           stake,
         });
+        shouldFlushNetwork = true;
+      } else {
+        sendPacketToHost({
+          type: NETWORK.PLAYER_LEAVE,
+          playerId: localPlayerId,
+          reason: "user_exit",
+        });
+        shouldFlushNetwork = true;
       }
 
+      if (shouldFlushNetwork) {
+        await new Promise<void>((resolve) => {
+          const flushTimer = setTimeout(() => resolve(), 150);
+          timerRefs.current.push(flushTimer);
+        });
+      }
+
+      currentQuizPlayerIdRef.current = null;
+      scoreQuizStartedRef.current = false;
+      roundStartPendingRef.current = false;
       ChorPoliceBotBehavior.reset();
       ChorPoliceEngine.reset();
       timerRefs.current.forEach(clearTimeout);
       timerRefs.current = [];
+      stopSession();
       dispatch(resetDifficulty());
       requestAnimationFrame(() => {
         router.dismissAll();
@@ -889,7 +1205,7 @@ export const useChorPoliceMultiplayer = () => {
     } finally {
       isQuittingRef.current = false;
     }
-  }, [isHost, dispatch, router]);
+  }, [dispatch, isHost, localPlayerId, router]);
 
   /**
    * Phase-aware back button handler.
@@ -955,7 +1271,6 @@ export const useChorPoliceMultiplayer = () => {
     quizDone,
     handleQuizOption,
     handleFinalExit,
-    handlePlayAgain,
     handleBackPress,
     isHost,
     localPlayerId,

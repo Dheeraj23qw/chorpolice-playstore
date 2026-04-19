@@ -44,16 +44,25 @@ const LobbyScreen: React.FC = () => {
   }, []);
   if (isTransitioning) {
     return (
-      <VideoPlayerComponent
-        videoIndex={1}
-        onVideoEnd={() => {
-          // Navigate based on game type after video
-          const route =
-            gameType === "QUIZ" ? "/think-count-quiz" : "/chor-police-mp";
-          router.push(route as any);
-        }}
-      />
-    );
+        <VideoPlayerComponent
+          videoIndex={1}
+          onVideoEnd={() => {
+            // Navigate based on game type after video
+            if (gameType === "QUIZ") {
+              router.push("/think-count-quiz" as any);
+              return;
+            }
+
+            router.push({
+              pathname: "/chor-police-mp",
+              params: {
+                playerId: lobby.localPlayerId,
+                isHost: String(lobby.isHost),
+              },
+            } as any);
+          }}
+        />
+      );
   }
 
   return (

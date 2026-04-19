@@ -2,92 +2,186 @@ import { NETWORK } from "../constants/Networking";
 import { PacketRouter } from "./PacketRouter";
 import { updateDebugMetric } from "./observability/DebugService";
 import { HeartbeatService } from "./network/HeartbeatService";
+import { GameSessionTransport } from "./network/GameSessionTransport";
 
-/**
- * --- LAN GAME SERVICE (Network Layer) ---
- * Adheres to SOLID Principles.
- * Responsibility: Low-level packet reception and dispatching.
- */
+type PacketListener = (packet: any, sourceIp?: string) => void;
 
-// 🔀 Register broadcast handler
-PacketRouter.setBroadcastHandler((packet) => {
-  handleIncomingPacket(packet);
-});
-
-type PacketListener = (packet: any) => void;
 const listeners: Set<PacketListener> = new Set();
 
-/**
- * Subscribes a component directly to the raw packet stream. (Used for Lobby)
- */
-export const subscribeToPackets = (listener: PacketListener) => {
-  listeners.add(listener);
-  return () => { listeners.delete(listener); };
+const debugLogger = (role: string, packet: any, metadata: string = "N/A") => {
+  if (!__DEV__) {
+    return;
+  }
+
+  const timestamp = new Date().toISOString();
+  const summary = JSON.stringify(packet).substring(0, 100);
+  console.log(
+    `[DEBUG][${timestamp}][${role}][${packet.type}][${summary}] - Meta: ${metadata}`,
+  );
 };
 
-/**
- * 🧹 Clears ALL packet listeners.
- * WHY: Prevents ghost listeners from a crashed/unmounted game session
- * from processing packets in the next session.
- */
+const notifyListeners = (packet: any, sourceIp?: string) => {
+  listeners.forEach((listener) => listener(packet, sourceIp));
+};
+
+PacketRouter.setBroadcastHandler((packet) => {
+  handleIncomingPacket(packet);
+
+  if (GameSessionTransport.getSnapshot().isHost) {
+    GameSessionTransport.sendToClients(packet);
+  }
+});
+
+export const subscribeToPackets = (listener: PacketListener) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
 export const clearAllListeners = () => {
   console.log(`🧹 [LAN] Clearing ${listeners.size} stale packet listeners.`);
   listeners.clear();
 };
 
-/**
- * --- PACKET AUDIT & DISPATCH ---
- */
-const debugLogger = (role: string, packet: any, metadata: string = "N/A") => {
-  if (!__DEV__) return;
-  const timestamp = new Date().toISOString();
-  const summary = JSON.stringify(packet).substring(0, 100);
-  console.log(`[DEBUG][${timestamp}][${role}][${packet.type}][${summary}] - Meta: ${metadata}`);
+export const configureSession = ({
+  isHost,
+  localPlayerId,
+  hostIp = null,
+}: {
+  isHost: boolean;
+  localPlayerId: string;
+  hostIp?: string | null;
+}) => {
+  GameSessionTransport.start({
+    isHost,
+    localPlayerId,
+    hostIp,
+    onPacket: (packet, sourceIp) => handleIncomingPacket(packet, sourceIp),
+  });
 };
 
-/**
- * Entry point for ALL network traffic (Local or Remote).
- * WHY: Adheres to defensive programming. Validates payloads before routing.
- */
-export const handleIncomingPacket = (packet: any, sourceIp?: string) => {
-  // 🛡️ PAYLOAD GUARD: Prevent crashes from malformed packets
-  if (!packet || typeof packet !== 'object' || !packet.type) {
-    if (__DEV__) console.warn("⚠️ [Network] Received malformed or empty packet. Ignoring.", packet);
+export const setSessionHostIp = (hostIp: string | null) => {
+  GameSessionTransport.setHostIp(hostIp);
+};
+
+export const getSessionContext = () => GameSessionTransport.getSnapshot();
+
+export const registerRemotePeer = (playerId: string, sourceIp?: string) => {
+  if (!sourceIp || !GameSessionTransport.getSnapshot().isHost) {
     return;
   }
 
-  // 1. Metrics & Logs
+  GameSessionTransport.registerPeer(playerId, sourceIp);
+  HeartbeatService.addClient(sourceIp);
+};
+
+export const unregisterRemotePeer = (playerId: string) => {
+  const peerIp = GameSessionTransport.getIpByPlayerId(playerId);
+  if (peerIp) {
+    HeartbeatService.removeClient(peerIp);
+  }
+  GameSessionTransport.unregisterPeer(playerId);
+};
+
+export const sendPacketToHost = (packet: any) => {
+  GameSessionTransport.sendToHost(packet);
+};
+
+export const sendPacketToPeer = (ip: string, packet: any) => {
+  GameSessionTransport.sendToPeer(ip, packet);
+};
+
+export const broadcastPacket = (
+  packet: any,
+  options: { processLocally?: boolean } = {},
+) => {
+  const { processLocally = true } = options;
+
+  if (processLocally) {
+    handleIncomingPacket(packet);
+  }
+
+  if (GameSessionTransport.getSnapshot().isHost) {
+    GameSessionTransport.sendToClients(packet);
+  }
+};
+
+export const stopSession = () => {
+  HeartbeatService.stop();
+  GameSessionTransport.stop();
+};
+
+export const handleIncomingPacket = (packet: any, sourceIp?: string) => {
+  if (!packet || typeof packet !== "object" || !packet.type) {
+    if (__DEV__) {
+      console.warn("⚠️ [Network] Received malformed or empty packet. Ignoring.", packet);
+    }
+    return;
+  }
+
   debugLogger("RECEIVER", packet, sourceIp || "LOCAL");
   updateDebugMetric("lastPacketType", packet.type);
 
-  // 2. Protocol Handlers (Ping/Pong)
   if (packet.type === NETWORK.PING) {
-    handleIncomingPacket({ type: NETWORK.PONG, timestamp: packet.timestamp }); 
+    notifyListeners(packet, sourceIp);
+    if (sourceIp) {
+      GameSessionTransport.sendToPeer(sourceIp, {
+        type: NETWORK.PONG,
+        timestamp: packet.timestamp,
+      });
+    }
     return;
   }
 
   if (packet.type === NETWORK.PONG) {
+    notifyListeners(packet, sourceIp);
     const now = Date.now();
     updateDebugMetric("latency", now - (packet.timestamp || now));
-    if (sourceIp) HeartbeatService.resetTracker(sourceIp);
+    if (sourceIp) {
+      HeartbeatService.resetTracker(sourceIp);
+    }
     return;
   }
 
-  // 3. Notify High-Level Listeners (Hooks/Lobby)
-  listeners.forEach(l => l(packet));
+  if (
+    packet.type === NETWORK.PLAYER_LEAVE &&
+    packet.playerId &&
+    GameSessionTransport.getSnapshot().isHost
+  ) {
+    unregisterRemotePeer(packet.playerId);
+  }
 
-  // 4. Delegate to Game Engine(s) via Router
+  notifyListeners(packet, sourceIp);
   PacketRouter.route(packet, sourceIp);
 };
 
-/**
- * --- SESSION CONTROLS ---
- */
-export const startHeartbeat = (isHost: boolean, clients: string[]) => {
-  if (!isHost) return;
-  HeartbeatService.start(clients, (packet) => {
-    // Notify local listener to simulate real broadcast
-    listeners.forEach(l => l(packet));
+export const startHeartbeat = (isHost: boolean) => {
+  if (!isHost) {
+    return;
+  }
+
+  HeartbeatService.start({
+    onPing: (packet) => {
+      GameSessionTransport.sendToClients(packet);
+    },
+    onStale: (ip) => {
+      const playerId = GameSessionTransport.getPlayerIdByIp(ip);
+      if (!playerId) {
+        HeartbeatService.removeClient(ip);
+        return;
+      }
+
+      const leavePacket = {
+        type: NETWORK.PLAYER_LEAVE,
+        playerId,
+        reason: "heartbeat_timeout",
+      };
+
+      unregisterRemotePeer(playerId);
+      GameSessionTransport.sendToClients(leavePacket);
+      handleIncomingPacket(leavePacket, ip);
+    },
   });
 };
 
@@ -95,5 +189,4 @@ export const stopHeartbeat = () => {
   HeartbeatService.stop();
 };
 
-// Re-export debug data from its dedicated service for backward compatibility
 export { useDebugData, debugState } from "./observability/DebugService";

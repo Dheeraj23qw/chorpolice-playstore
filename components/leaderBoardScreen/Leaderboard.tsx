@@ -6,30 +6,31 @@ import { rf, wp } from "@/utils/responsive";
 import { Text } from "../Text";
 
 interface PlayerScore {
+  playerId?: string;
   playerName: string;
   totalScore: number;
 }
 
 interface LeaderboardProps {
   sortedScores: PlayerScore[];
-  playerNames: { name: string }[];
+  playerNames: { id: string | number; name: string; avatarId?: number }[];
   selectedImages: number[];
 }
 
 const PlayerItem: React.FC<{
   player?: PlayerScore;
-  playerIndex?: number;
+  playerAvatarId?: number;
   rank?: number;
-}> = ({ player, playerIndex, rank }) => {
+}> = ({ player, playerAvatarId, rank }) => {
   const playerImages =
     useSelector((state: RootState) => state.playerImages?.images) ?? [];
 
   // 🛑 HARD SAFETY GUARDS
-  if (!player || playerIndex == null || rank == null) {
+  if (!player || playerAvatarId == null || rank == null) {
     return null;
   }
 
-  const playerImage = playerImages?.[playerIndex]?.src ?? null;
+  const playerImage = playerImages?.[playerAvatarId]?.src ?? null;
   const isTopRank = rank <= 3;
 
   return (
@@ -122,20 +123,35 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     return null;
   }
 
-  const playerNameToIndexMap = new Map(
-    playerNames.map((p, index) => [p.name, selectedImages[index]]),
+  const playerIdToAvatarMap = new Map(
+    playerNames
+      .filter((player) => typeof player.id === "string")
+      .map((player, index) => [
+        player.id as string,
+        player.avatarId ?? selectedImages[index],
+      ]),
+  );
+
+  const playerNameToAvatarMap = new Map(
+    playerNames.map((player, index) => [
+      player.name,
+      player.avatarId ?? selectedImages[index],
+    ]),
   );
 
   return (
     <View className="w-full">
       {sortedScores.map((player, index) => {
-        const playerIndex = playerNameToIndexMap.get(player.playerName) ?? 0;
+        const playerAvatarId =
+          (player.playerId && playerIdToAvatarMap.get(player.playerId)) ??
+          playerNameToAvatarMap.get(player.playerName) ??
+          0;
 
         return (
           <PlayerItem
-            key={`${player.playerName}-${index}`}
+            key={player.playerId ?? `${player.playerName}-${index}`}
             player={player}
-            playerIndex={playerIndex}
+            playerAvatarId={playerAvatarId}
             rank={index + 1}
           />
         );

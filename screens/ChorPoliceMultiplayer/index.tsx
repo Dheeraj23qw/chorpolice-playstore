@@ -64,12 +64,7 @@ const ChorPoliceMultiplayerScreen = () => {
 
       case "final_result":
       case "finished":
-        return (
-          <FinalResultView
-            onExit={g.handleFinalExit}
-            onPlayAgain={g.handlePlayAgain}
-          />
-        );
+        return <FinalResultView onExit={g.handleFinalExit} />;
 
       default:
         return null;

@@ -102,13 +102,13 @@ const GameModeScreen: React.FC = () => {
       </Animated.View>
 
       {useSelector(hasUnclaimedAwards) && <UnlockedAwardModal />}
-      <LowCoinModal
+      {/* <LowCoinModal
         visible={visible}
         onShare={onShare}
         onRate={onRate}
         onClose={onClose}
         onDisable={onDisableForever}
-      />
+      /> */}
     </View>
   );
 };

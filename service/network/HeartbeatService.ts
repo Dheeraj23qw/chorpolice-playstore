@@ -1,59 +1,69 @@
 import { NETWORK } from "../../constants/Networking";
 import { updateDebugMetric } from "../observability/DebugService";
 
-/**
- * --- HEARTBEAT SERVICE ---
- * Adheres to SRP.
- * Manages connection health checks for the LAN session.
- */
+type HeartbeatCallbacks = {
+  onPing: (packet: any) => void;
+  onStale: (ip: string) => void;
+};
 
-let heartbeatInterval: any = null;
-const pongTrackers: Map<string, number> = new Map(); 
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+const pongTrackers: Map<string, number> = new Map();
+let callbacks: HeartbeatCallbacks | null = null;
 
 export const HeartbeatService = {
-  /**
-   * Starts the heartbeat mechanism on the Host device.
-   */
-  start: (clients: string[], onPing: (packet: any) => void) => {
-    if (heartbeatInterval) return;
-    
-    console.log("💓 [Heartbeat] Service Started.");
+  start: (nextCallbacks: HeartbeatCallbacks) => {
+    callbacks = nextCallbacks;
+
+    if (heartbeatInterval) {
+      return;
+    }
+
     updateDebugMetric("isHeartbeatActive", true);
 
     heartbeatInterval = setInterval(() => {
       const packet = { type: NETWORK.PING, timestamp: Date.now() };
-      
-      // Monitor client health
-      clients.forEach(ip => {
-        const missed = (pongTrackers.get(ip) || 0) + 1;
-        pongTrackers.set(ip, missed);
-        
-        if (missed >= 3) {
-          console.warn(`[WARNING] Connection to ${ip} is stale. (Missed ${missed} PONGs)`);
+      callbacks?.onPing(packet);
+
+      Array.from(pongTrackers.entries()).forEach(([ip, missed]) => {
+        const nextMissed = missed + 1;
+        pongTrackers.set(ip, nextMissed);
+
+        if (nextMissed >= 3) {
+          callbacks?.onStale(ip);
         }
       });
-
-      // Notify the networking layer to broadcast
-      onPing(packet);
     }, 3000);
   },
 
-  /**
-   * Resets the missed pong count for a specific client.
-   */
-  resetTracker: (ip: string) => {
+  addClient: (ip: string) => {
+    if (!ip) {
+      return;
+    }
     pongTrackers.set(ip, 0);
   },
 
-  /**
-   * Stops the heartbeat mechanism.
-   */
+  removeClient: (ip: string) => {
+    if (!ip) {
+      return;
+    }
+    pongTrackers.delete(ip);
+  },
+
+  resetTracker: (ip: string) => {
+    if (!ip || !pongTrackers.has(ip)) {
+      return;
+    }
+    pongTrackers.set(ip, 0);
+  },
+
   stop: () => {
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval);
       heartbeatInterval = null;
-      updateDebugMetric("isHeartbeatActive", false);
-      console.log("💓 [Heartbeat] Service Stopped.");
     }
-  }
+
+    callbacks = null;
+    pongTrackers.clear();
+    updateDebugMetric("isHeartbeatActive", false);
+  },
 };

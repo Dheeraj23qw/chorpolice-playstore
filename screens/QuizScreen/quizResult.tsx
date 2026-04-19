@@ -18,6 +18,7 @@ import { ActionButtons } from "./components/renderButtons";
 import { StandingsDropdown } from "./components/StandingsDropdown";
 import { QuizEngine } from "@/service/QuizEngine";
 import { BotEngine } from "@/service/BotEngine";
+import { getSessionContext } from "@/service/lanGameService";
 
 export default function QuizResult() {
   const insets = useSafeAreaInsets();
@@ -68,7 +69,7 @@ export default function QuizResult() {
 
   useEffect(() => {
     if (standings.length > 0) {
-      const MY_PLAYER_ID = "host_id";
+      const MY_PLAYER_ID = getSessionContext().localPlayerId || "host_id";
       const winnerId = standings[0].playerId;
 
       // Dispatch the winner status

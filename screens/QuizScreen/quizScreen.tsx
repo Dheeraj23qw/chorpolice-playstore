@@ -171,9 +171,7 @@ const QuizScreen = () => {
                   roundProgress={roundProgress}
                   timeLeft={countdown}
                   onNext={handleNextQuestion}
-                  isHost={
-                    QuizEngine.state.playerScores["host_id"] !== undefined
-                  }
+                  isHost={isHost}
                   isLastRound={questionIndex + 1 >= NUM_QUESTIONS}
                   totalPot={QuizEngine.state.totalPot}
                   localPlayerId={localPlayerId}
