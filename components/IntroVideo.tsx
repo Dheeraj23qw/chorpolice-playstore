@@ -1,7 +1,8 @@
 import React, { memo, useEffect } from "react";
-import { View, StyleSheet, StatusBar } from "react-native";
+import { View } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { Asset } from "expo-asset";
+
+import { assetLoader } from "@/service/assetLoader";
 
 interface VideoPlayerComponentProps {
   videoIndex: number;
@@ -12,23 +13,18 @@ const VIDEO_SOURCES: Record<number, any> = {
   1: require("@/assets/gif/chorPolicescreen/chorpolice.mp4"),
 };
 
-const preloadVideos = () => {
-  Object.values(VIDEO_SOURCES).forEach((source) => {
-    Asset.fromModule(source).downloadAsync();
-  });
-};
-preloadVideos();
-
 const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
   ({ videoIndex, onVideoEnd }) => {
     const videoSource = VIDEO_SOURCES[videoIndex] || VIDEO_SOURCES[1];
 
-    const player = useVideoPlayer(videoSource, (player) => {
-      player.loop = false;
-      player.play();
+    const player = useVideoPlayer(videoSource, (instance) => {
+      instance.loop = false;
+      instance.play();
     });
 
     useEffect(() => {
+      void assetLoader.preloadBackgroundAssets();
+
       const subscription = player.addListener("playToEnd", () => {
         onVideoEnd();
       });
@@ -36,7 +32,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
       return () => {
         subscription.remove();
       };
-    }, [player, onVideoEnd]);
+    }, [onVideoEnd, player]);
 
     return (
       <View className="flex-1 bg-white">
@@ -45,7 +41,7 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
           style={{ flex: 1 }}
           contentFit="contain"
           nativeControls={false}
-          surfaceType="textureView" // ✅ Add this workaround
+          surfaceType="textureView"
           fullscreenOptions={{ allowsFullscreen: false } as any}
           allowsPictureInPicture={false}
         />

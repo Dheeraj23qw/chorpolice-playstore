@@ -4,6 +4,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -44,8 +45,11 @@ export const LowCoinModal = ({
         -1,
         true,
       );
+    } else {
+      cancelAnimation(floatY);
+      floatY.value = 0;
     }
-  }, [visible]);
+  }, [floatY, visible]);
 
   const thiefStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: floatY.value }],

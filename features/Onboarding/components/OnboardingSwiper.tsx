@@ -1,32 +1,36 @@
 import React from "react";
-import { View, Dimensions, StyleSheet } from "react-native";
+import { View, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   interpolate,
   Extrapolate,
+  type SharedValue,
 } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+
 import { Text } from "@/components/Text";
 import { ONBOARDING_SLIDES } from "../data/onboardingSlides";
 import AnimatedSlideImage from "./AnimatedSlideImage";
 
 const { width, height } = Dimensions.get("window");
 
-const OnboardingSwiper = () => {
+interface OnboardingSwiperProps {
+  onComplete: () => void;
+}
+
+const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
   const scrollX = useSharedValue(0);
   const lastIndex = ONBOARDING_SLIDES.length - 1;
-  const router = useRouter();
+
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
     },
   });
 
-  // 🔘 Pagination fade-out
   const paginationStyle = useAnimatedStyle(() => {
     const input = [(lastIndex - 1) * width, lastIndex * width];
 
@@ -42,7 +46,6 @@ const OnboardingSwiper = () => {
 
   return (
     <View className="flex-1 bg-[#050505]">
-      {/* 🌌 BACKGROUND */}
       <LinearGradient
         colors={["#000000", "#0D0D2B", "#000000"]}
         style={StyleSheet.absoluteFill}
@@ -63,10 +66,8 @@ const OnboardingSwiper = () => {
               style={{ width, height }}
               className="items-center justify-center px-8"
             >
-              {/* 🌈 Glow */}
               <GlowDisk index={index} scrollX={scrollX} color={item.accent} />
 
-              {/* 🧊 Glass Card */}
               <View className="w-full overflow-hidden rounded-[40px] border border-white/10">
                 <BlurView intensity={25} tint="dark" className="p-8 py-12">
                   <View className="items-center">
@@ -91,13 +92,12 @@ const OnboardingSwiper = () => {
         }}
       />
 
-      {/* 🚀 CTA BUTTON */}
       <AnimatedCTA
         scrollX={scrollX}
         lastIndex={lastIndex}
-        onPress={() => router.replace("/mode-select")}
+        onPress={onComplete}
       />
-      {/* 🔘 Pagination */}
+
       <Animated.View
         style={[paginationStyle]}
         className="absolute bottom-16 w-full flex-row justify-center space-x-2"
@@ -170,7 +170,15 @@ const PaginationDot = ({ index, scrollX }: any) => {
   return <Animated.View style={style} className="h-2 rounded-full bg-white" />;
 };
 
-const AnimatedCTA = ({ scrollX, lastIndex }: any) => {
+const AnimatedCTA = ({
+  scrollX,
+  lastIndex,
+  onPress,
+}: {
+  scrollX: SharedValue<number>;
+  lastIndex: number;
+  onPress: () => void;
+}) => {
   const animatedStyle = useAnimatedStyle(() => {
     const input = [(lastIndex - 1) * width, lastIndex * width];
 
@@ -214,18 +222,20 @@ const AnimatedCTA = ({ scrollX, lastIndex }: any) => {
         },
       ]}
     >
-      <View className="overflow-hidden rounded-full">
-        <LinearGradient
-          colors={["#A78BFA", "#60A5FA"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className="rounded-full px-12 py-4"
-        >
-          <Text className="text-lg font-bold tracking-wide text-white">
-            Let's Get Started
-          </Text>
-        </LinearGradient>
-      </View>
+      <TouchableOpacity activeOpacity={0.92} onPress={onPress}>
+        <View className="overflow-hidden rounded-full">
+          <LinearGradient
+            colors={["#A78BFA", "#60A5FA"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="rounded-full px-12 py-4"
+          >
+            <Text className="text-lg font-bold tracking-wide text-white">
+              Let's Get Started
+            </Text>
+          </LinearGradient>
+        </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 };

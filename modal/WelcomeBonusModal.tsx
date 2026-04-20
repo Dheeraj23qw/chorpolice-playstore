@@ -3,6 +3,7 @@ import { Modal, View, TouchableOpacity, Image } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -50,8 +51,13 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
         -1,
         false,
       );
+    } else {
+      cancelAnimation(floatY);
+      cancelAnimation(shimmerX);
+      floatY.value = 0;
+      shimmerX.value = -200;
     }
-  }, [isVisible]);
+  }, [floatY, isVisible, shimmerX]);
 
   const thiefStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: floatY.value }],

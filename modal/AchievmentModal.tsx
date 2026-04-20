@@ -9,11 +9,20 @@ import {
   BackHandler,
 } from "react-native";
 import * as LucideIcons from "lucide-react-native";
+
 import { claimAward } from "@/features/awards/awardsSlice";
 import { ACHIEVEMENT_DATA } from "@/constants/achievements";
 import { Text } from "@/components/Text";
 
-export default function UnlockedAwardModal() {
+interface UnlockedAwardModalProps {
+  visible?: boolean;
+  onClaimed?: () => void;
+}
+
+export default function UnlockedAwardModal({
+  visible = true,
+  onClaimed,
+}: UnlockedAwardModalProps) {
   const dispatch = useDispatch();
   const unlocked = useSelector((state: any) => state.awards.unlocked);
 
@@ -21,8 +30,7 @@ export default function UnlockedAwardModal() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (unlocked.length > 0) {
-      // Sequence: Scale in, then start rotation loop
+    if (visible && unlocked.length > 0) {
       Animated.spring(scaleAnim, {
         toValue: 1,
         tension: 50,
@@ -33,39 +41,43 @@ export default function UnlockedAwardModal() {
       Animated.loop(
         Animated.timing(rotateAnim, {
           toValue: 1,
-          duration: 15000, // Slightly slower rotation feels more "premium"
+          duration: 15000,
           easing: Easing.linear,
           useNativeDriver: true,
         }),
       ).start();
+    } else {
+      scaleAnim.stopAnimation();
+      rotateAnim.stopAnimation();
+      scaleAnim.setValue(0);
+      rotateAnim.setValue(0);
     }
-  }, [unlocked.length]);
+  }, [rotateAnim, scaleAnim, unlocked.length, visible]);
 
-  // Prevent back button from closing modal without triggering "Claim"
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
-      () => true,
+      () => visible,
     );
-    return () => backHandler.remove();
-  }, []);
 
-  if (unlocked.length === 0) return null;
+    return () => backHandler.remove();
+  }, [visible]);
+
+  if (!visible || unlocked.length === 0) return null;
 
   const awardId = unlocked[0];
-  const award = ACHIEVEMENT_DATA.find((a) => a.id === awardId);
+  const award = ACHIEVEMENT_DATA.find((item) => item.id === awardId);
   if (!award) return null;
 
   const handleClose = () => {
-    // 1. Shrink effect
     Animated.timing(scaleAnim, {
       toValue: 0,
       duration: 200,
       easing: Easing.ease,
       useNativeDriver: true,
     }).start(() => {
-      // 2. Dispatch only after animation completes
       dispatch(claimAward(awardId));
+      onClaimed?.();
     });
   };
 
@@ -85,13 +97,12 @@ export default function UnlockedAwardModal() {
   });
 
   return (
-    <Modal transparent visible={true} animationType="fade">
+    <Modal transparent visible={visible} animationType="fade">
       <View className="flex-1 items-center justify-center bg-black/80 p-6">
         <Animated.View
           style={{ transform: [{ scale: scaleAnim }] }}
           className="w-full max-w-sm items-center"
         >
-          {/* SUNBURST */}
           <Animated.View
             style={{ transform: [{ rotate: spin }] }}
             className="absolute -top-10 h-80 w-80 opacity-20"
@@ -99,7 +110,6 @@ export default function UnlockedAwardModal() {
             <View className="absolute h-full w-full rounded-full border-[60px] border-dashed border-white/40" />
           </Animated.View>
 
-          {/* MAIN CARD */}
           <View
             className={`w-full items-center rounded-[40px] border-4 border-white/20 bg-slate-900 p-8 shadow-2xl ${theme.glow}`}
           >

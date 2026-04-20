@@ -3,7 +3,10 @@ import { scheduleFromTemplate, cancelById } from "../scheduler";
 import { secondsUntilTomorrowAt } from "../utils/time";
 
 export async function scheduleDailyStreakReminder(dailyStreak: number) {
-  if (dailyStreak <= 0) return;
+  if (dailyStreak <= 0) {
+    await cancelById(DAILY_STREAK_TEMPLATE.id);
+    return;
+  }
 
   const seconds = secondsUntilTomorrowAt(20); // 8 PM
 

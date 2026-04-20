@@ -18,10 +18,6 @@ import {
   runOnJS,
   cancelAnimation,
 } from "react-native-reanimated";
-import {
-  cancelSpinNotification,
-  scheduleSpinUnlock,
-} from "@/service/notification/notication_types/spin.notification";
 import { updateCoins } from "../wallet/walletSlice";
 import { useSpin } from "../locks/lockSlice";
 
@@ -64,14 +60,7 @@ export const useSpinWheel = () => {
     };
   }, [spinLock.lastUsedTimestamp]);
 
-  // 2. Notification Logic
-  useEffect(() => {
-    if (remainingTime <= 0) return;
-    cancelSpinNotification();
-    scheduleSpinUnlock(Math.ceil(remainingTime / 1000));
-  }, [remainingTime]);
-
-  // 3. Cleanup on Unmount
+  // 2. Cleanup on Unmount
   useEffect(() => {
     return () => {
       cancelAnimation(spinAnim);

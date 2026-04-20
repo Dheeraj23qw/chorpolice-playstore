@@ -4,11 +4,13 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 interface SoundState {
   isLoading: boolean;
+  isLoaded: boolean;
   isMuted: boolean;
 }
 
 const initialState: SoundState = {
   isLoading: false,
+  isLoaded: false,
   isMuted: false,
 };
 
@@ -40,6 +42,10 @@ const soundSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(loadSounds.fulfilled, (state) => {
+        state.isLoading = false;
+        state.isLoaded = true;
+      })
+      .addCase(loadSounds.rejected, (state) => {
         state.isLoading = false;
       });
   },

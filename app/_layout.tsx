@@ -1,80 +1,58 @@
 import "../styles/global.css";
 import React, { useEffect, useCallback } from "react";
-import { Provider } from "react-redux";
-import { SplashScreen, Stack } from "expo-router";
+import { Provider, useSelector } from "react-redux";
+import { SplashScreen, Stack, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
-import store from "@/redux/store";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { AppState, View } from "react-native";
+
+import store, { RootState } from "@/redux/store";
 import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
-import { AppState, View } from "react-native";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
-import { notificationService } from "@/service/notification/NotificationService";
 import { ToastProvider } from "@/components/feedback/ToastProvider";
 import { runAfterUI } from "@/utils/runAfterUI";
 import AppExitModal from "@/modal/AppExitModal";
 import { useAppExit } from "@/hooks/useAppExit";
+import ModalRoot from "@/components/ModalRoot";
+import NotificationController from "@/components/NotificationController";
 
-// Prevent splash from hiding until we are ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
   const { exitVisible, hideExitModal, exitApp } = useAppExit();
+  const appPhase = useSelector((state: RootState) => state.appFlow.phase);
+  const isSoundLoaded = useSelector((state: RootState) => state.sound.isLoaded);
+  const pathname = usePathname();
 
-  /* ---------------- 🎧 Audio Restore ---------------- */
   useEffect(() => {
     const handleAppState = (state: string) => {
-      if (state === "active" && !AudioEngine.isMuted()) {
+      if (
+        state === "active" &&
+        appPhase === "HOME" &&
+        isSoundLoaded &&
+        !AudioEngine.isMuted()
+      ) {
         AudioEngine.ensureQuizGlobal?.();
       }
     };
+
     const sub = AppState.addEventListener("change", handleAppState);
-
-    runAfterUI(() => {
-      if (!AudioEngine.isMuted()) AudioEngine.ensureQuizGlobal?.();
-    });
-
     return () => sub.remove();
-  }, []);
+  }, [appPhase, isSoundLoaded]);
 
-  // src/app/_layout.tsx
-
-  /* ---------------- 🔔 Notifications (Silent Flow) ---------------- */
-  useEffect(() => {
-    let mounted = true;
-
-    runAfterUI(async () => {
-      try {
-        // 1. SILENT CHECK: No popup triggered here.
-        // This ensures a fast, non-intrusive launch.
-        const hasPermission = await notificationService.checkPermission();
-
-        // 2. ONLY initialize listeners if the user ALREADY granted permission
-        // in a previous session.
-        if (mounted && hasPermission) {
-          notificationService.listen();
-          await notificationService.handleInitialNotification();
-        }
-      } catch (e) {
-        console.log("Notification silent setup error:", e);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      notificationService.cleanup();
-    };
-  }, []);
-
-  /* ---------------- 🎬 Screen Wrapper ---------------- */
   const screenLayout = useCallback(
     ({ children }: { children: React.ReactNode }) => (
-      <ScreenWrapper variant="default" breathing>
-        {children}
-      </ScreenWrapper>
+      pathname === "/" ? (
+        <>{children}</>
+      ) : (
+        <ScreenWrapper variant="default" breathing>
+          {children}
+        </ScreenWrapper>
+      )
     ),
-    [],
+    [pathname],
   );
 
   return (
@@ -98,6 +76,8 @@ function AppLayout() {
         onCancel={hideExitModal}
         onConfirm={exitApp}
       />
+      <NotificationController />
+      <ModalRoot />
     </View>
   );
 }
@@ -113,7 +93,6 @@ export default function RootLayout() {
 
   useSystemUI();
 
-  /* ---------------- 🚀 Smooth Splash Hide ---------------- */
   useEffect(() => {
     if (fontsLoaded || fontError) {
       runAfterUI(() => {

@@ -2,6 +2,7 @@
 import { storage } from "@/storage/mmkv";
 
 const KEY = "LOW_COIN_REWARD";
+const LOW_COIN_COOLDOWN_MS = 1000 * 60 * 60 * 24;
 
 type LowCoinState = {
   disabledForever: boolean;
@@ -38,4 +39,19 @@ export const dismissTemp = () => {
     disabledForever: false,
     lastDismissed: Date.now(),
   });
+};
+
+export const canShowLowCoinModal = (now = Date.now()) => {
+  const state = getLowCoinState();
+
+  if (state.disabledForever) return false;
+
+  if (
+    state.lastDismissed &&
+    now - state.lastDismissed < LOW_COIN_COOLDOWN_MS
+  ) {
+    return false;
+  }
+
+  return true;
 };

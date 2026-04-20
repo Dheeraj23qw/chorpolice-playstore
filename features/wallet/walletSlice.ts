@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface WalletState {
+export interface WalletState {
   coins: number;
+  firstLaunch: boolean;
 }
 
 const initialState: WalletState = {
   coins: 0,
+  firstLaunch: true,
 };
 
 const walletSlice = createSlice({
@@ -21,9 +23,24 @@ const walletSlice = createSlice({
       state.coins = action.payload;
     },
 
+    setFirstLaunch: (state, action: PayloadAction<boolean>) => {
+      state.firstLaunch = action.payload;
+    },
+
+    claimFirstLaunchBonus: (state) => {
+      state.coins += 10000;
+      state.firstLaunch = false;
+    },
+
     resetWallet: () => initialState,
   },
 });
 
-export const { updateCoins, setCoins, resetWallet } = walletSlice.actions;
+export const {
+  updateCoins,
+  setCoins,
+  setFirstLaunch,
+  claimFirstLaunchBonus,
+  resetWallet,
+} = walletSlice.actions;
 export default walletSlice.reducer;

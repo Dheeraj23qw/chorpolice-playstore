@@ -1,34 +1,33 @@
 import { configureStore } from "@reduxjs/toolkit";
 
-import playerReducer from "./reducers/playerReducer";
-import soundSlice from "./reducers/soundReducer";
-import playerImagesReducer from "./reducers/dynamicImagesReducer";
-import difficultyReducer from "@/redux/reducers/quiz";
-import popupReducer from "./reducers/popupReducer";
 import awardsReducer from "@/features/awards/awardsSlice";
-import lockReducer from "@/features/locks/lockSlice";
-import walletReducer from "@/features/wallet/walletSlice";
+import gameStreakReducer, {
+  initialGameStreakState,
+} from "@/features/gameStreakSlice";
 import quizStatsReducer, {
   defaultQuizStats,
 } from "@/features/gameStats/gameStatsSlice";
-
-import { listenerMiddleware } from "./middleware";
+import lockReducer from "@/features/locks/lockSlice";
+import walletReducer from "@/features/wallet/walletSlice";
+import { loadGameStreak } from "@/storage/gameStreakStorage";
 import { loadQuizStats } from "@/storage/quizStatsStorage";
 import { loadWallet } from "@/storage/walletStorage";
 
-/**
- * ✅ SAFE LOADERS — Hydrate from MMKV on startup
- */
+import { listenerMiddleware } from "./middleware";
+import playerImagesReducer from "./reducers/dynamicImagesReducer";
+import appFlowReducer from "./reducers/appFlowReducer";
+import modalQueueReducer from "./reducers/modalQueueReducer";
+import difficultyReducer from "./reducers/quiz";
+import popupReducer from "./reducers/popupReducer";
+import playerReducer from "./reducers/playerReducer";
+import soundSlice from "./reducers/soundReducer";
 
-// WALLET (simple → fine)
-const preloadedWallet = loadWallet() ?? { coins: 0 };
-
-// QUIZ STATS (IMPORTANT → merge with defaults)
+const preloadedWallet = loadWallet() ?? { coins: 0, firstLaunch: true };
 const storedStats = loadQuizStats();
-
 const preloadedQuizStats = storedStats
-  ? { ...defaultQuizStats, ...storedStats } // ✅ merge fix
+  ? { ...defaultQuizStats, ...storedStats }
   : defaultQuizStats;
+const preloadedGameStreak = loadGameStreak() ?? initialGameStreakState;
 
 const store = configureStore({
   reducer: {
@@ -41,14 +40,16 @@ const store = configureStore({
     quizStats: quizStatsReducer,
     awards: awardsReducer,
     lock: lockReducer,
+    gameStreak: gameStreakReducer,
+    appFlow: appFlowReducer,
+    modalQueue: modalQueueReducer,
   },
-
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(listenerMiddleware.middleware),
-
   preloadedState: {
     wallet: preloadedWallet,
     quizStats: preloadedQuizStats,
+    gameStreak: preloadedGameStreak,
   },
 });
 

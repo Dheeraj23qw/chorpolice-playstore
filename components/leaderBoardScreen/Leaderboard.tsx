@@ -142,10 +142,12 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   return (
     <View className="w-full">
       {sortedScores.map((player, index) => {
-        const playerAvatarId =
+        const rawPlayerAvatarId =
           (player.playerId && playerIdToAvatarMap.get(player.playerId)) ??
           playerNameToAvatarMap.get(player.playerName) ??
           0;
+        const playerAvatarId =
+          typeof rawPlayerAvatarId === "number" ? rawPlayerAvatarId : 0;
 
         return (
           <PlayerItem

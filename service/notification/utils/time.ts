@@ -26,3 +26,11 @@ export function secondsUntilTomorrowAt(hour: number): number {
   // Math.max(1, ...) ensures we never return 0 or negative
   return Math.max(1, Math.floor(diff / 1000));
 }
+
+export function secondsUntilDate(date: Date): number | null {
+  const diff = date.getTime() - Date.now();
+
+  if (diff <= 0) return null;
+
+  return Math.max(1, Math.floor(diff / 1000));
+}
