@@ -6,7 +6,7 @@
     "start": "expo start",
     "android": "expo run:android",
     "clean": "npx rimraf node_modules android/build .expo && npm install",
-    "lint": "expo lint",
+    "lint": "expo lint -- --no-error-on-unmatched-pattern",
     "ts:check": "tsc --noEmit",
     "prebuild": "npx expo prebuild",
     "build:android:debug": "npx expo run:android --variant debug",

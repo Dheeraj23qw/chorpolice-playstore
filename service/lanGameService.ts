@@ -156,6 +156,12 @@ export const handleIncomingPacket = (packet: any, sourceIp?: string) => {
   PacketRouter.route(packet, sourceIp);
 };
 
+let apIsolationCallback: (() => void) | null = null;
+
+export const setApIsolationHandler = (handler: (() => void) | null) => {
+  apIsolationCallback = handler;
+};
+
 export const startHeartbeat = (isHost: boolean) => {
   if (!isHost) {
     return;
@@ -182,6 +188,12 @@ export const startHeartbeat = (isHost: boolean) => {
       GameSessionTransport.sendToClients(leavePacket);
       handleIncomingPacket(leavePacket, ip);
     },
+    onApIsolation: () => {
+      if (__DEV__) {
+        console.warn("[LAN] AP Isolation detected — TCP failed on same Wi-Fi");
+      }
+      apIsolationCallback?.();
+    },
   });
 };
 
@@ -190,3 +202,4 @@ export const stopHeartbeat = () => {
 };
 
 export { useDebugData, debugState } from "./observability/DebugService";
+

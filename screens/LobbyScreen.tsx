@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, Image, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
+import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import { playerImages } from "@/constants/playerData";
 import { DebugOverlay } from "@/components/DebugOverlay";
 import { BettingModal } from "@/modal/BettingModal";
@@ -11,17 +11,19 @@ import { LobbyHeader } from "@/components/Lobby/LobbyHeader";
 import { PlayerProfileCard } from "@/components/Lobby/PlayerProfileCard";
 import { PlayersList } from "@/components/Lobby/PlayersList";
 import { StartButton } from "@/components/Lobby/StartButton";
+import { HandshakeStatus } from "@/components/Lobby/HandshakeStatus";
+import { ApIsolationModal } from "@/components/Lobby/ApIsolationModal";
 
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import VideoPlayerComponent from "@/components/IntroVideo";
-import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
 
 const LobbyScreen: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const lobby = useLobbyLogic(router, params);
+  const permissions = useNetworkPermissions();
+  const lobby = useLobbyLogic(router, params, permissions.status === "granted");
 
   const getAvatarSource = (avatarId: number) => {
     const imgData = playerImages[avatarId];
@@ -33,15 +35,13 @@ const LobbyScreen: React.FC = () => {
   const isModalOpen = lobby.isBettingModalVisible;
   const isTransitioning = lobby.isTransitioning;
   const gameType = lobby.gameType;
-  const [showWaiting, setShowWaiting] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWaiting(false);
-    }, 3000);
+  // Handshake is complete when permissions are granted AND
+  // either we're the host (no need to discover) or hosts have been found
+  const isHandshakeComplete =
+    permissions.status === "granted" &&
+    (lobby.isHost || lobby.allHosts.length > 0);
 
-    return () => clearTimeout(timer);
-  }, []);
   if (isTransitioning) {
     return (
         <VideoPlayerComponent
@@ -130,15 +130,23 @@ const LobbyScreen: React.FC = () => {
               getAvatarSource={getAvatarSource}
               onSettingsToggle={setIsSettingsOpen}
             />
-            {/* Players */}
+            {/* Players / Handshake Status */}
             <View
               className={
                 lobby.showAvatarGrid || isSettingsOpen ? "hidden" : "flex-1"
               }
             >
-              {showWaiting ? (
+              {!isHandshakeComplete ? (
                 <View className="flex-1 items-center justify-center">
-                  <WaitingState />
+                  <HandshakeStatus
+                    step={permissions.step}
+                    status={permissions.status}
+                    discoveredCount={lobby.allHosts.length}
+                    errorMessage={permissions.errorMessage}
+                    wifiSSID={permissions.wifiSSID}
+                    onRetry={permissions.retry}
+                    isHost={lobby.isHost}
+                  />
                 </View>
               ) : (
                 <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
@@ -164,7 +172,7 @@ const LobbyScreen: React.FC = () => {
             </View>
           </View>
 
-          {!showWaiting && <StartButton lobby={lobby} />}
+          {isHandshakeComplete && <StartButton lobby={lobby} />}
         </>
       )}
 
@@ -174,6 +182,12 @@ const LobbyScreen: React.FC = () => {
         onConfirm={lobby.handleConfirmStake}
         onClose={() => lobby.setIsBettingModalVisible(false)}
         playerCount={lobby.players.length}
+      />
+
+      {/* 🔒 AP Isolation Modal */}
+      <ApIsolationModal
+        visible={lobby.showApIsolation}
+        onClose={() => lobby.setShowApIsolation(false)}
       />
     </KeyboardAvoidingView>
   );

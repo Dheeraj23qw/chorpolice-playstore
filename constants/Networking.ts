@@ -4,7 +4,8 @@
  */
 /**
  * --- UPDATED NETWORKING CONSTANTS ---
- * WHY: Added PROTOCOL_VERSION to prevent crashes between different app versions.
+ * WHY: Protocol v2.0.0 introduces Zeroconf discovery + TCP transport.
+ *      Old UDP-based clients (v1.x) are cleanly rejected.
  */
 
 export const NETWORK = {
@@ -13,9 +14,14 @@ export const NETWORK = {
   BROADCAST_ADDRESS: "255.255.255.255",
   DISCOVERY_TIMEOUT: 5000,
 
-  // PROTOCOL_VERSION: This acts as a 'gatekeeper' for your network.
-  // If this string doesn't match, the connection should be refused.
-  PROTOCOL_VERSION: "1.0.0",
+  // PROTOCOL_VERSION: Bumped to 2.0.0 for the TCP transport migration.
+  // v1.x (UDP) clients will be rejected at the envelope parse layer.
+  PROTOCOL_VERSION: "2.0.0",
+
+  // Zeroconf / mDNS Discovery
+  ZEROCONF_SERVICE_TYPE: "chorpolice-game",
+  ZEROCONF_PROTOCOL: "tcp",
+  GAME_VERSION: "3.0.0",
 
   // Handshake Messages
   DISCOVERY_MSG: "PLATFORM_DISCOVERY",
@@ -25,6 +31,10 @@ export const NETWORK = {
   PLAYER_LEAVE: "PLAYER_LEAVE",
   PING: "PING",
   PONG: "PONG",
+
+  // TCP Reconnection
+  RECONNECT_ATTEMPTS: 3,
+  RECONNECT_INTERVAL_MS: 1000,
 };
 
 // ... keep your MODES and SESSION constants the same ...

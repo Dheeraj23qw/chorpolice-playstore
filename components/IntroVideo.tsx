@@ -50,4 +50,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
   },
 );
 
+VideoPlayerComponent.displayName = "VideoPlayerComponent";
+
 export default VideoPlayerComponent;

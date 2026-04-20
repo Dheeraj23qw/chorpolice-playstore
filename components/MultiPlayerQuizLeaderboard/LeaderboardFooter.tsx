@@ -62,6 +62,11 @@ export const LeaderboardFooter = ({
     shadowColor: "#6366F1",
   }));
 
+  const arrowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: allFinished ? 1 : 0.3,
+    transform: [{ translateX: glow.value * 6 }],
+  }));
+
   if (!isHost) {
     return (
       <View className="items-center py-6">
@@ -110,10 +115,7 @@ export const LeaderboardFooter = ({
           </Text>
 
           <Animated.View
-            style={useAnimatedStyle(() => ({
-              opacity: allFinished ? 1 : 0.3,
-              transform: [{ translateX: glow.value * 6 }],
-            }))}
+            style={arrowAnimatedStyle}
           >
             <Ionicons
               name={isLastRound ? "home" : "chevron-forward"}

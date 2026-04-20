@@ -12,9 +12,9 @@ import { rf } from "../utils/responsive";
 
 export const DebugOverlay: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState(true);
-  if (!runtimeConfig.isDevelopment) return null;
-
   const debug = useDebugData();
+
+  if (!runtimeConfig.isDevelopment) return null;
 
   const handleTestNotification = async () => {
     const result = await notificationService.triggerTestNotification();

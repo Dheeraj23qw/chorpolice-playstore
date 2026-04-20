@@ -70,6 +70,8 @@
           "android": {
             "enableHermes": true,
             "enableProguardInReleaseBuilds": true,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
             "compiler": "r8",
             "extraCompilerArgs": ["-Xjvm-default=all"],
             "permissions": [
@@ -78,6 +80,7 @@
               "android.permission.ACCESS_WIFI_STATE",
               "android.permission.CHANGE_WIFI_MULTICAST_STATE",
               "android.permission.ACCESS_FINE_LOCATION",
+              "android.permission.ACCESS_COARSE_LOCATION",
               "android.permission.NEARBY_WIFI_DEVICES"
             ],
             "packagingOptions": {

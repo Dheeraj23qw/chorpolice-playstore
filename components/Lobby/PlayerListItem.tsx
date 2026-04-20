@@ -41,11 +41,11 @@ export const PlayerListItem = ({
         {/* 📄 Info */}
         <View className="flex-1">
           <Text className="font-main-bold text-white">
-            {lobby.isHost ? item.name : item.deviceName}
+            {lobby.isHost ? item.name : (item.lobbyName || item.name || item.deviceName)}
           </Text>
 
           <Text className="mt-1 text-[11px] text-white/40">
-            {lobby.isHost ? "Player" : item.ip}
+            {lobby.isHost ? "Player" : `${item.ip}${item.playerCount ? ` · ${item.playerCount}/4 players` : ""}`}
           </Text>
         </View>
 

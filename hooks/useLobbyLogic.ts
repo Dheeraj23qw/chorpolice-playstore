@@ -23,12 +23,14 @@ import {
   registerRemotePeer,
   sendPacketToHost,
   sendPacketToPeer,
+  setApIsolationHandler,
   setSessionHostIp,
   startHeartbeat,
   subscribeToPackets,
   unregisterRemotePeer,
 } from "@/service/lanGameService";
 import { updateDebugMetric } from "@/service/observability/DebugService";
+import { ZeroconfDiscoveryService } from "@/service/network/ZeroconfDiscoveryService";
 import {
   loadOrCreateClientPlayerId,
   loadUsername,
@@ -45,7 +47,11 @@ export interface Player {
   isBot?: boolean;
 }
 
-export const useLobbyLogic = (router: any, gameParams: any) => {
+export const useLobbyLogic = (
+  router: any,
+  gameParams: any,
+  lanEnabled = true,
+) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const isHost = gameParams.isHost === "true";
@@ -62,6 +68,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [selectedHostIp, setSelectedHostIp] = useState<string | null>(null);
+  const [showApIsolation, setShowApIsolation] = useState(false);
 
   const selectedImages = useSelector(
     (state: RootState) => state.player.selectedImages,
@@ -96,6 +103,11 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     ChorPoliceBotBehavior.reset();
     clearAllListeners();
 
+    // Wire AP Isolation handler
+    setApIsolationHandler(() => {
+      setShowApIsolation(true);
+    });
+
     const hostPlayer: Player = {
       id: localPlayerId,
       name: userName,
@@ -110,16 +122,27 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
       if (gameType === "QUIZ") {
         BotEngine.spawn(3);
         const timer = setTimeout(() => handleDifficultyChange("easy"), 800);
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(timer);
+          setApIsolationHandler(null);
+        };
       }
 
       if (gameType === "CHOR_POLICE") {
         BotEngine.spawn(3);
       }
     }
+
+    return () => {
+      setApIsolationHandler(null);
+    };
   }, [gameType, handleDifficultyChange, isHost, localPlayerId]);
 
-  const { availableHosts, localIp } = useLanDiscovery(isHost, userName);
+  const { availableHosts, localIp } = useLanDiscovery(
+    isHost,
+    userName,
+    lanEnabled,
+  );
 
   useEffect(() => {
     debugState.connectionCount = isHost ? players.length - 1 : availableHosts.length;
@@ -317,17 +340,24 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
         },
       };
 
+      const hostDisplayName = host.lobbyName || host.name || host.deviceName || host.ip;
+
       if (__DEV__) {
         console.log(
-          `[LAN] Client joining host ${host.deviceName} at ${host.ip}. Local IP: ${localIp}`,
+          `[LAN] Client joining host ${hostDisplayName} at ${host.ip}. Local IP: ${localIp}`,
         );
       }
 
       setSelectedHostIp(host.ip);
       setSessionHostIp(host.ip);
       updateDebugMetric("hostIp", host.ip);
-      sendPacketToHost(joinPacket);
-      toast.success("Joining", `Connecting to ${host.deviceName}...`);
+
+      // TCP connection is async — wait for handshake before sending join packet
+      setTimeout(() => {
+        sendPacketToHost(joinPacket);
+      }, 600);
+
+      toast.success("Joining", `Connecting to ${hostDisplayName}...`);
     },
     [localIp, localPlayerId, selectedImages, userName],
   );
@@ -523,6 +553,24 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     clearAllListeners();
   };
 
+  // ── Update Zeroconf TXT records when player count changes ──
+  useEffect(() => {
+    if (lanEnabled && isHost && players.length > 0) {
+      ZeroconfDiscoveryService.updateServiceMetadata({
+        lobbyName: userName,
+        playerCount: players.length,
+        hostPlayerId: localPlayerId,
+      });
+    }
+  }, [isHost, lanEnabled, players.length, userName, localPlayerId]);
+
+  // ── Cleanup Zeroconf on unmount ──
+  useEffect(() => {
+    return () => {
+      ZeroconfDiscoveryService.destroy();
+    };
+  }, []);
+
   return {
     isHost,
     localPlayerId,
@@ -546,5 +594,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     handleNameChange,
     resetAllEngines,
     isTransitioning,
+    showApIsolation,
+    setShowApIsolation,
   };
 };

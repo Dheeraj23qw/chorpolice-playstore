@@ -20,25 +20,19 @@ export const WinnerCard = ({
 
   return (
     <View className="w-full items-center px-2 py-4">
-      {/* ── HERO AVATAR ── */}
       <View className="relative mb-4 items-center justify-center">
-        {/* Outer Glow */}
         <View className="absolute h-40 w-40 rounded-full bg-yellow-400/20 blur-2xl" />
 
-        {/* Glass Border Layer */}
         <View className="h-32 w-32 items-center justify-center rounded-full border-[5px] border-white/20 bg-white/[0.05] backdrop-blur-md">
-          {/* Inner Ring (highlight) */}
           <View className="h-28 w-28 overflow-hidden rounded-full border-[3px] border-yellow-400/50">
-            {/* Image FULL COVER */}
             <Image
               source={getAvatarSource(winner.avatarId)}
               className="h-full w-full"
-              resizeMode="cover" // 🔥 FULL COVER
+              resizeMode="cover"
             />
           </View>
         </View>
 
-        {/* Winner Badge */}
         <View className="absolute -bottom-2 rounded-full bg-yellow-400 px-4 py-[3px]">
           <Text className="font-main-bold text-[9px] uppercase tracking-[2px] text-black">
             WINNER
@@ -46,10 +40,8 @@ export const WinnerCard = ({
         </View>
       </View>
 
-      {/* ── Name ── */}
       <Text className="font-main-bold text-lg text-white">{winner.name}</Text>
 
-      {/* ── Score ── */}
       <View className="mt-1 flex-row items-end">
         <Text className="font-main-bold text-3xl text-white">
           {winner.correctCount}
@@ -61,14 +53,12 @@ export const WinnerCard = ({
         Correct Answers
       </Text>
 
-      {/* ── Stats ── */}
       <View className="mt-4 w-full flex-row justify-between px-4 py-3">
         <StatItem label="Accuracy" value={`${accuracy}%`} />
         <StatItem label="Avg Time" value={avgTime} />
         <StatItem label="Rank" value="#1" />
       </View>
 
-      {/* ── Coins ── */}
       {isLastRound && totalPot > 0 && (
         <View className="mt-3 flex-row items-center px-3 py-1">
           <Ionicons name="trophy" size={14} color="#4ade80" />
@@ -78,11 +68,10 @@ export const WinnerCard = ({
         </View>
       )}
 
-      {/* ── You Tag ── */}
       {isMe && (
         <View className="mt-3 px-3 py-1">
           <Text className="font-main-bold text-[9px] uppercase tracking-[2px] text-indigo-400">
-            That's You 🎯
+            That&apos;s You
           </Text>
         </View>
       )}

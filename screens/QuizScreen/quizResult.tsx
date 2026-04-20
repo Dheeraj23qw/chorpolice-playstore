@@ -18,7 +18,7 @@ import { ActionButtons } from "./components/renderButtons";
 import { StandingsDropdown } from "./components/StandingsDropdown";
 import { QuizEngine } from "@/service/QuizEngine";
 import { BotEngine } from "@/service/BotEngine";
-import { getSessionContext } from "@/service/lanGameService";
+import { getSessionContext, stopSession } from "@/service/lanGameService";
 
 export default function QuizResult() {
   const insets = useSafeAreaInsets();
@@ -79,6 +79,8 @@ export default function QuizResult() {
 
   const handleNavigation = useCallback(
     (targetRoute: string) => {
+      stopSession();
+      QuizEngine.reset();
       dispatch(resetDifficulty());
       requestAnimationFrame(() => {
         router.dismissAll();

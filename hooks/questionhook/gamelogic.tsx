@@ -6,7 +6,11 @@ import { AppDispatch, RootState } from "@/redux/store";
 import { useGameTableAndScores } from "@/hooks/questionhook/quizhook";
 import { useRouter } from "expo-router";
 import useRandomMessage from "../useRandomMessage";
-import { resetDifficulty, setCorrectAnswers } from "@/redux/reducers/quiz";
+import {
+  resetDifficulty,
+  setCorrectAnswers,
+  setWinner,
+} from "@/redux/reducers/quiz";
 import { toast } from "@/components/feedback/toast";
 
 import {
@@ -14,6 +18,7 @@ import {
   getSessionContext,
   handleIncomingPacket,
   sendPacketToHost,
+  stopSession,
   subscribeToPackets,
 } from "@/service/lanGameService";
 import { MODES, NETWORK } from "@/constants/Networking";
@@ -204,6 +209,31 @@ export const useQuizGameLogic = () => {
       }
     }, POPUP_DELAY);
   }, [clearPostAnswerTimeout, isMultiplayer]);
+
+  const syncLocalQuizStats = useCallback(
+    (leaderboard?: Array<{ id: string; correctCount?: number }>) => {
+      if (!isMultiplayer) {
+        dispatch(setCorrectAnswers(correctAnswer));
+        return;
+      }
+
+      const effectiveLeaderboard =
+        leaderboard ||
+        Object.values(QuizEngine.state.playerScores).map((player) => ({
+          id: player.id,
+          correctCount: player.correctCount,
+        }));
+
+      const myStats = effectiveLeaderboard.find(
+        (player) => player.id === localPlayerId,
+      );
+      const winnerId = effectiveLeaderboard[0]?.id;
+
+      dispatch(setCorrectAnswers(myStats?.correctCount ?? 0));
+      dispatch(setWinner(winnerId === localPlayerId));
+    },
+    [correctAnswer, dispatch, isMultiplayer, localPlayerId],
+  );
 
   const applyQuestionSync = useCallback(
     (packet: any, options: { force?: boolean } = {}) => {
@@ -416,7 +446,7 @@ export const useQuizGameLogic = () => {
         roundStartedAt: QuizEngine.state.roundStartedAt,
         deadlineAt: QuizEngine.state.roundDeadlineAt,
         durationMs: getTimeLimitMs(),
-        serverNow: QuizEngine.state.roundStartedAt,
+        serverNow: Date.now(),
       },
       { force: true },
     );
@@ -437,7 +467,7 @@ export const useQuizGameLogic = () => {
       roundStartedAt: startAt,
       deadlineAt: startAt + durationMs,
       durationMs,
-      serverNow: startAt,
+      serverNow: Date.now(),
     };
 
     initialHostSyncSentRef.current = true;
@@ -445,7 +475,7 @@ export const useQuizGameLogic = () => {
     handleIncomingPacket(packet);
 
     const syncTimeout = setTimeout(() => {
-      broadcastPacket(packet, { processLocally: false });
+      broadcastPacket({ ...packet, serverNow: Date.now() }, { processLocally: false });
     }, 350);
 
     return () => clearTimeout(syncTimeout);
@@ -556,16 +586,33 @@ export const useQuizGameLogic = () => {
     clearPostAnswerTimeout();
 
     if (questionIndex + 1 >= NUM_QUESTIONS) {
-      dispatch(setCorrectAnswers(correctAnswer));
-      AudioEngine.stop("timer");
-      clearTimer();
+      void (async () => {
+        syncLocalQuizStats(leaderboardData);
+        AudioEngine.stop("timer");
+        clearTimer();
 
-      if (isMultiplayer) {
-        const { BotEngine } = require("@/service/BotEngine");
-        BotEngine.reset();
-      }
+        if (isMultiplayer && isHost) {
+          broadcastPacket(
+            {
+              type: MODES.THINK_AND_COUNT.GAME_END,
+              reason: "completed",
+            },
+            { processLocally: false },
+          );
 
-      router.push({ pathname: "/quiz-result" } as any);
+          await new Promise<void>((resolve) => {
+            setTimeout(() => resolve(), 150);
+          });
+        }
+
+        if (isMultiplayer) {
+          const { BotEngine } = require("@/service/BotEngine");
+          BotEngine.reset();
+          stopSession();
+        }
+
+        router.push({ pathname: "/quiz-result" } as any);
+      })();
       return;
     }
 
@@ -585,7 +632,7 @@ export const useQuizGameLogic = () => {
         roundStartedAt: startAt,
         deadlineAt: startAt + durationMs,
         durationMs,
-        serverNow: startAt,
+        serverNow: Date.now(),
       });
 
       return;
@@ -628,8 +675,10 @@ export const useQuizGameLogic = () => {
     getTimeLimitMs,
     isHost,
     isMultiplayer,
+    leaderboardData,
     questionIndex,
     router,
+    syncLocalQuizStats,
   ]);
 
   useEffect(() => {
@@ -678,6 +727,10 @@ export const useQuizGameLogic = () => {
         setIsWaitingForOthers(false);
         setIsLeaderboardVisible(true);
 
+        if (packet.isLastRound) {
+          syncLocalQuizStats(packet.leaderboard);
+        }
+
         if (packet.isLastRound && packet.leaderboard[0]?.id === localPlayerId) {
           const coins = QuizEngine.state.totalPot;
           if (coins > 0) {
@@ -692,6 +745,22 @@ export const useQuizGameLogic = () => {
       }
 
       if (packet.type === MODES.THINK_AND_COUNT.GAME_END) {
+        if (packet.reason === "completed") {
+          clearTimer();
+          clearPostAnswerTimeout();
+          AudioEngine.stop("timer");
+          syncLocalQuizStats(leaderboardData);
+          if (isMultiplayer) {
+            const { BotEngine } = require("@/service/BotEngine");
+            BotEngine.reset();
+          }
+          stopSession();
+          requestAnimationFrame(() => {
+            router.push({ pathname: "/quiz-result" } as any);
+          });
+          return;
+        }
+
         if (packet.reason === "host_quit" && isHost) {
           return;
         }
@@ -725,6 +794,7 @@ export const useQuizGameLogic = () => {
           const { BotEngine } = require("@/service/BotEngine");
           BotEngine.reset();
         }
+        stopSession();
         QuizEngine.reset();
         dispatch(resetDifficulty());
         requestAnimationFrame(() => {
@@ -752,6 +822,7 @@ export const useQuizGameLogic = () => {
           clearPostAnswerTimeout();
           AudioEngine.stop("timer");
           toast.error("Disconnected", "You were removed from the game.", 3000);
+          stopSession();
           QuizEngine.reset();
           dispatch(resetDifficulty());
           requestAnimationFrame(() => {
@@ -770,9 +841,11 @@ export const useQuizGameLogic = () => {
     dispatch,
     isHost,
     localPlayerId,
+    leaderboardData,
     markPlayerFinished,
     questionIndex,
     router,
+    syncLocalQuizStats,
   ]);
 
   useEffect(() => {
@@ -797,6 +870,7 @@ export const useQuizGameLogic = () => {
       if (refund > 0) {
         dispatch(updateCoins(refund));
       }
+      stopSession();
       QuizEngine.reset();
       dispatch(resetDifficulty());
       toast.error(
@@ -820,6 +894,7 @@ export const useQuizGameLogic = () => {
     isHost,
     isMultiplayer,
     router,
+    syncLocalQuizStats,
   ]);
 
   const resetGame = useCallback(() => {
@@ -917,6 +992,11 @@ export const useQuizGameLogic = () => {
             { processLocally: false },
           );
 
+          await new Promise<void>((resolve) => {
+            const flushTimer = setTimeout(() => resolve(), 150);
+            postAnswerTimeoutRef.current = flushTimer;
+          });
+
           const { BotEngine } = require("@/service/BotEngine");
           BotEngine.reset();
           QuizEngine.reset();
@@ -934,9 +1014,16 @@ export const useQuizGameLogic = () => {
             playerId: localPlayerId,
             reason: "player_quit",
           });
+
+          await new Promise<void>((resolve) => {
+            const flushTimer = setTimeout(() => resolve(), 150);
+            postAnswerTimeoutRef.current = flushTimer;
+          });
         }
       }
 
+      stopSession();
+      QuizEngine.reset();
       resetGame();
       dispatch(resetDifficulty());
 
