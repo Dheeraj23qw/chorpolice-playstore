@@ -3,8 +3,8 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withTiming,
   Easing,
 } from "react-native-reanimated";
@@ -45,42 +45,72 @@ const GameModeScreen: React.FC = () => {
   }, [bgScale, dispatch, opacity, scale]);
 
   const contentStyle = useAnimatedStyle(() => ({
-    opacity: isAnyModalOpen ? withTiming(0, { duration: 300 }) : opacity.value,
-    transform: [{ scale: isAnyModalOpen ? 0.95 : scale.value }],
+    opacity: withTiming(isAnyModalOpen ? 0 : opacity.value, { duration: 220 }),
+    transform: [
+      {
+        scale: withTiming(isAnyModalOpen ? 0.96 : scale.value, {
+          duration: 220,
+          easing: Easing.out(Easing.ease),
+        }),
+      },
+    ],
   }));
 
-  const bgStyle = useAnimatedStyle(() => ({
+  const backgroundStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(isAnyModalOpen ? 0 : 1, { duration: 220 }),
     transform: [{ scale: bgScale.value }],
+  }));
+
+  const blackoutStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(isAnyModalOpen ? 1 : 0, { duration: 220 }),
   }));
 
   return (
     <View className="flex-1 bg-black">
-      <Animated.Image
-        source={require("@/assets/images/bg/image.png")}
-        className="absolute h-full w-full"
-        resizeMode="cover"
-        style={bgStyle}
-      />
+      <Animated.View style={[{ position: "absolute", inset: 0 }, backgroundStyle]}>
+        <Animated.Image
+          source={require("@/assets/images/bg/image.png")}
+          className="absolute h-full w-full"
+          resizeMode="cover"
+          style={{ transform: [{ scale: bgScale.value }] }}
+        />
 
-      <BlurView intensity={25} tint="dark" className="absolute h-full w-full" />
-      <LinearGradient
-        colors={[
-          "rgba(15, 23, 42, 0.4)",
-          "transparent",
-          "rgba(99, 102, 241, 0.2)",
-          "rgba(0, 0, 0, 0.95)",
-        ]}
-        locations={[0, 0.25, 0.65, 1]}
-        className="absolute h-full w-full"
-      />
+        <BlurView
+          intensity={25}
+          tint="dark"
+          className="absolute h-full w-full"
+        />
+        <LinearGradient
+          colors={[
+            "rgba(15, 23, 42, 0.4)",
+            "transparent",
+            "rgba(99, 102, 241, 0.2)",
+            "rgba(0, 0, 0, 0.95)",
+          ]}
+          locations={[0, 0.25, 0.65, 1]}
+          className="absolute h-full w-full"
+        />
 
-      <LinearGradient
-        colors={[
-          "rgba(99, 102, 241, 0.22)",
-          "rgba(59, 130, 246, 0.12)",
-          "transparent",
+        <LinearGradient
+          colors={[
+            "rgba(99, 102, 241, 0.22)",
+            "rgba(59, 130, 246, 0.12)",
+            "transparent",
+          ]}
+          className="absolute h-[800px] w-[800px] self-center rounded-full opacity-90 blur-3xl"
+        />
+      </Animated.View>
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "#000",
+          },
+          blackoutStyle,
         ]}
-        className="absolute h-[800px] w-[800px] self-center rounded-full opacity-90 blur-3xl"
       />
 
       <Animated.View

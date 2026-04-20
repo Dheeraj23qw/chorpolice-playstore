@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 
+import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { setAppPhase } from "@/redux/reducers/appFlowReducer";
 import { enqueueModal } from "@/redux/reducers/modalQueueReducer";
@@ -56,7 +57,8 @@ export default function AppController() {
     bootstrappedRef.current = true;
 
     runAfterUI(() => {
-      const shouldShowOnboarding = __DEV__ || !getOnboardingDone();
+      const shouldShowOnboarding =
+        runtimeConfig.forceOnboardingEveryLaunch || !getOnboardingDone();
 
       if (shouldShowOnboarding) {
         dispatch(setAppPhase("ONBOARDING"));

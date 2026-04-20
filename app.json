@@ -70,7 +70,16 @@
           "android": {
             "enableHermes": true,
             "enableProguardInReleaseBuilds": true,
+            "compiler": "r8",
             "extraCompilerArgs": ["-Xjvm-default=all"],
+            "permissions": [
+              "android.permission.INTERNET",
+              "android.permission.ACCESS_NETWORK_STATE",
+              "android.permission.ACCESS_WIFI_STATE",
+              "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+              "android.permission.ACCESS_FINE_LOCATION",
+              "android.permission.NEARBY_WIFI_DEVICES"
+            ],
             "packagingOptions": {
               "pickFirst": ["**/libc++_shared.so"],
               "exclude": [

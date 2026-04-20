@@ -2,9 +2,15 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 
+import { toast } from "@/components/feedback/toast";
+import { runtimeConfig } from "@/constants/runtime";
 import { updateStreak } from "@/features/gameStreakSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { notificationService } from "@/service/notification/NotificationService";
+import {
+  getSpinReminderDelaySeconds,
+  shouldPromptForNotifications,
+} from "@/service/notification/controllerRules";
 import {
   cancelDormantPlayerReminder,
   scheduleDormantPlayerReminder,
@@ -17,10 +23,13 @@ import {
   cancelSpinNotification,
   scheduleSpinUnlock,
 } from "@/service/notification/notication_types/spin.notification";
+import { scheduleWelcomeNotification } from "@/service/notification/notication_types/welcome.notification";
 import { AppRoute } from "@/service/notification/types";
 import {
   hasPromptedForNotifications,
+  hasScheduledWelcomeNotification,
   markNotificationsPrompted,
+  markWelcomeNotificationScheduled,
 } from "@/storage/notificationStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
 
@@ -45,6 +54,9 @@ export default function NotificationController() {
 
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [prompted, setPrompted] = useState(hasPromptedForNotifications());
+  const [welcomeScheduled, setWelcomeScheduled] = useState(
+    hasScheduledWelcomeNotification(),
+  );
   const [pendingRoute, setPendingRoute] = useState<AppRoute | null>(null);
   const appPhaseRef = useRef(appPhase);
 
@@ -67,6 +79,13 @@ export default function NotificationController() {
     notificationService.setRouteHandler((route) => {
       setPendingRoute(route);
     });
+    notificationService.setForegroundHandler(({ title, body, route }) => {
+      toast.info(title, body, {
+        duration: route ? 4500 : 3200,
+        actionLabel: route ? "Open" : undefined,
+        onAction: route ? () => setPendingRoute(route) : undefined,
+      });
+    });
     notificationService.listen();
 
     void (async () => {
@@ -88,16 +107,20 @@ export default function NotificationController() {
 
     return () => {
       sub.remove();
+      notificationService.setForegroundHandler(null);
+      notificationService.setRouteHandler(null);
       notificationService.cleanup();
     };
   }, [dispatch, syncPermissionState]);
 
   useEffect(() => {
     if (
-      prompted ||
-      permissionGranted ||
-      appPhase !== "HOME" ||
-      activeModal !== null
+      !shouldPromptForNotifications({
+        prompted,
+        permissionGranted,
+        appPhase,
+        activeModal,
+      })
     ) {
       return;
     }
@@ -106,10 +129,23 @@ export default function NotificationController() {
       void (async () => {
         markNotificationsPrompted();
         setPrompted(true);
+
         const granted = await notificationService.registerPermissions();
         setPermissionGranted(granted);
+
+        if (granted) {
+          toast.success(
+            "Notifications enabled",
+            "Users will now get reminders and welcome alerts from the app.",
+          );
+        } else {
+          toast.info(
+            "Notifications skipped",
+            "Users can still enable them later from device settings.",
+          );
+        }
       })();
-    }, 1200);
+    }, runtimeConfig.notificationPermissionPromptDelayMs);
 
     return () => clearTimeout(timeout);
   }, [activeModal, appPhase, permissionGranted, prompted]);
@@ -126,18 +162,17 @@ export default function NotificationController() {
       return;
     }
 
-    if (!spinLastUsedTimestamp) {
+    const remainingSeconds = getSpinReminderDelaySeconds(
+      spinLastUsedTimestamp,
+      SPIN_COOLDOWN_MS,
+    );
+
+    if (remainingSeconds === null) {
       void cancelSpinNotification();
       return;
     }
 
-    const remainingMs = spinLastUsedTimestamp + SPIN_COOLDOWN_MS - Date.now();
-    if (remainingMs <= 0) {
-      void cancelSpinNotification();
-      return;
-    }
-
-    void scheduleSpinUnlock(Math.ceil(remainingMs / 1000));
+    void scheduleSpinUnlock(remainingSeconds);
   }, [permissionGranted, spinLastUsedTimestamp]);
 
   useEffect(() => {
@@ -157,6 +192,16 @@ export default function NotificationController() {
   }, [currentStreak, lastActiveDate, permissionGranted]);
 
   useEffect(() => {
+    if (!permissionGranted || welcomeScheduled || appPhase !== "HOME") {
+      return;
+    }
+
+    markWelcomeNotificationScheduled();
+    setWelcomeScheduled(true);
+    void scheduleWelcomeNotification();
+  }, [appPhase, permissionGranted, welcomeScheduled]);
+
+  useEffect(() => {
     if (!pendingRoute || appPhase !== "HOME" || activeModal !== null) return;
 
     if (pathname === pendingRoute) {
@@ -167,7 +212,7 @@ export default function NotificationController() {
     const timeout = setTimeout(() => {
       runAfterUI(() => {
         try {
-          router.push(pendingRoute as any);
+          router.push(pendingRoute as never);
         } catch (error) {
           console.error("[Notifications] Navigation failed:", error);
         } finally {

@@ -1,5 +1,20 @@
 import { NotificationTemplate } from "./types";
 
+export const WELCOME_TEMPLATE: NotificationTemplate = {
+  id: "welcome-player",
+  titles: [
+    "Welcome to Chor Police!",
+    "Your first challenge is ready!",
+    "Thanks for installing Chor Police!",
+  ],
+  bodies: [
+    "Jump in and start your first round now.",
+    "Your rewards and game modes are waiting inside.",
+    "Open the app and claim your welcome energy boost.",
+  ],
+  data: { screen: "/mode-select" },
+};
+
 export const DORMANT_PLAYER_TEMPLATE: NotificationTemplate = {
   id: "dormant-player",
   titles: [
@@ -46,7 +61,7 @@ export const REWARD_CLAIM_TEMPLATE: NotificationTemplate = {
     "One tap unlocks your reward.",
     "Claim your bonus before it expires.",
     "Your reward is ready to collect.",
-    "Today’s coins are ready for you.",
+    "Today's coins are ready for you.",
   ],
   data: { screen: "/earn" },
 };
@@ -63,7 +78,7 @@ export const SPIN_TEMPLATE: NotificationTemplate = {
     "One tap unlocks your spin reward.",
     "Your spin is unlocked and ready.",
     "Tap the wheel and grab your bonus.",
-    "Today’s surprise spin is waiting.",
+    "Today's surprise spin is waiting.",
   ],
   data: { screen: "/earn" },
 };
@@ -78,7 +93,7 @@ export const DAILY_STREAK_TEMPLATE: NotificationTemplate = {
   ],
   bodies: [
     "Play now and keep your streak alive.",
-    "One quick win protects today’s progress.",
+    "One quick win protects today's progress.",
     "You worked hard for this streak. Keep it going.",
     "A single match today keeps the chain alive.",
   ],

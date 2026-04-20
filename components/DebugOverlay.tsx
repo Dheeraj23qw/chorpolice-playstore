@@ -1,20 +1,53 @@
 import React, { useState } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+
+import { runtimeConfig } from "@/constants/runtime";
+
+import { toast } from "./feedback/toast";
 import { Text } from "./Text";
+import { notificationService } from "../service/notification/NotificationService";
 import { useDebugData } from "../service/lanGameService";
 import { rf } from "../utils/responsive";
-import { Ionicons } from "@expo/vector-icons";
-import { notificationService } from "../service/notification/NotificationService";
 
-/**
- * --- PREMIUM DIAGNOSTIC OVERLAY ---
- * WHY: Provides real-time visibility with a sleek, non-intrusive design.
- */
 export const DebugOverlay: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState(true);
-  if (!__DEV__) return null;
+  if (!runtimeConfig.isDevelopment) return null;
 
   const debug = useDebugData();
+
+  const handleTestNotification = async () => {
+    const result = await notificationService.triggerTestNotification();
+
+    if (result.status === "scheduled") {
+      toast.success(
+        "Test notification scheduled",
+        `It should appear in ${result.seconds} second${result.seconds === 1 ? "" : "s"}.`,
+      );
+      return;
+    }
+
+    if (result.reason === "permission-denied") {
+      toast.warning(
+        "Permission required",
+        "Allow notifications once so reminders can be tested.",
+      );
+      return;
+    }
+
+    if (result.reason === "unsupported-device") {
+      toast.info(
+        "Device required",
+        "Production notification testing needs a supported device build.",
+      );
+      return;
+    }
+
+    toast.error(
+      "Notification test failed",
+      "The local notification could not be scheduled.",
+    );
+  };
 
   if (isMinimized) {
     return (
@@ -23,7 +56,7 @@ export const DebugOverlay: React.FC = () => {
         onPress={() => setIsMinimized(false)}
         activeOpacity={0.8}
       >
-        <Ionicons name="stats-chart" size={rf(1.5)} color="#a855f7" />
+        <Ionicons name="stats-chart" size={rf(1.5)} color="#22c55e" />
       </TouchableOpacity>
     );
   }
@@ -32,7 +65,7 @@ export const DebugOverlay: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.headerRow}>
-          <Text style={styles.header}>📡 DIAGNOSTICS</Text>
+          <Text style={styles.header}>DIAGNOSTICS</Text>
           <TouchableOpacity onPress={() => setIsMinimized(true)}>
             <Ionicons
               name="close-circle-outline"
@@ -40,6 +73,25 @@ export const DebugOverlay: React.FC = () => {
               color="rgba(255,255,255,0.3)"
             />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Local:</Text>
+          <Text style={styles.value} numberOfLines={1}>
+            {debug.localIp}
+          </Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Host:</Text>
+          <Text style={styles.value} numberOfLines={1}>
+            {debug.hostIp}
+          </Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Found:</Text>
+          <Text style={styles.value}>{debug.discoveredHostCount}</Text>
         </View>
 
         <View style={styles.row}>
@@ -71,17 +123,14 @@ export const DebugOverlay: React.FC = () => {
           <Text
             style={[
               styles.value,
-              { color: debug.isHeartbeatActive ? "#a855f7" : "#4b5563" },
+              { color: debug.isHeartbeatActive ? "#22c55e" : "#4b5563" },
             ]}
           >
             {debug.isHeartbeatActive ? "ON" : "OFF"}
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.notifButton}
-          onPress={() => notificationService.triggerTestNotification()}
-        >
+        <TouchableOpacity style={styles.notifButton} onPress={handleTestNotification}>
           <Ionicons name="notifications-outline" size={rf(1.2)} color="white" />
           <Text style={styles.notifButtonText}>TEST NOTIF</Text>
         </TouchableOpacity>
@@ -93,7 +142,7 @@ export const DebugOverlay: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 120, // Positioned above the start button area
+    bottom: 120,
     left: 20,
     zIndex: 9999,
   },
@@ -113,9 +162,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(168, 85, 247, 0.3)", // Purple tint
-    width: 140,
-    shadowColor: "#a855f7",
+    borderColor: "rgba(34, 197, 94, 0.3)",
+    width: 220,
+    shadowColor: "#22c55e",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -133,13 +182,14 @@ const styles = StyleSheet.create({
   header: {
     fontFamily: "Main-Bold",
     fontSize: rf(1),
-    color: "#a855f7",
+    color: "#22c55e",
     letterSpacing: 1,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 4,
+    gap: 10,
   },
   label: {
     fontFamily: "Main-Regular",
@@ -147,13 +197,15 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.4)",
   },
   value: {
+    flex: 1,
+    textAlign: "right",
     fontFamily: "Main-Bold",
     fontSize: rf(0.9),
     color: "#fff",
   },
   notifButton: {
     marginTop: 10,
-    backgroundColor: "#6366f1", // Indigo
+    backgroundColor: "#22c55e",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

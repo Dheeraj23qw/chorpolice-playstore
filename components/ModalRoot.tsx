@@ -1,10 +1,8 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 
-import { LowCoinModal } from "@/features/lowCoinReward";
+import { createModalRegistry } from "@/components/modals/registry";
 import { claimFirstLaunchBonus } from "@/features/wallet/walletSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
-import UnlockedAwardModal from "@/modal/AchievmentModal";
-import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
 import { dismissActiveModal } from "@/redux/reducers/modalQueueReducer";
 import { disableForever, dismissTemp } from "@/storage/lowCoinStorage";
 
@@ -31,25 +29,27 @@ export default function ModalRoot() {
     closeActiveModal();
   }, [closeActiveModal]);
 
+  const modalRegistry = useMemo(
+    () =>
+      createModalRegistry({
+        onClaimBonus: handleBonusClaim,
+        onCloseLowCoin: handleLowCoinClose,
+        onDisableLowCoin: handleLowCoinDisable,
+        onCloseReward: closeActiveModal,
+      }),
+    [
+      closeActiveModal,
+      handleBonusClaim,
+      handleLowCoinClose,
+      handleLowCoinDisable,
+    ],
+  );
+
   return (
     <>
-      <WelcomeBonusModal
-        isVisible={activeModal === "BONUS_MODAL"}
-        onClaim={handleBonusClaim}
-      />
-
-      <LowCoinModal
-        visible={activeModal === "LOW_COIN_MODAL"}
-        onShare={handleLowCoinClose}
-        onRate={handleLowCoinClose}
-        onClose={handleLowCoinClose}
-        onDisable={handleLowCoinDisable}
-      />
-
-      <UnlockedAwardModal
-        visible={activeModal === "REWARD_MODAL"}
-        onClaimed={closeActiveModal}
-      />
+      {modalRegistry.map(({ key, render }) => (
+        <React.Fragment key={key}>{render(activeModal === key)}</React.Fragment>
+      ))}
     </>
   );
 }

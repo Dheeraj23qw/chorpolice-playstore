@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
 
-/**
- * --- DEBUG SERVICE ---
- * Adheres to Single Responsibility Principle (SRP).
- * Manages the observability state for the game networking.
- */
-
 export interface DebugState {
   lastPacketType: string;
   latency: number;
@@ -14,6 +8,9 @@ export interface DebugState {
   quizRound: number;
   quizDifficulty: string;
   lastQuestionSync: string;
+  localIp: string;
+  hostIp: string;
+  discoveredHostCount: number;
 }
 
 export const debugState: DebugState = {
@@ -23,29 +20,29 @@ export const debugState: DebugState = {
   isHeartbeatActive: false,
   quizRound: 0,
   quizDifficulty: "N/A",
-  lastQuestionSync: "None"
+  lastQuestionSync: "None",
+  localIp: "unknown",
+  hostIp: "N/A",
+  discoveredHostCount: 0,
 };
 
-/**
- * Hook for UI components to consume network debug data.
- */
 export const useDebugData = () => {
   const [data, setData] = useState<DebugState>(debugState);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setData({ ...debugState });
-    }, 500); 
-    
+    }, 500);
+
     return () => clearInterval(interval);
   }, []);
 
   return data;
 };
 
-/**
- * Updates the debug state with fresh metrics.
- */
-export const updateDebugMetric = (key: keyof DebugState, value: any) => {
-  (debugState as any)[key] = value;
+export const updateDebugMetric = <K extends keyof DebugState>(
+  key: K,
+  value: DebugState[K],
+) => {
+  debugState[key] = value;
 };

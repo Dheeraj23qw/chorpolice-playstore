@@ -1,5 +1,7 @@
 import dgram from "react-native-udp";
+
 import { NETWORK } from "@/constants/Networking";
+import { updateDebugMetric } from "../observability/DebugService";
 
 type PacketHandler = (packet: any, sourceIp?: string) => void;
 
@@ -59,11 +61,21 @@ const ensureSocket = () => {
     return socket;
   }
 
-  socket = dgram.createSocket({ type: "udp4" }) as any;
+  socket = dgram.createSocket({
+    type: "udp4",
+    reusePort: true,
+    debug: __DEV__,
+  }) as any;
 
   socket.on("listening", () => {
     try {
       socket.setBroadcast(true);
+      const address = socket.address?.();
+      if (__DEV__) {
+        console.log(
+          `[LAN Transport] Bound on ${address?.address ?? "0.0.0.0"}:${address?.port ?? SESSION_PORT}`,
+        );
+      }
     } catch (error) {
       console.error("[LAN Transport] Failed to enable broadcast", error);
     }
@@ -77,6 +89,13 @@ const ensureSocket = () => {
 
     if (!state.isHost && !state.hostIp) {
       state.hostIp = rinfo.address;
+      updateDebugMetric("hostIp", rinfo.address);
+    }
+
+    if (__DEV__) {
+      console.log(
+        `[LAN Transport] Incoming ${envelope.packet?.type ?? "UNKNOWN"} from ${rinfo.address}`,
+      );
     }
 
     packetHandler?.(envelope.packet, rinfo.address);
@@ -105,6 +124,12 @@ const sendPacket = (targetIp: string, packet: any) => {
 
   try {
     activeSocket.send(payload, 0, payload.length, SESSION_PORT, targetIp);
+
+    if (__DEV__) {
+      console.log(
+        `[LAN Transport] Sent ${packet?.type ?? "UNKNOWN"} to ${targetIp}:${SESSION_PORT}`,
+      );
+    }
   } catch (error) {
     console.error("[LAN Transport] Failed to send packet", targetIp, error);
   }
@@ -115,6 +140,7 @@ export const GameSessionTransport = {
     state.isHost = isHost;
     state.localPlayerId = localPlayerId;
     state.hostIp = hostIp;
+    updateDebugMetric("hostIp", hostIp ?? (isHost ? "self-hosted" : "N/A"));
     packetHandler = onPacket;
     ensureSocket();
   },
@@ -136,10 +162,16 @@ export const GameSessionTransport = {
     state.clientIps.clear();
     state.playerIdByIp.clear();
     state.ipByPlayerId.clear();
+    updateDebugMetric("hostIp", "N/A");
   },
 
   setHostIp: (hostIp: string | null) => {
     state.hostIp = hostIp;
+    updateDebugMetric("hostIp", hostIp ?? "N/A");
+
+    if (__DEV__) {
+      console.log(`[LAN Transport] Session host IP set to ${hostIp ?? "N/A"}`);
+    }
   },
 
   registerPeer: (playerId: string, ip: string) => {
@@ -169,7 +201,10 @@ export const GameSessionTransport = {
 
   sendToHost: (packet: any) => {
     if (!state.hostIp) {
-      console.warn("[LAN Transport] Missing host IP for client packet", packet?.type);
+      console.warn(
+        "[LAN Transport] Missing host IP for client packet",
+        packet?.type,
+      );
       return;
     }
     sendPacket(state.hostIp, packet);

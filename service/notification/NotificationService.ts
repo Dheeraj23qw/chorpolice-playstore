@@ -2,27 +2,58 @@ import { Platform } from "react-native";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
+import { runtimeConfig } from "@/constants/runtime";
+
 import { AppNotificationData, AppRoute, isAppRoute } from "./types";
 
 if (Platform.OS !== "web") {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldShowBanner: true,
+      shouldShowAlert: false,
+      shouldShowBanner: false,
       shouldShowList: true,
-      shouldPlaySound: true,
+      shouldPlaySound: false,
       shouldSetBadge: false,
     }),
   });
 }
 
+export interface ForegroundNotification {
+  title: string;
+  body?: string;
+  route: AppRoute | null;
+}
+
+export type NotificationTestResult =
+  | { status: "scheduled"; seconds: number }
+  | {
+      status: "blocked";
+      reason: "permission-denied" | "schedule-failed" | "unsupported-device";
+    };
+
 class NotificationService {
   private responseListener: Notifications.EventSubscription | null = null;
   private receivedListener: Notifications.EventSubscription | null = null;
   private routeHandler: ((route: AppRoute) => void) | null = null;
+  private foregroundHandler:
+    | ((notification: ForegroundNotification) => void)
+    | null = null;
 
   setRouteHandler(handler: ((route: AppRoute) => void) | null) {
     this.routeHandler = handler;
+  }
+
+  setForegroundHandler(
+    handler: ((notification: ForegroundNotification) => void) | null,
+  ) {
+    this.foregroundHandler = handler;
+  }
+
+  private canRequestPermissions() {
+    return (
+      Platform.OS !== "web" &&
+      (Device.isDevice || !runtimeConfig.isProduction)
+    );
   }
 
   private extractRoute(data?: AppNotificationData): AppRoute | null {
@@ -45,7 +76,7 @@ class NotificationService {
       importance: Notifications.AndroidImportance.MAX,
       sound: "default",
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#A855F7",
+      lightColor: "#22c55e",
       lockscreenVisibility:
         Notifications.AndroidNotificationVisibility.PUBLIC,
       enableLights: true,
@@ -59,7 +90,7 @@ class NotificationService {
       importance: Notifications.AndroidImportance.HIGH,
       sound: "default",
       vibrationPattern: [0, 500, 200, 500],
-      lightColor: "#EF4444",
+      lightColor: "#f97316",
       lockscreenVisibility:
         Notifications.AndroidNotificationVisibility.PUBLIC,
       enableLights: true,
@@ -71,7 +102,7 @@ class NotificationService {
   async registerPermissions(): Promise<boolean> {
     if (Platform.OS === "web") return false;
 
-    if (!Device.isDevice && !__DEV__) {
+    if (!this.canRequestPermissions()) {
       console.log(
         "[Notifications] Blocked: requires a physical device in production.",
       );
@@ -131,7 +162,7 @@ class NotificationService {
           body: params.body,
           data: params.data,
           sound: "default",
-          color: params.color ?? "#A855F7",
+          color: params.color ?? "#22c55e",
           priority: Notifications.AndroidNotificationPriority.MAX,
           ...(Platform.OS === "android" && {
             channelId: params.channelId ?? "default",
@@ -175,9 +206,14 @@ class NotificationService {
 
     this.receivedListener = Notifications.addNotificationReceivedListener(
       (notification) => {
-        console.log(
-          `[Notifications] Received: "${notification.request.content.title}"`,
-        );
+        const content = notification.request.content;
+        const route = this.extractRoute(content.data as AppNotificationData);
+
+        this.foregroundHandler?.({
+          title: content.title ?? "New update",
+          body: content.body ?? undefined,
+          route,
+        });
       },
     );
 
@@ -211,21 +247,46 @@ class NotificationService {
     }
   }
 
-  async triggerTestNotification(): Promise<void> {
+  async triggerTestNotification(): Promise<NotificationTestResult> {
+    if (!this.canRequestPermissions()) {
+      return {
+        status: "blocked",
+        reason: "unsupported-device",
+      };
+    }
+
     const hasPermission = await this.checkPermission();
     if (!hasPermission) {
       const granted = await this.registerPermissions();
-      if (!granted) return;
+      if (!granted) {
+        return {
+          status: "blocked",
+          reason: "permission-denied",
+        };
+      }
     }
 
-    await this.schedule({
+    const seconds = runtimeConfig.debugNotificationLeadSeconds;
+    const notificationId = await this.schedule({
       id: "debug_test",
       title: "Notifications Ready",
       body: "Local notification pipeline is working.",
-      seconds: 3,
+      seconds,
       color: "#22c55e",
       data: { screen: "/mode-select" },
     });
+
+    if (!notificationId) {
+      return {
+        status: "blocked",
+        reason: "schedule-failed",
+      };
+    }
+
+    return {
+      status: "scheduled",
+      seconds,
+    };
   }
 
   cleanup(): void {
@@ -234,6 +295,7 @@ class NotificationService {
     this.responseListener = null;
     this.receivedListener = null;
     this.routeHandler = null;
+    this.foregroundHandler = null;
   }
 }
 

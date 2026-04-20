@@ -1,6 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dgram from "react-native-udp";
+import { getIpAddress } from "react-native-device-info";
+
 import { NETWORK } from "../constants/Networking";
+import { updateDebugMetric } from "@/service/observability/DebugService";
 
 type Host = {
   deviceName: string;
@@ -9,11 +12,34 @@ type Host = {
   version: string;
 };
 
+const UNKNOWN_IP = "unknown";
+
+const normalizeIp = (value?: string | null) => {
+  if (!value || value === "0.0.0.0" || value === "::1") {
+    return UNKNOWN_IP;
+  }
+
+  return value;
+};
+
+const getBroadcastTargets = (localIp: string) => {
+  const targets = new Set<string>([NETWORK.BROADCAST_ADDRESS]);
+  const octets = localIp.split(".");
+
+  if (octets.length === 4 && octets[0] !== "127" && localIp !== UNKNOWN_IP) {
+    targets.add(`${octets[0]}.${octets[1]}.${octets[2]}.255`);
+  }
+
+  return Array.from(targets);
+};
+
 export const useLanDiscovery = (isHost: boolean, deviceName: string) => {
   const [availableHosts, setAvailableHosts] = useState<Host[]>([]);
+  const [localIp, setLocalIp] = useState<string>(UNKNOWN_IP);
   const deviceNameRef = useRef(deviceName);
+  const localIpRef = useRef<string>(UNKNOWN_IP);
+  const broadcastTargetsRef = useRef<string[]>([NETWORK.BROADCAST_ADDRESS]);
 
-  // keep latest device name
   useEffect(() => {
     deviceNameRef.current = deviceName;
   }, [deviceName]);
@@ -21,66 +47,72 @@ export const useLanDiscovery = (isHost: boolean, deviceName: string) => {
   useEffect(() => {
     let active = true;
 
-    // ✅ create socket ONCE inside effect
-    const socket = dgram.createSocket({ type: "udp4" }) as any;
+    void (async () => {
+      try {
+        const ip = normalizeIp(await getIpAddress());
+        if (!active) {
+          return;
+        }
+
+        localIpRef.current = ip;
+        setLocalIp(ip);
+        broadcastTargetsRef.current = getBroadcastTargets(ip);
+        updateDebugMetric("localIp", ip);
+
+        if (__DEV__) {
+          console.log(
+            `[LAN] Local IP resolved: ${ip}. Discovery targets: ${broadcastTargetsRef.current.join(", ")}`,
+          );
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.warn("[LAN] Failed to resolve local IP", error);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    updateDebugMetric("discoveredHostCount", availableHosts.length);
+  }, [availableHosts.length]);
+
+  useEffect(() => {
+    let active = true;
+
+    const socket = dgram.createSocket({
+      type: "udp4",
+      reusePort: true,
+      debug: __DEV__,
+    }) as any;
 
     socket.on("listening", () => {
       if (!active) return;
 
       try {
         socket.setBroadcast(true);
+        const address = socket.address?.();
         if (__DEV__) {
-          console.log("[LAN] Listening...");
-        }
-      } catch (e) {
-        console.error("[LAN] Broadcast error", e);
-      }
-    });
-
-    socket.on("error", (err: any) => {
-      if (!err?.message?.includes("closed")) {
-        console.error("[LAN ERROR]", err);
-      }
-    });
-
-    socket.bind(NETWORK.DISCOVERY_PORT);
-
-    // =========================
-    // 🟢 HOST MODE (broadcast)
-    // =========================
-    if (isHost) {
-      const interval = setInterval(() => {
-        if (!active) return;
-
-        const message = JSON.stringify({
-          type: NETWORK.DISCOVERY_MSG,
-          deviceName: deviceNameRef.current,
-          version: NETWORK.PROTOCOL_VERSION,
-        });
-
-        try {
-          socket.send(
-            message,
-            0,
-            message.length,
-            NETWORK.DISCOVERY_PORT,
-            NETWORK.BROADCAST_ADDRESS,
+          console.log(
+            `[LAN] Discovery socket ready as ${isHost ? "HOST" : "CLIENT"} on ${address?.address ?? "0.0.0.0"}:${address?.port ?? NETWORK.DISCOVERY_PORT}`,
           );
-        } catch {}
-      }, 2000);
+        }
+      } catch (error) {
+        console.error("[LAN] Broadcast error", error);
+      }
+    });
 
-      return () => {
-        active = false;
-        clearInterval(interval);
-        socket.close();
-      };
-    }
+    socket.on("error", (error: any) => {
+      if (!error?.message?.includes("closed")) {
+        console.error("[LAN] Discovery socket error", error);
+      }
+    });
 
-    // =========================
-    // 🔵 CLIENT MODE (listen)
-    // =========================
     socket.on("message", (msg: any, rinfo: any) => {
-      if (!active) return;
+      if (!active || isHost) return;
 
       try {
         const data = JSON.parse(msg.toString());
@@ -91,8 +123,14 @@ export const useLanDiscovery = (isHost: boolean, deviceName: string) => {
         ) {
           const now = Date.now();
 
+          if (__DEV__) {
+            console.log(
+              `[LAN] Host discovered: ${data.deviceName} @ ${rinfo.address} (local ${localIpRef.current})`,
+            );
+          }
+
           setAvailableHosts((prev) => {
-            const index = prev.findIndex((h) => h.ip === rinfo.address);
+            const index = prev.findIndex((host) => host.ip === rinfo.address);
 
             if (index !== -1) {
               const updated = [...prev];
@@ -107,17 +145,69 @@ export const useLanDiscovery = (isHost: boolean, deviceName: string) => {
             return [...prev, { ...data, ip: rinfo.address, lastSeen: now }];
           });
         }
-      } catch (e) {
-        if (__DEV__) console.warn("Parse error", e);
+      } catch (error) {
+        if (__DEV__) {
+          console.warn("[LAN] Discovery parse error", error);
+        }
       }
     });
 
-    // cleanup old hosts
+    try {
+      socket.bind(NETWORK.DISCOVERY_PORT);
+    } catch (error) {
+      console.error("[LAN] Failed to bind discovery socket", error);
+    }
+
+    if (isHost) {
+      const interval = setInterval(() => {
+        if (!active) return;
+
+        const message = JSON.stringify({
+          type: NETWORK.DISCOVERY_MSG,
+          deviceName: deviceNameRef.current,
+          version: NETWORK.PROTOCOL_VERSION,
+        });
+
+        for (const target of broadcastTargetsRef.current) {
+          try {
+            socket.send(
+              message,
+              0,
+              message.length,
+              NETWORK.DISCOVERY_PORT,
+              target,
+            );
+
+            if (__DEV__) {
+              console.log(
+                `[LAN] Discovery broadcast sent to ${target}:${NETWORK.DISCOVERY_PORT} from ${localIpRef.current}`,
+              );
+            }
+          } catch (error) {
+            if (__DEV__) {
+              console.warn(
+                `[LAN] Failed to broadcast discovery packet to ${target}`,
+                error,
+              );
+            }
+          }
+        }
+      }, 2000);
+
+      return () => {
+        active = false;
+        clearInterval(interval);
+        socket.close();
+      };
+    }
+
     const prune = setInterval(() => {
       if (!active) return;
 
       const now = Date.now();
-      setAvailableHosts((prev) => prev.filter((h) => now - h.lastSeen < 6000));
+      setAvailableHosts((prev) =>
+        prev.filter((host) => now - host.lastSeen < 6000),
+      );
     }, 3000);
 
     return () => {
@@ -127,5 +217,5 @@ export const useLanDiscovery = (isHost: boolean, deviceName: string) => {
     };
   }, [isHost]);
 
-  return { availableHosts };
+  return { availableHosts, localIp };
 };

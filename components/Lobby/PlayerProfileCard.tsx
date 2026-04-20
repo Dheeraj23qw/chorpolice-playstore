@@ -85,6 +85,15 @@ export const PlayerProfileCard = ({
               <Text className="mt-1 text-[10px] uppercase tracking-[2px] text-white/30">
                 Tap avatar to change
               </Text>
+
+              <Text className="mt-2 text-[11px] text-white/55">
+                LAN IP: {lobby.localIp || "unknown"}
+              </Text>
+              {!lobby.isHost ? (
+                <Text className="mt-1 text-[11px] text-white/45">
+                  Target Host: {lobby.selectedHostIp || "not connected"}
+                </Text>
+              ) : null}
             </View>
 
             <AnimatedPressable

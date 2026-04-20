@@ -1,23 +1,22 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@/redux/store";
+
 import { toast } from "@/components/feedback/toast";
+import { NETWORK, MODES } from "@/constants/Networking";
+import { DifficultyOption } from "@/constants/difficultyConfig";
 import { useLanDiscovery } from "@/hooks/useLanDiscovery";
-import {
-  loadOrCreateClientPlayerId,
-  loadUsername,
-  saveUsername,
-} from "@/storage/userStorage";
+import { RootState, AppDispatch } from "@/redux/store";
 import {
   setPlayerNames as setReduxPlayerNames,
   setSelectedImages,
 } from "@/redux/reducers/playerReducer";
 import { setDifficulty, generateTable } from "@/redux/reducers/quiz";
-import { MODES, NETWORK } from "@/constants/Networking";
-import { DifficultyOption } from "@/constants/difficultyConfig";
+import { BotEngine } from "@/service/BotEngine";
+import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
+import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
+import { QuizEngine } from "@/service/QuizEngine";
 import {
   broadcastPacket,
-  startHeartbeat,
   clearAllListeners,
   configureSession,
   debugState,
@@ -25,16 +24,18 @@ import {
   sendPacketToHost,
   sendPacketToPeer,
   setSessionHostIp,
+  startHeartbeat,
   subscribeToPackets,
   unregisterRemotePeer,
 } from "@/service/lanGameService";
-import { BotEngine } from "@/service/BotEngine";
-import { QuizEngine } from "@/service/QuizEngine";
-import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
-import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
+import { updateDebugMetric } from "@/service/observability/DebugService";
+import {
+  loadOrCreateClientPlayerId,
+  loadUsername,
+  saveUsername,
+} from "@/storage/userStorage";
 import { getBotName } from "@/utils/nameGenerator";
 
-/** LAN matches should always run as 4-player rooms. */
 const ROOM_MAX_PLAYERS = 4;
 
 export interface Player {
@@ -44,11 +45,6 @@ export interface Player {
   isBot?: boolean;
 }
 
-/**
- * --- LOBBY LOGIC HOOK ---
- * Adheres to DIP: Receives navigation context from the UI layer to prevent
- * navigation-context-missing errors during re-renders.
- */
 export const useLobbyLogic = (router: any, gameParams: any) => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -63,13 +59,17 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
   const [showAvatarGrid, setShowAvatarGrid] = useState(false);
   const [difficulty, setDifficultyState] = useState<DifficultyOption>("easy");
   const [isBettingModalVisible, setIsBettingModalVisible] = useState(false);
-
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [selectedHostIp, setSelectedHostIp] = useState<string | null>(null);
+
   const selectedImages = useSelector(
     (state: RootState) => state.player.selectedImages,
   );
+  const selectedRounds = useSelector(
+    (state: RootState) => state.player.gameRound,
+  );
 
-  // 🔥 HANDLERS (Defined early for use in effects)
   const handleDifficultyChange = useCallback(
     (newLevel: DifficultyOption) => {
       if (!isHost) return;
@@ -85,25 +85,17 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
         { processLocally: false },
       );
     },
-    [isHost],
+    [dispatch, isHost],
   );
 
-  // 🔥 INIT — Fresh state every time the lobby mounts
   useEffect(() => {
     configureSession({ isHost, localPlayerId, hostIp: null });
-    /**
-     * 🧹 STEP 1: Nuke ALL previous game state.
-     * WHY: If the user plays a game and comes back to lobby,
-     * BotEngine.activeBots, QuizEngine.state.playerScores, etc.
-     * still contain data from the last session.
-     */
     BotEngine.reset();
     QuizEngine.reset();
     ChorPoliceEngine.reset();
     ChorPoliceBotBehavior.reset();
-    clearAllListeners(); // Kill ghost listeners from crashed sessions
+    clearAllListeners();
 
-    // STEP 2: Start fresh — only the host player, zero bots
     const hostPlayer: Player = {
       id: localPlayerId,
       name: userName,
@@ -111,77 +103,51 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     };
     setPlayers([hostPlayer]);
 
-    // STEP 3: Initialize session
     if (isHost) {
       startHeartbeat(true);
+      updateDebugMetric("hostIp", "self-hosted");
 
       if (gameType === "QUIZ") {
         BotEngine.spawn(3);
-        const t = setTimeout(() => handleDifficultyChange("easy"), 800);
-        return () => clearTimeout(t);
+        const timer = setTimeout(() => handleDifficultyChange("easy"), 800);
+        return () => clearTimeout(timer);
       }
 
       if (gameType === "CHOR_POLICE") {
-        // Chor Police needs exactly 4 players — spawn 3 bots by default.
-        // If real players join, bots will be trimmed before game start.
         BotEngine.spawn(3);
       }
     }
+  }, [gameType, handleDifficultyChange, isHost, localPlayerId]);
 
-    // STEP 4: Cleanup on unmount — kill everything
-  }, [
-    gameType,
-    handleDifficultyChange,
-    isHost,
-    localPlayerId,
-  ]);
+  const { availableHosts, localIp } = useLanDiscovery(isHost, userName);
 
-  const { availableHosts } = useLanDiscovery(isHost, userName);
-  const [virtualHosts, setVirtualHosts] = useState<any[]>([]);
-
-  // 🔥 SYSTEM ROOM INJECTION
   useEffect(() => {
-    if (isHost) return;
+    debugState.connectionCount = isHost ? players.length - 1 : availableHosts.length;
+    updateDebugMetric("discoveredHostCount", availableHosts.length);
+  }, [players, availableHosts, isHost]);
 
-    let timer: any;
-    if (availableHosts.length === 0) {
-      timer = setTimeout(() => {
-        setVirtualHosts([
-          {
-            type: "VIRTUAL",
-            deviceName: "System Server (Bots) 🌐",
-            ip: "127.0.0.1",
-            version: NETWORK.PROTOCOL_VERSION,
-            lastSeen: Date.now(),
-          },
-        ]);
-      }, 3000);
-    } else {
-      setVirtualHosts([]);
+  useEffect(() => {
+    if (isHost) {
+      updateDebugMetric("hostIp", localIp === "unknown" ? "self-hosted" : localIp);
     }
-    return () => clearTimeout(timer);
-  }, [availableHosts.length, isHost]);
+  }, [isHost, localIp]);
 
-  const allHosts = [...availableHosts, ...virtualHosts];
-
-  // Sync Debug State
-  useEffect(() => {
-    debugState.connectionCount = isHost ? players.length - 1 : allHosts.length;
-  }, [players, allHosts, isHost]);
-
-  // Quiz and Chor Police both run as exact 4-player LAN rooms.
   const maxPlayers = ROOM_MAX_PLAYERS;
 
-  // 🔥 SUBSCRIPTIONS
   useEffect(() => {
     const unsubscribe = subscribeToPackets((packet, sourceIp) => {
       if (isHost) {
-        // Host only cares about Joins
         if (packet.type === NETWORK.PLAYER_JOIN) {
           const joiningPlayer: Player = packet.player;
           const isHumanJoining = !joiningPlayer.isBot;
           let accepted = false;
           let rejectionReason: "room_full" | null = null;
+
+          if (__DEV__) {
+            console.log(
+              `[LAN] Host received join from ${joiningPlayer.name} (${joiningPlayer.id}) at ${sourceIp ?? "unknown-ip"}`,
+            );
+          }
 
           setPlayers((prev) => {
             const existingPlayer = prev.find((p) => p.id === joiningPlayer.id);
@@ -194,63 +160,46 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
               );
             }
 
-            /**
-             * LAN ROOM AUTO-TRIM:
-             * When a human joins, remove one bot to keep the room at 4 players.
-             * Humans ALWAYS have priority over bots.
-             */
             if (isHumanJoining) {
               const humanCount = prev.filter((p) => !p.isBot).length;
 
-              // Already at max humans (4) → reject with warning
               if (humanCount >= ROOM_MAX_PLAYERS) {
                 rejectionReason = "room_full";
-                console.log(
-                  `🛡️ [Lobby] Rejecting human join — max humans reached (${humanCount})`,
-                );
                 toast.error(
                   "Room Full!",
-                  "🚫 Maximum 4 players allowed. No more can join.",
+                  "Maximum 4 players allowed. No more can join.",
                   3000,
                 );
                 return prev;
               }
 
-              // If lobby is full (4), remove one bot to make room for the human
               if (prev.length >= ROOM_MAX_PLAYERS) {
                 const botIndex = prev.findIndex((p) => p.isBot);
                 if (botIndex === -1) {
                   rejectionReason = "room_full";
-                  // No bots to trim — lobby is full of humans, reject with warning
-                  console.log(
-                    `🛡️ [Lobby] Rejecting human join — no bots to replace`,
-                  );
                   toast.error(
                     "Room Full!",
-                    "🚫 Maximum 4 players allowed. No more can join.",
+                    "Maximum 4 players allowed. No more can join.",
                     3000,
                   );
                   return prev;
                 }
+
                 const updated = [...prev];
                 const trimmedBot = updated.splice(botIndex, 1)[0];
-                console.log(
-                  `🤖 [Lobby] Auto-trimmed bot "${trimmedBot.name}" to make room for human "${joiningPlayer.name}"`,
-                );
-                // Also remove from BotEngine's active list
                 BotEngine.activeBots = BotEngine.activeBots.filter(
-                  (b) => b.id !== trimmedBot.id,
+                  (bot) => bot.id !== trimmedBot.id,
                 );
                 accepted = true;
                 return [...updated, joiningPlayer];
               }
             }
 
-            // Default: append if under max
             if (prev.length >= maxPlayers) {
               rejectionReason = "room_full";
               return prev;
             }
+
             accepted = true;
             return [...prev, joiningPlayer];
           });
@@ -265,7 +214,9 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
           }
         } else if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId) {
           unregisterRemotePeer(packet.playerId);
-          setPlayers((prev) => prev.filter((player) => player.id !== packet.playerId));
+          setPlayers((prev) =>
+            prev.filter((player) => player.id !== packet.playerId),
+          );
         }
       } else if (packet.type === MODES.THINK_AND_COUNT.DIFFICULTY_CHANGE) {
         setDifficultyState(packet.difficulty);
@@ -280,7 +231,11 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
             packet.betAmount || 0,
             packet.totalRounds,
           );
-          dispatch(setSelectedImages(packet.players.map((player: Player) => player.avatarId)));
+          dispatch(
+            setSelectedImages(
+              packet.players.map((player: Player) => player.avatarId),
+            ),
+          );
           dispatch(
             setReduxPlayerNames(
               packet.players.map((player: Player) => ({
@@ -303,7 +258,9 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
             packet.totalRounds || 5,
           );
           dispatch(
-            setSelectedImages(packet.players.map((player: Player) => player.avatarId)),
+            setSelectedImages(
+              packet.players.map((player: Player) => player.avatarId),
+            ),
           );
           dispatch(
             setReduxPlayerNames(
@@ -326,13 +283,20 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
           } as any);
         }, 300);
       } else if (packet.type === NETWORK.PLAYER_JOIN_REJECT) {
+        setSelectedHostIp(null);
         setSessionHostIp(null);
+        updateDebugMetric("hostIp", "N/A");
         toast.error(
           "Room Full",
           "This room already has 4 players. Please join another room.",
           3000,
         );
-      } else if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId === localPlayerId) {
+      } else if (
+        packet.type === NETWORK.PLAYER_LEAVE &&
+        packet.playerId === localPlayerId
+      ) {
+        setSelectedHostIp(null);
+        updateDebugMetric("hostIp", "N/A");
         toast.error("Disconnected", "You were removed from the room.", 3000);
         router.dismissAll();
         router.replace("/mode-select" as any);
@@ -342,32 +306,8 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     return unsubscribe;
   }, [dispatch, gameType, isHost, localPlayerId, maxPlayers, router]);
 
-  // 🔥 HANDLERS
-  const handleJoinSystemServer = useCallback(() => {
-    router.replace({
-      pathname: "/(game)/lobby",
-      params: {
-        isHost: "true",
-        gameType: gameType || "QUIZ",
-        isSystem: "true",
-      },
-    } as any);
-  }, [router, gameType]);
-
-  /**
-   * handleJoin — Called from PlayerListItem when a client taps "JOIN" on a discovered host.
-   * For VIRTUAL hosts (system bots): re-mount as host with bots.
-   * For REAL LAN hosts: send a PLAYER_JOIN packet so the host adds us.
-   */
   const handleJoin = useCallback(
     (host: any) => {
-      if (host.type === "VIRTUAL") {
-        // System Server — become the host with bots
-        handleJoinSystemServer();
-        return;
-      }
-
-      // Real LAN host — notify them we're joining
       const joinPacket = {
         type: NETWORK.PLAYER_JOIN,
         player: {
@@ -376,29 +316,33 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
           avatarId: selectedImages[0] || 1,
         },
       };
+
+      if (__DEV__) {
+        console.log(
+          `[LAN] Client joining host ${host.deviceName} at ${host.ip}. Local IP: ${localIp}`,
+        );
+      }
+
+      setSelectedHostIp(host.ip);
       setSessionHostIp(host.ip);
+      updateDebugMetric("hostIp", host.ip);
       sendPacketToHost(joinPacket);
       toast.success("Joining", `Connecting to ${host.deviceName}...`);
     },
-    [handleJoinSystemServer, localPlayerId, selectedImages, userName],
+    [localIp, localPlayerId, selectedImages, userName],
   );
 
-  const selectedRounds = useSelector(
-    (state: RootState) => state.player.gameRound,
-  );
-
-  const [isStarting, setIsStarting] = useState(false);
   const handleConfirmStake = useCallback(
     (stake: number) => {
       if (isStarting) return;
       setIsStarting(true);
 
       setIsBettingModalVisible(false);
-      toast.success("Stake Added", `💰 ${stake} coins added to pot!`);
+      toast.success("Stake Added", `${stake} coins added to pot!`);
 
       if (gameType === "QUIZ") {
-        const humans = players.filter((p) => !p.isBot).slice(0, ROOM_MAX_PLAYERS);
-        const existingBots = players.filter((p) => p.isBot);
+        const humans = players.filter((player) => !player.isBot).slice(0, ROOM_MAX_PLAYERS);
+        const existingBots = players.filter((player) => player.isBot);
         const botsNeeded = ROOM_MAX_PLAYERS - humans.length;
 
         let selectedBots = existingBots.slice(0, botsNeeded);
@@ -406,19 +350,19 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
         if (selectedBots.length < botsNeeded) {
           const extraNeeded = botsNeeded - selectedBots.length;
           const usedAvatars = new Set(
-            [...humans, ...selectedBots].map((p) => p.avatarId),
+            [...humans, ...selectedBots].map((player) => player.avatarId),
           );
 
-          for (let i = 0; i < extraNeeded; i++) {
+          for (let index = 0; index < extraNeeded; index += 1) {
             let avatarId: number;
             do {
               avatarId = Math.floor(Math.random() * 13) + 1;
             } while (usedAvatars.has(avatarId));
             usedAvatars.add(avatarId);
 
-            const botName = getBotName(selectedBots.length + i);
+            const botName = getBotName(selectedBots.length + index);
             selectedBots.push({
-              id: `bot_${botName.toLowerCase()}_${Math.random().toString(36).substr(2, 5)}`,
+              id: `bot_${botName.toLowerCase()}_${Math.random().toString(36).slice(2, 7)}`,
               name: botName,
               avatarId,
               isBot: true,
@@ -455,47 +399,32 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
           { processLocally: false },
         );
         setIsTransitioning(true);
-
-        // setTimeout(() => {
-        //   router.push("/think-count-quiz" as any);
-        // }, 500);
       }
 
       if (gameType === "CHOR_POLICE") {
-        /**
-         * BUILD FINAL 4-PLAYER ROSTER:
-         * 1. Separate humans and bots from the current player list.
-         * 2. Take up to 4 humans (humans always have priority).
-         * 3. If fewer than 4 humans, dynamically fill remaining slots with bots.
-         * 4. This guarantees exactly 4 players every time.
-         */
-        const humans = players.filter((p) => !p.isBot);
-        const existingBots = players.filter((p) => p.isBot);
-
-        // Take at most 4 humans
+        const humans = players.filter((player) => !player.isBot);
+        const existingBots = players.filter((player) => player.isBot);
         const selectedHumans = humans.slice(0, ROOM_MAX_PLAYERS);
         const botsNeeded = ROOM_MAX_PLAYERS - selectedHumans.length;
 
-        // Reuse existing bots first, dynamically create more if needed
         let selectedBots = existingBots.slice(0, botsNeeded);
 
-        // If we don't have enough existing bots, spawn fresh ones
         if (selectedBots.length < botsNeeded) {
           const extraNeeded = botsNeeded - selectedBots.length;
           const usedAvatars = new Set(
-            [...selectedHumans, ...selectedBots].map((p) => p.avatarId),
+            [...selectedHumans, ...selectedBots].map((player) => player.avatarId),
           );
 
-          for (let i = 0; i < extraNeeded; i++) {
+          for (let index = 0; index < extraNeeded; index += 1) {
             let avatarId: number;
             do {
               avatarId = Math.floor(Math.random() * 13) + 1;
             } while (usedAvatars.has(avatarId));
             usedAvatars.add(avatarId);
 
-            const botName = getBotName(selectedBots.length + i);
+            const botName = getBotName(selectedBots.length + index);
             selectedBots.push({
-              id: `bot_${botName.toLowerCase()}_${Math.random().toString(36).substr(2, 5)}`,
+              id: `bot_${botName.toLowerCase()}_${Math.random().toString(36).slice(2, 7)}`,
               name: botName,
               avatarId,
               isBot: true,
@@ -505,12 +434,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
 
         const finalPlayers = [...selectedHumans, ...selectedBots];
 
-        console.log(
-          `🎮 [Lobby] Final roster: ${finalPlayers.map((p) => `${p.name}(${p.isBot ? "BOT" : "HUMAN"})`).join(", ")}`,
-        );
-
-        // Bridge lobby players → Redux so PlayerCard can find avatar images
-        dispatch(setSelectedImages(finalPlayers.map((p) => p.avatarId)));
+        dispatch(setSelectedImages(finalPlayers.map((player) => player.avatarId)));
         dispatch(
           setReduxPlayerNames(
             finalPlayers.map((player) => ({
@@ -522,10 +446,7 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
         );
 
         ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 5);
-
-        // Initialize bot behavior for bots in the final roster
-        const bots = finalPlayers.filter((p) => p.isBot);
-        ChorPoliceBotBehavior.init(bots);
+        ChorPoliceBotBehavior.init(finalPlayers.filter((player) => player.isBot));
 
         broadcastPacket(
           {
@@ -544,11 +465,11 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
       }
     },
     [
-      dispatch,
-      players,
       difficulty,
+      dispatch,
       gameType,
       isStarting,
+      players,
       selectedRounds,
       userName,
     ],
@@ -557,40 +478,42 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
   const handleAvatarSelect = useCallback(
     (id: number) => {
       setPlayers((currentPlayers) => {
-        const isTaken = currentPlayers.some((p) => p.avatarId === id);
+        const isTaken = currentPlayers.some((player) => player.avatarId === id);
         if (isTaken) {
           toast.error(
             "Taken!",
-            "🚫 Character already taken! Please pick another kid.",
+            "Character already taken. Please pick another kid.",
           );
           return currentPlayers;
         }
+
         dispatch(setSelectedImages([id]));
         setShowAvatarGrid(false);
 
-        // Update the host player's avatar in the player list so the UI reflects it
-        return currentPlayers.map((p) =>
-          p.id === localPlayerId ? { ...p, avatarId: id } : p,
+        return currentPlayers.map((player) =>
+          player.id === localPlayerId ? { ...player, avatarId: id } : player,
         );
       });
     },
     [dispatch, localPlayerId],
   );
 
-  const handleNameChange = useCallback((name: string) => {
-    const sanitized = name.replace(/[^a-zA-Z0-9 ]/g, "").substring(0, 12);
-    setUserName(sanitized);
-    setPlayers((currentPlayers) =>
-      currentPlayers.map((player) =>
-        player.id === localPlayerId ? { ...player, name: sanitized } : player,
-      ),
-    );
-    if (sanitized.length >= 3) {
-      saveUsername(sanitized);
-    }
-  }, [localPlayerId]);
+  const handleNameChange = useCallback(
+    (name: string) => {
+      const sanitized = name.replace(/[^a-zA-Z0-9 ]/g, "").substring(0, 12);
+      setUserName(sanitized);
+      setPlayers((currentPlayers) =>
+        currentPlayers.map((player) =>
+          player.id === localPlayerId ? { ...player, name: sanitized } : player,
+        ),
+      );
+      if (sanitized.length >= 3) {
+        saveUsername(sanitized);
+      }
+    },
+    [localPlayerId],
+  );
 
-  // Proposed: A single point of truth for cleanup
   const resetAllEngines = () => {
     [BotEngine, QuizEngine, ChorPoliceEngine, ChorPoliceBotBehavior].forEach(
       (engine) => {
@@ -606,7 +529,9 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     gameType,
     userName,
     players,
-    allHosts,
+    allHosts: availableHosts,
+    localIp,
+    selectedHostIp,
     showAvatarGrid,
     setShowAvatarGrid,
     difficulty,
@@ -615,7 +540,6 @@ export const useLobbyLogic = (router: any, gameParams: any) => {
     selectedImages,
     maxPlayers,
     handleJoin,
-    handleJoinSystemServer,
     handleDifficultyChange,
     handleConfirmStake,
     handleAvatarSelect,
