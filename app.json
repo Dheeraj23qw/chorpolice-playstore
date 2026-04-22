@@ -30,6 +30,17 @@
       "userInterfaceStyle": "dark",
       "allowBackup": false,
       "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+        "android.permission.NEARBY_WIFI_DEVICES",
+        "android.permission.CAMERA",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#050508"
@@ -79,22 +90,6 @@
             "targetSdkVersion": 35,
             "compiler": "r8",
             "usesCleartextTraffic": true,
-            "extraManifestAttributes": {
-              "android:usesPermissionFlags": "neverForLocation"
-            },
-            "permissions": [
-              "android.permission.INTERNET",
-              "android.permission.ACCESS_NETWORK_STATE",
-              "android.permission.ACCESS_WIFI_STATE",
-              "android.permission.ACCESS_FINE_LOCATION",
-              "android.permission.CHANGE_WIFI_MULTICAST_STATE",
-              "android.permission.NEARBY_WIFI_DEVICES",
-              "android.permission.CAMERA",
-              "android.permission.WAKE_LOCK",
-              "android.permission.ACCESS_LOCAL_NETWORK",
-              "android.permission.BATTERY_STATS",
-              "android.permission.VIBRATE"
-            ],
             "packagingOptions": {
               "pickFirst": ["**/libc++_shared.so"],
               "exclude": [

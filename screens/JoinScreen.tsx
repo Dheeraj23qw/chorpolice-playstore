@@ -26,6 +26,7 @@ import {
   joinLanLobby,
   leaveLanLobby,
 } from "@/service/lanLobbyCoordinator";
+import { logPermissionDebug, warnPermissionDebug } from "@/utils/permissionDebug";
 import { setLocalSessionIdentity } from "@/redux/reducers/sessionSlice";
 import { AppDispatch, RootState } from "@/redux/store";
 
@@ -59,7 +60,11 @@ const JoinScreen = () => {
     retry: retryNetwork,
     errorMessage: networkErrorMessage,
     openSettings,
-  } = useNetworkPermissions(true);
+  } = useNetworkPermissions({
+    enabled: true,
+    requireWifiIpAddress: false,
+    requireAndroidWifiPermissions: false,
+  });
 
   const [roomCode, setRoomCode] = useState("");
   const [joinMethod, setJoinMethod] = useState<"scan" | "code">("scan");
@@ -75,6 +80,24 @@ const JoinScreen = () => {
     networkStatus === "pending"
       ? "loading"
       : (networkStatus as HandshakeStatusType);
+
+  useEffect(() => {
+    logPermissionDebug("JoinScreen", "Join permission state updated", {
+      networkStep,
+      networkStatus,
+      canAttemptJoin,
+      connectionStatus: session.connectionStatus,
+      errorMessage: networkErrorMessage,
+      joinMethod,
+    });
+  }, [
+    canAttemptJoin,
+    joinMethod,
+    networkErrorMessage,
+    networkStatus,
+    networkStep,
+    session.connectionStatus,
+  ]);
 
   useEffect(() => {
     const preselectedAvatarId = selectedImages[0];
@@ -110,10 +133,23 @@ const JoinScreen = () => {
 
   const handleConnectToIp = useCallback(
     async (hostIp: string) => {
+      logPermissionDebug("JoinScreen", "Attempting connect to host", {
+        hostIp,
+        canAttemptJoin,
+        connectionStatus: session.connectionStatus,
+        networkStatus,
+      });
+
       if (!canAttemptJoin) {
+        warnPermissionDebug("JoinScreen", "Connect blocked because same-network gate is not satisfied", {
+          hostIp,
+          networkStatus,
+          networkStep,
+          networkErrorMessage,
+        });
         toast.error(
-          "Wi-Fi Required",
-          "Allow LAN permissions and connect to the same Wi-Fi first.",
+          "Same Network Required",
+          "Connect both devices to the same Wi-Fi or hotspot first.",
         );
         return;
       }
@@ -292,7 +328,13 @@ const JoinScreen = () => {
                     <QRScanner
                       key={`${session.connectionStatus}-${session.errorMessage || "idle"}`}
                       onScan={(payload) => {
+                        logPermissionDebug("JoinScreen", "QR scanner returned payload", payload);
                         if (!payload.ip) {
+                          warnPermissionDebug(
+                            "JoinScreen",
+                            "QR scanner payload missing IP",
+                            payload,
+                          );
                           toast.error(
                             "Invalid QR",
                             "This QR code does not contain a room IP.",
