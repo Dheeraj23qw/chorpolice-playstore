@@ -1,6 +1,14 @@
 import { MODES } from "../constants/Networking";
 import { PacketRouter } from "./PacketRouter";
 import { IGameEngine } from "./interfaces/IGameEngine";
+import store from "@/redux/store";
+import {
+  setGamePhase,
+  setMyRole,
+  setRoundActive,
+  setRoundState,
+  setStake,
+} from "@/redux/reducers/sessionSlice";
 
 /**
  * --- CHOR POLICE ENGINE (Multiplayer) ---
@@ -11,6 +19,12 @@ import { IGameEngine } from "./interfaces/IGameEngine";
  * - Police guess evaluation
  * - Per-round scoring
  * - Round progression & game end detection
+ *
+ * ARCHITECTURE:
+ * - Engine.state is a WRITE-THROUGH CACHE for fast game logic computations.
+ * - Every mutation ALSO dispatches to Redux (sessionSlice) so the UI
+ *   reads from Redux as the single source of truth.
+ * - The engine never reads from Redux — it only writes to it.
  *
  * SOLID:
  * - SRP: Only game rules — no UI, no bot logic, no networking I/O.
@@ -36,6 +50,17 @@ interface CPScoreEntry {
   totalScore: number;
   roundScores: number[];
 }
+
+// ── Redux dispatch helper (fail-safe) ──
+const dispatch = (action: any) => {
+  try {
+    store.dispatch(action);
+  } catch (e) {
+    if (__DEV__) {
+      console.warn("[CPEngine] Redux dispatch failed:", e);
+    }
+  }
+};
 
 export const ChorPoliceEngine = {
   state: {
@@ -66,9 +91,15 @@ export const ChorPoliceEngine = {
 
     switch (packet.type) {
       case CP.GAME_START:
-        // Session initialized — do NOT auto-start the first round.
-        // The host must click "Play" which sends CP_ROUND_START.
+        // PROD-4 FIX: if players are already initialised (host called init() directly),
+        // skip re-init; just ensure phase is set correctly.
+        if (ChorPoliceEngine.state.players.length > 0) {
+          console.log(`🎭 [CPEngine] 🟢 GAME_START — engine already initialised, skipping re-init.`);
+          dispatch(setGamePhase("waiting"));
+          break;
+        }
         console.log(`🎭 [CPEngine] 🟢 GAME_START received — session ready. Waiting for host to click Play.`);
+        dispatch(setGamePhase("waiting"));
         break;
 
       case CP.POLICE_GUESS:
@@ -80,7 +111,7 @@ export const ChorPoliceEngine = {
         console.log(`🎭 [CPEngine] ▶️ ROUND_START received — starting round ${ChorPoliceEngine.state.currentRound}`);
         if (ChorPoliceEngine.state.isRoundActive) {
           console.warn(
-            "ðŸ›¡ï¸ [CPEngine] Duplicate ROUND_START ignored â€” round already active.",
+            "🛡️ [CPEngine] Duplicate ROUND_START ignored — round already active.",
           );
           break;
         }
@@ -95,6 +126,29 @@ export const ChorPoliceEngine = {
         ChorPoliceEngine.state.kingIndex =
           packet.kingIndex ?? ChorPoliceEngine.state.kingIndex;
         ChorPoliceEngine.state.isRoundActive = true;
+
+        // ── Redux sync ──
+        dispatch(setRoundActive(true));
+        dispatch(setRoundState({
+          round: ChorPoliceEngine.state.currentRound,
+          roles: [...ChorPoliceEngine.state.roles],
+          policeIndex: ChorPoliceEngine.state.policeIndex,
+          kingIndex: ChorPoliceEngine.state.kingIndex,
+          thiefIndex: ChorPoliceEngine.state.thiefIndex,
+          advisorIndex: ChorPoliceEngine.state.advisorIndex,
+        }));
+        dispatch(setGamePhase("dealing"));
+        break;
+
+      case CP.ROLE_ASSIGN:
+        // Each player receives their own role via this packet.
+        // Dispatch to Redux so the UI can read myRole from the store.
+        {
+          const sessionState = store.getState().session;
+          if (packet.playerId === sessionState.localPlayerId) {
+            dispatch(setMyRole(packet.role));
+          }
+        }
         break;
 
       case CP.ROUND_RESULT:
@@ -105,6 +159,18 @@ export const ChorPoliceEngine = {
           packet.allRoles?.map((entry: any) => entry.role) ??
           ChorPoliceEngine.state.roles;
         ChorPoliceEngine.syncScores(packet.leaderboard);
+
+        // ── Redux sync ──
+        dispatch(setRoundActive(false));
+        dispatch(setRoundState({
+          round: ChorPoliceEngine.state.currentRound,
+          roles: [...ChorPoliceEngine.state.roles],
+          policeIndex: packet.allRoles?.findIndex((e: any) => e.role === "Police") ?? null,
+          kingIndex: packet.allRoles?.findIndex((e: any) => e.role === "King") ?? null,
+          thiefIndex: packet.allRoles?.findIndex((e: any) => e.role === "Thief") ?? null,
+          advisorIndex: packet.allRoles?.findIndex((e: any) => e.role === "Advisor") ?? null,
+        }));
+        dispatch(setGamePhase("result"));
         break;
 
       case CP.SCORE_GUESS_RESULT:
@@ -113,6 +179,9 @@ export const ChorPoliceEngine = {
 
       case CP.GAME_END:
         console.log(`🎭 [CPEngine] 🛑 GAME_END received — reason: ${packet.reason}`);
+        if (packet.reason === "completed") {
+          dispatch(setGamePhase("final_result"));
+        }
         break;
 
       default:
@@ -126,18 +195,6 @@ export const ChorPoliceEngine = {
     ChorPoliceEngine.reset();
 
     // 🛡️ VALIDATION: Chor Police requires EXACTLY 4 players
-    if (ChorPoliceEngine.state.isRoundActive) {
-      console.warn("ðŸ›¡ï¸ [CPEngine] Duplicate ROUND_START ignored â€” round already active.");
-      return;
-    }
-
-    if (ChorPoliceEngine.state.isRoundActive) {
-      console.warn(
-        "ðŸ›¡ï¸ [CPEngine] Duplicate ROUND_START ignored â€” round already active.",
-      );
-      return;
-    }
-
     if (players.length !== 4) {
       console.error(
         `🚨 [CPEngine] CRITICAL: init() called with ${players.length} players — expected exactly 4! Game will not function correctly.`,
@@ -164,6 +221,19 @@ export const ChorPoliceEngine = {
         roundScores: [],
       };
     });
+
+    // ── Redux sync ──
+    dispatch(setStake(stake));
+    dispatch(setRoundState({
+      round: 1,
+      totalRounds,
+      roles: [],
+      policeIndex: null,
+      kingIndex: null,
+      thiefIndex: null,
+      advisorIndex: null,
+    }));
+    dispatch(setGamePhase("waiting"));
   },
 
   /* ─── Shuffle & assign roles for the current round ─── */
@@ -185,16 +255,11 @@ export const ChorPoliceEngine = {
     console.log(`🎭 [CPEngine] Starting Round ${currentRound}/${totalRounds}`);
     console.log(`🎭 [CPEngine] Players: [${players.map(p => `${p.name}(${p.id}${p.isBot ? ",bot" : ""})`).join(", ")}]`);
 
-    // Fisher-Yates shuffle (deterministic per round)
+    // FIX BUG-8: was a deterministic LCG — same seed = same roles every game.
+    // Host is authoritative and broadcasts the result, so Math.random() is correct.
     const shuffled: Role[] = [...ROLES];
-    const seed = ChorPoliceEngine.state.currentRound * 7919 + ChorPoliceEngine.state.players.length * 104729;
-    let s = seed;
-    const rand = (): number => {
-      s = (1664525 * s + 1013904223) % 4294967296;
-      return s / 4294967296;
-    };
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
+      const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
@@ -204,6 +269,17 @@ export const ChorPoliceEngine = {
     ChorPoliceEngine.state.thiefIndex = shuffled.indexOf("Thief");
     ChorPoliceEngine.state.advisorIndex = shuffled.indexOf("Advisor");
     ChorPoliceEngine.state.isRoundActive = true;
+
+    // ── Redux sync ──
+    dispatch(setRoundActive(true));
+    dispatch(setRoundState({
+      round: currentRound,
+      roles: [...shuffled],
+      policeIndex: ChorPoliceEngine.state.policeIndex,
+      kingIndex: ChorPoliceEngine.state.kingIndex,
+      thiefIndex: ChorPoliceEngine.state.thiefIndex,
+      advisorIndex: ChorPoliceEngine.state.advisorIndex,
+    }));
 
     // Log role assignments
     players.forEach((p, i) => {
@@ -267,6 +343,7 @@ export const ChorPoliceEngine = {
     }
 
     ChorPoliceEngine.state.isRoundActive = false;
+    dispatch(setRoundActive(false));
 
     const { roles, players, currentRound, scores } = ChorPoliceEngine.state;
     const guessedRole = roles[targetIndex];

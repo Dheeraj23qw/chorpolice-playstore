@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
@@ -27,6 +28,9 @@ export default function AppController() {
   );
   const loadingTaskRef = useRef<Promise<void> | null>(null);
   const bootstrappedRef = useRef(false);
+  // PROD-8 FIX: only enqueue reward once per session; re-queuing on every
+  // activeModal change causes an infinite loop while awards.unlocked stays > 0
+  const rewardQueuedRef = useRef(false);
 
   const prepareIntroFlow = useCallback(() => {
     if (loadingTaskRef.current) return loadingTaskRef.current;
@@ -87,10 +91,15 @@ export default function AppController() {
   }, [coins, dispatch, firstLaunch, phase]);
 
   useEffect(() => {
-    if (phase === "HOME" && unlockedAwardsCount > 0) {
+    if (phase === "HOME" && unlockedAwardsCount > 0 && !rewardQueuedRef.current) {
+      rewardQueuedRef.current = true; // PROD-8: only enqueue once
       dispatch(enqueueModal("REWARD_MODAL"));
     }
-  }, [activeModal, dispatch, phase, unlockedAwardsCount]);
+    // Reset flag when awards count drops back to 0 (claimed)
+    if (unlockedAwardsCount === 0) {
+      rewardQueuedRef.current = false;
+    }
+  }, [dispatch, phase, unlockedAwardsCount]);
 
   const handleOnboardingComplete = useCallback(() => {
     setOnboardingDone(true);
@@ -101,17 +110,26 @@ export default function AppController() {
     dispatch(setAppPhase("HOME"));
   }, [dispatch]);
 
+  // UI-4: each phase gets a fast fade-in so hard-cuts are replaced with
+  // smooth 200ms entrances — wrapping with a stable key forces re-mount
+  // (and re-animation) only when the phase actually changes.
+  const wrapPhase = (key: string, child: React.ReactNode) => (
+    <Animated.View key={key} entering={FadeIn.duration(200)} style={{ flex: 1 }}>
+      {child}
+    </Animated.View>
+  );
+
   switch (phase) {
     case "ONBOARDING":
-      return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+      return wrapPhase("onboarding", <OnboardingScreen onComplete={handleOnboardingComplete} />);
     case "LOADING":
-      return <LoadingScreen />;
+      return wrapPhase("loading", <LoadingScreen />);
     case "VIDEO":
-      return <VideoScreen onComplete={handleVideoComplete} />;
+      return wrapPhase("video", <VideoScreen onComplete={handleVideoComplete} />);
     case "HOME":
-      return <HomeScreen />;
+      return wrapPhase("home", <HomeScreen />);
     case "SPLASH":
     default:
-      return <SplashPhaseScreen />;
+      return wrapPhase("splash", <SplashPhaseScreen />);
   }
 }

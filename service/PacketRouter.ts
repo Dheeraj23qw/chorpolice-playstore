@@ -12,8 +12,10 @@ const engines: Set<IGameEngine> = new Set();
 export const PacketRouter = {
   /**
    * Registers a game engine to the routing system.
+   * PROD-7 FIX: guard against duplicate registration (can occur on hot-reload)
    */
   registerEngine: (engine: IGameEngine) => {
+    if (engines.has(engine)) return;
     console.log("🧩 [Router] Registering Engine:", engine.constructor.name || "Anonymous Engine");
     engines.add(engine);
   },

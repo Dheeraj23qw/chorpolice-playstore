@@ -184,8 +184,24 @@ const startTcpServer = () => {
     });
 
     socket.on("close", () => {
+      // NET-1 FIX: clean up ALL maps and notify the game layer.
+      // Previously only clientSockets/clientBuffers were cleared, leaving
+      // playerIdByIp / ipByPlayerId stale and breaking heartbeat eviction.
+      const playerId = state.playerIdByIp.get(remoteIp);
       state.clientSockets.delete(remoteIp);
       state.clientBuffers.delete(remoteIp);
+      state.clientIps.delete(remoteIp);
+      if (playerId) {
+        state.playerIdByIp.delete(remoteIp);
+        state.ipByPlayerId.delete(playerId);
+        // Synthesise a PLAYER_LEAVE so game engines and lobby coordinator react
+        if (packetHandler) {
+          packetHandler(
+            { type: "PLAYER_LEAVE", playerId, reason: "tcp_close" },
+            remoteIp,
+          );
+        }
+      }
     });
   });
 
@@ -212,37 +228,30 @@ const startTcpServer = () => {
 
 const connectToHost = (hostIp: string) => {
   if (clientSocket) {
-    try {
-      clientSocket.destroy();
-    } catch {
-      // ignore
-    }
+    try { clientSocket.destroy(); } catch { /* ignore */ }
     clientSocket = null;
   }
 
   state.hostBuffer = Buffer.alloc(0);
 
+  // NET-4 FIX: declare timeout BEFORE the connection callback that clears it
+  let connectionTimeout: ReturnType<typeof setTimeout> | null = null;
+
   clientSocket = TcpSocket.createConnection(
-    {
-      port: SESSION_PORT,
-      host: hostIp,
-    },
+    { port: SESSION_PORT, host: hostIp },
     () => {
-      clearTimeout(connectionTimeout);
+      if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
       if (__DEV__) {
-        console.log(
-          `[TCP Transport] Connected to host: ${hostIp}:${SESSION_PORT}`,
-        );
+        console.log(`[TCP Transport] Connected to host: ${hostIp}:${SESSION_PORT}`);
       }
     },
   );
 
-  // Manual connection timeout
-  const connectionTimeout = setTimeout(() => {
+  // NET-4: manual connection timeout (5s)
+  connectionTimeout = setTimeout(() => {
+    connectionTimeout = null;
     if (clientSocket && !clientSocket.destroyed) {
-      if (__DEV__) {
-        console.warn(`[TCP Transport] Connection to host timed out: ${hostIp}`);
-      }
+      if (__DEV__) console.warn(`[TCP Transport] Connection to host timed out: ${hostIp}`);
       clientSocket.destroy();
       clientSocket = null;
     }
@@ -250,11 +259,9 @@ const connectToHost = (hostIp: string) => {
 
   clientSocket.on("data", (data: any) => {
     const rawBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
-
     state.hostBuffer = Buffer.concat([state.hostBuffer, rawBuffer]);
     const [packets, remaining] = extractFrames(state.hostBuffer);
     state.hostBuffer = remaining;
-
     for (const envelope of packets) {
       if (__DEV__) {
         console.log(
@@ -266,16 +273,26 @@ const connectToHost = (hostIp: string) => {
   });
 
   clientSocket.on("error", (error: any) => {
-    clearTimeout(connectionTimeout);
+    if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
     console.error(`[TCP Transport] Host connection error:`, error?.message);
   });
 
+  // NET-3 FIX: auto-reconnect on drop instead of silently going dark
   clientSocket.on("close", () => {
-    clearTimeout(connectionTimeout);
-    if (__DEV__) {
-      console.log(`[TCP Transport] Disconnected from host: ${hostIp}`);
-    }
+    if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
+    if (__DEV__) console.log(`[TCP Transport] Disconnected from host: ${hostIp}`);
     clientSocket = null;
+
+    // Only reconnect if we still have a valid hostIp stored (i.e. not intentionally stopped)
+    if (state.hostIp === hostIp) {
+      const delay = 1500;
+      if (__DEV__) console.log(`[TCP Transport] Auto-reconnecting in ${delay}ms...`);
+      setTimeout(() => {
+        if (state.hostIp === hostIp) {
+          connectToHost(hostIp);
+        }
+      }, delay);
+    }
   });
 };
 
@@ -438,30 +455,29 @@ export const GameSessionTransport = {
 
   sendToHost: (packet: any) => {
     if (!state.hostIp) {
-      console.warn(
-        "[TCP Transport] Missing host IP for client packet",
-        packet?.type,
-      );
+      console.warn("[TCP Transport] Missing host IP for client packet", packet?.type);
       return;
     }
 
     const framed = framePacket(packet);
 
-    if (clientSocket) {
+    if (clientSocket && !clientSocket.destroyed) {
       safeSend(clientSocket, framed, `host(${state.hostIp})`);
     } else {
       if (__DEV__) {
-        console.warn(
-          "[TCP Transport] No active connection to host. Reconnecting...",
-        );
+        console.warn("[TCP Transport] No active connection to host. Reconnecting...");
       }
+      // NET-2 FIX: reconnect first, then retry with backoff (300ms then 800ms)
       connectToHost(state.hostIp);
-      // Queue a retry after connection establishes
-      setTimeout(() => {
-        if (clientSocket) {
-          safeSend(clientSocket, framed, `host(${state.hostIp})`);
-        }
-      }, 500);
+      const hostIpAtSend = state.hostIp;
+      const retryDelays = [300, 800];
+      retryDelays.forEach((delay) => {
+        setTimeout(() => {
+          if (clientSocket && !clientSocket.destroyed && state.hostIp === hostIpAtSend) {
+            safeSend(clientSocket, framed, `host(${state.hostIp})`);
+          }
+        }, delay);
+      });
     }
   },
 

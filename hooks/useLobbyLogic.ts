@@ -201,13 +201,17 @@ export const useLobbyLogic = (
       }
 
       if (packet.type === MODES.THINK_AND_COUNT.GAME_START) {
-        if (packet.players?.length) {
+        // PROD-5: only clients init QuizEngine from broadcast — host already called init() directly
+        if (!isHost && packet.players?.length) {
           QuizEngine.init(
             packet.players,
             packet.difficulty,
             packet.betAmount || 0,
             packet.totalRounds,
           );
+        }
+        // Always sync player names/images (even on host, to keep Redux in sync)
+        if (packet.players?.length) {
           dispatch(
             setSelectedImages(
               packet.players.map((player: Player) => player.avatarId),
@@ -224,19 +228,23 @@ export const useLobbyLogic = (
           );
         }
 
+        // PROD-1 FIX: 600ms delay so TCP handshake completes before screen mounts
         setTimeout(() => {
           router.push("/think-count-quiz" as any);
-        }, 300);
+        }, 600);
         return;
       }
 
       if (packet.type === MODES.CHOR_POLICE.GAME_START) {
-        if (packet.players?.length) {
+        // PROD-5: only clients init ChorPoliceEngine from broadcast — host already called init()
+        if (!isHost && packet.players?.length) {
           ChorPoliceEngine.init(
             packet.players,
             packet.betAmount || 0,
             packet.totalRounds || 5,
           );
+        }
+        if (packet.players?.length) {
           dispatch(
             setSelectedImages(
               packet.players.map((player: Player) => player.avatarId),
@@ -253,15 +261,18 @@ export const useLobbyLogic = (
           );
         }
 
-        setTimeout(() => {
-          router.push({
-            pathname: "/chor-police-mp",
-            params: {
-              playerId: localPlayerId,
-              isHost: String(isHost),
-            },
-          } as any);
-        }, 300);
+        // PROD-1 FIX: 600ms delay so TCP handshake completes before screen mounts
+        if (localPlayerId) {
+          setTimeout(() => {
+            router.push({
+              pathname: "/chor-police-mp",
+              params: {
+                playerId: localPlayerId,
+                isHost: String(isHost),
+              },
+            } as any);
+          }, 600);
+        }
       }
     });
 
@@ -292,7 +303,9 @@ export const useLobbyLogic = (
       );
 
       if (gameType === "QUIZ") {
+        // BOT-4 FIX: BotEngine.start() was never called — bots never answered quiz questions
         BotEngine.activeBots = botPlayers;
+        BotEngine.start(); // registers QUESTION_SYNC listener so bots auto-answer
         QuizEngine.init(finalPlayers, difficulty, stake, selectedRounds || 5);
         broadcastPacket(
           {

@@ -72,7 +72,8 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   if (isGameReset || !isPopUp || !mediaData) return null;
 
   return (
-        <View className="absolute top-0 left-0 right-0 bottom-0 bg-white flex-1">
+    // UI-2 FIX: was solid white (bg-white) — now dark translucent so game bg stays visible
+    <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
       <View style={styles.container}>
         {/* Decorative Elements */}
         <View style={styles.topGlass} />
@@ -145,7 +146,7 @@ export default DynamicOverlayPopUp;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "rgba(5, 5, 8, 0.96)",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
     left: "-10%",
     width: "120%",
     height: "40%",
-    backgroundColor: "#f4f4f5",
+    backgroundColor: "rgba(99,102,241,0.06)",
     opacity: 0.5,
     transform: [{ rotate: "-15deg" }],
     borderRadius: 100,
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
     right: "-20%",
     width: "100%",
     height: "30%",
-    backgroundColor: "rgba(244,244,245,0.4)",
+    backgroundColor: "rgba(99,102,241,0.04)",
     transform: [{ rotate: "10deg" }],
     borderRadius: 100,
   },
@@ -179,12 +180,12 @@ const styles = StyleSheet.create({
     top: 80,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.1)",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 50,
     borderWidth: 1,
-    borderColor: "#f4f4f5",
+    borderColor: "rgba(255,255,255,0.12)",
     elevation: 5,
   },
 
@@ -197,14 +198,14 @@ const styles = StyleSheet.create({
   },
 
   nameText: {
-    color: "#18181b",
+    color: "#ffffff",
     fontSize: 18,
     textTransform: "uppercase",
     marginBottom: 2,
   },
 
   messageText: {
-    color: "#52525b",
+    color: "rgba(255,255,255,0.7)",
     fontSize: 14,
     textTransform: "uppercase",
   },
@@ -219,13 +220,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
     elevation: 6,
   },
 
   descriptionText: {
-    color: "#18181b",
+    color: "rgba(255,255,255,0.9)",
     textAlign: "center",
     fontSize: 18,
     textTransform: "uppercase",

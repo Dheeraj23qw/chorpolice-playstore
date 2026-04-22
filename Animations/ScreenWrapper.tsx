@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { ViewProps } from "react-native";
 import Animated, {
   useSharedValue,
@@ -38,32 +38,18 @@ export default function ScreenWrapper({
   const progress = useSharedValue(0);
   const scale = useSharedValue(1);
 
-  const getConfig = () => {
+  const config = useMemo(() => {
     switch (variant) {
       case "dramatic":
-        return {
-          spring: { damping: 12, stiffness: 90, mass: 0.8 },
-          yOffset: 60,
-        };
+        return { spring: { damping: 12, stiffness: 90, mass: 0.8 }, yOffset: 60 };
       case "modal":
-        return {
-          spring: { damping: 16, stiffness: 85 },
-          yOffset: 40,
-        };
+        return { spring: { damping: 16, stiffness: 85 }, yOffset: 40 };
       case "fast":
-        return {
-          spring: { damping: 20, stiffness: 150 },
-          yOffset: 15,
-        };
+        return { spring: { damping: 20, stiffness: 150 }, yOffset: 15 };
       default:
-        return {
-          spring: { damping: 15, stiffness: 100 },
-          yOffset: 30,
-        };
+        return { spring: { damping: 15, stiffness: 100 }, yOffset: 30 };
     }
-  };
-
-  const config = getConfig();
+  }, [variant]);
 
   useFocusEffect(
     useCallback(() => {
@@ -83,10 +69,13 @@ export default function ScreenWrapper({
       }
 
       return () => {
+        // UI-3 FIX: do NOT snap progress to 0 here — that causes an opacity
+        // flash on Android as the component briefly renders at opacity:0
+        // before it actually unmounts. Let animations cancel cleanly.
         cancelAnimation(progress);
         cancelAnimation(scale);
-        progress.value = 0;
         scale.value = 1;
+        // progress stays at current value until component truly unmounts
       };
     }, [variant, breathing])
   );

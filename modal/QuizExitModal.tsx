@@ -38,21 +38,25 @@ export default function QuizExitModal({
   useEffect(() => {
     if (visible) {
       tapped.current = false;
-      cardScale.setValue(0.9);
-      cardOpacity.setValue(0);
-      Animated.parallel([
-        Animated.spring(cardScale, {
-          toValue: 1,
-          tension: 120,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardOpacity, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      // PROD-12 FIX: defer reset to next frame — Modal visible={true} doesn't
+      // guarantee the component tree is mounted before the next sync render on Android.
+      requestAnimationFrame(() => {
+        cardScale.setValue(0.9);
+        cardOpacity.setValue(0);
+        Animated.parallel([
+          Animated.spring(cardScale, {
+            toValue: 1,
+            tension: 120,
+            friction: 10,
+            useNativeDriver: true,
+          }),
+          Animated.timing(cardOpacity, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
     }
   }, [visible]);
 

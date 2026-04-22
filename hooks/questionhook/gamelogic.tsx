@@ -15,12 +15,13 @@ import { toast } from "@/components/feedback/toast";
 
 import {
   broadcastPacket,
-  getSessionContext,
   handleIncomingPacket,
   sendPacketToHost,
   stopSession,
   subscribeToPackets,
 } from "@/service/lanGameService";
+// BOT-2 FIX: was require("@/service/BotEngine") at call sites — wrong path, runtime crash
+import { BotEngine } from "@/service/QuizBotEngine";
 import { MODES, NETWORK } from "@/constants/Networking";
 import { QuizEngine } from "@/service/QuizEngine";
 import {
@@ -48,10 +49,15 @@ export const useQuizGameLogic = () => {
   const router = useRouter();
   const difficulty = useSelector((state: RootState) => state.difficulty.level);
 
-  const session = getSessionContext();
-  const localPlayerId = session.localPlayerId || "host_id";
-  const isHost = session.isHost || localPlayerId === "host_id";
+  // BOT-1 FIX: was getSessionContext() from transport layer — not reactive, can be stale
+  // Using Redux state for stable, reactive identity
+  const sessionState = useSelector((state: RootState) => state.session);
+  const localPlayerId = sessionState.localPlayerId || "host_id";
+  const isHost = sessionState.isHost || localPlayerId === "host_id";
   const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
+
+  // BOT-5 FIX: guard against double stake deduction on hook remount
+  const stakeDeductedRef = useRef(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const postAnswerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -482,11 +488,13 @@ export const useQuizGameLogic = () => {
   }, [applyQuestionSync, getTimeLimitMs, isHost, isMultiplayer, question]);
 
   useEffect(() => {
-    if (isMultiplayer) {
-      const stake = QuizEngine.state.stake;
-      if (stake > 0 && questionIndex === 0) {
-        dispatch(updateCoins(-stake));
-      }
+    // BOT-5 FIX: use ref guard to prevent double-deduct if hook remounts
+    if (!isMultiplayer || stakeDeductedRef.current) return;
+    const stake = QuizEngine.state.stake;
+    if (stake > 0 && questionIndex === 0) {
+      stakeDeductedRef.current = true;
+      QuizEngine.state.stake = 0; // zero out so a re-mount can't re-deduct
+      dispatch(updateCoins(-stake));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -606,7 +614,6 @@ export const useQuizGameLogic = () => {
         }
 
         if (isMultiplayer) {
-          const { BotEngine } = require("@/service/BotEngine");
           BotEngine.reset();
           stopSession();
         }
@@ -751,7 +758,6 @@ export const useQuizGameLogic = () => {
           AudioEngine.stop("timer");
           syncLocalQuizStats(leaderboardData);
           if (isMultiplayer) {
-            const { BotEngine } = require("@/service/BotEngine");
             BotEngine.reset();
           }
           stopSession();
@@ -790,8 +796,9 @@ export const useQuizGameLogic = () => {
         clearTimer();
         clearPostAnswerTimeout();
         AudioEngine.stop("timer");
+        // SWEEP-1 FIX: was require("@/service/BotEngine") — wrong path, runtime crash.
+        // BotEngine is already imported at the top of this file.
         if (isMultiplayer) {
-          const { BotEngine } = require("@/service/BotEngine");
           BotEngine.reset();
         }
         stopSession();
@@ -840,6 +847,7 @@ export const useQuizGameLogic = () => {
     clearTimer,
     dispatch,
     isHost,
+    isMultiplayer,
     localPlayerId,
     leaderboardData,
     markPlayerFinished,
@@ -997,7 +1005,6 @@ export const useQuizGameLogic = () => {
             postAnswerTimeoutRef.current = flushTimer;
           });
 
-          const { BotEngine } = require("@/service/BotEngine");
           BotEngine.reset();
           QuizEngine.reset();
         } else {

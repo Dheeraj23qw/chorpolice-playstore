@@ -280,23 +280,19 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
   }, [lobby.players]);
 
   if (lobby.isTransitioning) {
+    // SWEEP-4: Navigation is handled by the useLobbyLogic packet listener (PROD-1 fix).
+    // This video is purely a loading buffer — onVideoEnd does nothing here.
     return (
       <VideoPlayerComponent
         videoIndex={1}
         onVideoEnd={() => {
-          const path =
-            lobby.gameType === "QUIZ" ? "/think-count-quiz" : "/chor-police-mp";
-          router.push({
-            pathname: path,
-            params: {
-              playerId: lobby.localPlayerId,
-              isHost: String(lobby.isHost),
-            },
-          } as any);
+          // Intentionally empty: navigation fires from the subscription listener
+          // at 600ms after the GAME_START packet, which is long before this video ends.
         }}
       />
     );
   }
+
 
   return (
     <KeyboardAvoidingView

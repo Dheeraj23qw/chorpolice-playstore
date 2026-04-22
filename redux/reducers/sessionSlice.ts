@@ -16,7 +16,28 @@ export type ConnectionStatus =
   | "CONNECTED"
   | "ERROR";
 
+export type GamePhase =
+  | "idle"
+  | "video_transition"
+  | "waiting"
+  | "dealing"
+  | "police_turn"
+  | "result"
+  | "finished"
+  | "round_video"
+  | "score_quiz"
+  | "final_result";
+
+export interface RoundRoleState {
+  roles: string[];
+  policeIndex: number | null;
+  kingIndex: number | null;
+  thiefIndex: number | null;
+  advisorIndex: number | null;
+}
+
 interface SessionState {
+  // ── Lobby / Connection ──
   roomCode: string | null;
   isHost: boolean;
   hostIp: string | null;
@@ -28,11 +49,38 @@ interface SessionState {
   localAvatarId: number;
   gameType: string | null;
   errorMessage: string | null;
+
+  // ── Game State (Chor Police) ──
+  gamePhase: GamePhase;
+  currentRound: number;
+  totalRounds: number;
+  roles: string[];
+  policeIndex: number | null;
+  kingIndex: number | null;
+  thiefIndex: number | null;
+  advisorIndex: number | null;
+  myRole: string | null;
+  isRoundActive: boolean;
+  stake: number;
 }
 
 const DEFAULT_LOCAL_PLAYER_ID = loadOrCreateClientPlayerId();
 const DEFAULT_LOCAL_PLAYER_NAME = loadUsername();
 const DEFAULT_LOCAL_AVATAR_ID = 1;
+
+const INITIAL_GAME_STATE = {
+  gamePhase: "idle" as GamePhase,
+  currentRound: 1,
+  totalRounds: 5,
+  roles: [] as string[],
+  policeIndex: null as number | null,
+  kingIndex: null as number | null,
+  thiefIndex: null as number | null,
+  advisorIndex: null as number | null,
+  myRole: null as string | null,
+  isRoundActive: false,
+  stake: 0,
+};
 
 const initialState: SessionState = {
   roomCode: null,
@@ -46,12 +94,15 @@ const initialState: SessionState = {
   localAvatarId: DEFAULT_LOCAL_AVATAR_ID,
   gameType: null,
   errorMessage: null,
+  ...INITIAL_GAME_STATE,
 };
 
 export const sessionSlice = createSlice({
   name: "session",
   initialState,
   reducers: {
+    // ── Lobby / Connection Reducers (unchanged) ──
+
     configureSessionState: (
       state,
       action: PayloadAction<{
@@ -142,6 +193,49 @@ export const sessionSlice = createSlice({
       }
     },
 
+    // ── Game State Reducers (NEW) ──
+
+    setGamePhase: (state, action: PayloadAction<GamePhase>) => {
+      state.gamePhase = action.payload;
+    },
+
+    setRoundState: (
+      state,
+      action: PayloadAction<{
+        round: number;
+        totalRounds?: number;
+        roles: string[];
+        policeIndex: number | null;
+        kingIndex: number | null;
+        thiefIndex: number | null;
+        advisorIndex: number | null;
+      }>,
+    ) => {
+      state.currentRound = action.payload.round;
+      if (action.payload.totalRounds !== undefined) {
+        state.totalRounds = action.payload.totalRounds;
+      }
+      state.roles = action.payload.roles;
+      state.policeIndex = action.payload.policeIndex;
+      state.kingIndex = action.payload.kingIndex;
+      state.thiefIndex = action.payload.thiefIndex;
+      state.advisorIndex = action.payload.advisorIndex;
+    },
+
+    setMyRole: (state, action: PayloadAction<string | null>) => {
+      state.myRole = action.payload;
+    },
+
+    setRoundActive: (state, action: PayloadAction<boolean>) => {
+      state.isRoundActive = action.payload;
+    },
+
+    setStake: (state, action: PayloadAction<number>) => {
+      state.stake = action.payload;
+    },
+
+    // ── Reset ──
+
     clearSession: (state) => ({
       ...initialState,
       localPlayerId: state.localPlayerId || initialState.localPlayerId,
@@ -149,6 +243,10 @@ export const sessionSlice = createSlice({
       localAvatarId: state.localAvatarId || initialState.localAvatarId,
       localIp: state.localIp,
     }),
+
+    resetGameState: (state) => {
+      Object.assign(state, INITIAL_GAME_STATE);
+    },
   },
 });
 
@@ -160,6 +258,13 @@ export const {
   setLobbyPlayers,
   setSessionError,
   setSessionNetworkInfo,
+  setGamePhase,
+  setRoundState,
+  setMyRole,
+  setRoundActive,
+  setStake,
+  resetGameState,
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;
+

@@ -8,13 +8,31 @@ import {
   setPlayerNames as setReduxPlayerNames,
   updatePlayerScores as updateReduxScores,
 } from "@/redux/reducers/playerReducer";
+import {
+  setGamePhase as setReduxGamePhase,
+  setMyRole as setReduxMyRole,
+  setRoundState as setReduxRoundState,
+  resetGameState,
+  type GamePhase,
+} from "@/redux/reducers/sessionSlice";
+import {
+  selectGamePhase,
+  selectIsHost,
+  selectLocalPlayerId,
+  selectMyRole,
+  selectPoliceIndex,
+  selectKingIndex,
+  selectRoles,
+  selectCurrentRound,
+  selectTotalRounds,
+  selectStake,
+} from "@/redux/selectors/sessionSelectors";
 import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
 import useRandomMessage from "../useRandomMessage";
 
 import {
   broadcastPacket,
-  getSessionContext,
   handleIncomingPacket,
   sendPacketToHost,
   stopSession,
@@ -30,21 +48,17 @@ import { revealAllCards } from "./helpers/revealAllCardsUtils";
 /**
  * --- CHOR POLICE MULTIPLAYER HOOK ---
  *
+ * ARCHITECTURE (Option B — Pragmatic Refactor):
+ * - All STATE reads come from Redux selectors (sessionSlice)
+ * - All STATE writes go through Redux dispatch
+ * - The packet listener is kept for SIDE EFFECTS only (animations, audio, popups)
+ * - ChorPoliceEngine.state is a write-through cache; Redux is authoritative
+ *
  * CRITICAL: The useEffect that listens to packets runs ONCE on mount.
  * All mutable values are accessed via REFS to prevent re-subscription
  * which would kill pending animation timers.
  */
 
-type GamePhase =
-  | "video_transition"
-  | "waiting"
-  | "dealing"
-  | "police_turn"
-  | "result"
-  | "finished"
-  | "round_video"
-  | "score_quiz"
-  | "final_result";
 type Role = "King" | "Police" | "Thief" | "Advisor";
 
 const D = "🎭 [CPHook]";
@@ -58,27 +72,49 @@ export const useChorPoliceMultiplayer = () => {
     playerId?: string;
     isHost?: string;
   }>();
-  const session = getSessionContext();
 
+  // ═══════════════════════════════════════════════════════
+  // RULE 10: ALL state reads come from Redux selectors
+  // ═══════════════════════════════════════════════════════
+  const reduxGamePhase = useSelector(selectGamePhase);
+  const reduxIsHost = useSelector(selectIsHost);
+  const reduxLocalPlayerId = useSelector(selectLocalPlayerId);
+  const reduxMyRole = useSelector(selectMyRole);
+  const reduxPoliceIndex = useSelector(selectPoliceIndex);
+  const reduxKingIndex = useSelector(selectKingIndex);
+  // FIX BUG-1: these were illegally called inside the return object — moved here
+  const reduxAdvisorIndex = useSelector((state: RootState) => state.session.advisorIndex);
+  const reduxThiefIndex = useSelector((state: RootState) => state.session.thiefIndex);
+  const reduxRoles = useSelector(selectRoles);
+  const reduxCurrentRound = useSelector(selectCurrentRound);
+  const reduxTotalRounds = useSelector(selectTotalRounds);
+  const reduxStake = useSelector(selectStake);
+
+  // Params override for initial identity (from navigation)
   const localPlayerId =
     typeof params.playerId === "string"
       ? params.playerId
-      : session.localPlayerId || "host_id";
+      : reduxLocalPlayerId || "host_id";
   const isHost =
     typeof params.isHost === "string"
       ? params.isHost === "true"
-      : session.isHost;
+      : reduxIsHost;
+
+  // ── UI-only local state (animations, popups — not game logic) ──
   const [nextPhase, setNextPhase] = useState<GamePhase>("score_quiz");
   const playTransition = useCallback((afterPhase: GamePhase) => {
     setNextPhase(afterPhase);
-    setGamePhase("video_transition");
-  }, []);
-  // ─── Card / Flip state ───
+    dispatch(setReduxGamePhase("video_transition"));
+  }, [dispatch]);
+
+  // ─── Card / Flip state (purely UI animation — NOT game logic) ───
   const [flipAnims, setFlipAnims] = useState<Animated.Value[]>(() =>
     Array(4)
       .fill(null)
       .map(() => new Animated.Value(0)),
   );
+  // FIX BUG-7: stable ref so handleCardClick useCallback doesn't get new ref every round
+  const flipAnimsRef = useRef(flipAnims);
   const [flippedStates, setFlippedStates] = useState<boolean[]>([
     false,
     false,
@@ -91,12 +127,8 @@ export const useChorPoliceMultiplayer = () => {
     false,
     false,
   ]);
-  const [roles, setRoles] = useState<string[]>([
-    "King",
-    "Advisor",
-    "Thief",
-    "Police",
-  ]);
+
+  // Player names derived from engine for display (populated on PUBLIC_REVEAL)
   const [playerNames, setPlayerNames] = useState<string[]>(() => {
     const players = ChorPoliceEngine.state.players;
     if (players.length === 4) {
@@ -106,13 +138,7 @@ export const useChorPoliceMultiplayer = () => {
   });
   const [isPlayButtonDisabled, setIsPlayButtonDisabled] = useState(false);
 
-  // ─── Role indices ───
-  const [policeIndex, setPoliceIndex] = useState<number | null>(null);
-  const [kingIndex, setKingIndex] = useState<number | null>(null);
-  const [advisorIndex, setAdvisorIndex] = useState<number | null>(null);
-  const [thiefIndex, setThiefIndex] = useState<number | null>(null);
-
-  // ─── Score / Round ───
+  // ─── Score display state (UI-only — engine is authoritative) ───
   const [playerScores, setPlayerScores] = useState<
     Array<{ playerId: string; playerName: string; scores: (number | string)[] }>
   >(() =>
@@ -122,13 +148,9 @@ export const useChorPoliceMultiplayer = () => {
       scores: [],
     })),
   );
-  const [round, setRound] = useState(1);
-  const [totalRounds, setTotalRounds] = useState(
-    ChorPoliceEngine.state.totalRounds || 5,
-  );
   const [showTableButton, setShowTableButton] = useState(false);
 
-  // ─── Popups ───
+  // ─── Popups (pure UI) ───
   const [popupIndex, setPopupIndex] = useState<number | null>(null);
   const [isDynamicPopUp, setIsDynamicPopUp] = useState(false);
   const [mediaId, setMediaId] = useState<number | null>(null);
@@ -144,23 +166,13 @@ export const useChorPoliceMultiplayer = () => {
   const [areCardsClickable, setAreCardsClickable] = useState(false);
   const [firstCardClicked, setFirstCardClicked] = useState(false);
 
-  // ─── Score Quiz state ───
+  // ─── Score Quiz state (UI-only) ───
   const [quizPlayerIndex, setQuizPlayerIndex] = useState(0);
   const [quizOptions, setQuizOptions] = useState<number[]>([]);
   const [quizOptionDisabled, setQuizOptionDisabled] = useState(false);
   const quizOptionDisabledRef = useRef(false); // ref to avoid stale closure in bot timeouts
   const [quizDone, setQuizDone] = useState(false);
   const [message, setMessage] = useState("");
-
-  // ─── Phase + Role ───
-  const [gamePhase, setGamePhase] = useState<GamePhase>("waiting");
-  const gamePhaseRef = useRef<GamePhase>(gamePhase);
-  // Keep gamePhaseRef always in sync
-  gamePhaseRef.current = gamePhase;
-  const [myRole, setMyRole] = useState<Role | null>(null);
-
-  const canSeeBoard = myRole === "Police" || myRole === null;
-  const canInteract = myRole === "Police";
 
   // ─── Exit modal ───
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
@@ -182,38 +194,51 @@ export const useChorPoliceMultiplayer = () => {
   const hasGuessedRef = useRef(false);
   const isQuittingRef = useRef(false);
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const myRoleRef = useRef<Role | null>(null);
   const roundStartPendingRef = useRef(false);
   const scoreQuizStartedRef = useRef(false);
   const currentQuizPlayerIdRef = useRef<string | null>(null);
   const stakeDeductedRef = useRef(false);
   const lastHostSignalAtRef = useRef(Date.now());
   const hostDisconnectHandledRef = useRef(false);
-  myRoleRef.current = myRole;
+  // FIX BUG-4,5: stable refs for values used inside the ONE-TIME packet listener
+  const isHostRef = useRef(isHost);
+  const localPlayerIdRef = useRef(localPlayerId);
 
   // ═══════════════════════════════════════════════════════
   // REFS for values accessed inside the packet listener.
-  // This prevents useEffect from re-running when state changes.
+  // These mirror Redux state so the ONE-TIME-MOUNT listener
+  // can access current values without re-subscribing.
   // ═══════════════════════════════════════════════════════
-  const policeIndexRef = useRef(policeIndex);
+  const gamePhaseRef = useRef<GamePhase>(reduxGamePhase);
+  const myRoleRef = useRef<string | null>(reduxMyRole);
+  const policeIndexRef = useRef(reduxPoliceIndex);
   const playerNamesRef = useRef(playerNames);
   const playerImagesRef = useRef(playerImages);
   const selectedImagesRef = useRef(selectedImages);
   const flippedStatesRef = useRef(flippedStates);
   const clickedCardsRef = useRef(clickedCards);
 
-  // Keep refs in sync with state
-  policeIndexRef.current = policeIndex;
+  // Keep refs in sync with Redux selectors and local state
+  gamePhaseRef.current = reduxGamePhase;
+  myRoleRef.current = reduxMyRole;
+  policeIndexRef.current = reduxPoliceIndex;
   playerNamesRef.current = playerNames;
   playerImagesRef.current = playerImages;
   selectedImagesRef.current = selectedImages;
   flippedStatesRef.current = flippedStates;
   clickedCardsRef.current = clickedCards;
+  flipAnimsRef.current = flipAnims;
+  isHostRef.current = isHost;
+  localPlayerIdRef.current = localPlayerId;
+
+  // Derived values from Redux
+  const canSeeBoard = reduxMyRole === "Police" || reduxMyRole === null;
+  const canInteract = reduxMyRole === "Police";
 
   // Random messages
   const pName =
-    policeIndex !== null && policeIndex >= 0
-      ? playerNames[policeIndex] || ""
+    reduxPoliceIndex !== null && reduxPoliceIndex >= 0
+      ? playerNames[reduxPoliceIndex] || ""
       : "";
   const randomMessageWin = useRandomMessage("win", pName);
   const randomMessageLose = useRandomMessage("lose", pName);
@@ -244,57 +269,9 @@ export const useChorPoliceMultiplayer = () => {
     return Array.from(randomOptions).sort(() => Math.random() - 0.5);
   }, []);
 
-  useEffect(() => {
-    if (gamePhase !== "score_quiz" || !isHost || scoreQuizStartedRef.current) {
-      return;
-    }
-
-    scoreQuizStartedRef.current = true;
-
-    const startTimer = setTimeout(() => {
-      queueScoreQuizTurn(0);
-    }, 300);
-    timerRefs.current.push(startTimer);
-  }, [gamePhase, isHost, queueScoreQuizTurn]);
-
-  useEffect(() => {
-    if (stakeDeductedRef.current) {
-      return;
-    }
-
-    const stake = ChorPoliceEngine.state.stake;
-    if (stake <= 0) {
-      return;
-    }
-
-    stakeDeductedRef.current = true;
-    dispatch(updateCoins(-stake));
-  }, [dispatch]);
-
-  useEffect(() => {
-    const players = ChorPoliceEngine.state.players;
-    if (!players.length) {
-      return;
-    }
-
-    setRound(ChorPoliceEngine.state.currentRound || 1);
-    setTotalRounds(ChorPoliceEngine.state.totalRounds || 5);
-    setPlayerNames((prev) =>
-      prev.some(Boolean) ? prev : players.map((player) => player.name),
-    );
-    setPlayerScores((prev) =>
-      prev.length > 0
-        ? prev
-        : players.map((player) => ({
-            playerId: player.id,
-            playerName: player.name,
-            scores: [],
-          })),
-    );
-  }, []);
-
-  function queueScoreQuizTurn(playerIndex: number) {
-    if (!isHost) {
+  // FIX BUG-3: was a plain function — caused the scoreQuiz useEffect to re-fire every render
+  const queueScoreQuizTurn = useCallback((playerIndex: number) => {
+    if (!isHostRef.current) {
       return;
     }
 
@@ -325,36 +302,91 @@ export const useChorPoliceMultiplayer = () => {
       playerIndex,
       options,
     });
-  }
+  }, [buildQuizOptions]);
+
+  useEffect(() => {
+    if (reduxGamePhase !== "score_quiz" || !isHost || scoreQuizStartedRef.current) {
+      return;
+    }
+
+    scoreQuizStartedRef.current = true;
+
+    const startTimer = setTimeout(() => {
+      queueScoreQuizTurn(0);
+    }, 300);
+    timerRefs.current.push(startTimer);
+  }, [reduxGamePhase, isHost, queueScoreQuizTurn]);
+
+  useEffect(() => {
+    if (stakeDeductedRef.current) {
+      return;
+    }
+
+    const stake = ChorPoliceEngine.state.stake;
+    if (stake <= 0) {
+      return;
+    }
+
+    stakeDeductedRef.current = true;
+    // FIX BUG-6: zero out engine stake so a re-mount cannot double-deduct coins
+    ChorPoliceEngine.state.stake = 0;
+    dispatch(updateCoins(-stake));
+  }, [dispatch]);
+
+  useEffect(() => {
+    const players = ChorPoliceEngine.state.players;
+    if (!players.length) {
+      return;
+    }
+
+    setPlayerNames((prev) =>
+      prev.some(Boolean) ? prev : players.map((player) => player.name),
+    );
+    setPlayerScores((prev) =>
+      prev.length > 0
+        ? prev
+        : players.map((player) => ({
+            playerId: player.id,
+            playerName: player.name,
+            scores: [],
+          })),
+    );
+  }, []);
 
   /* ═══════════════════════════════════════════════════════
      PACKET LISTENER — runs ONCE on mount. Never re-subscribes.
-     All mutable values accessed via refs.
+     RULE 6: All packets arrive via central handler (handleIncomingPacket →
+     PacketRouter → ChorPoliceEngine), which dispatches to Redux.
+     This listener is for SIDE EFFECTS ONLY: animations, audio, popups.
   ═══════════════════════════════════════════════════════ */
   useEffect(() => {
     const CP = MODES.CHOR_POLICE;
-    console.log(`${D} 📡 Subscribing to CP_* packets (ONE TIME)`);
+    console.log(`${D} 📡 Subscribing to CP_* packets (ONE TIME — side effects only)`);
 
     const unsubscribe = subscribeToPackets((packet) => {
       if (!packet?.type) {
         return;
       }
 
+      // FIX BUG-4,5: use refs, not closures, so stale values are never read
+      const _isHost = isHostRef.current;
+      const _localPlayerId = localPlayerIdRef.current;
+
       if (
-        !isHost &&
+        !_isHost &&
         (packet.type === NETWORK.PING || packet.type.startsWith("CP_"))
       ) {
         lastHostSignalAtRef.current = Date.now();
       }
 
-      /* ── 1. ROLE ASSIGNMENT ── */
-      if (packet.type === CP.ROLE_ASSIGN && packet.playerId === localPlayerId) {
+      /* ── 1. ROLE ASSIGNMENT (side effect: log only — Redux dispatch handled by engine) ── */
+      if (packet.type === CP.ROLE_ASSIGN && packet.playerId === _localPlayerId) {
         console.log(`${D} ═══════════════════════════════════`);
         console.log(
           `${D} 🎴 MY ROLE: ${packet.role} (idx: ${packet.playerIndex})`,
         );
         console.log(`${D} ═══════════════════════════════════`);
-        setMyRole(packet.role as Role);
+        // No setState — engine dispatches setMyRole to Redux
       }
 
       /* ── 2. PUBLIC REVEAL → ALL players see the SAME board animation ── */
@@ -376,10 +408,11 @@ export const useChorPoliceMultiplayer = () => {
         console.log(`${D}    King idx: ${kIdx}, Police idx: ${pIdx}`);
         console.log(`${D} ─────────────────────────────────`);
 
-        // Set state
+        // UI-only: set player names for display
         roundStartPendingRef.current = false;
         setPlayerNames(names);
-        // ✅ FIX: Dispatch names to Redux so OverlayPopUp can read them
+
+        // Dispatch names to Redux so OverlayPopUp can read them
         dispatch(
           setReduxPlayerNames(
             packet.players.map((player: any) => ({
@@ -389,13 +422,12 @@ export const useChorPoliceMultiplayer = () => {
             })),
           ),
         );
-        setRoles(isHost ? engineRoles : publicRoles);
-        setPoliceIndex(pIdx);
-        setKingIndex(kIdx);
-        setAdvisorIndex(isHost ? ChorPoliceEngine.state.advisorIndex : null);
-        setThiefIndex(isHost ? ChorPoliceEngine.state.thiefIndex : null);
-        setTotalRounds(ChorPoliceEngine.state.totalRounds);
-        setRound(packet.round);
+
+        // Redux: round state + game phase already dispatched by engine
+        // Set roles for UI display (host sees real roles, client sees public)
+        // Note: The engine dispatches setRoundState with full roles; the UI
+        // component uses reduxRoles for game logic, but we store display roles
+        // locally for the card rendering (host vs client view).
 
         if (packet.round === 1) {
           setPlayerScores(
@@ -408,12 +440,11 @@ export const useChorPoliceMultiplayer = () => {
         }
 
         setIsPlayButtonDisabled(true);
-        setGamePhase("dealing");
 
         const hostRole =
-          packet.policeId === localPlayerId
+          packet.policeId === _localPlayerId
             ? "Police"
-            : packet.kingId === localPlayerId
+            : packet.kingId === _localPlayerId
               ? "King"
               : myRoleRef.current;
         console.log(
@@ -423,39 +454,35 @@ export const useChorPoliceMultiplayer = () => {
         // ── ALL PLAYERS see the SAME animation ──
         AudioEngine.play("level", "gameplay");
 
-        // Step A: Flip King + Police (4000ms simultaneous)
-        setFlipAnims((currentAnims) => {
-          console.log(
-            `${D} 🃏 Flipping King (${kIdx}) + Police (${pIdx}) — 4s`,
-          );
-          flipCard(
-            kIdx,
-            1,
-            4000,
-            currentAnims,
-            setFlippedStates,
-            [false, false, false, false],
-            engineRoles,
-            [false, false, false, false],
-            setRound,
-            () => {},
-            dispatch,
-          );
-          flipCard(
-            pIdx,
-            1,
-            4000,
-            currentAnims,
-            setFlippedStates,
-            [false, false, false, false],
-            engineRoles,
-            [false, false, false, false],
-            setRound,
-            () => {},
-            dispatch,
-          );
-          return currentAnims;
-        });
+        // Step A: Flip King + Police (4000ms simultaneous) — use ref, not state
+        const _flipAnims = flipAnimsRef.current;
+        console.log(`${D} 🃏 Flipping King (${kIdx}) + Police (${pIdx}) — 4s`);
+        flipCard(
+          kIdx,
+          1,
+          4000,
+          _flipAnims,
+          setFlippedStates,
+          [false, false, false, false],
+          engineRoles,
+          [false, false, false, false],
+          () => {},
+          () => {},
+          dispatch,
+        );
+        flipCard(
+          pIdx,
+          1,
+          4000,
+          _flipAnims,
+          setFlippedStates,
+          [false, false, false, false],
+          engineRoles,
+          [false, false, false, false],
+          () => {},
+          () => {},
+          dispatch,
+        );
 
         // Step B: Police popup (4.5s)
         const t1 = setTimeout(() => {
@@ -475,54 +502,39 @@ export const useChorPoliceMultiplayer = () => {
 
         // Step D: ROLE SPLIT (11.5s) — NOW views diverge
         const t3 = setTimeout(() => {
+          // re-read role from ref in case Redux updated after closure was created
+          const resolvedRole = myRoleRef.current || hostRole;
           console.log(`${D} ═══════════════════════════════════`);
-          console.log(`${D} 🔀 ROLE SPLIT — ${hostRole} view activating`);
+          console.log(`${D} 🔀 ROLE SPLIT — ${resolvedRole} view activating`);
           console.log(`${D} ═══════════════════════════════════`);
 
           setPopupIndex(null);
-          setGamePhase("police_turn");
+          dispatch(setReduxGamePhase("police_turn"));
 
-          if (hostRole === "Police") {
+          if (resolvedRole === "Police") {
             console.log(`${D} ✅ Police: Cards NOW CLICKABLE`);
             setAreCardsClickable(true);
             setShowTableButton(true);
           } else {
             console.log(
-              `${D} 🔒 ${hostRole}: Switching to PRIVATE role card view`,
+              `${D} 🔒 ${resolvedRole}: Switching to PRIVATE role card view`,
             );
           }
         }, 11500);
         timerRefs.current.push(t3);
       }
 
-      /* ── 3. ROUND RESULT ── */
+      /* ── 3. ROUND RESULT (side effects: animations, audio, popups) ── */
       if (packet.type === CP.ROUND_RESULT) {
         console.log(`${D} ═══════════════════════════════════`);
         console.log(`${D} 📊 ROUND RESULT — correct: ${packet.correct}`);
         console.log(`${D} ═══════════════════════════════════`);
 
         roundStartPendingRef.current = false;
-        setGamePhase("result");
+        // gamePhase → "result" dispatched by engine
         setAreCardsClickable(false);
-        setRoles(packet.allRoles?.map((info: any) => info.role) ?? roles);
-        setPoliceIndex(
-          packet.allRoles?.findIndex((info: any) => info.role === "Police") ??
-            null,
-        );
-        setKingIndex(
-          packet.allRoles?.findIndex((info: any) => info.role === "King") ??
-            null,
-        );
-        setAdvisorIndex(
-          packet.allRoles?.findIndex((info: any) => info.role === "Advisor") ??
-            null,
-        );
-        setThiefIndex(
-          packet.allRoles?.findIndex((info: any) => info.role === "Thief") ??
-            null,
-        );
 
-        // Update scores
+        // Update UI-only score display
         setPlayerScores((prev) => {
           const updated = prev.map((p) => ({ ...p, scores: [...p.scores] }));
           packet.allRoles?.forEach((info: any) => {
@@ -544,19 +556,19 @@ export const useChorPoliceMultiplayer = () => {
           ...ChorPoliceEngine.state.roles,
         ];
 
-        setFlipAnims((currentAnims) => {
-          revealAllCards(
-            engineRoles,
-            currentFlipped,
-            currentAnims,
-            setFlippedStates,
-            currentClicked,
-            setRound,
-            () => {},
-            dispatch,
-          );
-          return currentAnims;
-        });
+        // FIX BUG-9: revealAllCards now returns its timer ID — push to timerRefs
+        // so it is cleared on unmount (prevents state-update-on-unmounted-component)
+        const revealTimer = revealAllCards(
+          engineRoles,
+          currentFlipped,
+          flipAnimsRef.current,
+          setFlippedStates,
+          currentClicked,
+          () => {},
+          () => {},
+          dispatch,
+        );
+        timerRefs.current.push(revealTimer);
 
         // Win/Lose sound
         const t4 = setTimeout(() => {
@@ -608,11 +620,11 @@ export const useChorPoliceMultiplayer = () => {
             setFirstCardClicked(false);
             setPopupIndex(null);
             setMessage("");
-            setMyRole(null);
-            setShowTableButton(false); // ✅ FIX: Reset so Play button shows after video
+            dispatch(setReduxMyRole(null));
+            setShowTableButton(false);
             hasGuessedRef.current = false;
-            // ✅ FIX: Play intro video between rounds instead of going straight to waiting
-            setGamePhase("round_video");
+            // Play intro video between rounds instead of going straight to waiting
+            dispatch(setReduxGamePhase("round_video"));
           }
         }, 8000);
         timerRefs.current.push(t6);
@@ -632,7 +644,7 @@ export const useChorPoliceMultiplayer = () => {
 
         scoreQuizStartedRef.current = true;
         currentQuizPlayerIdRef.current = packet.playerId;
-        setGamePhase("score_quiz");
+        dispatch(setReduxGamePhase("score_quiz"));
         setQuizDone(false);
         setQuizPlayerIndex(packet.playerIndex);
         setQuizOptions(Array.isArray(packet.options) ? packet.options : []);
@@ -648,7 +660,7 @@ export const useChorPoliceMultiplayer = () => {
           name: null,
         });
 
-        if (isHost && quizPlayer.isBot) {
+        if (_isHost && quizPlayer.isBot) {
           const botDelay = 1500 + Math.floor(Math.random() * 2000);
           const expectedPlayerId = packet.playerId;
           const options = Array.isArray(packet.options) ? packet.options : [];
@@ -676,7 +688,7 @@ export const useChorPoliceMultiplayer = () => {
         }
       }
 
-      if (packet.type === CP.SCORE_GUESS && isHost) {
+      if (packet.type === CP.SCORE_GUESS && _isHost) {
         const expectedPlayerId = currentQuizPlayerIdRef.current;
 
         if (!expectedPlayerId || packet.playerId !== expectedPlayerId) {
@@ -770,8 +782,7 @@ export const useChorPoliceMultiplayer = () => {
       /* ── 4. GAME END (completed) ── */
       if (packet.type === CP.GAME_END && packet.reason === "completed") {
         console.log(`${D} 🏁 GAME END — completed`);
-        // Use ONLY playTransition to avoid flash — playTransition sets phase to "video_transition"
-        // and queues "final_result" as nextPhase, which is applied after video ends.
+        // gamePhase → "final_result" dispatched by engine
         scoreQuizStartedRef.current = false;
         roundStartPendingRef.current = false;
         currentQuizPlayerIdRef.current = null;
@@ -803,7 +814,7 @@ export const useChorPoliceMultiplayer = () => {
       if (
         packet.type === CP.GAME_END &&
         packet.reason === "host_quit" &&
-        !isHost
+        !_isHost
       ) {
         const refund = packet.stake || 0;
         if (refund > 0) {
@@ -811,6 +822,7 @@ export const useChorPoliceMultiplayer = () => {
           toast.success("Refunded!", `${refund} coins returned.`);
         }
         stopSession();
+        dispatch(resetGameState());
         router.dismissAll();
         router.replace("/mode-select" as any);
       }
@@ -831,6 +843,7 @@ export const useChorPoliceMultiplayer = () => {
         ChorPoliceBotBehavior.reset();
         ChorPoliceEngine.reset();
         stopSession();
+        dispatch(resetGameState());
         dispatch(resetDifficulty());
         router.dismissAll();
         router.replace("/mode-select" as any);
@@ -839,10 +852,10 @@ export const useChorPoliceMultiplayer = () => {
 
       if (
         packet.type === NETWORK.PLAYER_LEAVE &&
-        packet.playerId !== localPlayerId &&
+        packet.playerId !== _localPlayerId &&
         gamePhaseRef.current !== "final_result"
       ) {
-        if (isHost) {
+        if (_isHost) {
           broadcastPacket({
             type: CP.GAME_END,
             reason: "player_left",
@@ -894,6 +907,7 @@ export const useChorPoliceMultiplayer = () => {
         4000,
       );
       stopSession();
+      dispatch(resetGameState());
       dispatch(resetDifficulty());
       requestAnimationFrame(() => {
         router.dismissAll();
@@ -942,12 +956,12 @@ export const useChorPoliceMultiplayer = () => {
   ═══════════════════════════════════════════════════════ */
   const handleCardClick = useCallback(
     (index: number) => {
-      if (myRole !== "Police") {
-        console.log(`${D} 🛡️ BLOCKED — role "${myRole}"`);
+      if (reduxMyRole !== "Police") {
+        console.log(`${D} 🛡️ BLOCKED — role "${reduxMyRole}"`);
         return;
       }
-      if (gamePhase !== "police_turn") {
-        console.log(`${D} 🛡️ BLOCKED — phase "${gamePhase}"`);
+      if (reduxGamePhase !== "police_turn") {
+        console.log(`${D} 🛡️ BLOCKED — phase "${reduxGamePhase}"`);
         return;
       }
       if (!areCardsClickable) {
@@ -965,7 +979,7 @@ export const useChorPoliceMultiplayer = () => {
 
       console.log(`${D} ═══════════════════════════════════`);
       console.log(
-        `${D} 🎯 POLICE GUESS: index ${index} (role: ${roles[index]})`,
+        `${D} 🎯 POLICE GUESS: index ${index} (role: ${reduxRoles[index]})`,
       );
       console.log(`${D} ═══════════════════════════════════`);
 
@@ -982,16 +996,17 @@ export const useChorPoliceMultiplayer = () => {
       };
 
       if (isHost) {
+        // FIX BUG-7: use ref so flipAnims is not in deps (new array ref each round)
         flipCard(
           index,
           1,
           1500,
-          flipAnims,
+          flipAnimsRef.current,
           setFlippedStates,
           flippedStates,
-          roles,
+          reduxRoles,
           clickedCards,
-          setRound,
+          () => {},
           () => {},
           dispatch,
         );
@@ -1010,13 +1025,13 @@ export const useChorPoliceMultiplayer = () => {
     [
       isHost,
       localPlayerId,
-      myRole,
-      gamePhase,
+      reduxMyRole,
+      reduxGamePhase,
+      reduxRoles,
       areCardsClickable,
       flippedStates,
       firstCardClicked,
-      flipAnims,
-      roles,
+      // FIX BUG-7: flipAnims removed — accessed via stable flipAnimsRef instead
       clickedCards,
       dispatch,
     ],
@@ -1024,11 +1039,11 @@ export const useChorPoliceMultiplayer = () => {
 
   const handleCardClickWithBounce = useCallback(
     (index: number) => {
-      if (myRole !== "Police" || !areCardsClickable) return;
+      if (reduxMyRole !== "Police" || !areCardsClickable) return;
       const { bounceAnimation } = require("@/Animations/animation");
       bounceAnims[index] && bounceAnimation(bounceAnims[index]).start();
     },
-    [bounceAnims, myRole, areCardsClickable],
+    [bounceAnims, reduxMyRole, areCardsClickable],
   );
 
   const getCardStyle = useCallback(
@@ -1043,8 +1058,8 @@ export const useChorPoliceMultiplayer = () => {
   const handleVideoEnd = useCallback(() => {
     console.log(`${D} 🎬 Round video ended — transitioning to waiting`);
     setIsPlayButtonDisabled(false);
-    setGamePhase("waiting");
-  }, []);
+    dispatch(setReduxGamePhase("waiting"));
+  }, [dispatch]);
 
   /* ═══════════════════════════════════════════════════════
      SCORE QUIZ — After all rounds, each player guesses their total score
@@ -1053,148 +1068,13 @@ export const useChorPoliceMultiplayer = () => {
      Refs used to avoid stale-closure bugs with bot timeouts.
   ═══════════════════════════════════════════════════════ */
 
-  // Core quiz answer processor — called by both human tap and bot auto-answer
-  const processQuizAnswer = useCallback(
-    (selectedScore: number, playerIdx: number) => {
-      const players = ChorPoliceEngine.state.players;
-      const scores = ChorPoliceEngine.state.scores;
-      const player = players[playerIdx];
-      if (!player) return;
+  // PROD-3: processQuizAnswer was dead code that directly mutated ChorPoliceEngine.state
+  // bypassing Redux (Rule 7 violation). The SCORE_GUESS → SCORE_GUESS_RESULT packet flow
+  // handles all scoring correctly for both humans and bots. Removed.
 
-      const correctScore = scores[player.id]?.totalScore ?? 0;
-      const isCorrect = selectedScore === correctScore;
-      const bonus = isCorrect ? 2000 : -2000;
-
-      // Apply bonus to engine scores
-      if (scores[player.id]) {
-        scores[player.id].totalScore += bonus;
-      }
-
-      // Update local playerScores
-      setPlayerScores((prev) =>
-        prev.map((p) =>
-          p.playerName === player.name
-            ? { ...p, scores: [...p.scores, bonus] }
-            : p,
-        ),
-      );
-
-      console.log(
-        `${D} 🎯 ${player.name} guessed ${selectedScore} (correct: ${correctScore}) → ${isCorrect ? "+2000 ✅" : "-2000 ❌"}`,
-      );
-
-      // Show feedback using existing DynamicOverlayPopUp
-      const pImg = playerImagesRef.current;
-      const sImg = selectedImagesRef.current;
-      AudioEngine.play(isCorrect ? "win" : "lose", "gameplay");
-      setMediaId(isCorrect ? 2 : 1);
-      setMediaType("gif");
-      setPlayerData({
-        image: pImg[sImg[playerIdx]]?.src ?? null,
-        message: isCorrect
-          ? `guessed correctly! +2000 🎉`
-          : `guessed wrong! -2000 😢`,
-        name: player.name,
-        imageType: pImg[sImg[playerIdx]]?.type ?? null,
-      });
-      setIsDynamicPopUp(true);
-
-      // Auto-dismiss popup → move to next player
-      const t1 = setTimeout(() => {
-        setIsDynamicPopUp(false);
-      }, 3500);
-      const t2 = setTimeout(() => {
-        setQuizPlayerIndex((prev) => prev + 1);
-      }, 4000);
-      timerRefs.current.push(t1, t2);
-    },
-    [],
-  );
-
-  // Generate quiz options when quizPlayerIndex changes during score_quiz phase
-  useEffect(() => {
-    return;
-    if (gamePhase !== "score_quiz") return;
-    if (quizDone) return;
-
-    const players = ChorPoliceEngine.state.players;
-    const scores = ChorPoliceEngine.state.scores;
-
-    if (quizPlayerIndex >= players.length) {
-      console.log(`${D} 🎯 All players finished quiz — ending game`);
-      setQuizDone(true);
-
-      const finalScores = players.map((p) => ({
-        playerName: p.name,
-        totalScore: scores[p.id]?.totalScore ?? 0,
-      }));
-      dispatch(updateReduxScores(finalScores));
-
-      const t = setTimeout(() => {
-        handleIncomingPacket({
-          type: MODES.CHOR_POLICE.GAME_END,
-          reason: "completed",
-        });
-      }, 1500);
-      timerRefs.current.push(t);
-      return;
-    }
-
-    const player = players[quizPlayerIndex];
-    const correctScore = scores[player.id]?.totalScore ?? 0;
-
-    console.log(
-      `${D} 🎯 Quiz for player ${player.name} (score: ${correctScore})`,
-    );
-
-    // --- YOUR CUSTOM LOGIC ---
-    const generateRandomScore = (baseScore: number) => {
-      const variations = [500, 800];
-      const variation =
-        variations[Math.floor(Math.random() * variations.length)];
-      return Math.max(
-        0,
-        baseScore + (Math.random() < 0.5 ? -variation : variation),
-      );
-    };
-
-    const randomOptions = new Set<number>();
-    randomOptions.add(correctScore);
-
-    while (randomOptions.size < 3) {
-      const randomScore = generateRandomScore(correctScore);
-      if (!randomOptions.has(randomScore)) {
-        randomOptions.add(randomScore);
-      }
-    }
-
-    const shuffled = Array.from(randomOptions).sort(() => Math.random() - 0.5);
-    // -------------------------
-
-    setQuizOptions(shuffled);
-    setQuizOptionDisabled(false);
-    quizOptionDisabledRef.current = false;
-    setIsDynamicPopUp(false);
-
-    // If this player is a bot, auto-answer after a delay
-    if (player.isBot) {
-      const currentIdx = quizPlayerIndex;
-      const botDelay = 1500 + Math.floor(Math.random() * 2000);
-      const t = setTimeout(() => {
-        if (quizOptionDisabledRef.current) return;
-        quizOptionDisabledRef.current = true;
-        setQuizOptionDisabled(true);
-
-        // Bots have 40% chance of guessing correctly
-        const botGuess =
-          Math.random() < 0.4
-            ? correctScore
-            : (shuffled.find((s) => s !== correctScore) ?? correctScore);
-        processQuizAnswer(botGuess, currentIdx);
-      }, botDelay);
-      timerRefs.current.push(t);
-    }
-  }, [gamePhase, quizPlayerIndex, quizDone, processQuizAnswer]);
+  // FIX BUG-2: Removed dead useEffect that had `return;` as its first line,
+  // making the entire body (80+ lines) unreachable. The SCORE_QUIZ_TURN
+  // packet path (handled above in the packet listener) is the correct flow.
 
   // Human player quiz handler
   const handleQuizOption = useCallback(
@@ -1246,6 +1126,7 @@ export const useChorPoliceMultiplayer = () => {
       timerRefs.current = [];
 
       stopSession();
+      dispatch(resetGameState());
       dispatch(resetDifficulty());
 
       requestAnimationFrame(() => {
@@ -1323,9 +1204,12 @@ export const useChorPoliceMultiplayer = () => {
       timerRefs.current = [];
       stopSession();
       dispatch(resetDifficulty());
+      // PROD-6 FIX: dispatch resetGameState AFTER navigation so UI never reads
+      // from an empty Redux store during the transition frame.
       requestAnimationFrame(() => {
         router.dismissAll();
         router.replace("/mode-select" as any);
+        setTimeout(() => dispatch(resetGameState()), 100);
       });
     } catch (e) {
       console.error(`${D} ❌ Exit error:`, e);
@@ -1358,16 +1242,19 @@ export const useChorPoliceMultiplayer = () => {
     flipAnims,
     flippedStates,
     clickedCards,
-    roles,
+    // RULE 10: Expose Redux-sourced roles instead of local state
+    roles: reduxRoles.length > 0 ? reduxRoles : ["King", "Advisor", "Thief", "Police"],
     playerNames,
     isPlayButtonDisabled,
-    policeIndex,
-    kingIndex,
-    advisorIndex,
-    thiefIndex,
+    // RULE 10: All role indices from Redux (FIX BUG-1: were illegally called here before)
+    policeIndex: reduxPoliceIndex,
+    kingIndex: reduxKingIndex,
+    advisorIndex: reduxAdvisorIndex,
+    thiefIndex: reduxThiefIndex,
     playerScores,
-    round,
-    totalRounds,
+    // RULE 10: Round info from Redux
+    round: reduxCurrentRound,
+    totalRounds: reduxTotalRounds,
     message,
     showTableButton,
     popupIndex,
@@ -1376,8 +1263,10 @@ export const useChorPoliceMultiplayer = () => {
     mediaType,
     playerData,
     areCardsClickable,
-    gamePhase,
-    myRole,
+    // RULE 10: Game phase from Redux
+    gamePhase: reduxGamePhase,
+    // RULE 10: My role from Redux
+    myRole: reduxMyRole as Role | null,
     popupTable,
     canSeeBoard,
     canInteract,
@@ -1403,6 +1292,7 @@ export const useChorPoliceMultiplayer = () => {
     localPlayerId,
     nextPhase,
     playTransition,
-    setGamePhase,
+    // RULE 7: setGamePhase now dispatches to Redux
+    setGamePhase: (phase: GamePhase) => dispatch(setReduxGamePhase(phase)),
   };
 };

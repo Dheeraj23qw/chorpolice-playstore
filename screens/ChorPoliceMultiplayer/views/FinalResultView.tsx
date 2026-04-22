@@ -9,7 +9,7 @@ import { WinnerSection } from "@/components/leaderBoardScreen/WinnerSection";
 import { Leaderboard } from "@/components/leaderBoardScreen/Leaderboard";
 import { playerImages } from "@/constants/playerData";
 import { Text } from "@/components/Text";
-import { getSessionContext } from "@/service/lanGameService";
+import { selectLocalPlayerId } from "@/redux/selectors/sessionSelectors";
 import { ActionButtons } from "@/screens/QuizScreen/components/renderButtons";
 
 const MemoizedLeaderboard = memo(Leaderboard);
@@ -55,7 +55,7 @@ const FinalResultView = ({ onExit }: any) => {
   const totalPot =
     ChorPoliceEngine.state.totalPot || ChorPoliceEngine.state.stake * 4;
 
-  const { localPlayerId } = getSessionContext();
+  const localPlayerId = useSelector(selectLocalPlayerId);
   const isLocalWinner = winner?.playerId === localPlayerId;
 
   return (

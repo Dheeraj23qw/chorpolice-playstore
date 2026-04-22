@@ -191,7 +191,14 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       return;
     }
 
-    if (packet.playerId === state.localPlayerId) {
+    // PROD-2 FIX: Only show ERROR if this was NOT a self-initiated leave.
+    // A self-leave has reason "player_quit" or comes from our own leaveLanLobby().
+    // Avoid showing "You were disconnected" when the player tapped Back.
+    if (
+      packet.playerId === state.localPlayerId &&
+      packet.reason !== "player_quit" &&
+      packet.reason !== "user_exit"
+    ) {
       store.dispatch(setConnectionStatus("ERROR"));
       store.dispatch(setSessionError("You were disconnected from the host."));
     }
@@ -412,6 +419,7 @@ export const leaveLanLobby = async () => {
     sendPacketToHost({
       type: NETWORK.PLAYER_LEAVE,
       playerId: state.localPlayerId,
+      reason: "player_quit", // SWEEP-3 FIX: needed so PROD-2 guard skips the error toast
     });
   }
 

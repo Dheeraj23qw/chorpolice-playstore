@@ -45,24 +45,26 @@ const GameModeScreen: React.FC = () => {
   }, [bgScale, dispatch, opacity, scale]);
 
   const contentStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isAnyModalOpen ? 0 : opacity.value, { duration: 220 }),
+    opacity: withTiming(isAnyModalOpen ? 0.15 : opacity.value, { duration: 250 }),
     transform: [
       {
-        scale: withTiming(isAnyModalOpen ? 0.96 : scale.value, {
-          duration: 220,
+        scale: withTiming(isAnyModalOpen ? 0.97 : scale.value, {
+          duration: 250,
           easing: Easing.out(Easing.ease),
         }),
       },
     ],
   }));
 
+  // UI-1 FIX: Background ALWAYS stays visible — never fade to 0.
+  // When a modal opens, only the content dims. The bg is the app's identity.
   const backgroundStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isAnyModalOpen ? 0 : 1, { duration: 220 }),
     transform: [{ scale: bgScale.value }],
   }));
 
-  const blackoutStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isAnyModalOpen ? 1 : 0, { duration: 220 }),
+  // A soft dark scrim over the bg when a modal is open (not full black)
+  const scrimStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(isAnyModalOpen ? 0.55 : 0, { duration: 250 }),
   }));
 
   return (
@@ -103,15 +105,12 @@ const GameModeScreen: React.FC = () => {
         />
       </Animated.View>
 
+      {/* Soft scrim over bg when modal is open — bg stays visible */}
       <Animated.View
         pointerEvents="none"
         style={[
-          {
-            position: "absolute",
-            inset: 0,
-            backgroundColor: "#000",
-          },
-          blackoutStyle,
+          { position: "absolute", inset: 0, backgroundColor: "#000" },
+          scrimStyle,
         ]}
       />
 

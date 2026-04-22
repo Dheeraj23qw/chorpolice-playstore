@@ -63,9 +63,10 @@ export const ChorPoliceBotBehavior = {
           /**
            * TIMING STRATEGY:
            * 1. ANIMATION_WAIT: Time for the cards to deal and the 'Police' popup to show.
+           *    PROD-11 FIX: 12000ms (was 11500ms) to give 500ms safety margin on slow Android.
            * 2. THINKING_TIME: Random delay to simulate a human looking at the screen.
            */
-          const ANIMATION_WAIT = 11500;
+          const ANIMATION_WAIT = 12000;
           const THINKING_TIME = 2000 + Math.floor(Math.random() * 3000);
           const totalDelay = ANIMATION_WAIT + THINKING_TIME;
 

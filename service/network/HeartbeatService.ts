@@ -1,6 +1,5 @@
 import { NETWORK } from "../../constants/Networking";
 import { updateDebugMetric } from "../observability/DebugService";
-import { GameSessionTransport } from "./GameSessionTransport";
 
 type HeartbeatCallbacks = {
   onPing: (packet: any) => void;
@@ -10,8 +9,6 @@ type HeartbeatCallbacks = {
 
 type ReconnectTracker = {
   missed: number;
-  reconnectAttempts: number;
-  isReconnecting: boolean;
 };
 
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
@@ -35,58 +32,24 @@ export const HeartbeatService = {
       Array.from(pongTrackers.entries()).forEach(([ip, tracker]) => {
         tracker.missed += 1;
 
-        // ── FAST RECONNECT ──
-        if (
-          tracker.missed >= 2 &&
-          !tracker.isReconnecting &&
-          tracker.reconnectAttempts < NETWORK.RECONNECT_ATTEMPTS
-        ) {
-          tracker.isReconnecting = true;
-          tracker.reconnectAttempts += 1;
-
-          if (__DEV__) {
-            console.log(
-              `[Heartbeat] Reconnect attempt ${tracker.reconnectAttempts}/${NETWORK.RECONNECT_ATTEMPTS} for ${ip}`,
-            );
-          }
-
-          const isAlive = GameSessionTransport.isConnectedTo(ip);
-
-          if (!isAlive) {
-            const didReconnect = GameSessionTransport.reconnectToHost();
-
-            if (!didReconnect && __DEV__) {
-              console.warn(`[Heartbeat] Reconnect failed for ${ip}`);
-            }
-          }
-
-          tracker.isReconnecting = false;
-        }
+        // NET-5 FIX: removed confused reconnectToHost() call from host's heartbeat loop.
+        // The host can't reconnect TO clients — it's a server. Clients auto-reconnect
+        // via the TCP close handler. The host only needs to detect staleness and evict.
 
         // ── AP ISOLATION DETECTION ──
-        if (
-          tracker.reconnectAttempts >= NETWORK.RECONNECT_ATTEMPTS &&
-          tracker.missed >= 2 + NETWORK.RECONNECT_ATTEMPTS
-        ) {
-          if (__DEV__) {
-            console.warn(`[Heartbeat] Possible AP Isolation detected`);
-          }
+        // After RECONNECT_ATTEMPTS worth of missed pings with no pong,
+        // the client is likely behind AP isolation (same Wi-Fi, no peer traffic)
+        if (tracker.missed === NETWORK.RECONNECT_ATTEMPTS + 1) {
+          if (__DEV__) console.warn(`[Heartbeat] Possible AP Isolation for ${ip}`);
           callbacks?.onApIsolation?.();
         }
 
         // ── STALE PEER DETECTION ──
-        if (
-          tracker.missed >= 3 + NETWORK.RECONNECT_ATTEMPTS &&
-          tracker.reconnectAttempts >= NETWORK.RECONNECT_ATTEMPTS
-        ) {
-          if (__DEV__) {
-            console.log(`[Heartbeat] Peer ${ip} declared stale`);
-          }
-
+        // After HEARTBEAT_MISS_THRESHOLD missed pings, the peer is declared gone.
+        if (tracker.missed >= NETWORK.HEARTBEAT_MISS_THRESHOLD + NETWORK.RECONNECT_ATTEMPTS) {
+          if (__DEV__) console.log(`[Heartbeat] Peer ${ip} declared stale after ${tracker.missed} missed pings`);
           callbacks?.onStale(ip);
-
-          // 🔥 IMPORTANT: remove to prevent repeated triggers
-          pongTrackers.delete(ip);
+          pongTrackers.delete(ip); // prevent repeated triggers
         }
       });
     }, HEARTBEAT_INTERVAL);
@@ -94,14 +57,8 @@ export const HeartbeatService = {
 
   addClient: (ip: string) => {
     if (!ip) return;
-
-    // prevent duplicate trackers
     if (!pongTrackers.has(ip)) {
-      pongTrackers.set(ip, {
-        missed: 0,
-        reconnectAttempts: 0,
-        isReconnecting: false,
-      });
+      pongTrackers.set(ip, { missed: 0 });
     }
   },
 
@@ -113,13 +70,8 @@ export const HeartbeatService = {
 
   resetTracker: (ip: string) => {
     if (!ip) return;
-
     const tracker = pongTrackers.get(ip);
-    if (!tracker) return;
-
-    tracker.missed = 0;
-    tracker.reconnectAttempts = 0;
-    tracker.isReconnecting = false;
+    if (tracker) tracker.missed = 0;
   },
 
   stop: () => {

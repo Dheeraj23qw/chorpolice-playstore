@@ -47,7 +47,6 @@
       "expo-audio",
       "expo-file-system",
       "expo-video",
-      "expo-keep-awake",
       [
         "expo-camera",
         {

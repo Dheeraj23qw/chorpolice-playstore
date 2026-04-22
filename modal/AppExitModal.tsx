@@ -23,23 +23,23 @@ export default function AppExitModal({
   useEffect(() => {
     if (visible) {
       tapped.current = false;
-
-      cardScale.setValue(0.92);
-      cardOpacity.setValue(0);
-
-      Animated.parallel([
-        Animated.spring(cardScale, {
-          toValue: 1,
-          tension: 110,
-          friction: 9,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cardOpacity, {
-          toValue: 1,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      requestAnimationFrame(() => {
+        cardScale.setValue(0.92);
+        cardOpacity.setValue(0);
+        Animated.parallel([
+          Animated.spring(cardScale, {
+            toValue: 1,
+            tension: 110,
+            friction: 9,
+            useNativeDriver: true,
+          }),
+          Animated.timing(cardOpacity, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
     }
   }, [visible]);
 
