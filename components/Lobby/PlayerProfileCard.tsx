@@ -106,7 +106,7 @@ export const PlayerProfileCard = ({
                 {/* image container */}
                 <View className="h-full w-full overflow-hidden rounded-full bg-black">
                   <Image
-                    source={getAvatarSource(lobby.selectedImages[0] || 1)}
+                    source={getAvatarSource(lobby.localAvatarId || 1)}
                     className="h-full w-full"
                     resizeMode="cover"
                   />
@@ -216,7 +216,7 @@ export const PlayerProfileCard = ({
             </View>
 
             <ImageGrid
-              selectedImages={lobby.selectedImages}
+              selectedImages={[lobby.localAvatarId || 1]}
               handleImageSelect={(id) => {
                 Haptics.notificationAsync(
                   Haptics.NotificationFeedbackType.Success,

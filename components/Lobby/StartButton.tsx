@@ -1,18 +1,22 @@
 import React from "react";
-import { View, Pressable } from "react-native";
-import { Text } from "@/components/Text";
+import { Pressable, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { Text } from "@/components/Text";
+
 export const StartButton = ({ lobby }: any) => {
-  /**
-   * Ready when lobby has 4 players (humans + bots combined).
-   * Bots auto-spawn at mount so count hits 4 within ~1s.
-   * When humans join, bots are auto-trimmed to keep count at 4.
-   */
-  const isReady = lobby.players.length >= 4;
+  const isReady = lobby.players.length === 4;
+  const humanCount = lobby.players.filter((player: any) => !player.isBot).length;
   const buttonText = isReady
-    ? "LETS GO!"
+    ? humanCount <= 1
+      ? "PLAY WITH BOTS"
+      : "START MATCH"
     : `WAITING (${lobby.players.length}/4)`;
+  const buttonHint = isReady
+    ? humanCount <= 1
+      ? "Jump in now. Friends can still replace bots next time."
+      : "Everyone is ready. Launch the match."
+    : "Preparing a full 4-seat room";
 
   return (
     <View className="absolute bottom-0 w-full px-6 pb-12 pt-10">
@@ -22,41 +26,45 @@ export const StartButton = ({ lobby }: any) => {
           onPress={() => lobby.setIsBettingModalVisible(true)}
           className="overflow-hidden rounded-3xl"
         >
-          {/* 🔥 Soft Glow */}
-          {isReady && (
+          {isReady ? (
             <View className="absolute inset-0 rounded-3xl bg-purple-500/15 blur-3xl" />
-          )}
+          ) : null}
 
-          {/* 🎯 Glass Button */}
           <LinearGradient
             colors={
               isReady
-                ? [
-                    "rgba(124,58,237,0.55)", // purple
-                    "rgba(79,70,229,0.45)", // indigo
-                  ]
+                ? ["rgba(124,58,237,0.55)", "rgba(79,70,229,0.45)"]
                 : ["rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)"]
             }
-            className={`items-center rounded-3xl border py-5 ${
+            className={`rounded-3xl border py-5 ${
               isReady ? "border-purple-300/30" : "border-white/10"
             }`}
           >
-            {/* ✨ Glass highlight overlay */}
             <View className="absolute inset-0 rounded-3xl bg-white/5" />
 
-            {/* 📝 Text */}
-            <Text
-              className={`font-main-bold tracking-wide ${
-                isReady ? "text-white" : "text-white/40"
-              }`}
-            >
-              {buttonText}
-            </Text>
+            <View className="items-center px-5">
+              <Text
+                className={`font-main-bold tracking-wide ${
+                  isReady ? "text-white" : "text-white/40"
+                }`}
+              >
+                {buttonText}
+              </Text>
+              <Text
+                className={`mt-1 text-center text-[11px] ${
+                  isReady ? "text-white/70" : "text-white/30"
+                }`}
+              >
+                {buttonHint}
+              </Text>
+            </View>
           </LinearGradient>
         </Pressable>
       ) : (
         <View className="items-center py-5">
-          <Text className="text-white/30">Select a room from above</Text>
+          <Text className="text-center text-white/30">
+            Waiting for the host to start the match
+          </Text>
         </View>
       )}
     </View>

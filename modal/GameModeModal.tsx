@@ -1,13 +1,13 @@
 import React from "react";
-import { View, Modal, Pressable, TouchableOpacity } from "react-native";
+import { Modal, Pressable, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { rf } from "@/utils/responsive";
-import { Text } from "../components/Text";
-import WifiHint from "../components/WifiHint";
+import { Text } from "@/components/Text";
+import WifiHint from "@/components/WifiHint";
 
 interface GameModeModalProps {
   isVisible: boolean;
@@ -20,15 +20,14 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
   onClose,
   gameType,
 }) => {
-  const handleSelection = (isHost: boolean) => {
+  const handleSelection = (mode: "host" | "join") => {
     onClose();
     router.push({
-      pathname: "/lobby",
+      pathname: mode === "host" ? "/host" : "/join",
       params: {
-        isHost: isHost ? "true" : "false",
         gameType,
       },
-    });
+    } as any);
   };
 
   return (
@@ -67,12 +66,12 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
                 CHOOSE MODE
               </Text>
               <Text className="mt-1 text-sm text-white/40">
-                Play with friends or join others
+                Host a LAN room or join with QR or code
               </Text>
             </View>
 
             <TouchableOpacity
-              onPress={() => handleSelection(true)}
+              onPress={() => handleSelection("host")}
               className="mb-4 overflow-hidden rounded-3xl"
             >
               <LinearGradient
@@ -91,7 +90,7 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
                     HOST GAME
                   </Text>
                   <Text className="text-sm text-white/40">
-                    Create your own lobby
+                    Create a room with bots ready to fill empty slots
                   </Text>
                 </View>
                 <Ionicons name="arrow-forward" size={rf(2)} color="#C084FC" />
@@ -99,7 +98,7 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => handleSelection(false)}
+              onPress={() => handleSelection("join")}
               className="overflow-hidden rounded-3xl"
             >
               <LinearGradient
@@ -108,7 +107,7 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
               >
                 <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/20">
                   <Ionicons
-                    name="search-outline"
+                    name="scan-outline"
                     size={rf(3)}
                     color="#60A5FA"
                   />
@@ -118,7 +117,7 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
                     JOIN GAME
                   </Text>
                   <Text className="text-sm text-white/40">
-                    Find nearby players
+                    Scan the QR code or enter the room code manually
                   </Text>
                 </View>
                 <Ionicons name="arrow-forward" size={rf(2)} color="#60A5FA" />

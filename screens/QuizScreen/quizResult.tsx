@@ -17,7 +17,7 @@ import { useQuizReward } from "@/features/gameStats/useQuizRewards";
 import { ActionButtons } from "./components/renderButtons";
 import { StandingsDropdown } from "./components/StandingsDropdown";
 import { QuizEngine } from "@/service/QuizEngine";
-import { BotEngine } from "@/service/BotEngine";
+import { BotEngine } from "@/service/QuizBotEngine";
 import { getSessionContext, stopSession } from "@/service/lanGameService";
 
 export default function QuizResult() {

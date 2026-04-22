@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Image, Pressable } from "react-native";
+import { Image, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+
 import { Text } from "@/components/Text";
 
 export const PlayerListItem = ({
@@ -11,60 +11,69 @@ export const PlayerListItem = ({
   lobby,
   getAvatarSource,
 }: any) => {
+  const isBot = Boolean(item.isBot);
+  const isLocalPlayer = item.id === lobby.localPlayerId;
+  const isHostSlot = index === 0;
+  const accentColors: [string, string] = isBot
+    ? ["rgba(14,165,233,0.16)", "rgba(14,165,233,0.04)"]
+    : isHostSlot
+      ? ["rgba(245,158,11,0.18)", "rgba(245,158,11,0.04)"]
+      : ["rgba(124,58,237,0.16)", "rgba(124,58,237,0.04)"];
+  const subtitle = isBot
+    ? "Standby bot will step out when a real friend joins"
+    : isHostSlot
+      ? "Room owner"
+      : "Connected player";
+
   return (
     <Animated.View
-      entering={FadeInUp.delay(index * 100).springify()}
+      entering={FadeInUp.delay(index * 80).springify()}
       className="mb-4 overflow-hidden rounded-3xl"
     >
-      {/* 🔥 Glow Background */}
       <View className="absolute inset-0 rounded-3xl bg-purple-500/10 blur-2xl" />
 
-      {/* 🎯 Glass Card */}
       <LinearGradient
-        colors={["rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)"]}
+        colors={accentColors}
         className="flex-row items-center rounded-3xl border border-white/10 p-4"
       >
-        {/* 🧑 Avatar */}
-        <View className="mr-4">
-          <View className="h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-            {lobby.isHost ? (
-              <Image
-                source={getAvatarSource(item.avatarId)}
-                className="h-12 w-12 rounded-xl"
-              />
-            ) : (
-              <Ionicons name="globe-outline" size={22} color="white" />
-            )}
-          </View>
+        <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+          <Image
+            source={getAvatarSource(item.avatarId)}
+            className="h-12 w-12 rounded-xl"
+          />
         </View>
 
-        {/* 📄 Info */}
         <View className="flex-1">
-          <Text className="font-main-bold text-white">
-            {lobby.isHost ? item.name : (item.lobbyName || item.name || item.deviceName)}
-          </Text>
-
-          <Text className="mt-1 text-[11px] text-white/40">
-            {lobby.isHost ? "Player" : `${item.ip}${item.playerCount ? ` · ${item.playerCount}/4 players` : ""}`}
+          <Text className="font-main-bold text-white">{item.name}</Text>
+          <Text className="mt-1 text-[11px] text-white/45">{subtitle}</Text>
+          <Text className="mt-1 text-[10px] uppercase tracking-[2px] text-white/30">
+            Slot {index + 1} of {lobby.maxPlayers}
           </Text>
         </View>
 
-        {/* 🚀 JOIN BUTTON */}
-        {!lobby.isHost && (
-          <Pressable
-            onPress={() => lobby.handleJoin(item)}
-            className="overflow-hidden rounded-xl"
-          >
-            <LinearGradient
-              colors={["#7C3AED", "#4F46E5"]}
-              className="items-center px-4 py-2"
-            >
-              <Text className="font-main-bold text-xs tracking-wide text-white">
-                JOIN
+        <View className="items-end gap-2">
+          {isHostSlot ? (
+            <View className="rounded-full border border-amber-400/30 bg-amber-400/15 px-3 py-1">
+              <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-amber-200">
+                Host
               </Text>
-            </LinearGradient>
-          </Pressable>
-        )}
+            </View>
+          ) : null}
+          {isLocalPlayer ? (
+            <View className="rounded-full border border-emerald-400/30 bg-emerald-400/15 px-3 py-1">
+              <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-emerald-200">
+                You
+              </Text>
+            </View>
+          ) : null}
+          {isBot ? (
+            <View className="rounded-full border border-sky-400/30 bg-sky-400/15 px-3 py-1">
+              <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-sky-200">
+                Bot
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </LinearGradient>
     </Animated.View>
   );

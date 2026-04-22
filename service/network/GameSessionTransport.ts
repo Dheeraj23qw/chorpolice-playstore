@@ -76,9 +76,7 @@ const framePacket = (packet: any): Buffer => {
  * Extracts complete framed packets from a buffer.
  * Returns [extractedPackets, remainingBuffer].
  */
-const extractFrames = (
-  buffer: Buffer,
-): [PacketEnvelope[], Buffer] => {
+const extractFrames = (buffer: Buffer): [PacketEnvelope[], Buffer] => {
   const packets: PacketEnvelope[] = [];
   let offset = 0;
 
@@ -135,11 +133,23 @@ const extractFrames = (
 // ── TCP Server (Host) ──
 
 const startTcpServer = () => {
+  // 1. Prevent multiple server instances in the same session
   if (tcpServer) return;
 
   tcpServer = TcpSocket.createServer((socket: any) => {
+    // 2. Resolve Remote IP immediately
     const remoteIp: string =
       socket.remoteAddress?.replace("::ffff:", "") || "unknown";
+
+    // 3. CRITICAL: Reject connections that can't be identified
+    // This prevents the "unknown-ip" bot bug
+    if (remoteIp === "unknown") {
+      if (__DEV__)
+        console.warn("[TCP Transport] Rejecting connection with unknown IP");
+      socket.destroy();
+      return;
+    }
+
     const remotePort: number = socket.remotePort || 0;
 
     if (__DEV__) {
@@ -153,53 +163,51 @@ const startTcpServer = () => {
     state.clientBuffers.set(remoteIp, Buffer.alloc(0));
 
     socket.on("data", (data: any) => {
-      const rawBuffer = Buffer.isBuffer(data)
-        ? data
-        : Buffer.from(data);
-
-      const existingBuffer = state.clientBuffers.get(remoteIp) || Buffer.alloc(0);
+      const rawBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+      const existingBuffer =
+        state.clientBuffers.get(remoteIp) || Buffer.alloc(0);
       const combined = Buffer.concat([existingBuffer, rawBuffer]);
       const [packets, remaining] = extractFrames(combined);
       state.clientBuffers.set(remoteIp, remaining);
 
       for (const envelope of packets) {
-        if (__DEV__) {
-          console.log(
-            `[TCP Transport] Incoming ${envelope.packet?.type ?? "UNKNOWN"} from ${remoteIp}`,
-          );
-        }
         packetHandler?.(envelope.packet, remoteIp);
       }
     });
 
     socket.on("error", (error: any) => {
-      if (__DEV__) {
-        console.warn(`[TCP Transport] Client socket error (${remoteIp}):`, error?.message);
-      }
+      if (__DEV__)
+        console.warn(
+          `[TCP Transport] Socket error (${remoteIp}):`,
+          error?.message,
+        );
     });
 
     socket.on("close", () => {
-      if (__DEV__) {
-        console.log(`[TCP Transport] Client disconnected: ${remoteIp}`);
-      }
       state.clientSockets.delete(remoteIp);
       state.clientBuffers.delete(remoteIp);
-      // Note: we don't remove from clientIps/playerIdByIp here
-      // because the HeartbeatService handles stale peer removal
     });
   });
 
   tcpServer.on("error", (error: any) => {
-    console.error("[TCP Transport] Server error:", error);
-  });
-
-  tcpServer.listen({ port: SESSION_PORT, host: "0.0.0.0" }, () => {
-    if (__DEV__) {
-      console.log(`[TCP Transport] Server listening on 0.0.0.0:${SESSION_PORT}`);
+    // 4. Handle the "Address already in use" error
+    if (error.code === "EADDRINUSE") {
+      console.error(
+        "[TCP Transport] Port busy (EADDRINUSE). Old session still active.",
+      );
+    } else {
+      console.error("[TCP Transport] Server error:", error);
     }
   });
-};
 
+  tcpServer.listen(
+    { port: SESSION_PORT, host: "0.0.0.0", reuseAddress: true }, // reuseAddress is key
+    () => {
+      if (__DEV__)
+        console.log(`[TCP Transport] Server listening on port ${SESSION_PORT}`);
+    },
+  );
+};
 // ── TCP Client ──
 
 const connectToHost = (hostIp: string) => {
@@ -222,7 +230,9 @@ const connectToHost = (hostIp: string) => {
     () => {
       clearTimeout(connectionTimeout);
       if (__DEV__) {
-        console.log(`[TCP Transport] Connected to host: ${hostIp}:${SESSION_PORT}`);
+        console.log(
+          `[TCP Transport] Connected to host: ${hostIp}:${SESSION_PORT}`,
+        );
       }
     },
   );
@@ -239,9 +249,7 @@ const connectToHost = (hostIp: string) => {
   }, 5000);
 
   clientSocket.on("data", (data: any) => {
-    const rawBuffer = Buffer.isBuffer(data)
-      ? data
-      : Buffer.from(data);
+    const rawBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
 
     state.hostBuffer = Buffer.concat([state.hostBuffer, rawBuffer]);
     const [packets, remaining] = extractFrames(state.hostBuffer);
@@ -295,15 +303,14 @@ const safeSend = (socket: any, framedData: Buffer, label: string) => {
 // ── Public API ──
 
 export const GameSessionTransport = {
-  start: ({
+  start: async ({
     isHost,
     localPlayerId,
     hostIp = null,
     onPacket,
   }: SessionConfig) => {
     // Clean up any previous session
-    GameSessionTransport.stop();
-
+    await GameSessionTransport.stop();
     state.isHost = isHost;
     state.localPlayerId = localPlayerId;
     state.hostIp = hostIp;
@@ -316,57 +323,78 @@ export const GameSessionTransport = {
     // Client connects lazily when setHostIp is called
   },
 
-  stop: () => {
-    // Stop server
-    if (tcpServer) {
-      try {
-        tcpServer.close();
-      } catch {
-        // ignore close races
-      }
-      tcpServer = null;
-    }
+  stop: async (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      // 1. Handle Server Shutdown
+      if (tcpServer) {
+        if (__DEV__) console.log("[TCP Transport] Stopping active server...");
+        try {
+          // KICK EVERYONE IMMEDIATELY so the port closes faster
+          state.clientSockets.forEach((socket) => socket.destroy());
+          state.clientSockets.clear();
 
-    // Close all client connections on the server side
-    state.clientSockets.forEach((socket) => {
-      try {
-        socket.destroy();
-      } catch {
-        // ignore
+          tcpServer.removeAllListeners();
+
+          tcpServer.close(() => {
+            if (__DEV__) console.log("[TCP Transport] Server port released.");
+            tcpServer = null;
+
+            // Resolve now so start() can proceed
+            performCleanup();
+            resolve(true);
+          });
+        } catch (e) {
+          console.warn("[TCP Transport] Error closing server:", e);
+          tcpServer = null;
+          performCleanup();
+          resolve(false);
+        }
+      } else {
+        performCleanup();
+        resolve(true);
+      }
+
+      // 2. Encapsulated State Cleanup
+      function performCleanup() {
+        // Close all client connections on the server side
+        state.clientSockets.forEach((socket) => {
+          try {
+            socket.destroy();
+          } catch {
+            /* ignore */
+          }
+        });
+
+        // Close client-side connection
+        if (clientSocket) {
+          try {
+            clientSocket.destroy();
+          } catch {
+            /* ignore */
+          }
+          clientSocket = null;
+        }
+
+        packetHandler = null;
+        state.isHost = false;
+        state.localPlayerId = "host_id";
+        state.hostIp = null;
+        state.clientSockets.clear();
+        state.clientIps.clear();
+        state.playerIdByIp.clear();
+        state.ipByPlayerId.clear();
+        state.clientBuffers.clear();
+        state.hostBuffer = Buffer.alloc(0);
+        updateDebugMetric("hostIp", "N/A");
       }
     });
-
-    // Close client-side connection
-    if (clientSocket) {
-      try {
-        clientSocket.destroy();
-      } catch {
-        // ignore
-      }
-      clientSocket = null;
-    }
-
-    packetHandler = null;
-    state.isHost = false;
-    state.localPlayerId = "host_id";
-    state.hostIp = null;
-    state.clientSockets.clear();
-    state.clientIps.clear();
-    state.playerIdByIp.clear();
-    state.ipByPlayerId.clear();
-    state.clientBuffers.clear();
-    state.hostBuffer = Buffer.alloc(0);
-    updateDebugMetric("hostIp", "N/A");
   },
-
   setHostIp: (hostIp: string | null) => {
     state.hostIp = hostIp;
     updateDebugMetric("hostIp", hostIp ?? "N/A");
 
     if (__DEV__) {
-      console.log(
-        `[TCP Transport] Session host IP set to ${hostIp ?? "N/A"}`,
-      );
+      console.log(`[TCP Transport] Session host IP set to ${hostIp ?? "N/A"}`);
     }
 
     // Client: connect to host when IP is set

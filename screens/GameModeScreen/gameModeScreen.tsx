@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 
 import { AppDispatch } from "@/redux/store";
-import { BotEngine } from "@/service/BotEngine";
+import { BotEngine } from "@/service/QuizBotEngine";
 import { AudioEngine } from "@/audio/audioEngine";
 import { setIsGameReset } from "@/redux/reducers/playerReducer";
 
@@ -67,7 +67,9 @@ const GameModeScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-black">
-      <Animated.View style={[{ position: "absolute", inset: 0 }, backgroundStyle]}>
+      <Animated.View
+        style={[{ position: "absolute", inset: 0 }, backgroundStyle]}
+      >
         <Animated.Image
           source={require("@/assets/images/bg/image.png")}
           className="absolute h-full w-full"

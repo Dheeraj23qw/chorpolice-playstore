@@ -14,9 +14,7 @@
       "backgroundColor": "#050508"
     },
     "icon": "./assets/images/adaptive-icon.png",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": { "policy": "appVersion" },
     "assetBundlePatterns": [
       "assets/images/*",
       "assets/audio/*",
@@ -48,6 +46,14 @@
       "expo-font",
       "expo-audio",
       "expo-file-system",
+      "expo-video",
+      "expo-keep-awake",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "The app uses your camera to scan LAN room QR codes."
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -73,15 +79,22 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "compiler": "r8",
-            "extraCompilerArgs": ["-Xjvm-default=all"],
+            "usesCleartextTraffic": true,
+            "extraManifestAttributes": {
+              "android:usesPermissionFlags": "neverForLocation"
+            },
             "permissions": [
               "android.permission.INTERNET",
               "android.permission.ACCESS_NETWORK_STATE",
               "android.permission.ACCESS_WIFI_STATE",
-              "android.permission.CHANGE_WIFI_MULTICAST_STATE",
               "android.permission.ACCESS_FINE_LOCATION",
-              "android.permission.ACCESS_COARSE_LOCATION",
-              "android.permission.NEARBY_WIFI_DEVICES"
+              "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+              "android.permission.NEARBY_WIFI_DEVICES",
+              "android.permission.CAMERA",
+              "android.permission.WAKE_LOCK",
+              "android.permission.ACCESS_LOCAL_NETWORK",
+              "android.permission.BATTERY_STATS",
+              "android.permission.VIBRATE"
             ],
             "packagingOptions": {
               "pickFirst": ["**/libc++_shared.so"],
@@ -95,8 +108,7 @@
             }
           }
         }
-      ],
-      "expo-video"
+      ]
     ]
   }
 }

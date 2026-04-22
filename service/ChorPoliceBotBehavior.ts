@@ -2,14 +2,12 @@ import { MODES } from "../constants/Networking";
 import { handleIncomingPacket, subscribeToPackets } from "./lanGameService";
 
 /**
- * --- CHOR POLICE BOT BEHAVIOR ---
- * SRP: Handles ONLY bot AI for the Chor Police game.
- * Separate from BotEngine (which handles lobby spawning).
- *
- * Bot logic:
- * - Listens for CP_ROLE_ASSIGN packets.
- * - If a bot is Police → auto-sends CP_POLICE_GUESS after a realistic delay.
- * - All other roles (King, Advisor, Thief) are passive — no action needed.
+ * @module ChorPoliceBotBehavior
+ * @description Handles AI decision-making for the "Chor Police" game mode.
+ * * Logic Flow:
+ * 1. Waits for PUBLIC_REVEAL (where King and Police are shown).
+ * 2. If a Bot is assigned 'Police', it calculates which cards are hidden.
+ * 3. After a natural delay (animation + thinking), it submits a guess.
  */
 
 interface BotPlayer {
@@ -26,107 +24,72 @@ export const ChorPoliceBotBehavior = {
   _lastRevealKey: null as string | null,
 
   /**
-   * Initialize bot behavior listeners for a set of bot players.
-   * Call this AFTER ChorPoliceEngine.init() and BEFORE the first round.
+   * @function init
+   * @description Initializes listeners for bot behavior.
+   * Should be called by the Host when the Chor Police game starts.
    */
   init: (bots: BotPlayer[]): void => {
     ChorPoliceBotBehavior.reset();
     ChorPoliceBotBehavior._bots = [...bots];
 
-    if (bots.length === 0) {
-      console.log("🤖 [CPBots] No bots to initialize.");
-      return;
-    }
-
-    console.log(
-      `🤖 [CPBots] Initializing behavior for ${bots.length} bots: [${bots.map((b) => b.name).join(", ")}]`,
-    );
+    if (bots.length === 0) return;
 
     const botIds = new Set(bots.map((b) => b.id));
 
     const unsub = subscribeToPackets((packet) => {
       const CP = MODES.CHOR_POLICE;
 
-      // When a bot is assigned the Police role, auto-guess after a delay
       if (packet.type === CP.PUBLIC_REVEAL) {
-        const revealKey = `${packet.round ?? 0}:${packet.policeId ?? "unknown"}`;
-        if (ChorPoliceBotBehavior._lastRevealKey === revealKey) {
-          return;
-        }
-
+        // Unique key per round/police to prevent duplicate triggers
+        const revealKey = `round_${packet.round ?? 0}_pol_${packet.policeId ?? "na"}`;
+        if (ChorPoliceBotBehavior._lastRevealKey === revealKey) return;
         ChorPoliceBotBehavior._lastRevealKey = revealKey;
+
+        // Clear any stale timers
         ChorPoliceBotBehavior._guessTimers.forEach(clearTimeout);
         ChorPoliceBotBehavior._guessTimers = [];
 
-        const policeId = packet.policeId;
+        const { policeId, kingIndex, policeIndex } = packet;
 
-        console.log(
-          `🤖 [CPBots] PUBLIC_REVEAL received — Police ID: ${policeId}`,
-        );
-        console.log(
-          `🤖 [CPBots]   Is Police a bot? ${botIds.has(policeId) ? "YES ✅" : "NO ❌"}`,
-        );
-
-        // Is the police a bot?
+        // CHECK: Is the assigned Police one of our bots?
         if (botIds.has(policeId)) {
-          const botName = bots.find((b) => b.id === policeId)?.name || "Bot";
+          const botPlayer = bots.find((b) => b.id === policeId);
 
-          // Determine which indices are hidden (not King, not Police)
-          const kingIdx = packet.kingIndex;
-          const policeIdx = packet.policeIndex;
+          // Identify the two indices that are NOT the King or Police (Thief and Advisor)
           const hiddenIndices = [0, 1, 2, 3].filter(
-            (i) => i !== kingIdx && i !== policeIdx,
+            (i) => i !== kingIndex && i !== policeIndex,
           );
 
-          console.log(`🤖 [CPBots]   Bot "${botName}" IS the Police!`);
-          console.log(
-            `🤖 [CPBots]   King idx: ${kingIdx}, Police idx: ${policeIdx}`,
-          );
-          console.log(
-            `🤖 [CPBots]   Hidden indices (Thief/Advisor): [${hiddenIndices.join(", ")}]`,
-          );
-
-          // IMPORTANT: The dealing animation takes 11.5s (flip + popups).
-          // Bot must wait for that to finish, then add a realistic "thinking" delay.
-          // ✅ FIX: Increased delay so Thief/Advisor players see their RoleRevealView
-          // for a meaningful amount of time (7.5-12.5s) before the bot guesses.
-          // Total: 19-24 seconds after PUBLIC_REVEAL
-          const ANIMATION_DURATION = 11500;
-          const THINKING_DELAY = 1800 + Math.floor(Math.random() * 2600);
-          const delay = ANIMATION_DURATION + THINKING_DELAY;
-          console.log(
-            `🤖 [CPBots]   Will guess in ${delay}ms (${ANIMATION_DURATION}ms anim + ${THINKING_DELAY}ms thinking)`,
-          );
+          /**
+           * TIMING STRATEGY:
+           * 1. ANIMATION_WAIT: Time for the cards to deal and the 'Police' popup to show.
+           * 2. THINKING_TIME: Random delay to simulate a human looking at the screen.
+           */
+          const ANIMATION_WAIT = 11500;
+          const THINKING_TIME = 2000 + Math.floor(Math.random() * 3000);
+          const totalDelay = ANIMATION_WAIT + THINKING_TIME;
 
           const timer = setTimeout(() => {
-            // Safety: Are bots still active?
-            if (ChorPoliceBotBehavior._bots.length === 0) {
-              console.log(
-                `🤖 [CPBots]   ⚠️ Bot was cleared before guess — aborting`,
-              );
+            // Safety: Ensure bot is still in the session
+            if (!ChorPoliceBotBehavior._bots.some((b) => b.id === policeId))
               return;
-            }
 
-            // 50/50 random pick between the 2 hidden cards
+            // Randomly guess one of the two hidden cards
             const pick =
               hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
-
-            console.log(`🤖 [CPBots] ═══════════════════════════════════`);
-            console.log(`🤖 [CPBots] BOT "${botName}" GUESSING index ${pick}`);
-            console.log(`🤖 [CPBots] ═══════════════════════════════════`);
 
             handleIncomingPacket({
               type: CP.POLICE_GUESS,
               targetIndex: pick,
               playerId: policeId,
             });
-          }, delay);
+
+            console.log(
+              `🤖 [CPBot] ${botPlayer?.name} guessed index ${pick} after ${totalDelay}ms`,
+            );
+          }, totalDelay);
 
           ChorPoliceBotBehavior._guessTimers.push(timer);
-        } else {
-          console.log(
-            `🤖 [CPBots]   Police is a HUMAN player — bots idle (passive roles)`,
-          );
         }
       }
     });
@@ -135,17 +98,15 @@ export const ChorPoliceBotBehavior = {
   },
 
   /**
-   * Full reset — clears listeners, timers, and bot references.
+   * @function reset
+   * @description Stops all AI logic and clears memory.
+   * CRITICAL: Call this when the game ends or host leaves.
    */
   reset: (): void => {
-    console.log("🤖 [CPBots] Resetting bot behavior...");
-
-    // Clear guess timers
     ChorPoliceBotBehavior._guessTimers.forEach(clearTimeout);
     ChorPoliceBotBehavior._guessTimers = [];
     ChorPoliceBotBehavior._lastRevealKey = null;
 
-    // Unsubscribe packet listeners
     ChorPoliceBotBehavior._listeners.forEach((unsub) => unsub());
     ChorPoliceBotBehavior._listeners = [];
 

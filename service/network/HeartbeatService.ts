@@ -18,13 +18,13 @@ let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 const pongTrackers: Map<string, ReconnectTracker> = new Map();
 let callbacks: HeartbeatCallbacks | null = null;
 
+const HEARTBEAT_INTERVAL = NETWORK.HEARTBEAT_INTERVAL || 3000;
+
 export const HeartbeatService = {
   start: (nextCallbacks: HeartbeatCallbacks) => {
     callbacks = nextCallbacks;
 
-    if (heartbeatInterval) {
-      return;
-    }
+    if (heartbeatInterval) return;
 
     updateDebugMetric("isHeartbeatActive", true);
 
@@ -33,14 +33,11 @@ export const HeartbeatService = {
       callbacks?.onPing(packet);
 
       Array.from(pongTrackers.entries()).forEach(([ip, tracker]) => {
-        const nextMissed = tracker.missed + 1;
-        tracker.missed = nextMissed;
+        tracker.missed += 1;
 
-        // ── Fast Reconnect Logic ──
-        // If we've missed pings but haven't exhausted reconnect tries,
-        // attempt to re-establish the TCP connection before declaring stale.
+        // ── FAST RECONNECT ──
         if (
-          nextMissed >= 2 &&
+          tracker.missed >= 2 &&
           !tracker.isReconnecting &&
           tracker.reconnectAttempts < NETWORK.RECONNECT_ATTEMPTS
         ) {
@@ -49,70 +46,80 @@ export const HeartbeatService = {
 
           if (__DEV__) {
             console.log(
-              `[Heartbeat] Fast Reconnect attempt ${tracker.reconnectAttempts}/${NETWORK.RECONNECT_ATTEMPTS} for ${ip}`,
+              `[Heartbeat] Reconnect attempt ${tracker.reconnectAttempts}/${NETWORK.RECONNECT_ATTEMPTS} for ${ip}`,
             );
           }
 
-          // Check if the TCP socket is still alive
           const isAlive = GameSessionTransport.isConnectedTo(ip);
 
           if (!isAlive) {
-            // Socket is dead — this may be AP Isolation if we're still on Wi-Fi
-            if (
-              tracker.reconnectAttempts >= NETWORK.RECONNECT_ATTEMPTS
-            ) {
-              callbacks?.onApIsolation?.();
+            const didReconnect = GameSessionTransport.reconnectToHost();
+
+            if (!didReconnect && __DEV__) {
+              console.warn(`[Heartbeat] Reconnect failed for ${ip}`);
             }
           }
 
           tracker.isReconnecting = false;
         }
 
-        // ── Stale Peer Declaration ──
-        // Only declare stale after exhausting all reconnect attempts
+        // ── AP ISOLATION DETECTION ──
         if (
-          nextMissed >= 3 + NETWORK.RECONNECT_ATTEMPTS &&
+          tracker.reconnectAttempts >= NETWORK.RECONNECT_ATTEMPTS &&
+          tracker.missed >= 2 + NETWORK.RECONNECT_ATTEMPTS
+        ) {
+          if (__DEV__) {
+            console.warn(`[Heartbeat] Possible AP Isolation detected`);
+          }
+          callbacks?.onApIsolation?.();
+        }
+
+        // ── STALE PEER DETECTION ──
+        if (
+          tracker.missed >= 3 + NETWORK.RECONNECT_ATTEMPTS &&
           tracker.reconnectAttempts >= NETWORK.RECONNECT_ATTEMPTS
         ) {
           if (__DEV__) {
-            console.log(
-              `[Heartbeat] Peer ${ip} declared stale after ${nextMissed} missed pings and ${tracker.reconnectAttempts} reconnect attempts.`,
-            );
+            console.log(`[Heartbeat] Peer ${ip} declared stale`);
           }
+
           callbacks?.onStale(ip);
+
+          // 🔥 IMPORTANT: remove to prevent repeated triggers
+          pongTrackers.delete(ip);
         }
       });
-    }, 3000);
+    }, HEARTBEAT_INTERVAL);
   },
 
   addClient: (ip: string) => {
-    if (!ip) {
-      return;
+    if (!ip) return;
+
+    // prevent duplicate trackers
+    if (!pongTrackers.has(ip)) {
+      pongTrackers.set(ip, {
+        missed: 0,
+        reconnectAttempts: 0,
+        isReconnecting: false,
+      });
     }
-    pongTrackers.set(ip, {
-      missed: 0,
-      reconnectAttempts: 0,
-      isReconnecting: false,
-    });
   },
 
   removeClient: (ip: string) => {
-    if (!ip) {
-      return;
-    }
+    if (!ip) return;
+
     pongTrackers.delete(ip);
   },
 
   resetTracker: (ip: string) => {
-    if (!ip || !pongTrackers.has(ip)) {
-      return;
-    }
-    // Reset everything — successful pong means connection is alive
-    pongTrackers.set(ip, {
-      missed: 0,
-      reconnectAttempts: 0,
-      isReconnecting: false,
-    });
+    if (!ip) return;
+
+    const tracker = pongTrackers.get(ip);
+    if (!tracker) return;
+
+    tracker.missed = 0;
+    tracker.reconnectAttempts = 0;
+    tracker.isReconnecting = false;
   },
 
   stop: () => {
@@ -121,8 +128,9 @@ export const HeartbeatService = {
       heartbeatInterval = null;
     }
 
-    callbacks = null;
     pongTrackers.clear();
+    callbacks = null;
+
     updateDebugMetric("isHeartbeatActive", false);
   },
 };
