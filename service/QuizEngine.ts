@@ -90,6 +90,12 @@ export const QuizEngine = {
     QuizEngine.state.stake = stake;
     QuizEngine.state.totalPot = stake * players.length;
 
+    if (__DEV__) {
+      console.log(
+        `[QuizEngine] Session config — totalRounds: ${totalRounds}, difficulty: ${difficulty}, stake: ${stake}, players: ${players.length}`,
+      );
+    }
+
     players.forEach((player) => {
       QuizEngine.state.playerScores[player.id] = {
         id: player.id,
@@ -178,9 +184,11 @@ export const QuizEngine = {
     const isHost = GameSessionTransport.getSnapshot().isHost;
 
     if (QuizEngine.state.currentRound > QuizEngine.state.totalRounds) {
-      console.log(
-        `[QuizEngine] Game over; ignoring late answer from: ${playerId}`,
-      );
+      if (__DEV__) {
+        console.log(
+          `[QuizEngine] Game over; ignoring late answer from: ${playerId} (round ${QuizEngine.state.currentRound} > totalRounds ${QuizEngine.state.totalRounds})`,
+        );
+      }
       return;
     }
 
@@ -299,6 +307,12 @@ export const QuizEngine = {
   },
 
   completeRound: () => {
+    if (__DEV__) {
+      console.log(
+        `[QuizEngine] completeRound — currentRound: ${QuizEngine.state.currentRound}, totalRounds: ${QuizEngine.state.totalRounds}`,
+      );
+    }
+
     const summaryPacket = {
       type: "TC_ROUND_SUMMARY",
       round: QuizEngine.state.currentRound,

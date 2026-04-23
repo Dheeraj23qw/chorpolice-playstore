@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { MODES, NETWORK } from "@/constants/Networking";
+import { NUM_QUESTIONS } from "@/constants/quizConstants";
 import { DifficultyOption } from "@/constants/difficultyConfig";
 import { toast } from "@/components/feedback/toast";
 import {
@@ -475,7 +476,10 @@ export const useLobbyLogic = (
         // BOT-4 FIX: BotEngine.start() was never called — bots never answered quiz questions
         BotEngine.activeBots = botPlayers;
         BotEngine.start(); // registers QUESTION_SYNC listener so bots auto-answer
-        QuizEngine.init(finalPlayers, difficulty, stake, selectedRounds || 5);
+        // Quiz always uses NUM_QUESTIONS as round count (not selectedRounds,
+        // which is for ChorPolice). selectedRounds defaults to 1 in Redux
+        // which would limit the quiz to a single question.
+        QuizEngine.init(finalPlayers, difficulty, stake, NUM_QUESTIONS);
         broadcastPacket(
           {
             type: MODES.THINK_AND_COUNT.GAME_START,
