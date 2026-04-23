@@ -72,8 +72,7 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
   if (isGameReset || !isPopUp || !mediaData) return null;
 
   return (
-    // UI-2 FIX: was solid white (bg-white) — now dark translucent so game bg stays visible
-    <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
+    <View className="absolute bottom-0 left-0 right-0 top-0 flex-1 bg-white">
       <View style={styles.container}>
         {/* Decorative Elements */}
         <View style={styles.topGlass} />
@@ -101,9 +100,13 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
           )}
           <View style={{ marginLeft: 16, flexShrink: 1 }}>
             {playerData.name ? (
-              <Text style={styles.nameText} className="font-main-bold">{playerData.name}</Text>
+              <Text style={styles.nameText} className="font-main-bold">
+                {playerData.name}
+              </Text>
             ) : null}
-            <Text style={styles.messageText} className="font-main-bold">{playerData.message}</Text>
+            <Text style={styles.messageText} className="font-main-bold">
+              {playerData.message}
+            </Text>
           </View>
         </View>
 
@@ -128,13 +131,17 @@ const DynamicOverlayPopUp: React.FC<OverlayPopUpProps> = ({
           />
 
           <View style={styles.descriptionBox}>
-            <Text style={styles.descriptionText} className="font-main-bold">{mediaData.description}</Text>
+            <Text style={styles.descriptionText} className="font-main-bold">
+              {mediaData.description}
+            </Text>
           </View>
         </View>
 
         {/* Tap Hint */}
         <View style={[styles.tapHint, { opacity: showCloseText ? 0.4 : 0 }]}>
-          <Text style={styles.tapText} className="font-main-bold">TAP TO CONTINUE</Text>
+          <Text style={styles.tapText} className="font-main-bold">
+            TAP TO CONTINUE
+          </Text>
         </View>
       </View>
     </View>
@@ -146,7 +153,7 @@ export default DynamicOverlayPopUp;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(5, 5, 8, 0.96)",
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -158,7 +165,7 @@ const styles = StyleSheet.create({
     left: "-10%",
     width: "120%",
     height: "40%",
-    backgroundColor: "rgba(99,102,241,0.06)",
+    backgroundColor: "#f4f4f5",
     opacity: 0.5,
     transform: [{ rotate: "-15deg" }],
     borderRadius: 100,
@@ -170,7 +177,7 @@ const styles = StyleSheet.create({
     right: "-20%",
     width: "100%",
     height: "30%",
-    backgroundColor: "rgba(99,102,241,0.04)",
+    backgroundColor: "rgba(244,244,245,0.4)",
     transform: [{ rotate: "10deg" }],
     borderRadius: 100,
   },
@@ -180,12 +187,12 @@ const styles = StyleSheet.create({
     top: 80,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.9)",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 50,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "#f4f4f5",
     elevation: 5,
   },
 
@@ -198,14 +205,14 @@ const styles = StyleSheet.create({
   },
 
   nameText: {
-    color: "#ffffff",
+    color: "#18181b",
     fontSize: 18,
     textTransform: "uppercase",
     marginBottom: 2,
   },
 
   messageText: {
-    color: "rgba(255,255,255,0.7)",
+    color: "#52525b",
     fontSize: 14,
     textTransform: "uppercase",
   },
@@ -220,15 +227,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.95)",
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
     elevation: 6,
   },
 
   descriptionText: {
-    color: "rgba(255,255,255,0.9)",
+    color: "#18181b",
     textAlign: "center",
     fontSize: 18,
     textTransform: "uppercase",
