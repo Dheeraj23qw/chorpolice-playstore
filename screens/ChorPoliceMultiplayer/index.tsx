@@ -35,7 +35,7 @@ const ChorPoliceMultiplayerScreen = () => {
     if (g.gamePhase === "video_transition") {
       return (
         <VideoPlayerComponent
-          videoIndex={1}
+          index={1}
           onVideoEnd={() => {
             // Move to whichever phase was queued
             g.setGamePhase(g.nextPhase);

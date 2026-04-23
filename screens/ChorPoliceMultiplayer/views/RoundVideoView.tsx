@@ -8,7 +8,7 @@ import { View } from "react-native";
 const RoundVideoView = ({ g }: any) => {
   return (
     <View style={{ flex: 1, backgroundColor: "#050508" }}>
-      <VideoPlayerComponent videoIndex={1} onVideoEnd={g.handleVideoEnd} />
+      <VideoPlayerComponent index={1} onVideoEnd={g.handleVideoEnd} />
     </View>
   );
 };

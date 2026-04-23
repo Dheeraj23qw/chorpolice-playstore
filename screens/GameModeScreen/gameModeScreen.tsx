@@ -2,22 +2,20 @@ import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
+import { MotiView, MotiImage } from "moti";
 
 import { AppDispatch } from "@/redux/store";
 import { AudioEngine } from "@/audio/audioEngine";
 import { setIsGameReset } from "@/redux/reducers/playerReducer";
 
-import HeaderSection from "@/components/GameModeScreen/HeaderSection";
-import UserProfilecard from "@/components/GameModeScreen/UserProfilecard";
-import GameModeList from "@/components/GameModeScreen/GameModeList";
+import {
+  HeaderSection,
+  UserProfilecard,
+  GameModeList,
+} from "@/components/GameModeScreen";
+
 import UnlockedAwardModal from "@/modal/AchievmentModal";
 import { hasUnclaimedAwards } from "@/features/awards/awardsSlice";
 import { BotEngine } from "@/service/QuizBotEngine";
@@ -27,59 +25,45 @@ const GameModeScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
 
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.98);
-  const bgScale = useSharedValue(1.1);
+  const showAwards = useSelector(hasUnclaimedAwards);
 
   useEffect(() => {
     BotEngine.prepareEngine(10);
     AudioEngine.stopAllExceptQuiz();
-    opacity.value = withTiming(1, { duration: 600 });
-    scale.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.exp),
-    });
-    bgScale.value = withTiming(1, {
-      duration: 1200,
-      easing: Easing.out(Easing.ease),
-    });
+
     const timer = setTimeout(() => dispatch(setIsGameReset(false)), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  const contentStyle = useAnimatedStyle(() => ({
-    opacity: isAnyModalOpen ? withTiming(0, { duration: 300 }) : opacity.value,
-    transform: [{ scale: isAnyModalOpen ? 0.95 : scale.value }],
-  }));
-
-  const bgStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: bgScale.value }],
-  }));
-
   return (
     <View className="flex-1 bg-black">
-      {/* 1. BACKGROUND */}
-      <Animated.Image
+      {/* 1. BACKGROUND (Moti animated) */}
+      <MotiImage
         source={require("@/assets/images/bg/image.png")}
         className="absolute h-full w-full"
         resizeMode="cover"
-        style={bgStyle}
+        from={{ scale: 1.1 }}
+        animate={{ scale: 1 }}
+        transition={{
+          type: "timing",
+          duration: 1200,
+        }}
       />
 
-      {/* 2. FULL-SCREEN ATMOSPHERIC FADE (Indigo Edition) */}
+      {/* 2. KEEP YOUR GRADIENTS EXACTLY SAME */}
       <BlurView intensity={25} tint="dark" className="absolute h-full w-full" />
+
       <LinearGradient
         colors={[
-          "rgba(15, 23, 42, 0.4)", // Subtle top dark
-          "transparent", // Clear mid
-          "rgba(99, 102, 241, 0.2)", // Mid-bottom indigo
-          "rgba(0, 0, 0, 0.95)", // Deep bottom focus
+          "rgba(15, 23, 42, 0.4)",
+          "transparent",
+          "rgba(99, 102, 241, 0.2)",
+          "rgba(0, 0, 0, 0.95)",
         ]}
         locations={[0, 0.25, 0.65, 1]}
         className="absolute h-full w-full"
       />
 
-      {/* 3. CENTER GLOW (Indigo Neon) */}
       <LinearGradient
         colors={[
           "rgba(99, 102, 241, 0.22)",
@@ -89,17 +73,51 @@ const GameModeScreen: React.FC = () => {
         className="absolute h-[800px] w-[800px] self-center rounded-full opacity-90 blur-3xl"
       />
 
-      {/* 4. CONTENT */}
-      <Animated.View
-        style={[{ paddingTop: insets.top }, contentStyle]}
+      {/* 3. CONTENT WITH STAGGER */}
+      <MotiView
         className="flex-1"
+        style={{ paddingTop: insets.top }}
+        animate={{
+          opacity: isAnyModalOpen ? 0 : 1,
+          scale: isAnyModalOpen ? 0.96 : 1,
+        }}
+        transition={{
+          type: "timing",
+          duration: 300,
+        }}
       >
-        <HeaderSection />
-        <UserProfilecard />
-        <GameModeList onModalToggle={setIsAnyModalOpen} />
-      </Animated.View>
+        {/* Header */}
+        <MotiView
+          from={{ opacity: 0, translateY: -20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ delay: 100, duration: 500 }}
+        >
+          <HeaderSection />
+        </MotiView>
 
-      {useSelector(hasUnclaimedAwards) && <UnlockedAwardModal />}
+        {/* Profile */}
+        <MotiView
+          from={{ opacity: 0, translateY: 20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ delay: 200, duration: 500 }}
+        >
+          <UserProfilecard />
+        </MotiView>
+
+        <View className="flex-1">
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 300, duration: 500 }}
+            className="flex-1"
+          >
+            <GameModeList onModalToggle={setIsAnyModalOpen} />
+          </MotiView>
+        </View>
+      </MotiView>
+
+      {/* 4. MODAL */}
+      {showAwards && <UnlockedAwardModal />}
     </View>
   );
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocalSearchParams } from "expo-router";
 
-import LobbyScreen from "./LobbyScreen";
+import LobbyScreen from "./LobbyScreen/LobbyScreen";
 
 const HostScreen = () => {
   const params = useLocalSearchParams();

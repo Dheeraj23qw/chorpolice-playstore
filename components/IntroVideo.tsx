@@ -2,11 +2,9 @@ import React, { memo, useEffect, useMemo, useRef } from "react";
 import { Platform, View } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 
-import { assetLoader } from "@/service/assetLoader";
-
 interface VideoPlayerComponentProps {
-  videoIndex: number;
-  onVideoEnd: () => void;
+  index: number;
+  onVideoEnd?: () => void; // Added back as optional for flexibility
 }
 
 const VIDEO_SOURCES: Record<number, any> = {
@@ -14,56 +12,59 @@ const VIDEO_SOURCES: Record<number, any> = {
 };
 
 const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
-  ({ videoIndex, onVideoEnd }) => {
-    const videoSource = VIDEO_SOURCES[videoIndex] || VIDEO_SOURCES[1];
-    const hasEndedRef = useRef(false);
-    const androidVideoViewProps = useMemo(
-      () =>
-        Platform.OS === "android"
-          ? ({ surfaceType: "surfaceView" } as const)
-          : {},
-      [],
+  ({ index, onVideoEnd }) => {
+    // 1. Resolve source based on index
+    const videoSource = useMemo(
+      () => VIDEO_SOURCES[index] || VIDEO_SOURCES[1],
+      [index],
     );
 
+    // Using a Ref for the callback to prevent the Effect from re-running
+    // unnecessarily if the parent component re-renders the function.
+    const onVideoEndRef = useRef(onVideoEnd);
+    onVideoEndRef.current = onVideoEnd;
+
+    // 2. Initialize the player.
     const player = useVideoPlayer(videoSource, (instance) => {
       instance.loop = false;
       instance.play();
     });
 
+    // 3. Handle Lifecycle and Events
     useEffect(() => {
-      hasEndedRef.current = false;
-      void assetLoader.preloadBackgroundAssets();
-
       const subscription = player.addListener("playToEnd", () => {
-        if (hasEndedRef.current) {
-          return;
-        }
-
-        hasEndedRef.current = true;
-        onVideoEnd();
+        onVideoEndRef.current?.();
       });
 
       return () => {
-        subscription.remove();
+        subscription.remove(); // Unsubscribe first
         try {
           player.pause();
         } catch {
-          // ignore player cleanup errors during fast refresh
+          // Safe silence for native release
         }
       };
-    }, [onVideoEnd, player]);
+    }, [player]);
+
+    // 4. Android performance tuning
+    const androidProps = useMemo(
+      () =>
+        Platform.OS === "android"
+          ? ({ surfaceType: "textureView" } as const)
+          : {},
+      [],
+    );
 
     return (
       <View className="flex-1 bg-white">
         <VideoView
-          key={`intro-video-${videoIndex}`}
+          key={`video-view-${index}`}
           player={player}
           style={{ flex: 1 }}
           contentFit="contain"
           nativeControls={false}
-          fullscreenOptions={{ allowsFullscreen: false } as any}
           allowsPictureInPicture={false}
-          {...androidVideoViewProps}
+          {...androidProps}
         />
       </View>
     );

@@ -1,6 +1,6 @@
 import React from "react";
 import { Stack } from "expo-router";
-import LobbyScreen from "@/screens/LobbyScreen";
+import LobbyScreen from "@/screens/LobbyScreen/LobbyScreen";
 
 /**
  * --- LOBBY ROUTE ENTRY ---
@@ -9,13 +9,13 @@ import LobbyScreen from "@/screens/LobbyScreen";
 export default function LobbyRoute() {
   return (
     <>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           headerShown: false,
           gestureEnabled: false,
-        }} 
+        }}
       />
-      
+
       <LobbyScreen />
     </>
   );
