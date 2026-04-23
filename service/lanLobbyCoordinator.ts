@@ -4,6 +4,7 @@ import {
   configureSessionState,
   SessionPlayer,
   setConnectionStatus,
+  setLobbyStage,
   setLobbyPlayers,
   setLocalSessionIdentity,
   setSessionError,
@@ -36,6 +37,11 @@ import { GameSessionTransport } from "./network/GameSessionTransport";
 let unsubscribePackets: (() => void) | null = null;
 let joinRetryInterval: ReturnType<typeof setInterval> | null = null;
 let joinTimeout: ReturnType<typeof setTimeout> | null = null;
+let pendingHostLobbyPromise: Promise<{
+  hostIp: string | null;
+  roomCode: string | null;
+  players: SessionPlayer[];
+}> | null = null;
 
 const clearJoinAttempts = () => {
   if (joinRetryInterval) {
@@ -50,10 +56,12 @@ const clearJoinAttempts = () => {
 };
 
 const broadcastPlayerList = (players: SessionPlayer[]) => {
+  const { lobbyStage } = store.getState().session;
   broadcastPacket(
     {
       type: NETWORK.PLAYER_LIST_UPDATE,
       players,
+      lobbyStage,
     },
     { processLocally: false },
   );
@@ -171,6 +179,7 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
   if (packet.type === NETWORK.PLAYER_LIST_UPDATE && Array.isArray(packet.players)) {
     clearJoinAttempts();
     syncPlayerListLocally(packet.players);
+    store.dispatch(setLobbyStage(packet.lobbyStage === "setup" ? "setup" : "room"));
     if (!state.isHost) {
       store.dispatch(setConnectionStatus("CONNECTED"));
       store.dispatch(setSessionError(null));
@@ -245,65 +254,113 @@ export const hostLanLobby = async ({
   avatarId: number;
   gameType: string;
 }) => {
-  await stopCoordinator();
-  ensurePacketSubscription();
+  if (pendingHostLobbyPromise) {
+    return pendingHostLobbyPromise;
+  }
 
-  await GameSessionTransport.start({
-    isHost: true,
-    localPlayerId,
-    onPacket: (packet, sourceIp) => handleIncomingPacket(packet, sourceIp),
-  });
+  const existingSession = store.getState().session;
+  const existingTransport = GameSessionTransport.getSnapshot();
+  if (
+    existingSession.isHost &&
+    existingSession.localPlayerId === localPlayerId &&
+    existingSession.gameType === gameType &&
+    existingSession.connectionStatus === "HOSTING" &&
+    existingTransport.isHost
+  ) {
+    return {
+      hostIp: existingSession.hostIp,
+      roomCode: existingSession.roomCode,
+      players: existingSession.players,
+    };
+  }
 
-  const hostIp = await getLocalIpAddress();
-  const roomCode = hostIp ? encodeRoomCode(hostIp) : null;
-  const players = createInitialLobbyPlayers({
-    id: localPlayerId,
-    name,
-    avatarId,
-  });
+  pendingHostLobbyPromise = (async () => {
+    await stopCoordinator();
+    ensurePacketSubscription();
 
-  store.dispatch(
-    configureSessionState({
-      isHost: true,
-      localPlayerId,
-      gameType,
-    }),
-  );
-  store.dispatch(
-    setLocalSessionIdentity({
-      localPlayerId,
+    try {
+      await GameSessionTransport.start({
+        isHost: true,
+        localPlayerId,
+        onPacket: (packet, sourceIp) => handleIncomingPacket(packet, sourceIp),
+      });
+    } catch (error) {
+      store.dispatch(setConnectionStatus("ERROR"));
+      store.dispatch(
+        setSessionError(
+          "Could not start the local lobby server. Please reopen the lobby.",
+        ),
+      );
+      throw error;
+    }
+
+    // The transport may have bound on a fallback port if the primary was busy.
+    const actualPort = GameSessionTransport.getListeningPort();
+    if (__DEV__) {
+      console.log(`[LobbyCoordinator] Server listening on port ${actualPort}`);
+    }
+
+    const hostIp = await getLocalIpAddress();
+    const roomCode = hostIp ? encodeRoomCode(hostIp) : null;
+    const players = createInitialLobbyPlayers({
+      id: localPlayerId,
       name,
       avatarId,
-      localIp: hostIp,
-    }),
-  );
-  store.dispatch(
-    setSessionNetworkInfo({
+    });
+
+    store.dispatch(
+      configureSessionState({
+        isHost: true,
+        localPlayerId,
+        gameType,
+      }),
+    );
+    store.dispatch(
+      setLocalSessionIdentity({
+        localPlayerId,
+        name,
+        avatarId,
+        localIp: hostIp,
+      }),
+    );
+    store.dispatch(
+      setSessionNetworkInfo({
+        hostIp,
+        roomCode,
+      }),
+    );
+    store.dispatch(setConnectionStatus("HOSTING"));
+    store.dispatch(setLobbyPlayers(players));
+    store.dispatch(setSessionError(null));
+    store.dispatch(setLobbyStage("room"));
+
+    startHeartbeat(true);
+
+    return {
       hostIp,
       roomCode,
-    }),
-  );
-  store.dispatch(setConnectionStatus("HOSTING"));
-  store.dispatch(setLobbyPlayers(players));
-  store.dispatch(setSessionError(null));
+      players,
+      port: actualPort,
+    };
+  })();
 
-  startHeartbeat(true);
-
-  return {
-    hostIp,
-    roomCode,
-    players,
-  };
+  try {
+    return await pendingHostLobbyPromise;
+  } finally {
+    pendingHostLobbyPromise = null;
+  }
 };
 
 export const joinLanLobby = async ({
   hostIp,
+  hostPort,
   localPlayerId,
   name,
   avatarId,
   gameType,
 }: {
   hostIp: string;
+  hostPort?: number;
   localPlayerId: string;
   name: string;
   avatarId: number;
@@ -312,9 +369,14 @@ export const joinLanLobby = async ({
   await stopCoordinator();
   ensurePacketSubscription();
 
+  if (__DEV__) {
+    console.log(`[LobbyCoordinator] Joining host at ${hostIp}:${hostPort ?? "default"}`);
+  }
+
   await GameSessionTransport.start({
     isHost: false,
     localPlayerId,
+    hostPort,
     onPacket: (packet, sourceIp) => handleIncomingPacket(packet, sourceIp),
   });
 
@@ -341,8 +403,9 @@ export const joinLanLobby = async ({
   store.dispatch(setLobbyPlayers([]));
   store.dispatch(setConnectionStatus("CONNECTING"));
   store.dispatch(setSessionError(null));
+  store.dispatch(setLobbyStage("room"));
 
-  setSessionHostIp(hostIp);
+  setSessionHostIp(hostIp, hostPort);
 
   clearJoinAttempts();
 

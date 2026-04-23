@@ -3,13 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { MODES, NETWORK } from "@/constants/Networking";
 import { DifficultyOption } from "@/constants/difficultyConfig";
+import { toast } from "@/components/feedback/toast";
 import {
   setPlayerNames as setReduxPlayerNames,
   setSelectedImages,
 } from "@/redux/reducers/playerReducer";
 import { generateTable, setDifficulty } from "@/redux/reducers/quiz";
 import {
+  setConnectionStatus,
+  setLobbyStage,
   setLocalSessionIdentity,
+  setSessionError,
   type SessionPlayer,
 } from "@/redux/reducers/sessionSlice";
 import { AppDispatch, RootState } from "@/redux/store";
@@ -22,6 +26,7 @@ import {
   setApIsolationHandler,
   subscribeToPackets,
 } from "@/service/lanGameService";
+import { GameSessionTransport } from "@/service/network/GameSessionTransport";
 import {
   hostLanLobby,
   leaveLanLobby,
@@ -56,7 +61,12 @@ export const useLobbyLogic = (
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [showApIsolation, setShowApIsolation] = useState(false);
+  const [allowLocalOnlyLobby, setAllowLocalOnlyLobby] = useState(false);
+  const [isBootstrappingHost, setIsBootstrappingHost] = useState(false);
   const hostBootstrappedRef = useRef(false);
+  const startNavigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const localPlayerId = session.localPlayerId;
   const gameType =
@@ -83,6 +93,12 @@ export const useLobbyLogic = (
   const connectionStatus = session.connectionStatus;
   const errorMessage = session.errorMessage;
   const localIp = session.localIp || "unknown";
+  const lobbyStage = session.lobbyStage;
+  const isLocalOnlyLobby =
+    isHost &&
+    connectionStatus === "HOSTING" &&
+    !hostIp &&
+    !roomCode;
 
   useEffect(() => {
     void (async () => {
@@ -123,32 +139,102 @@ export const useLobbyLogic = (
     };
   }, []);
 
+  const queueGameStartNavigation = useCallback(
+    (targetGameType: string, playerId?: string | null) => {
+      if (startNavigationTimerRef.current) {
+        clearTimeout(startNavigationTimerRef.current);
+      }
+
+      startNavigationTimerRef.current = setTimeout(() => {
+        startNavigationTimerRef.current = null;
+        setIsTransitioning(false);
+        setIsStarting(false);
+
+        if (targetGameType === "QUIZ") {
+          router.push("/think-count-quiz" as any);
+          return;
+        }
+
+        if (!playerId) {
+          return;
+        }
+
+        router.push({
+          pathname: "/chor-police-mp",
+          params: {
+            playerId,
+            isHost: String(isHost),
+          },
+        } as any);
+      }, 600);
+    },
+    [isHost, router],
+  );
+
   useEffect(() => {
-    if (
-      !isHost ||
-      !lanReady ||
-      hostBootstrappedRef.current ||
-      !localPlayerId
-    ) {
-      return;
-    }
+    return () => {
+      if (startNavigationTimerRef.current) {
+        clearTimeout(startNavigationTimerRef.current);
+        startNavigationTimerRef.current = null;
+      }
+    };
+  }, []);
 
-    hostBootstrappedRef.current = true;
+  const bootstrapHostLobby = useCallback(
+    async (forceRetry = false) => {
+      if (
+        !isHost ||
+        (!lanReady && !allowLocalOnlyLobby) ||
+        !localPlayerId ||
+        (hostBootstrappedRef.current && !forceRetry)
+      ) {
+        return;
+      }
 
-    void hostLanLobby({
-      localPlayerId,
-      name: userName.trim() || "You",
-      avatarId: currentAvatarId,
+      hostBootstrappedRef.current = true;
+      setIsBootstrappingHost(true);
+      dispatch(setSessionError(null));
+
+      if (forceRetry) {
+        dispatch(setConnectionStatus("IDLE"));
+      }
+
+      try {
+        await hostLanLobby({
+          localPlayerId,
+          name: userName.trim() || "You",
+          avatarId: currentAvatarId,
+          gameType,
+        });
+      } catch (error) {
+        hostBootstrappedRef.current = false;
+        console.error("[Lobby] Failed to bootstrap host lobby:", error);
+        // The coordinator already dispatches ERROR + errorMessage to Redux,
+        // which surfaces the HostStartErrorCard. Show a toast too so the
+        // user gets immediate feedback.
+        toast.error(
+          "Room failed to start",
+          "Tap Try Hosting Again to retry, or play locally with Ready Seats.",
+        );
+      } finally {
+        setIsBootstrappingHost(false);
+      }
+    },
+    [
+      allowLocalOnlyLobby,
+      currentAvatarId,
+      dispatch,
       gameType,
-    });
-  }, [
-    currentAvatarId,
-    gameType,
-    isHost,
-    lanReady,
-    localPlayerId,
-    userName,
-  ]);
+      isHost,
+      lanReady,
+      localPlayerId,
+      userName,
+    ],
+  );
+
+  useEffect(() => {
+    void bootstrapHostLobby();
+  }, [bootstrapHostLobby]);
 
   useEffect(() => {
     if (
@@ -228,10 +314,7 @@ export const useLobbyLogic = (
           );
         }
 
-        // PROD-1 FIX: 600ms delay so TCP handshake completes before screen mounts
-        setTimeout(() => {
-          router.push("/think-count-quiz" as any);
-        }, 600);
+        queueGameStartNavigation("QUIZ");
         return;
       }
 
@@ -261,27 +344,113 @@ export const useLobbyLogic = (
           );
         }
 
-        // PROD-1 FIX: 600ms delay so TCP handshake completes before screen mounts
-        if (localPlayerId) {
-          setTimeout(() => {
-            router.push({
-              pathname: "/chor-police-mp",
-              params: {
-                playerId: localPlayerId,
-                isHost: String(isHost),
-              },
-            } as any);
-          }, 600);
-        }
+        queueGameStartNavigation("CHOR_POLICE", localPlayerId);
       }
     });
 
     return unsubscribe;
-  }, [dispatch, isHost, localPlayerId, router]);
+  }, [dispatch, isHost, localPlayerId, queueGameStartNavigation]);
+
+  const broadcastLobbyStage = useCallback(
+    (nextStage: "room" | "setup") => {
+      if (!isHost) {
+        return;
+      }
+
+      broadcastPacket(
+        {
+          type: NETWORK.PLAYER_LIST_UPDATE,
+          players: players.slice(0, ROOM_MAX_PLAYERS),
+          lobbyStage: nextStage,
+        },
+        { processLocally: false },
+      );
+    },
+    [isHost, players],
+  );
+
+  const routeToLobbyStage = useCallback(
+    (nextStage: "room" | "setup") => {
+      router.replace({
+        pathname: nextStage === "setup" ? "/lobby-setup" : "/lobby",
+        params: {
+          gameType,
+          isHost: String(isHost),
+        },
+      } as any);
+    },
+    [gameType, isHost, router],
+  );
+
+  const handleOpenSetup = useCallback(() => {
+    if (!isHost) {
+      return;
+    }
+
+    if (connectionStatus !== "HOSTING") {
+      toast.error(
+        "Room not ready",
+        "Wait until the room is ready, then tap Let's Go.",
+      );
+      return;
+    }
+
+    dispatch(setLobbyStage("setup"));
+    broadcastLobbyStage("setup");
+    routeToLobbyStage("setup");
+  }, [
+    broadcastLobbyStage,
+    connectionStatus,
+    dispatch,
+    isHost,
+    routeToLobbyStage,
+  ]);
+
+  const handleBackToRoom = useCallback(() => {
+    if (isHost) {
+      dispatch(setLobbyStage("room"));
+      broadcastLobbyStage("room");
+    }
+
+    routeToLobbyStage("room");
+  }, [broadcastLobbyStage, dispatch, isHost, routeToLobbyStage]);
+
+  const handleContinueWithReadySeats = useCallback(() => {
+    if (!isHost) {
+      return;
+    }
+
+    setAllowLocalOnlyLobby(true);
+    hostBootstrappedRef.current = false;
+    dispatch(setLobbyStage("room"));
+    toast.info(
+      "Ready seats opened",
+      "You can start now. To play with friends later, allow Chor Police network permissions.",
+      3500,
+    );
+  }, [dispatch, isHost]);
+
+  const handleRetryHosting = useCallback(() => {
+    if (!isHost) {
+      return;
+    }
+
+    setAllowLocalOnlyLobby(false);
+    hostBootstrappedRef.current = false;
+    void bootstrapHostLobby(true);
+  }, [bootstrapHostLobby, isHost]);
 
   const handleConfirmStake = useCallback(
     (stake: number) => {
       if (isStarting || !isHost) {
+        return;
+      }
+
+      if (connectionStatus !== "HOSTING") {
+        toast.error(
+          "Lobby not ready",
+          "Wait for the local lobby server to start, then try again.",
+        );
         return;
       }
 
@@ -338,6 +507,7 @@ export const useLobbyLogic = (
       }
 
       setIsTransitioning(true);
+      queueGameStartNavigation(gameType, localPlayerId);
     },
     [
       difficulty,
@@ -345,7 +515,10 @@ export const useLobbyLogic = (
       gameType,
       isHost,
       isStarting,
+      connectionStatus,
+      localPlayerId,
       players,
+      queueGameStartNavigation,
       selectedRounds,
       userName,
     ],
@@ -392,6 +565,7 @@ export const useLobbyLogic = (
     isHost,
     localPlayerId,
     gameType,
+    lobbyStage,
     userName,
     players,
     roomCode,
@@ -399,17 +573,19 @@ export const useLobbyLogic = (
     connectionStatus,
     errorMessage,
     localIp,
+    isLocalOnlyLobby,
     selectedHostIp: isHost ? null : hostIp,
     localAvatarId: currentAvatarId,
     qrPayload: hostIp
       ? JSON.stringify({
           ip: hostIp,
-          port: NETWORK.TCP_SERVER_PORT,
+          port: GameSessionTransport.getListeningPort(),
         })
       : "",
     showAvatarGrid,
     setShowAvatarGrid,
     difficulty,
+    selectedRounds,
     isBettingModalVisible,
     setIsBettingModalVisible,
     selectedImages: [currentAvatarId],
@@ -419,6 +595,11 @@ export const useLobbyLogic = (
     handleAvatarSelect,
     handleNameChange,
     handleBack,
+    handleOpenSetup,
+    handleBackToRoom,
+    handleContinueWithReadySeats,
+    handleRetryHosting,
+    isBootstrappingHost,
     isTransitioning,
     showApIsolation,
     setShowApIsolation,

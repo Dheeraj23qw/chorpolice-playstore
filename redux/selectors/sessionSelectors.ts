@@ -39,6 +39,11 @@ export const selectRoomCode = createSelector(
   (session) => session.roomCode,
 );
 
+export const selectLobbyStage = createSelector(
+  [selectSession],
+  (session) => session.lobbyStage,
+);
+
 export const selectHostIp = createSelector(
   [selectSession],
   (session) => session.hostIp,

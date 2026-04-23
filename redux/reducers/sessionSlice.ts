@@ -16,6 +16,8 @@ export type ConnectionStatus =
   | "CONNECTED"
   | "ERROR";
 
+export type LobbyStage = "room" | "setup";
+
 export type GamePhase =
   | "idle"
   | "video_transition"
@@ -49,6 +51,7 @@ interface SessionState {
   localAvatarId: number;
   gameType: string | null;
   errorMessage: string | null;
+  lobbyStage: LobbyStage;
 
   // ── Game State (Chor Police) ──
   gamePhase: GamePhase;
@@ -94,6 +97,7 @@ const initialState: SessionState = {
   localAvatarId: DEFAULT_LOCAL_AVATAR_ID,
   gameType: null,
   errorMessage: null,
+  lobbyStage: "room",
   ...INITIAL_GAME_STATE,
 };
 
@@ -177,6 +181,10 @@ export const sessionSlice = createSlice({
       state.connectionStatus = action.payload ? "ERROR" : state.connectionStatus;
     },
 
+    setLobbyStage: (state, action: PayloadAction<LobbyStage>) => {
+      state.lobbyStage = action.payload;
+    },
+
     setLobbyPlayers: (state, action: PayloadAction<SessionPlayer[]>) => {
       state.players = action.payload.slice(0, 4);
 
@@ -256,6 +264,7 @@ export const {
   setLocalSessionIdentity,
   setConnectionStatus,
   setLobbyPlayers,
+  setLobbyStage,
   setSessionError,
   setSessionNetworkInfo,
   setGamePhase,
@@ -267,4 +276,3 @@ export const {
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;
-

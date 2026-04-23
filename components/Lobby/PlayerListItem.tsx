@@ -20,7 +20,7 @@ export const PlayerListItem = ({
       ? ["rgba(245,158,11,0.18)", "rgba(245,158,11,0.04)"]
       : ["rgba(124,58,237,0.16)", "rgba(124,58,237,0.04)"];
   const subtitle = isBot
-    ? "Standby bot will step out when a real friend joins"
+    ? "Open seat ready for a friend to join"
     : isHostSlot
       ? "Room owner"
       : "Connected player";
@@ -63,13 +63,6 @@ export const PlayerListItem = ({
             <View className="rounded-full border border-emerald-400/30 bg-emerald-400/15 px-3 py-1">
               <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-emerald-200">
                 You
-              </Text>
-            </View>
-          ) : null}
-          {isBot ? (
-            <View className="rounded-full border border-sky-400/30 bg-sky-400/15 px-3 py-1">
-              <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-sky-200">
-                Bot
               </Text>
             </View>
           ) : null}

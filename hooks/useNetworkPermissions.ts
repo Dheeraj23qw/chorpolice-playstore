@@ -27,6 +27,33 @@ type UseNetworkPermissionsOptions = {
   requireAndroidWifiPermissions?: boolean;
 };
 
+let sharedAndroidPermissionRequestPromise: Promise<unknown> | null = null;
+
+const runSharedAndroidPermissionRequest = async <T,>(
+  payload: unknown,
+  request: () => Promise<T>,
+) => {
+  if (sharedAndroidPermissionRequestPromise) {
+    logPermissionDebug(
+      "NetworkPermissions",
+      "Reusing shared Android permission request",
+      payload,
+    );
+    return (await sharedAndroidPermissionRequestPromise) as T;
+  }
+
+  const requestPromise = request();
+  sharedAndroidPermissionRequestPromise = requestPromise;
+
+  try {
+    return await requestPromise;
+  } finally {
+    if (sharedAndroidPermissionRequestPromise === requestPromise) {
+      sharedAndroidPermissionRequestPromise = null;
+    }
+  }
+};
+
 export const useNetworkPermissions = (
   enabledOrOptions: boolean | UseNetworkPermissionsOptions = true,
 ) => {
@@ -48,218 +75,307 @@ export const useNetworkPermissions = (
           requireAndroidWifiPermissions:
             enabledOrOptions.requireAndroidWifiPermissions ?? true,
         };
+
   const [step, setStep] = useState<PermissionStep>("idle");
   const [status, setStatus] = useState<PermissionStatus>("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const mountedRef = useRef(true);
+  const activeRunIdRef = useRef(0);
+  const inFlightRunRef = useRef<Promise<void> | null>(null);
 
   const runFlow = useCallback(async () => {
-    logPermissionDebug("NetworkPermissions", "Starting permission flow", {
-      enabled,
-      requireWifiIpAddress,
-      requireAndroidWifiPermissions,
-      platform: Platform.OS,
-      platformVersion: Platform.Version,
-    });
-
-    if (!enabled) {
-      if (!mountedRef.current) return;
-      setStep("ready");
-      setStatus("granted");
-      setErrorMessage(null);
+    if (inFlightRunRef.current) {
       logPermissionDebug(
         "NetworkPermissions",
-        "Permissions bypassed because the flow is disabled",
+        "Reusing in-flight permission flow",
+        { activeRunId: activeRunIdRef.current },
       );
+      await inFlightRunRef.current;
       return;
     }
 
-    if (!mountedRef.current) return;
+    const runId = activeRunIdRef.current + 1;
+    activeRunIdRef.current = runId;
 
-    setStep("idle");
-    setStatus("pending");
-    setErrorMessage(null);
+    const isActiveRun = () =>
+      mountedRef.current && activeRunIdRef.current === runId;
 
-    try {
-      // ─── PHASE 1: WIFI VALIDATION ───
-      setStep("checking_wifi");
-
-      const netState = await NetInfo.fetch();
-      logPermissionDebug("NetworkPermissions", "NetInfo.fetch() result", {
-        type: netState.type,
-        isConnected: netState.isConnected,
-        isInternetReachable: netState.isInternetReachable,
-        details: netState.details,
+    const flowPromise = (async () => {
+      logPermissionDebug("NetworkPermissions", "Starting permission flow", {
+        runId,
+        enabled,
+        requireWifiIpAddress,
+        requireAndroidWifiPermissions,
+        platform: Platform.OS,
+        platformVersion: Platform.Version,
       });
 
-      const hasWifiConnection = netState.type === "wifi" && netState.isConnected;
-      const hasValidWifi =
-        hasWifiConnection &&
-        (!requireWifiIpAddress || Boolean(netState.details?.ipAddress));
-
-      if (!hasValidWifi) {
-        if (!mountedRef.current) return;
-        setStatus("no_wifi");
-        setErrorMessage(
-          requireWifiIpAddress
-            ? "Please connect both devices to the same WiFi network."
-            : "Please connect both devices to the same WiFi or hotspot.",
+      if (!enabled) {
+        if (!isActiveRun()) return;
+        setStep("ready");
+        setStatus("granted");
+        setErrorMessage(null);
+        logPermissionDebug(
+          "NetworkPermissions",
+          "Permissions bypassed because the flow is disabled",
+          { runId },
         );
-        warnPermissionDebug("NetworkPermissions", "Wi-Fi validation failed", {
-          hasWifiConnection,
-          hasValidWifi,
-          requireWifiIpAddress,
-          details: netState.details,
-        });
         return;
       }
 
-      // ─── PHASE 2: ANDROID PERMISSIONS ───
-      if (Platform.OS === "android" && requireAndroidWifiPermissions) {
-        setStep("requesting_permissions");
-        const apiLevel = Platform.Version as number;
+      if (!isActiveRun()) {
+        return;
+      }
 
-        const LOCATION_PERM =
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
+      setStep("idle");
+      setStatus("pending");
+      setErrorMessage(null);
 
-        if (apiLevel >= 33) {
-          const NEARBY_PERM = "android.permission.NEARBY_WIFI_DEVICES";
+      try {
+        setStep("checking_wifi");
 
-          const hasNearby = await PermissionsAndroid.check(NEARBY_PERM as any);
-          const hasLocation = await PermissionsAndroid.check(LOCATION_PERM);
-          logPermissionDebug(
+        const netState = await NetInfo.fetch();
+        logPermissionDebug("NetworkPermissions", "NetInfo.fetch() result", {
+          runId,
+          type: netState.type,
+          isConnected: netState.isConnected,
+          isInternetReachable: netState.isInternetReachable,
+          details: netState.details,
+        });
+
+        const hasWifiConnection =
+          netState.type === "wifi" && netState.isConnected;
+        const hasValidWifi =
+          hasWifiConnection &&
+          (!requireWifiIpAddress || Boolean(netState.details?.ipAddress));
+
+        if (!hasValidWifi) {
+          if (!isActiveRun()) return;
+          setStatus("no_wifi");
+          setErrorMessage(
+            requireWifiIpAddress
+              ? "Please connect both devices to the same WiFi network."
+              : "Please connect both devices to the same WiFi or hotspot.",
+          );
+          warnPermissionDebug(
             "NetworkPermissions",
-            "Existing Android permission check",
+            "Wi-Fi validation failed",
             {
-              apiLevel,
-              hasNearby,
-              hasLocation,
-              requestedPermissions: [NEARBY_PERM, LOCATION_PERM],
+              runId,
+              hasWifiConnection,
+              hasValidWifi,
+              requireWifiIpAddress,
+              details: netState.details,
             },
           );
+          return;
+        }
 
-          if (!hasNearby || !hasLocation) {
-            const results = await PermissionsAndroid.requestMultiple([
-              NEARBY_PERM as any,
-              LOCATION_PERM,
-            ]);
+        if (Platform.OS === "android" && requireAndroidWifiPermissions) {
+          setStep("requesting_permissions");
+          const apiLevel = Platform.Version as number;
+          const LOCATION_PERM =
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
+
+          if (apiLevel >= 33) {
+            const NEARBY_PERM = "android.permission.NEARBY_WIFI_DEVICES";
+            const hasNearby = await PermissionsAndroid.check(NEARBY_PERM as any);
+            const hasLocation = await PermissionsAndroid.check(LOCATION_PERM);
+
             logPermissionDebug(
               "NetworkPermissions",
-              "Android requestMultiple result",
-              results,
+              "Existing Android permission check",
+              {
+                runId,
+                apiLevel,
+                hasNearby,
+                hasLocation,
+                requestedPermissions: [NEARBY_PERM, LOCATION_PERM],
+              },
             );
 
-            const isNearbyGranted =
-              results[NEARBY_PERM] === PermissionsAndroid.RESULTS.GRANTED;
-            const isLocationGranted =
-              results[LOCATION_PERM] === PermissionsAndroid.RESULTS.GRANTED;
-
-            if (!isNearbyGranted || !isLocationGranted) {
-              if (!mountedRef.current) return;
-
-              setStatus("denied");
-
-              // Handle "never ask again"
-              if (
-                results[NEARBY_PERM] ===
-                  PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
-                results[LOCATION_PERM] ===
-                  PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN
-              ) {
-                setErrorMessage(
-                  "Permission permanently denied. Please enable it from settings.",
-                );
-              } else {
-                setErrorMessage(
-                  "Permissions are required to find and connect to players.",
-                );
-              }
-
-              warnPermissionDebug(
-                "NetworkPermissions",
-                "Android permission request denied",
+            if (!hasNearby || !hasLocation) {
+              const results = await runSharedAndroidPermissionRequest(
                 {
-                  apiLevel,
+                  runId,
+                  requestedPermissions: [NEARBY_PERM, LOCATION_PERM],
+                },
+                () =>
+                  PermissionsAndroid.requestMultiple([
+                    NEARBY_PERM as any,
+                    LOCATION_PERM,
+                  ]),
+              );
+
+              logPermissionDebug(
+                "NetworkPermissions",
+                "Android requestMultiple result",
+                {
+                  runId,
                   results,
                 },
               );
 
-              return;
-            }
-          }
-        } else {
-          // Android 12 and below
-          const hasLocation = await PermissionsAndroid.check(LOCATION_PERM);
-          logPermissionDebug(
-            "NetworkPermissions",
-            "Existing Android location permission check",
-            {
-              apiLevel,
-              hasLocation,
-              requestedPermission: LOCATION_PERM,
-            },
-          );
+              const isNearbyGranted =
+                results[NEARBY_PERM] === PermissionsAndroid.RESULTS.GRANTED;
+              const isLocationGranted =
+                results[LOCATION_PERM] === PermissionsAndroid.RESULTS.GRANTED;
 
-          if (!hasLocation) {
-            const result = await PermissionsAndroid.request(LOCATION_PERM);
-            logPermissionDebug("NetworkPermissions", "Android request result", {
-              permission: LOCATION_PERM,
-              result,
-            });
+              if (!isNearbyGranted || !isLocationGranted) {
+                if (!isActiveRun()) {
+                  logPermissionDebug(
+                    "NetworkPermissions",
+                    "Discarded denied result from stale permission flow",
+                    {
+                      runId,
+                      results,
+                    },
+                  );
+                  return;
+                }
 
-            if (result !== PermissionsAndroid.RESULTS.GRANTED) {
-              if (!mountedRef.current) return;
+                setStatus("denied");
 
-              setStatus("denied");
+                if (
+                  results[NEARBY_PERM] ===
+                    PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
+                  results[LOCATION_PERM] ===
+                    PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN
+                ) {
+                  setErrorMessage(
+                    "Permission permanently denied. Please enable it from settings.",
+                  );
+                } else {
+                  setErrorMessage(
+                    "Permissions are required to find and connect to players.",
+                  );
+                }
 
-              if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-                setErrorMessage(
-                  "Permission permanently denied. Please enable it from settings.",
+                warnPermissionDebug(
+                  "NetworkPermissions",
+                  "Android permission request denied",
+                  {
+                    runId,
+                    apiLevel,
+                    results,
+                  },
                 );
-              } else {
-                setErrorMessage(
-                  "Location permission is required for LAN multiplayer.",
-                );
+                return;
               }
+            }
+          } else {
+            const hasLocation = await PermissionsAndroid.check(LOCATION_PERM);
 
-              warnPermissionDebug(
-                "NetworkPermissions",
-                "Android location permission denied",
+            logPermissionDebug(
+              "NetworkPermissions",
+              "Existing Android location permission check",
+              {
+                runId,
+                apiLevel,
+                hasLocation,
+                requestedPermission: LOCATION_PERM,
+              },
+            );
+
+            if (!hasLocation) {
+              const result = await runSharedAndroidPermissionRequest(
                 {
-                  apiLevel,
-                  permission: LOCATION_PERM,
-                  result,
+                  runId,
+                  requestedPermission: LOCATION_PERM,
                 },
+                () => PermissionsAndroid.request(LOCATION_PERM),
               );
 
-              return;
+              logPermissionDebug("NetworkPermissions", "Android request result", {
+                runId,
+                permission: LOCATION_PERM,
+                result,
+              });
+
+              if (result !== PermissionsAndroid.RESULTS.GRANTED) {
+                if (!isActiveRun()) {
+                  logPermissionDebug(
+                    "NetworkPermissions",
+                    "Discarded denied location result from stale permission flow",
+                    {
+                      runId,
+                      permission: LOCATION_PERM,
+                      result,
+                    },
+                  );
+                  return;
+                }
+
+                setStatus("denied");
+
+                if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+                  setErrorMessage(
+                    "Permission permanently denied. Please enable it from settings.",
+                  );
+                } else {
+                  setErrorMessage(
+                    "Location permission is required for LAN multiplayer.",
+                  );
+                }
+
+                warnPermissionDebug(
+                  "NetworkPermissions",
+                  "Android location permission denied",
+                  {
+                    runId,
+                    apiLevel,
+                    permission: LOCATION_PERM,
+                    result,
+                  },
+                );
+                return;
+              }
             }
           }
         }
+
+        if (!isActiveRun()) {
+          logPermissionDebug(
+            "NetworkPermissions",
+            "Discarded successful result from stale permission flow",
+            { runId },
+          );
+          return;
+        }
+
+        setStep("ready");
+        setStatus("granted");
+        logPermissionDebug(
+          "NetworkPermissions",
+          "Permission flow completed successfully",
+          { runId },
+        );
+      } catch (error) {
+        errorPermissionDebug("NetworkPermissions", "Permission flow crashed", {
+          runId,
+          error,
+        });
+        console.error("Handshake Error:", error);
+
+        if (!isActiveRun()) return;
+
+        setStatus("error");
+        setErrorMessage("Something went wrong. Please retry.");
       }
+    })();
 
-      // ─── PHASE 3: READY ───
-      if (!mountedRef.current) return;
+    inFlightRunRef.current = flowPromise;
 
-      setStep("ready");
-      setStatus("granted");
-      logPermissionDebug(
-        "NetworkPermissions",
-        "Permission flow completed successfully",
-      );
-    } catch (error) {
-      errorPermissionDebug("NetworkPermissions", "Permission flow crashed", error);
-      console.error("Handshake Error:", error);
-
-      if (!mountedRef.current) return;
-
-      setStatus("error");
-      setErrorMessage("Something went wrong. Please retry.");
+    try {
+      await flowPromise;
+    } finally {
+      if (inFlightRunRef.current === flowPromise) {
+        inFlightRunRef.current = null;
+      }
     }
   }, [enabled, requireAndroidWifiPermissions, requireWifiIpAddress]);
 
-  // ─── INIT + CLEANUP ───
   useEffect(() => {
     mountedRef.current = true;
     void runFlow();
@@ -269,7 +385,6 @@ export const useNetworkPermissions = (
     };
   }, [runFlow]);
 
-  // ─── REAL-TIME WIFI MONITOR ───
   useEffect(() => {
     if (!enabled) {
       return;
@@ -288,25 +403,23 @@ export const useNetworkPermissions = (
         hasWifiConnection &&
         (!requireWifiIpAddress || Boolean(state.details?.ipAddress));
 
-      if (!hasValidWifi) {
-        if (mountedRef.current) {
-          setStatus("no_wifi");
-          setErrorMessage(
-            requireWifiIpAddress
-              ? "WiFi connection lost. Please reconnect to continue."
-              : "WiFi or hotspot connection lost. Please reconnect to continue.",
-          );
-          warnPermissionDebug(
-            "NetworkPermissions",
-            "NetInfo listener marked connection invalid",
-            {
-              hasWifiConnection,
-              hasValidWifi,
-              requireWifiIpAddress,
-              details: state.details,
-            },
-          );
-        }
+      if (!hasValidWifi && mountedRef.current) {
+        setStatus("no_wifi");
+        setErrorMessage(
+          requireWifiIpAddress
+            ? "WiFi connection lost. Please reconnect to continue."
+            : "WiFi or hotspot connection lost. Please reconnect to continue.",
+        );
+        warnPermissionDebug(
+          "NetworkPermissions",
+          "NetInfo listener marked connection invalid",
+          {
+            hasWifiConnection,
+            hasValidWifi,
+            requireWifiIpAddress,
+            details: state.details,
+          },
+        );
       }
     });
 

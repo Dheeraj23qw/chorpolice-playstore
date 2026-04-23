@@ -21,13 +21,13 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
   gameType,
 }) => {
   const handleSelection = (mode: "host" | "join") => {
-    onClose();
     router.push({
       pathname: mode === "host" ? "/host" : "/join",
       params: {
         gameType,
       },
     } as any);
+    requestAnimationFrame(onClose);
   };
 
   return (

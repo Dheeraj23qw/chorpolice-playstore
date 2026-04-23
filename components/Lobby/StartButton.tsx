@@ -5,18 +5,21 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/Text";
 
 export const StartButton = ({ lobby }: any) => {
-  const isReady = lobby.players.length === 4;
+  const isHostReady = !lobby.isHost || lobby.connectionStatus === "HOSTING";
+  const isReady = lobby.players.length === 4 && isHostReady;
   const humanCount = lobby.players.filter((player: any) => !player.isBot).length;
   const buttonText = isReady
-    ? humanCount <= 1
-      ? "PLAY WITH BOTS"
-      : "START MATCH"
-    : `WAITING (${lobby.players.length}/4)`;
+    ? "START MATCH"
+    : isHostReady
+      ? `WAITING (${lobby.players.length}/4)`
+      : "STARTING LOBBY...";
   const buttonHint = isReady
-    ? humanCount <= 1
-      ? "Jump in now. Friends can still replace bots next time."
+    ? humanCount < lobby.maxPlayers
+      ? "All seats are ready. Start whenever you want."
       : "Everyone is ready. Launch the match."
-    : "Preparing a full 4-seat room";
+    : isHostReady
+      ? "Preparing a full 4-seat room"
+      : lobby.errorMessage || "Local server is still starting.";
 
   return (
     <View className="absolute bottom-0 w-full px-6 pb-12 pt-10">

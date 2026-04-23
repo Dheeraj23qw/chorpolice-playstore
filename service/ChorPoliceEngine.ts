@@ -180,7 +180,10 @@ export const ChorPoliceEngine = {
       case CP.GAME_END:
         console.log(`🎭 [CPEngine] 🛑 GAME_END received — reason: ${packet.reason}`);
         if (packet.reason === "completed") {
-          dispatch(setGamePhase("final_result"));
+          const currentPhase = store.getState().session.gamePhase;
+          if (currentPhase !== "video_transition") {
+            dispatch(setGamePhase("final_result"));
+          }
         }
         break;
 

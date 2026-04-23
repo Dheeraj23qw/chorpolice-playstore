@@ -1,6 +1,6 @@
 import { NETWORK, MODES } from "../constants/Networking";
 import { handleIncomingPacket, subscribeToPackets } from "./lanGameService";
-import { getBotName } from "../utils/nameGenerator";
+import { getBotName, preloadBotNames } from "../utils/nameGenerator";
 import { SessionPlayer } from "@/redux/reducers/sessionSlice";
 import { customAlphabet } from "nanoid/non-secure";
 
@@ -23,8 +23,7 @@ export const BotEngine = {
   _lastQuestionId: null as string | null,
 
   prepareEngine: (_count: number) => {
-    // The current LAN flow instantiates bots from lobby state,
-    // so prewarming is intentionally a no-op.
+    void preloadBotNames(Math.max(20, _count * 2));
   },
 
   reset: () => {

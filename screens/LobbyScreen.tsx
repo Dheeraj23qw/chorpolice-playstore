@@ -1,10 +1,8 @@
 import * as Clipboard from "expo-clipboard";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,16 +17,14 @@ import {
   HandshakeStatus,
   HandshakeStatusType,
 } from "@/components/Lobby/HandshakeStatus";
+import { LobbyBackdrop } from "@/components/Lobby/LobbyBackdrop";
 import { LobbyHeader } from "@/components/Lobby/LobbyHeader";
-import { PlayerProfileCard } from "@/components/Lobby/PlayerProfileCard";
 import { PlayersList } from "@/components/Lobby/PlayersList";
-import { StartButton } from "@/components/Lobby/StartButton";
 import { Text } from "@/components/Text";
 import { toast } from "@/components/feedback/toast";
 import { playerImages } from "@/constants/playerData";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
-import { BettingModal } from "@/modal/BettingModal";
 
 type LobbyScreenProps = {
   forcedMode?: "host" | "client";
@@ -36,108 +32,139 @@ type LobbyScreenProps = {
   requireLanReady?: boolean;
 };
 
-const HostConnectionCard = ({
+const QR_SIZE = 112;
+
+const PrimaryButton = ({
+  title,
+  subtitle,
+  onPress,
+  disabled = false,
+}: {
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) => (
+  <Pressable
+    onPress={onPress}
+    disabled={disabled}
+    className="overflow-hidden rounded-[28px]"
+  >
+    <LinearGradient
+      colors={
+        disabled
+          ? ["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]
+          : ["#2563EB", "#4F46E5"]
+      }
+      className="rounded-[28px] border border-white/10 px-5 py-5"
+    >
+      <Text
+        className={`text-center font-main-bold text-lg tracking-[1px] ${
+          disabled ? "text-white/45" : "text-white"
+        }`}
+      >
+        {title}
+      </Text>
+      <Text
+        className={`mt-1 text-center text-xs leading-5 ${
+          disabled ? "text-white/25" : "text-white/75"
+        }`}
+      >
+        {subtitle}
+      </Text>
+    </LinearGradient>
+  </Pressable>
+);
+
+const HostInviteCard = ({
   lobby,
   onCopyRoomCode,
-  onCopyIp,
 }: {
   lobby: any;
   onCopyRoomCode: () => void;
-  onCopyIp: () => void;
 }) => {
   const roomCodeParts = (lobby.roomCode || "---- ----").split("-");
 
+  if (lobby.isLocalOnlyLobby || !lobby.qrPayload) {
+    return (
+      <View className="mb-5 overflow-hidden rounded-[30px]">
+        <LinearGradient
+          colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]}
+          className="rounded-[30px] border border-white/10 p-5"
+        >
+          <Text className="text-[10px] uppercase tracking-[3px] text-amber-200">
+            Ready Seats
+          </Text>
+          <Text className="mt-3 font-main-bold text-2xl text-white">
+            Start right away
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-white/62">
+            This room is ready for local play now. If you want to invite
+            friends, allow Chor Police network permissions and stay on the same
+            Wi-Fi or hotspot.
+          </Text>
+        </LinearGradient>
+      </View>
+    );
+  }
+
   return (
-    <View className="mb-5 overflow-hidden rounded-[34px]">
-      <View className="absolute inset-0 rounded-[34px] bg-indigo-500/15 blur-3xl" />
+    <View className="mb-5 overflow-hidden rounded-[30px]">
+      <View className="absolute inset-0 rounded-[30px] bg-indigo-500/10 blur-3xl" />
 
       <LinearGradient
         colors={[
           "rgba(255,255,255,0.08)",
           "rgba(255,255,255,0.03)",
-          "rgba(0,0,0,0.18)",
+          "rgba(0,0,0,0.16)",
         ]}
-        className="rounded-[34px] border border-white/10 p-5"
+        className="rounded-[30px] border border-white/10 p-5"
       >
         <View className="flex-row items-center justify-between">
-          <View className="rounded-full border border-emerald-400/25 bg-emerald-400/15 px-3 py-1">
-            <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-emerald-200">
-              LAN Ready
+          <Text className="text-[10px] uppercase tracking-[3px] text-emerald-200">
+            Invite Friends
+          </Text>
+          <View className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1">
+            <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-emerald-100">
+              Scan Here
             </Text>
           </View>
-
-          <Text className="text-[10px] uppercase tracking-[2px] text-white/35">
-            Host Lobby
-          </Text>
         </View>
 
-        <Text className="mt-4 font-main-bold text-2xl text-white">
-          Invite your friend
-        </Text>
-        <Text className="mt-2 text-sm leading-5 text-white/62">
-          Tell your friend to tap Join, then scan this QR or type the room code
-          on the same Wi-Fi.
-        </Text>
-        <Text className="mt-2 text-xs leading-5 text-white/45">
-          No friend nearby? Start anytime and bots will keep empty seats filled.
-        </Text>
-
-        <View className="mt-5 flex-row gap-4">
-          <View className="items-center rounded-[28px] border border-white/10 bg-white p-4">
-            {lobby.qrPayload ? (
-              <QRCode value={lobby.qrPayload} size={148} />
-            ) : (
-              <View className="h-[148px] w-[148px] items-center justify-center">
-                <Text className="text-center text-xs text-black/60">
-                  Preparing host QR...
-                </Text>
-              </View>
-            )}
+        <View className="mt-4 flex-row items-center gap-4">
+          <View className="rounded-[24px] bg-white p-3">
+            <QRCode value={lobby.qrPayload} size={QR_SIZE} />
           </View>
 
-          <View className="flex-1 justify-between">
-            <View className="rounded-[28px] border border-white/10 bg-white/5 p-4">
-              <Text className="text-[10px] uppercase tracking-[2px] text-white/35">
-                Room Code
-              </Text>
-              <View className="mt-3 flex-row gap-2">
-                {roomCodeParts.map((part: string, index: number) => (
-                  <View
-                    key={`${part}-${index}`}
-                    className="flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-3"
-                  >
-                    <Text className="text-center font-main-bold text-xl tracking-[2px] text-white">
-                      {part}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-              <Pressable
-                onPress={onCopyRoomCode}
-                className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-              >
-                <Text className="text-center text-xs font-main-bold uppercase tracking-[2px] text-white">
-                  Copy Room Code
-                </Text>
-              </Pressable>
+          <View className="flex-1">
+            <Text className="font-main-bold text-2xl text-white">
+              Join my room
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-white/62">
+              Ask your friend to scan this code or type the room code below.
+            </Text>
+
+            <View className="mt-4 flex-row gap-2">
+              {roomCodeParts.map((part: string, index: number) => (
+                <View
+                  key={`${part}-${index}`}
+                  className="flex-1 rounded-2xl border border-white/10 bg-black/25 px-3 py-3"
+                >
+                  <Text className="text-center font-main-bold text-base tracking-[2px] text-white">
+                    {part}
+                  </Text>
+                </View>
+              ))}
             </View>
 
-            <View className="mt-4 rounded-[28px] border border-white/10 bg-white/5 p-4">
-              <Text className="text-[10px] uppercase tracking-[2px] text-white/35">
-                Host IP
+            <Pressable
+              onPress={onCopyRoomCode}
+              className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+            >
+              <Text className="text-center text-xs font-main-bold uppercase tracking-[2px] text-white">
+                Copy Room Code
               </Text>
-              <Text className="mt-2 font-main-bold text-base text-white">
-                {lobby.hostIp || "Resolving..."}
-              </Text>
-              <Pressable
-                onPress={onCopyIp}
-                className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-              >
-                <Text className="text-center text-xs font-main-bold uppercase tracking-[2px] text-white">
-                  Copy IP
-                </Text>
-              </Pressable>
-            </View>
+            </Pressable>
           </View>
         </View>
       </LinearGradient>
@@ -145,70 +172,164 @@ const HostConnectionCard = ({
   );
 };
 
-const StatusCard = ({ lobby }: { lobby: any }) => {
-  const humanCount = lobby.players.filter((player: any) => !player.isBot).length;
-  const statusTone = lobby.errorMessage
-    ? {
-        pillClass: "border-red-400/25 bg-red-400/15",
-        pillText: "text-red-200",
-        title: "Connection issue",
-        body: lobby.errorMessage,
-      }
-    : lobby.isHost
-      ? {
-          pillClass: "border-emerald-400/25 bg-emerald-400/15",
-          pillText: "text-emerald-200",
-          title: `${humanCount}/4 real players connected`,
-          body: "Bots stay ready in open slots and are replaced automatically when friends join.",
-        }
-      : lobby.connectionStatus === "CONNECTED"
-        ? {
-            pillClass: "border-emerald-400/25 bg-emerald-400/15",
-            pillText: "text-emerald-200",
-            title: "Connected to host",
-            body: "You are in the room. Your seat is already synced in the lobby.",
-          }
-        : lobby.connectionStatus === "CONNECTING"
-          ? {
-              pillClass: "border-amber-400/25 bg-amber-400/15",
-              pillText: "text-amber-200",
-              title: "Connecting to host",
-              body: "Hold on while we complete the LAN handshake.",
-            }
-          : {
-              pillClass: "border-white/10 bg-white/5",
-              pillText: "text-white/70",
-              title: "Waiting for connection",
-              body: "Once the host accepts you, the bot slot will turn into your seat.",
-            };
+const RoomSummaryCard = ({ lobby }: { lobby: any }) => {
+  const joinedCount = lobby.players.filter((player: any) => !player.isBot).length;
+  const openSeats = Math.max(0, lobby.maxPlayers - joinedCount);
 
   return (
     <View className="mb-5 overflow-hidden rounded-[28px]">
       <LinearGradient
         colors={["rgba(255,255,255,0.05)", "rgba(255,255,255,0.02)"]}
-        className="rounded-[28px] border border-white/10 p-4"
+        className="rounded-[28px] border border-white/10 p-5"
       >
         <View className="flex-row items-center justify-between">
           <Text className="text-[10px] uppercase tracking-[3px] text-white/35">
-            Room Status
+            Room Story
           </Text>
-          <View className={`rounded-full px-3 py-1 ${statusTone.pillClass}`}>
-            <Text
-              className={`text-[10px] font-main-bold uppercase tracking-[2px] ${statusTone.pillText}`}
-            >
-              {lobby.isHost ? "Host" : lobby.connectionStatus}
+          <View className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+            <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-white/65">
+              {lobby.isHost ? "Host" : "Player"}
             </Text>
           </View>
         </View>
 
-        <Text className="mt-3 font-main-bold text-white">{statusTone.title}</Text>
+        <Text className="mt-3 font-main-bold text-xl text-white">
+          {openSeats === 0
+            ? "Everybody is ready"
+            : `${openSeats} seat${openSeats === 1 ? "" : "s"} still open`}
+        </Text>
         <Text className="mt-2 text-sm leading-5 text-white/60">
-          {statusTone.body}
+          {lobby.isHost
+            ? "Tap Let's Go when you want to move everyone to the final setup screen."
+            : "Wait here. The host will move everyone to the final setup screen."}
+        </Text>
+        <Text className="mt-3 text-xs uppercase tracking-[2px] text-white/35">
+          {joinedCount} joined • {lobby.maxPlayers} seats ready
         </Text>
       </LinearGradient>
     </View>
   );
 };
+
+const PermissionFallbackCard = ({
+  isHost,
+  onPrimary,
+  onSecondary,
+  primaryLabel,
+  message,
+}: {
+  isHost: boolean;
+  onPrimary: () => void;
+  onSecondary?: () => void;
+  primaryLabel: string;
+  message: string;
+}) => (
+  <View className="mx-1 overflow-hidden rounded-[30px]">
+    <LinearGradient
+      colors={["rgba(239,68,68,0.18)", "rgba(15,23,42,0.2)"]}
+      className="rounded-[30px] border border-red-400/20 p-5"
+    >
+      <Text className="text-[10px] uppercase tracking-[3px] text-red-200">
+        Permission Needed
+      </Text>
+      <Text className="mt-3 font-main-bold text-2xl text-white">
+        Let Chor Police connect
+      </Text>
+      <Text className="mt-2 text-sm leading-5 text-white/65">{message}</Text>
+      <Text className="mt-2 text-sm leading-5 text-white/55">
+        If you want to play with friends, make sure you allow Chor Police this
+        permission.
+      </Text>
+
+      <Pressable onPress={onPrimary} className="mt-5 overflow-hidden rounded-2xl">
+        <LinearGradient
+          colors={["#2563EB", "#1D4ED8"]}
+          className="rounded-2xl px-4 py-4"
+        >
+          <Text className="text-center font-main-bold uppercase tracking-[2px] text-white">
+            {primaryLabel}
+          </Text>
+        </LinearGradient>
+      </Pressable>
+
+      {isHost && onSecondary ? (
+        <Pressable
+          onPress={onSecondary}
+          className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+        >
+          <Text className="text-center font-main-bold uppercase tracking-[2px] text-white">
+            Play With Ready Seats
+          </Text>
+        </Pressable>
+      ) : null}
+    </LinearGradient>
+  </View>
+);
+
+const HostStartErrorCard = ({
+  message,
+  onRetry,
+  onUseReadySeats,
+  retrying = false,
+}: {
+  message: string;
+  onRetry: () => void;
+  onUseReadySeats?: () => void;
+  retrying?: boolean;
+}) => (
+  <View className="mx-1 overflow-hidden rounded-[30px]">
+    <LinearGradient
+      colors={["rgba(245,158,11,0.18)", "rgba(15,23,42,0.2)"]}
+      className="rounded-[30px] border border-amber-400/20 p-5"
+    >
+      <Text className="text-[10px] uppercase tracking-[3px] text-amber-200">
+        Room Problem
+      </Text>
+      <Text className="mt-3 font-main-bold text-2xl text-white">
+        Could not open the room
+      </Text>
+      <Text className="mt-2 text-sm leading-5 text-white/65">{message}</Text>
+      <Text className="mt-2 text-sm leading-5 text-white/55">
+        Try hosting again. If you only want to play on this phone for now, you
+        can still continue with ready seats.
+      </Text>
+
+      <Pressable
+        onPress={onRetry}
+        disabled={retrying}
+        className="mt-5 overflow-hidden rounded-2xl"
+      >
+        <LinearGradient
+          colors={
+            retrying
+              ? ["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]
+              : ["#2563EB", "#1D4ED8"]
+          }
+          className="rounded-2xl px-4 py-4"
+        >
+          <Text
+            className={`text-center font-main-bold uppercase tracking-[2px] ${
+              retrying ? "text-white/45" : "text-white"
+            }`}
+          >
+            {retrying ? "Trying Again..." : "Try Hosting Again"}
+          </Text>
+        </LinearGradient>
+      </Pressable>
+
+      {onUseReadySeats ? (
+        <Pressable
+          onPress={onUseReadySeats}
+          className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+        >
+          <Text className="text-center font-main-bold uppercase tracking-[2px] text-white">
+            Play With Ready Seats
+          </Text>
+        </Pressable>
+      ) : null}
+    </LinearGradient>
+  </View>
+);
 
 const LobbyScreen: React.FC<LobbyScreenProps> = ({
   forcedMode,
@@ -217,7 +338,6 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
 }) => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const {
     step: networkStep,
     status: networkStatus,
@@ -225,14 +345,6 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
     errorMessage: networkErrorMessage,
     openSettings,
   } = useNetworkPermissions(requireLanReady);
-  const isLanReady = !requireLanReady || networkStatus === "granted";
-  const showNetworkGate = requireLanReady && !isLanReady;
-  const uiStep = networkStep === "idle" ? "checking_wifi" : networkStep;
-  const uiStatus =
-    networkStatus === "pending"
-      ? "loading"
-      : (networkStatus as HandshakeStatusType);
-
   const lobby = useLobbyLogic(
     router,
     {
@@ -246,8 +358,24 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
             : params.isHost,
     },
     forcedMode,
-    isLanReady,
+    !requireLanReady || networkStatus === "granted",
   );
+
+  const showNetworkGate =
+    requireLanReady &&
+    networkStatus !== "granted" &&
+    !lobby.isLocalOnlyLobby &&
+    lobby.connectionStatus !== "HOSTING";
+  const showHostStartError =
+    lobby.isHost &&
+    lobby.connectionStatus === "ERROR" &&
+    Boolean(lobby.errorMessage) &&
+    !showNetworkGate;
+  const uiStep = networkStep === "idle" ? "checking_wifi" : networkStep;
+  const uiStatus =
+    networkStatus === "pending"
+      ? "loading"
+      : (networkStatus as HandshakeStatusType);
 
   const getAvatarSource = useCallback((avatarId: number) => {
     const imgData = playerImages[avatarId];
@@ -265,114 +393,151 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
     toast.success("Room Code Copied", lobby.roomCode);
   }, [lobby.roomCode]);
 
-  const copyHostIp = useCallback(async () => {
-    if (!lobby.hostIp) {
+  const permissionPrimaryLabel = useMemo(() => {
+    return uiStatus === "denied" ? "Open Settings" : "Try Again";
+  }, [uiStatus]);
+
+  const permissionPrimaryAction = useCallback(() => {
+    if (uiStatus === "denied") {
+      void openSettings();
       return;
     }
 
-    await Clipboard.setStringAsync(lobby.hostIp);
-    toast.success("Host IP Copied", lobby.hostIp);
-  }, [lobby.hostIp]);
+    void retryNetwork();
+  }, [openSettings, retryNetwork, uiStatus]);
 
-  const playerCountSummary = useMemo(() => {
-    const realPlayers = lobby.players.filter((player: any) => !player.isBot).length;
-    return `${realPlayers} real player${realPlayers === 1 ? "" : "s"} in room`;
-  }, [lobby.players]);
+  useEffect(() => {
+    if (lobby.lobbyStage !== "setup") {
+      return;
+    }
+
+    router.replace({
+      pathname: "/lobby-setup",
+      params: {
+        gameType: lobby.gameType,
+        isHost: String(lobby.isHost),
+      },
+    } as any);
+  }, [lobby.gameType, lobby.isHost, lobby.lobbyStage, router]);
 
   if (lobby.isTransitioning) {
-    // SWEEP-4: Navigation is handled by the useLobbyLogic packet listener (PROD-1 fix).
-    // This video is purely a loading buffer — onVideoEnd does nothing here.
     return (
       <VideoPlayerComponent
         videoIndex={1}
         onVideoEnd={() => {
-          // Intentionally empty: navigation fires from the subscription listener
-          // at 600ms after the GAME_START packet, which is long before this video ends.
+          // Navigation happens from the packet listener.
         }}
       />
     );
   }
-
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-black"
     >
-      <View className="absolute inset-0">
-        <Image
-          source={require("@/assets/images/bg/image.png")}
-          className="h-full w-full"
-          resizeMode="cover"
-        />
-        <BlurView intensity={18} tint="dark" className="absolute inset-0" />
-        <LinearGradient
-          colors={["rgba(0,0,0,0.75)", "rgba(0,0,0,0.35)", "transparent"]}
-          className="absolute inset-0"
-        />
-      </View>
+      <LobbyBackdrop />
 
       <LobbyHeader onBack={lobby.handleBack} />
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 180 }}
+        contentContainerStyle={{ paddingBottom: 164 }}
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6">
-          <PlayerProfileCard
-            lobby={lobby}
-            getAvatarSource={getAvatarSource}
-            onSettingsToggle={setIsSettingsOpen}
-          />
+          <View className="mb-5">
+            <Text className="text-[11px] uppercase tracking-[3px] text-white/35">
+              {lobby.isHost ? "Host Room" : "Joined Room"}
+            </Text>
+            <Text className="mt-2 font-main-bold text-4xl text-white">
+              {lobby.isHost ? "Invite and play" : "Wait for Let's Go"}
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-white/60">
+              {lobby.isHost
+                ? "Keep this screen simple for kids: invite friends first, then move everyone to the final setup screen."
+                : "You are in the room. When the host taps Let's Go, everyone moves to the final setup screen."}
+            </Text>
+          </View>
 
           {showNetworkGate ? (
-            <HandshakeStatus
-              step={uiStep as any}
-              status={uiStatus}
-              discoveredCount={0}
-              errorMessage={networkErrorMessage}
-              wifiSSID="Secure LAN"
-              onRetry={retryNetwork}
-              onOpenSettings={openSettings}
-              isHost={Boolean(lobby.isHost)}
+            uiStatus === "loading" ? (
+              <HandshakeStatus
+                step={uiStep as any}
+                status={uiStatus}
+                discoveredCount={0}
+                errorMessage={networkErrorMessage}
+                wifiSSID="Secure LAN"
+                onRetry={retryNetwork}
+                onOpenSettings={openSettings}
+                isHost={Boolean(lobby.isHost)}
+              />
+            ) : (
+              <PermissionFallbackCard
+                isHost={Boolean(lobby.isHost)}
+                onPrimary={permissionPrimaryAction}
+                onSecondary={
+                  lobby.isHost ? lobby.handleContinueWithReadySeats : undefined
+                }
+                primaryLabel={permissionPrimaryLabel}
+                message={
+                  networkErrorMessage ||
+                  "Nearby Wi-Fi and location permission help Chor Police find and host local rooms."
+                }
+              />
+            )
+          ) : showHostStartError ? (
+            <HostStartErrorCard
+              message={
+                lobby.errorMessage ||
+                "The local room server did not start. Please try again."
+              }
+              onRetry={lobby.handleRetryHosting}
+              retrying={lobby.isBootstrappingHost}
+              onUseReadySeats={
+                lobby.isHost ? lobby.handleContinueWithReadySeats : undefined
+              }
             />
           ) : (
             <>
               {lobby.isHost ? (
-                <HostConnectionCard
-                  lobby={lobby}
-                  onCopyRoomCode={copyRoomCode}
-                  onCopyIp={copyHostIp}
-                />
+                <HostInviteCard lobby={lobby} onCopyRoomCode={copyRoomCode} />
               ) : null}
 
-              <StatusCard lobby={lobby} />
-
-              <View className="mb-4">
-                <Text className="text-center text-[11px] uppercase tracking-[2px] text-white/30">
-                  {playerCountSummary}
-                </Text>
-              </View>
-
+              <RoomSummaryCard lobby={lobby} />
               <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
             </>
           )}
         </View>
       </ScrollView>
 
-      {!showNetworkGate && !lobby.showAvatarGrid && !isSettingsOpen ? (
+      {!showNetworkGate && !showHostStartError ? (
         <View className="px-6 pb-8">
-          <StartButton lobby={lobby} />
+          {lobby.isHost ? (
+            <PrimaryButton
+              title="LET'S GO"
+              subtitle="Next you will choose names, pictures and coins before the match starts."
+              onPress={lobby.handleOpenSetup}
+              disabled={lobby.connectionStatus !== "HOSTING"}
+            />
+          ) : (
+            <View className="overflow-hidden rounded-[28px]">
+              <LinearGradient
+                colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]}
+                className="rounded-[28px] border border-white/10 px-5 py-5"
+              >
+                <Text className="text-center font-main-bold text-lg text-white">
+                  Waiting for the host
+                </Text>
+                <Text className="mt-1 text-center text-xs leading-5 text-white/65">
+                  Stay here. The host will move everyone to the final setup
+                  screen.
+                </Text>
+              </LinearGradient>
+            </View>
+          )}
         </View>
       ) : null}
-
-      <BettingModal
-        isVisible={lobby.isBettingModalVisible}
-        onConfirm={lobby.handleConfirmStake}
-        onClose={() => lobby.setIsBettingModalVisible(false)}
-        playerCount={lobby.players.length}
-      />
 
       <ApIsolationModal
         visible={lobby.showApIsolation}

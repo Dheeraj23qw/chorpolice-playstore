@@ -61,8 +61,8 @@ export const configureSession = ({
   });
 };
 
-export const setSessionHostIp = (hostIp: string | null) => {
-  GameSessionTransport.setHostIp(hostIp);
+export const setSessionHostIp = (hostIp: string | null, hostPort?: number) => {
+  GameSessionTransport.setHostIp(hostIp, hostPort);
 };
 
 export const getSessionContext = () => GameSessionTransport.getSnapshot();
@@ -107,9 +107,9 @@ export const broadcastPacket = (
   }
 };
 
-export const stopSession = () => {
+export const stopSession = async () => {
   HeartbeatService.stop();
-  GameSessionTransport.stop();
+  await GameSessionTransport.stop();
 };
 
 export const handleIncomingPacket = (packet: any, sourceIp?: string) => {
@@ -202,4 +202,3 @@ export const stopHeartbeat = () => {
 };
 
 export { useDebugData, debugState } from "./observability/DebugService";
-

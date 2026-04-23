@@ -1,9 +1,7 @@
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,6 +14,7 @@ import {
   HandshakeStatus,
   HandshakeStatusType,
 } from "@/components/Lobby/HandshakeStatus";
+import { LobbyBackdrop } from "@/components/Lobby/LobbyBackdrop";
 import { LobbyHeader } from "@/components/Lobby/LobbyHeader";
 import { QRScanner } from "@/components/QRScanner";
 import { Text } from "@/components/Text";
@@ -26,9 +25,12 @@ import {
   joinLanLobby,
   leaveLanLobby,
 } from "@/service/lanLobbyCoordinator";
-import { logPermissionDebug, warnPermissionDebug } from "@/utils/permissionDebug";
 import { setLocalSessionIdentity } from "@/redux/reducers/sessionSlice";
 import { AppDispatch, RootState } from "@/redux/store";
+import {
+  logPermissionDebug,
+  warnPermissionDebug,
+} from "@/utils/permissionDebug";
 
 const isValidIpv4 = (value: string) => {
   const parts = value.trim().split(".");
@@ -45,6 +47,75 @@ const isValidIpv4 = (value: string) => {
     })
   );
 };
+
+const TogglePill = ({
+  selected,
+  label,
+  onPress,
+}: {
+  selected: boolean;
+  label: string;
+  onPress: () => void;
+}) => (
+  <Pressable onPress={onPress} className="flex-1 overflow-hidden rounded-[16px]">
+    <LinearGradient
+      colors={
+        selected
+          ? ["rgba(37,99,235,0.55)", "rgba(79,70,229,0.35)"]
+          : ["transparent", "transparent"]
+      }
+      className="rounded-[16px] px-4 py-3"
+    >
+      <Text
+        className={`text-center font-main-bold uppercase tracking-[2px] ${
+          selected ? "text-white" : "text-white/45"
+        }`}
+      >
+        {label}
+      </Text>
+    </LinearGradient>
+  </Pressable>
+);
+
+const PermissionCard = ({
+  message,
+  primaryLabel,
+  onPrimary,
+}: {
+  message: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+}) => (
+  <View className="overflow-hidden rounded-[30px]">
+    <LinearGradient
+      colors={["rgba(239,68,68,0.18)", "rgba(15,23,42,0.22)"]}
+      className="rounded-[30px] border border-red-400/20 p-5"
+    >
+      <Text className="text-[10px] uppercase tracking-[3px] text-red-200">
+        Permission Needed
+      </Text>
+      <Text className="mt-3 font-main-bold text-2xl text-white">
+        Let Chor Police join the room
+      </Text>
+      <Text className="mt-2 text-sm leading-5 text-white/65">{message}</Text>
+      <Text className="mt-2 text-sm leading-5 text-white/55">
+        If you want to play with a friend, make sure you allow Chor Police this
+        permission.
+      </Text>
+
+      <Pressable onPress={onPrimary} className="mt-5 overflow-hidden rounded-2xl">
+        <LinearGradient
+          colors={["#2563EB", "#1D4ED8"]}
+          className="rounded-2xl px-4 py-4"
+        >
+          <Text className="text-center font-main-bold uppercase tracking-[2px] text-white">
+            {primaryLabel}
+          </Text>
+        </LinearGradient>
+      </Pressable>
+    </LinearGradient>
+  </View>
+);
 
 const JoinScreen = () => {
   const router = useRouter();
@@ -121,32 +192,37 @@ const JoinScreen = () => {
     }
 
     if (session.connectionStatus === "CONNECTING") {
-      return "Trying to reach the host. Stay on the same Wi-Fi or hotspot.";
+      return "Keep both devices on the same Wi-Fi or hotspot while we connect.";
     }
 
     if (session.connectionStatus === "CONNECTED") {
-      return "Connected. Finalizing your seat in the lobby.";
+      return "Connected. Taking you into the room now.";
     }
 
-    return "Scan the host QR or enter the room code exactly as shown.";
+    return "Scan the host QR or type the room code exactly as shown.";
   }, [session.connectionStatus, session.errorMessage]);
 
   const handleConnectToIp = useCallback(
-    async (hostIp: string) => {
+    async (hostIp: string, hostPort?: number) => {
       logPermissionDebug("JoinScreen", "Attempting connect to host", {
         hostIp,
+        hostPort,
         canAttemptJoin,
         connectionStatus: session.connectionStatus,
         networkStatus,
       });
 
       if (!canAttemptJoin) {
-        warnPermissionDebug("JoinScreen", "Connect blocked because same-network gate is not satisfied", {
-          hostIp,
-          networkStatus,
-          networkStep,
-          networkErrorMessage,
-        });
+        warnPermissionDebug(
+          "JoinScreen",
+          "Connect blocked because same-network gate is not satisfied",
+          {
+            hostIp,
+            networkStatus,
+            networkStep,
+            networkErrorMessage,
+          },
+        );
         toast.error(
           "Same Network Required",
           "Connect both devices to the same Wi-Fi or hotspot first.",
@@ -166,6 +242,7 @@ const JoinScreen = () => {
 
       await joinLanLobby({
         hostIp,
+        hostPort,
         localPlayerId,
         name: userName,
         avatarId,
@@ -207,107 +284,104 @@ const JoinScreen = () => {
     })();
   }, [router]);
 
+  const permissionPrimaryLabel = uiStatus === "denied" ? "Open Settings" : "Try Again";
+  const permissionPrimaryAction = useCallback(() => {
+    if (uiStatus === "denied") {
+      void openSettings();
+      return;
+    }
+
+    void retryNetwork();
+  }, [openSettings, retryNetwork, uiStatus]);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-black"
     >
-      <View className="absolute inset-0">
-        <Image
-          source={require("@/assets/images/bg/image.png")}
-          className="h-full w-full"
-          resizeMode="cover"
-        />
-        <BlurView intensity={20} tint="dark" className="absolute inset-0" />
-        <LinearGradient
-          colors={["rgba(0,0,0,0.82)", "rgba(0,0,0,0.42)", "transparent"]}
-          className="absolute inset-0"
-        />
-      </View>
+      <LobbyBackdrop
+        blurIntensity={20}
+        gradientColors={[
+          "rgba(0,0,0,0.82)",
+          "rgba(0,0,0,0.42)",
+          "transparent",
+        ]}
+      />
 
       <LobbyHeader onBack={handleBack} />
 
       <View className="flex-1 px-6 pb-8">
-        <View className="mb-6 overflow-hidden rounded-[34px]">
+        <View className="mb-6">
+          <Text className="text-[10px] uppercase tracking-[3px] text-blue-200">
+            Join A Friend
+          </Text>
+          <Text className="mt-2 font-main-bold text-4xl text-white">
+            Scan or type the code
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-white/60">
+            You are joining as {userName}. After you enter the room, you can
+            still change your picture and name before the game starts.
+          </Text>
+        </View>
+
+        <View className="mb-5 overflow-hidden rounded-[30px]">
           <LinearGradient
-            colors={[
-              "rgba(255,255,255,0.08)",
-              "rgba(255,255,255,0.03)",
-              "rgba(0,0,0,0.18)",
-            ]}
-            className="rounded-[34px] border border-white/10 p-6"
+            colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]}
+            className="rounded-[30px] border border-white/10 p-5"
           >
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[10px] uppercase tracking-[3px] text-blue-300">
-                Join LAN Room
-              </Text>
-              <View className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                <Text className="text-[10px] font-main-bold uppercase tracking-[2px] text-white/65">
-                  Same Wi-Fi
-                </Text>
-              </View>
-            </View>
-
-            <Text className="mt-3 font-main-bold text-3xl text-white">
-              Join your friend smoothly
+            <Text className="text-[10px] uppercase tracking-[3px] text-white/35">
+              Easy Steps
             </Text>
-            <Text className="mt-3 text-sm leading-5 text-white/60">
-              Joining as {userName}. Your seat will automatically replace the
-              first open bot slot.
+            <Text className="mt-3 font-main-bold text-white">
+              1. Stay on the same Wi-Fi or hotspot
             </Text>
-
-            <View className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-4">
-              <Text className="text-[10px] uppercase tracking-[2px] text-white/35">
-                Connection Status
-              </Text>
-              <Text className="mt-2 font-main-bold text-white">
-                {isConnecting
-                  ? "Connecting to host..."
-                  : session.connectionStatus === "CONNECTED"
-                    ? "Connected"
-                    : "Ready to join"}
-              </Text>
-              <Text className="mt-2 text-sm leading-5 text-white/60">
-                {connectionCopy}
-              </Text>
-            </View>
+            <Text className="mt-2 font-main-bold text-white">
+              2. Scan the QR or type the room code
+            </Text>
+            <Text className="mt-2 font-main-bold text-white">
+              3. Wait for the host to tap Let's Go
+            </Text>
+            <Text className="mt-3 text-sm leading-5 text-white/55">
+              {connectionCopy}
+            </Text>
           </LinearGradient>
         </View>
 
-        {canAttemptJoin ? (
+        {!canAttemptJoin ? (
+          uiStatus === "loading" ? (
+            <HandshakeStatus
+              step={uiStep as any}
+              status={uiStatus}
+              discoveredCount={0}
+              errorMessage={networkErrorMessage}
+              wifiSSID="Secure LAN"
+              onRetry={retryNetwork}
+              onOpenSettings={openSettings}
+              isHost={false}
+            />
+          ) : (
+            <PermissionCard
+              message={
+                networkErrorMessage ||
+                "Nearby Wi-Fi and location permission help Chor Police find your friend's room."
+              }
+              primaryLabel={permissionPrimaryLabel}
+              onPrimary={permissionPrimaryAction}
+            />
+          )
+        ) : (
           <>
             <View className="mb-4 flex-row rounded-2xl border border-white/10 bg-white/5 p-1">
-              {[
-                { key: "scan", label: "Scan QR" },
-                { key: "code", label: "Enter Code" },
-              ].map((item) => {
-                const selected = joinMethod === item.key;
-
-                return (
-                  <Pressable
-                    key={item.key}
-                    onPress={() => setJoinMethod(item.key as "scan" | "code")}
-                    className="flex-1 overflow-hidden rounded-[14px]"
-                  >
-                    <LinearGradient
-                      colors={
-                        selected
-                          ? ["rgba(37,99,235,0.45)", "rgba(29,78,216,0.28)"]
-                          : ["transparent", "transparent"]
-                      }
-                      className="items-center rounded-[14px] px-4 py-3"
-                    >
-                      <Text
-                        className={`font-main-bold uppercase tracking-[2px] ${
-                          selected ? "text-white" : "text-white/45"
-                        }`}
-                      >
-                        {item.label}
-                      </Text>
-                    </LinearGradient>
-                  </Pressable>
-                );
-              })}
+              <TogglePill
+                selected={joinMethod === "scan"}
+                label="Scan QR"
+                onPress={() => setJoinMethod("scan")}
+              />
+              <TogglePill
+                selected={joinMethod === "code"}
+                label="Type Code"
+                onPress={() => setJoinMethod("code")}
+              />
             </View>
 
             {joinMethod === "scan" ? (
@@ -317,18 +391,22 @@ const JoinScreen = () => {
                   className="rounded-[30px] border border-white/10 p-5"
                 >
                   <Text className="text-[10px] uppercase tracking-[3px] text-white/35">
-                    Scan Host QR
+                    Scan The Host QR
                   </Text>
                   <Text className="mt-2 text-sm leading-5 text-white/60">
-                    Keep the host QR inside the frame. We will connect as soon
-                    as it is detected.
+                    Hold the host QR inside the frame. We connect as soon as we
+                    read it.
                   </Text>
 
                   <View className="mt-4">
                     <QRScanner
                       key={`${session.connectionStatus}-${session.errorMessage || "idle"}`}
                       onScan={(payload) => {
-                        logPermissionDebug("JoinScreen", "QR scanner returned payload", payload);
+                        logPermissionDebug(
+                          "JoinScreen",
+                          "QR scanner returned payload",
+                          payload,
+                        );
                         if (!payload.ip) {
                           warnPermissionDebug(
                             "JoinScreen",
@@ -341,7 +419,7 @@ const JoinScreen = () => {
                           );
                           return;
                         }
-                        void handleConnectToIp(payload.ip);
+                        void handleConnectToIp(payload.ip, payload.port);
                       }}
                     />
                   </View>
@@ -354,10 +432,10 @@ const JoinScreen = () => {
                   className="rounded-[30px] border border-white/10 p-5"
                 >
                   <Text className="text-[10px] uppercase tracking-[3px] text-white/35">
-                    Enter Room Code
+                    Type The Room Code
                   </Text>
                   <Text className="mt-2 text-sm leading-5 text-white/60">
-                    Ask the host for the code shown above the QR card.
+                    Ask the host for the code shown next to the QR.
                   </Text>
                   <TextInput
                     value={roomCode}
@@ -382,14 +460,14 @@ const JoinScreen = () => {
                           ? ["rgba(255,255,255,0.12)", "rgba(255,255,255,0.06)"]
                           : ["#2563EB", "#1D4ED8"]
                       }
-                      className="items-center rounded-2xl px-4 py-4"
+                      className="rounded-2xl px-4 py-4"
                     >
                       <Text
-                        className={`font-main-bold tracking-[2px] ${
+                        className={`text-center font-main-bold uppercase tracking-[2px] ${
                           isConnecting ? "text-white/45" : "text-white"
                         }`}
                       >
-                        {isConnecting ? "CONNECTING..." : "CONNECT TO HOST"}
+                        {isConnecting ? "CONNECTING..." : "JOIN ROOM"}
                       </Text>
                     </LinearGradient>
                   </Pressable>
@@ -397,17 +475,6 @@ const JoinScreen = () => {
               </View>
             )}
           </>
-        ) : (
-          <HandshakeStatus
-            step={uiStep as any}
-            status={uiStatus}
-            discoveredCount={0}
-            errorMessage={networkErrorMessage}
-            wifiSSID="Secure LAN"
-            onRetry={retryNetwork}
-            onOpenSettings={openSettings}
-            isHost={false}
-          />
         )}
       </View>
     </KeyboardAvoidingView>

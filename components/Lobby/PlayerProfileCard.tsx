@@ -24,6 +24,7 @@ export const PlayerProfileCard = ({
   lobby,
   getAvatarSource,
   onSettingsToggle,
+  showGameSettings = true,
 }: any) => {
   const [activeTab, setActiveTab] = useState<"settings" | null>(null);
   const scale = useSharedValue(1);
@@ -71,19 +72,19 @@ export const PlayerProfileCard = ({
           <View className="mb-8 flex-row items-center justify-between">
             <View className="flex-1 pr-4">
               <Text className="text-[10px] uppercase tracking-[3px] text-indigo-300">
-                Identity Profile
+                Your Player Card
               </Text>
 
               <TextInput
                 value={lobby.userName}
                 onChangeText={lobby.handleNameChange}
-                placeholder="Enter Name..."
+                placeholder="Type your name"
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 className="mt-2 font-main-bold text-3xl text-white"
               />
 
               <Text className="mt-1 text-[10px] uppercase tracking-[2px] text-white/30">
-                Tap avatar to change
+                Tap your picture to change it
               </Text>
 
               <Text className="mt-2 text-[11px] text-white/55">
@@ -121,68 +122,87 @@ export const PlayerProfileCard = ({
           </View>
 
           {/* ---------------- SETTINGS ---------------- */}
-          <CollapsibleCard
-            label="Game Configuration"
-            title={
-              lobby.gameType === "QUIZ"
-                ? `LEVEL: ${lobby.difficulty || "SELECT"}`
-                : "SELECT ROUNDS"
-            }
-            icon={
-              lobby.gameType === "QUIZ"
-                ? "speedometer-outline"
-                : "timer-outline"
-            }
-            isOpen={activeTab === "settings"}
-            onToggle={() => {
-              const next = activeTab === "settings" ? null : "settings";
-              setActiveTab(next);
-              onSettingsToggle?.(next === "settings");
-            }}
-          >
-            {lobby.gameType === "QUIZ" ? (
-              <View className="rounded-2xl border border-white/10 bg-white/5 p-2">
-                <View className="flex-row gap-2">
-                  {DIFFICULTY_OPTIONS.map((opt: any) => {
-                    const isSelected = lobby.difficulty === opt;
+          {showGameSettings ? (
+            <CollapsibleCard
+              label="Host Controls"
+              title={
+                lobby.gameType === "QUIZ"
+                  ? `LEVEL: ${lobby.difficulty || "SELECT"}`
+                  : `ROUNDS: ${lobby.selectedRounds || 1}`
+              }
+              icon={
+                lobby.gameType === "QUIZ"
+                  ? "speedometer-outline"
+                  : "timer-outline"
+              }
+              isOpen={activeTab === "settings"}
+              onToggle={() => {
+                const next = activeTab === "settings" ? null : "settings";
+                setActiveTab(next);
+                onSettingsToggle?.(next === "settings");
+              }}
+            >
+              {lobby.gameType === "QUIZ" ? (
+                <View className="rounded-2xl border border-white/10 bg-white/5 p-2">
+                  <View className="flex-row gap-2">
+                    {DIFFICULTY_OPTIONS.map((opt: any) => {
+                      const isSelected = lobby.difficulty === opt;
 
-                    return (
-                      <Pressable
-                        key={opt}
-                        onPress={() => {
-                          lobby.handleDifficultyChange(opt);
+                      return (
+                        <Pressable
+                          key={opt}
+                          onPress={() => {
+                            lobby.handleDifficultyChange(opt);
 
-                          Haptics.notificationAsync(
-                            Haptics.NotificationFeedbackType.Success,
-                          );
-                        }}
-                        className="flex-1"
-                      >
-                        <LinearGradient
-                          colors={
-                            isSelected
-                              ? ["#6366F1", "#8B5CF6"]
-                              : ["transparent", "transparent"]
-                          }
-                          className="items-center rounded-xl py-3"
+                            Haptics.notificationAsync(
+                              Haptics.NotificationFeedbackType.Success,
+                            );
+                          }}
+                          className="flex-1"
                         >
-                          <Text
-                            className={`font-main-bold ${
-                              isSelected ? "text-white" : "text-white/30"
-                            }`}
+                          <LinearGradient
+                            colors={
+                              isSelected
+                                ? ["#6366F1", "#8B5CF6"]
+                                : ["transparent", "transparent"]
+                            }
+                            className="items-center rounded-xl py-3"
                           >
-                            {opt}
-                          </Text>
-                        </LinearGradient>
-                      </Pressable>
-                    );
-                  })}
+                            <Text
+                              className={`font-main-bold ${
+                                isSelected ? "text-white" : "text-white/30"
+                              }`}
+                            >
+                              {opt}
+                            </Text>
+                          </LinearGradient>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
                 </View>
-              </View>
-            ) : (
-              <RoundSelector />
-            )}
-          </CollapsibleCard>
+              ) : (
+                <RoundSelector />
+              )}
+            </CollapsibleCard>
+          ) : (
+            <View className="rounded-3xl border border-white/10 bg-white/[0.08] p-5">
+              <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white/40">
+                Host Controls
+              </Text>
+              <Text className="mt-2 font-main-bold text-white">
+                {lobby.gameType === "QUIZ"
+                  ? `Host picks the level: ${String(
+                      lobby.difficulty || "easy",
+                    ).toUpperCase()}`
+                  : `Host picks the rounds: ${lobby.selectedRounds || 1}`}
+              </Text>
+              <Text className="mt-2 text-sm leading-5 text-white/55">
+                You can change your name and picture here. The host chooses the
+                game settings and starts the match.
+              </Text>
+            </View>
+          )}
         </LinearGradient>
       </Animated.View>
 

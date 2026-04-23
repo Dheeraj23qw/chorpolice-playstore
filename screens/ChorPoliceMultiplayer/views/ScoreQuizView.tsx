@@ -12,7 +12,9 @@ import { Text } from "@/components/Text";
 import { rf, hp, wp } from "@/utils/responsive";
 
 const ScoreQuizView = ({ g }: any) => {
-  const players = ChorPoliceEngine.state.players;
+  const players = g.scoreQuizPlayers?.length
+    ? g.scoreQuizPlayers
+    : ChorPoliceEngine.state.players;
   const currentPlayer = players[g.quizPlayerIndex];
 
   if (!currentPlayer) return null;

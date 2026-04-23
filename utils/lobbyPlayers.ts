@@ -1,4 +1,5 @@
 import { SessionPlayer } from "@/redux/reducers/sessionSlice";
+import { getBotName } from "@/utils/nameGenerator";
 
 const TOTAL_PLAYERS = 4;
 const BOT_START_INDEX = 1;
@@ -18,7 +19,7 @@ export const createBotPlayer = (
 
   return {
     id: `bot_${slotIndex}`,
-    name: `Bot ${slotIndex}`,
+    name: getBotName(Math.max(0, slotIndex - BOT_START_INDEX)),
     avatarId,
     isBot: true,
   };

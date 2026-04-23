@@ -9,6 +9,7 @@ import {
   updatePlayerScores as updateReduxScores,
 } from "@/redux/reducers/playerReducer";
 import {
+  clearSession,
   setGamePhase as setReduxGamePhase,
   setMyRole as setReduxMyRole,
   setRoundState as setReduxRoundState,
@@ -60,6 +61,12 @@ import { revealAllCards } from "./helpers/revealAllCardsUtils";
  */
 
 type Role = "King" | "Police" | "Thief" | "Advisor";
+type ScoreQuizParticipant = {
+  id: string;
+  name: string;
+  avatarId: number;
+  isBot?: boolean;
+};
 
 const D = "🎭 [CPHook]";
 
@@ -136,6 +143,16 @@ export const useChorPoliceMultiplayer = () => {
     }
     return ["", "", "", ""];
   });
+  const [scoreQuizPlayers, setScoreQuizPlayers] = useState<
+    ScoreQuizParticipant[]
+  >(() =>
+    ChorPoliceEngine.state.players.map((player) => ({
+      id: player.id,
+      name: player.name,
+      avatarId: player.avatarId,
+      isBot: player.isBot,
+    })),
+  );
   const [isPlayButtonDisabled, setIsPlayButtonDisabled] = useState(false);
 
   // ─── Score display state (UI-only — engine is authoritative) ───
@@ -246,10 +263,59 @@ export const useChorPoliceMultiplayer = () => {
   const randomMessageLoseRef = useRef(randomMessageLose);
   randomMessageWinRef.current = randomMessageWin;
   randomMessageLoseRef.current = randomMessageLose;
+  const stakeRef = useRef(reduxStake);
+  stakeRef.current = reduxStake;
 
   // ─── Score table ───
   const [popupTable, setPopupTable] = useState(false);
   const toggleModal = useCallback(() => setPopupTable((p) => !p), []);
+  const getActiveStake = useCallback(() => {
+    return stakeRef.current > 0 ? stakeRef.current : ChorPoliceEngine.state.stake;
+  }, []);
+  const scoreQuizPlayersRef = useRef(scoreQuizPlayers);
+  const playerScoresRef = useRef(playerScores);
+  playerScoresRef.current = playerScores;
+
+  const setScoreQuizPlayersSnapshot = useCallback(
+    (players: ScoreQuizParticipant[]) => {
+      scoreQuizPlayersRef.current = players;
+      setScoreQuizPlayers(players);
+      return players;
+    },
+    [],
+  );
+
+  const resolveScoreQuizPlayers = useCallback((): ScoreQuizParticipant[] => {
+    const enginePlayers = ChorPoliceEngine.state.players.map((player) => ({
+      id: player.id,
+      name: player.name,
+      avatarId: player.avatarId,
+      isBot: player.isBot,
+    }));
+
+    if (enginePlayers.length > 0) {
+      return setScoreQuizPlayersSnapshot(enginePlayers);
+    }
+
+    if (scoreQuizPlayersRef.current.length > 0) {
+      return scoreQuizPlayersRef.current;
+    }
+
+    const fallbackPlayers = playerScoresRef.current
+      .filter((player) => typeof player.playerId === "string")
+      .map((player, index) => ({
+        id: player.playerId,
+        name: player.playerName,
+        avatarId: selectedImagesRef.current[index] || 1,
+        isBot: false,
+      }));
+
+    if (fallbackPlayers.length > 0) {
+      return setScoreQuizPlayersSnapshot(fallbackPlayers);
+    }
+
+    return [];
+  }, [setScoreQuizPlayersSnapshot]);
 
   const buildQuizOptions = useCallback((baseScore: number) => {
     const variations = [500, 800];
@@ -276,7 +342,7 @@ export const useChorPoliceMultiplayer = () => {
     }
 
     const CP = MODES.CHOR_POLICE;
-    const players = ChorPoliceEngine.state.players;
+    const players = resolveScoreQuizPlayers();
 
     if (playerIndex >= players.length) {
       setQuizDone(true);
@@ -322,16 +388,14 @@ export const useChorPoliceMultiplayer = () => {
       return;
     }
 
-    const stake = ChorPoliceEngine.state.stake;
+    const stake = getActiveStake();
     if (stake <= 0) {
       return;
     }
 
     stakeDeductedRef.current = true;
-    // FIX BUG-6: zero out engine stake so a re-mount cannot double-deduct coins
-    ChorPoliceEngine.state.stake = 0;
     dispatch(updateCoins(-stake));
-  }, [dispatch]);
+  }, [dispatch, getActiveStake, reduxStake]);
 
   useEffect(() => {
     const players = ChorPoliceEngine.state.players;
@@ -351,7 +415,15 @@ export const useChorPoliceMultiplayer = () => {
             scores: [],
           })),
     );
-  }, []);
+    setScoreQuizPlayersSnapshot(
+      players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        avatarId: player.avatarId,
+        isBot: player.isBot,
+      })),
+    );
+  }, [setScoreQuizPlayersSnapshot]);
 
   /* ═══════════════════════════════════════════════════════
      PACKET LISTENER — runs ONCE on mount. Never re-subscribes.
@@ -411,6 +483,14 @@ export const useChorPoliceMultiplayer = () => {
         // UI-only: set player names for display
         roundStartPendingRef.current = false;
         setPlayerNames(names);
+        setScoreQuizPlayersSnapshot(
+          ChorPoliceEngine.state.players.map((player) => ({
+            id: player.id,
+            name: player.name,
+            avatarId: player.avatarId,
+            isBot: player.isBot,
+          })),
+        );
 
         // Dispatch names to Redux so OverlayPopUp can read them
         dispatch(
@@ -606,6 +686,7 @@ export const useChorPoliceMultiplayer = () => {
             setQuizDone(false);
             setQuizOptionDisabled(false);
             quizOptionDisabledRef.current = false;
+            resolveScoreQuizPlayers();
             playTransition("score_quiz");
           } else {
             console.log(`${D} ▶️ Ready for next round — playing round video`);
@@ -631,10 +712,21 @@ export const useChorPoliceMultiplayer = () => {
       }
 
       if (packet.type === CP.SCORE_QUIZ_TURN) {
-        const players = ChorPoliceEngine.state.players;
-        const quizPlayer = players[packet.playerIndex];
+        const players = resolveScoreQuizPlayers();
+        let resolvedPlayerIndex =
+          typeof packet.playerIndex === "number" ? packet.playerIndex : -1;
+        let quizPlayer =
+          resolvedPlayerIndex >= 0 ? players[resolvedPlayerIndex] : undefined;
 
-        if (!quizPlayer || quizPlayer.id !== packet.playerId) {
+        if ((!quizPlayer || quizPlayer.id !== packet.playerId) && packet.playerId) {
+          resolvedPlayerIndex = players.findIndex(
+            (player) => player.id === packet.playerId,
+          );
+          quizPlayer =
+            resolvedPlayerIndex >= 0 ? players[resolvedPlayerIndex] : undefined;
+        }
+
+        if (!quizPlayer || resolvedPlayerIndex < 0) {
           console.warn(
             `${D} Ignoring malformed SCORE_QUIZ_TURN packet`,
             packet,
@@ -646,7 +738,7 @@ export const useChorPoliceMultiplayer = () => {
         currentQuizPlayerIdRef.current = packet.playerId;
         dispatch(setReduxGamePhase("score_quiz"));
         setQuizDone(false);
-        setQuizPlayerIndex(packet.playerIndex);
+        setQuizPlayerIndex(resolvedPlayerIndex);
         setQuizOptions(Array.isArray(packet.options) ? packet.options : []);
         setQuizOptionDisabled(false);
         quizOptionDisabledRef.current = false;
@@ -696,7 +788,7 @@ export const useChorPoliceMultiplayer = () => {
           return;
         }
 
-        const players = ChorPoliceEngine.state.players;
+        const players = resolveScoreQuizPlayers();
         const playerIndex = players.findIndex((p) => p.id === packet.playerId);
         const player = players[playerIndex];
         const guessedScore = Number(packet.guessedScore);
@@ -742,7 +834,13 @@ export const useChorPoliceMultiplayer = () => {
         currentQuizPlayerIdRef.current = null;
         quizOptionDisabledRef.current = true;
         setQuizOptionDisabled(true);
-        setQuizPlayerIndex(packet.playerIndex);
+        const players = resolveScoreQuizPlayers();
+        const resolvedPlayerIndex = players.findIndex(
+          (player) => player.id === packet.playerId,
+        );
+        const safePlayerIndex =
+          resolvedPlayerIndex >= 0 ? resolvedPlayerIndex : packet.playerIndex;
+        setQuizPlayerIndex(safePlayerIndex);
         ChorPoliceEngine.syncScores(packet.leaderboard ?? []);
 
         setPlayerScores((prev) =>
@@ -756,7 +854,8 @@ export const useChorPoliceMultiplayer = () => {
           ),
         );
 
-        const player = ChorPoliceEngine.state.players[packet.playerIndex];
+        const player =
+          safePlayerIndex >= 0 ? players[safePlayerIndex] : undefined;
         const avatarId = player?.avatarId ?? 1;
         const playerImage = playerImagesRef.current[avatarId];
 
@@ -798,7 +897,7 @@ export const useChorPoliceMultiplayer = () => {
         );
         playTransition("final_result");
 
-        const isWinner = packet.leaderboard?.[0]?.id === localPlayerId;
+        const isWinner = packet.leaderboard?.[0]?.id === _localPlayerId;
         const totalPot = packet.totalPot ?? 0;
 
         if (isWinner && totalPot > 0) {
@@ -817,14 +916,19 @@ export const useChorPoliceMultiplayer = () => {
         !_isHost
       ) {
         const refund = packet.stake || 0;
-        if (refund > 0) {
-          dispatch(updateCoins(refund));
-          toast.success("Refunded!", `${refund} coins returned.`);
-        }
-        stopSession();
-        dispatch(resetGameState());
-        router.dismissAll();
-        router.replace("/mode-select" as any);
+        void (async () => {
+          if (refund > 0) {
+            dispatch(updateCoins(refund));
+            toast.success("Refunded!", `${refund} coins returned.`);
+          }
+          await stopSession();
+          dispatch(clearSession());
+          dispatch(resetGameState());
+          dispatch(resetDifficulty());
+          router.dismissAll();
+          router.replace("/mode-select" as any);
+        })();
+        return;
       }
 
       if (packet.type === CP.GAME_END && packet.reason === "player_left") {
@@ -838,15 +942,18 @@ export const useChorPoliceMultiplayer = () => {
           toast.error("Match Ended", "A player left, so the match was closed.", 3000);
         }
 
-        timerRefs.current.forEach(clearTimeout);
-        timerRefs.current = [];
-        ChorPoliceBotBehavior.reset();
-        ChorPoliceEngine.reset();
-        stopSession();
-        dispatch(resetGameState());
-        dispatch(resetDifficulty());
-        router.dismissAll();
-        router.replace("/mode-select" as any);
+        void (async () => {
+          timerRefs.current.forEach(clearTimeout);
+          timerRefs.current = [];
+          ChorPoliceBotBehavior.reset();
+          ChorPoliceEngine.reset();
+          await stopSession();
+          dispatch(clearSession());
+          dispatch(resetGameState());
+          dispatch(resetDifficulty());
+          router.dismissAll();
+          router.replace("/mode-select" as any);
+        })();
         return;
       }
 
@@ -895,7 +1002,7 @@ export const useChorPoliceMultiplayer = () => {
       }
 
       hostDisconnectHandledRef.current = true;
-      const refund = ChorPoliceEngine.state.stake || 0;
+      const refund = getActiveStake();
       if (refund > 0) {
         dispatch(updateCoins(refund));
       }
@@ -906,17 +1013,20 @@ export const useChorPoliceMultiplayer = () => {
           : "The host connection was lost. Returning to the lobby.",
         4000,
       );
-      stopSession();
-      dispatch(resetGameState());
-      dispatch(resetDifficulty());
-      requestAnimationFrame(() => {
-        router.dismissAll();
-        router.replace("/mode-select" as any);
-      });
+      void (async () => {
+        await stopSession();
+        dispatch(clearSession());
+        dispatch(resetGameState());
+        dispatch(resetDifficulty());
+        requestAnimationFrame(() => {
+          router.dismissAll();
+          router.replace("/mode-select" as any);
+        });
+      })();
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [dispatch, isHost, router]);
+  }, [dispatch, getActiveStake, isHost, router]);
 
   /* ═══════════════════════════════════════════════════════
      handlePlay — User clicks "Press me to play!"
@@ -1110,7 +1220,7 @@ export const useChorPoliceMultiplayer = () => {
 
   /* ─── FINAL RESULT EXIT ─── */
   const handleFinalExit = useCallback(
-    (target?: string) => {
+    async (target?: string) => {
       if (isQuittingRef.current) return;
       isQuittingRef.current = true;
 
@@ -1125,7 +1235,8 @@ export const useChorPoliceMultiplayer = () => {
       timerRefs.current.forEach(clearTimeout);
       timerRefs.current = [];
 
-      stopSession();
+      await stopSession();
+      dispatch(clearSession());
       dispatch(resetGameState());
       dispatch(resetDifficulty());
 
@@ -1170,7 +1281,7 @@ export const useChorPoliceMultiplayer = () => {
         console.log(`${D} 🏁 Exit from finished game — no penalty`);
       } else if (isHost) {
         // Game is still in progress — host quit penalty applies
-        const stake = ChorPoliceEngine.state.stake;
+        const stake = getActiveStake();
         if (stake > 0)
           toast.error("Stake Lost!", `Your ${stake} coins are lost.`, 4000);
         broadcastPacket({
@@ -1202,7 +1313,8 @@ export const useChorPoliceMultiplayer = () => {
       ChorPoliceEngine.reset();
       timerRefs.current.forEach(clearTimeout);
       timerRefs.current = [];
-      stopSession();
+      await stopSession();
+      dispatch(clearSession());
       dispatch(resetDifficulty());
       // PROD-6 FIX: dispatch resetGameState AFTER navigation so UI never reads
       // from an empty Redux store during the transition frame.
@@ -1216,7 +1328,7 @@ export const useChorPoliceMultiplayer = () => {
     } finally {
       isQuittingRef.current = false;
     }
-  }, [dispatch, isHost, localPlayerId, router]);
+  }, [dispatch, getActiveStake, isHost, localPlayerId, router]);
 
   /**
    * Phase-aware back button handler.
@@ -1252,6 +1364,7 @@ export const useChorPoliceMultiplayer = () => {
     advisorIndex: reduxAdvisorIndex,
     thiefIndex: reduxThiefIndex,
     playerScores,
+    scoreQuizPlayers,
     // RULE 10: Round info from Redux
     round: reduxCurrentRound,
     totalRounds: reduxTotalRounds,

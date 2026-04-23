@@ -11,6 +11,12 @@
  *   [4 bytes: payload length][N bytes: JSON payload]
  * This prevents TCP stream fragmentation issues where multiple JSON objects
  * arrive concatenated in a single `onData` callback.
+ *
+ * PORT STRATEGY:
+ * The server attempts the configured primary port first. If it fails (port in
+ * use, OS hasn't released it from a previous session, etc.), it rotates
+ * through a pool of fallback ports. The actual listening port is exposed via
+ * getListeningPort() so QR codes and client connections use the right port.
  */
 import { Buffer } from "buffer";
 import TcpSocket from "react-native-tcp-socket";
@@ -23,6 +29,7 @@ type SessionConfig = {
   isHost: boolean;
   localPlayerId: string;
   hostIp?: string | null;
+  hostPort?: number;
   onPacket: PacketHandler;
 };
 
@@ -31,6 +38,7 @@ type SessionSnapshot = {
   localPlayerId: string;
   hostIp: string | null;
   clientIps: string[];
+  listeningPort: number;
 };
 
 type PacketEnvelope = {
@@ -38,22 +46,45 @@ type PacketEnvelope = {
   packet: any;
 };
 
-const SESSION_PORT = NETWORK.TCP_SERVER_PORT;
+// ── Port Configuration ──
+// Primary port + fallback pool. If the primary port is occupied (common on
+// Android when a previous session's socket is still in TIME_WAIT), we rotate
+// through fallbacks until one succeeds.
+const PRIMARY_PORT = NETWORK.TCP_SERVER_PORT;
+const FALLBACK_PORTS = [41236, 41237, 41238, 41239, 41240];
+const ALL_PORTS = [PRIMARY_PORT, ...FALLBACK_PORTS];
+const SERVER_START_TIMEOUT_MS = 3000;
 
 let tcpServer: any = null;
 let clientSocket: any = null;
 let packetHandler: PacketHandler | null = null;
+let pendingServerStartPromise: Promise<void> | null = null;
+let pendingServerStopPromise: Promise<boolean> | null = null;
+let serverRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 const state = {
   isHost: false,
   localPlayerId: "host_id",
   hostIp: null as string | null,
+  listeningPort: PRIMARY_PORT as number,
   clientSockets: new Map<string, any>(), // ip -> socket
   clientIps: new Set<string>(),
   playerIdByIp: new Map<string, string>(),
   ipByPlayerId: new Map<string, string>(),
   clientBuffers: new Map<string, Buffer>(), // ip -> partial data buffer
   hostBuffer: Buffer.alloc(0), // partial data buffer for client side
+};
+
+const devLog = (tag: string, message: string, ...args: any[]) => {
+  if (__DEV__) {
+    console.log(`[TCP Transport][${tag}] ${message}`, ...args);
+  }
+};
+
+const devWarn = (tag: string, message: string, ...args: any[]) => {
+  if (__DEV__) {
+    console.warn(`[TCP Transport][${tag}] ${message}`, ...args);
+  }
 };
 
 // ── Framing Helpers ──
@@ -85,11 +116,7 @@ const extractFrames = (buffer: Buffer): [PacketEnvelope[], Buffer] => {
 
     // Sanity check: reject absurdly large frames (> 1MB)
     if (payloadLength > 1_048_576) {
-      if (__DEV__) {
-        console.warn(
-          `[TCP Transport] Rejecting oversized frame (${payloadLength} bytes). Resetting buffer.`,
-        );
-      }
+      devWarn("Frame", `Rejecting oversized frame (${payloadLength} bytes). Resetting buffer.`);
       return [packets, Buffer.alloc(0)];
     }
 
@@ -112,15 +139,11 @@ const extractFrames = (buffer: Buffer): [PacketEnvelope[], Buffer] => {
         envelope.packet
       ) {
         packets.push(envelope);
-      } else if (__DEV__) {
-        console.warn(
-          `[TCP Transport] Dropping packet with mismatched version: ${envelope?.version}`,
-        );
+      } else {
+        devWarn("Frame", `Dropping packet with mismatched version: ${envelope?.version}`);
       }
     } catch (error) {
-      if (__DEV__) {
-        console.warn("[TCP Transport] Frame parse error:", error);
-      }
+      devWarn("Frame", "Frame parse error:", error);
     }
 
     offset += 4 + payloadLength;
@@ -132,101 +155,176 @@ const extractFrames = (buffer: Buffer): [PacketEnvelope[], Buffer] => {
 
 // ── TCP Server (Host) ──
 
-const startTcpServer = () => {
-  // 1. Prevent multiple server instances in the same session
-  if (tcpServer) return;
+/**
+ * Attempts to start a TCP server on the given port.
+ * Returns a Promise that resolves if the server starts listening,
+ * or rejects with the error.
+ */
+const tryListenOnPort = (port: number): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    devLog("Server", `Trying to bind on port ${port}...`);
 
-  tcpServer = TcpSocket.createServer((socket: any) => {
-    // 2. Resolve Remote IP immediately
-    const remoteIp: string =
-      socket.remoteAddress?.replace("::ffff:", "") || "unknown";
+    const server = TcpSocket.createServer((socket: any) => {
+      // Resolve Remote IP immediately
+      const remoteIp: string =
+        socket.remoteAddress?.replace("::ffff:", "") || "unknown";
 
-    // 3. CRITICAL: Reject connections that can't be identified
-    // This prevents the "unknown-ip" bot bug
-    if (remoteIp === "unknown") {
-      if (__DEV__)
-        console.warn("[TCP Transport] Rejecting connection with unknown IP");
-      socket.destroy();
-      return;
-    }
+      // CRITICAL: Reject connections that can't be identified
+      if (remoteIp === "unknown") {
+        devWarn("Server", "Rejecting connection with unknown IP");
+        socket.destroy();
+        return;
+      }
 
-    const remotePort: number = socket.remotePort || 0;
+      const remotePort: number = socket.remotePort || 0;
+      devLog("Server", `Client connected: ${remoteIp}:${remotePort}`);
 
-    if (__DEV__) {
-      console.log(
-        `[TCP Transport] Client connected: ${remoteIp}:${remotePort}`,
-      );
-    }
+      state.clientSockets.set(remoteIp, socket);
+      state.clientIps.add(remoteIp);
+      state.clientBuffers.set(remoteIp, Buffer.alloc(0));
 
-    state.clientSockets.set(remoteIp, socket);
-    state.clientIps.add(remoteIp);
-    state.clientBuffers.set(remoteIp, Buffer.alloc(0));
+      socket.on("data", (data: any) => {
+        const rawBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+        const existingBuffer =
+          state.clientBuffers.get(remoteIp) || Buffer.alloc(0);
+        const combined = Buffer.concat([existingBuffer, rawBuffer]);
+        const [packets, remaining] = extractFrames(combined);
+        state.clientBuffers.set(remoteIp, remaining);
 
-    socket.on("data", (data: any) => {
-      const rawBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
-      const existingBuffer =
-        state.clientBuffers.get(remoteIp) || Buffer.alloc(0);
-      const combined = Buffer.concat([existingBuffer, rawBuffer]);
-      const [packets, remaining] = extractFrames(combined);
-      state.clientBuffers.set(remoteIp, remaining);
+        for (const envelope of packets) {
+          packetHandler?.(envelope.packet, remoteIp);
+        }
+      });
 
-      for (const envelope of packets) {
-        packetHandler?.(envelope.packet, remoteIp);
+      socket.on("error", (error: any) => {
+        devWarn("Socket", `Socket error (${remoteIp}):`, error?.message);
+      });
+
+      socket.on("close", () => {
+        // NET-1 FIX: clean up ALL maps and notify the game layer.
+        const playerId = state.playerIdByIp.get(remoteIp);
+        state.clientSockets.delete(remoteIp);
+        state.clientBuffers.delete(remoteIp);
+        state.clientIps.delete(remoteIp);
+        if (playerId) {
+          state.playerIdByIp.delete(remoteIp);
+          state.ipByPlayerId.delete(playerId);
+          // Synthesise a PLAYER_LEAVE so game engines and lobby coordinator react
+          if (packetHandler) {
+            packetHandler(
+              { type: "PLAYER_LEAVE", playerId, reason: "tcp_close" },
+              remoteIp,
+            );
+          }
+        }
+      });
+    });
+
+    let settled = false;
+
+    // Timeout fallback — if neither `listening` nor `error` fires within
+    // SERVER_START_TIMEOUT_MS, we assume the native layer is stuck and
+    // clean up.
+    const startupTimeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      devWarn("Server", `Bind on port ${port} timed out after ${SERVER_START_TIMEOUT_MS}ms`);
+      try { server.removeAllListeners(); } catch { /* ignore */ }
+      try { server.close(); } catch { /* ignore */ }
+      reject(new Error(`Timeout binding port ${port}`));
+    }, SERVER_START_TIMEOUT_MS);
+
+    const cleanup = () => {
+      clearTimeout(startupTimeout);
+    };
+
+    server.on("close", () => {
+      cleanup();
+      if (tcpServer === server) {
+        tcpServer = null;
       }
     });
 
-    socket.on("error", (error: any) => {
-      if (__DEV__)
-        console.warn(
-          `[TCP Transport] Socket error (${remoteIp}):`,
-          error?.message,
-        );
+    server.on("error", (error: any) => {
+      cleanup();
+      if (settled) return;
+      settled = true;
+      const msg = error?.message || error?.code || "Unknown server error";
+      devWarn("Server", `Bind on port ${port} failed: ${msg}`);
+      try { server.removeAllListeners(); } catch { /* ignore */ }
+      try { server.close(); } catch { /* ignore */ }
+      reject(new Error(msg));
     });
 
-    socket.on("close", () => {
-      // NET-1 FIX: clean up ALL maps and notify the game layer.
-      // Previously only clientSockets/clientBuffers were cleared, leaving
-      // playerIdByIp / ipByPlayerId stale and breaking heartbeat eviction.
-      const playerId = state.playerIdByIp.get(remoteIp);
-      state.clientSockets.delete(remoteIp);
-      state.clientBuffers.delete(remoteIp);
-      state.clientIps.delete(remoteIp);
-      if (playerId) {
-        state.playerIdByIp.delete(remoteIp);
-        state.ipByPlayerId.delete(playerId);
-        // Synthesise a PLAYER_LEAVE so game engines and lobby coordinator react
-        if (packetHandler) {
-          packetHandler(
-            { type: "PLAYER_LEAVE", playerId, reason: "tcp_close" },
-            remoteIp,
-          );
+    // Wire up event handlers before listen
+    server.listen(
+      { port, host: "0.0.0.0", reuseAddress: true },
+      () => {
+        cleanup();
+        if (settled) return;
+        settled = true;
+
+        // ✅ SUCCESS — assign the server ref and update state
+        tcpServer = server;
+        state.listeningPort = port;
+
+        devLog("Server", `✅ Listening on port ${port}`);
+        updateDebugMetric("hostIp", `self:${port}`);
+        resolve();
+      },
+    );
+  });
+};
+
+/**
+ * Starts the TCP server by trying each port in the pool sequentially.
+ * Resolves when one port successfully binds, or rejects if all fail.
+ */
+const startTcpServer = (): Promise<void> => {
+  if (pendingServerStartPromise) {
+    return pendingServerStartPromise;
+  }
+
+  if (tcpServer) {
+    return Promise.resolve();
+  }
+
+  pendingServerStartPromise = (async () => {
+    const errors: string[] = [];
+
+    for (let i = 0; i < ALL_PORTS.length; i++) {
+      const port = ALL_PORTS[i];
+      devLog("Server", `═══ Attempt ${i + 1}/${ALL_PORTS.length} — port ${port} ═══`);
+
+      try {
+        await tryListenOnPort(port);
+        // Success — clear the pending promise reference
+        pendingServerStartPromise = null;
+        return;
+      } catch (error: any) {
+        errors.push(`Port ${port}: ${error?.message || "unknown"}`);
+        devWarn("Server", `Port ${port} failed (${error?.message}). ${i < ALL_PORTS.length - 1 ? "Trying next port..." : "No more ports."}`);
+
+        // Small delay between attempts to let the OS breathe
+        if (i < ALL_PORTS.length - 1) {
+          await new Promise((r) => setTimeout(r, 300));
         }
       }
-    });
-  });
-
-  tcpServer.on("error", (error: any) => {
-    // 4. Handle the "Address already in use" error
-    if (error.code === "EADDRINUSE") {
-      console.error(
-        "[TCP Transport] Port busy (EADDRINUSE). Old session still active.",
-      );
-    } else {
-      console.error("[TCP Transport] Server error:", error);
     }
-  });
 
-  tcpServer.listen(
-    { port: SESSION_PORT, host: "0.0.0.0", reuseAddress: true }, // reuseAddress is key
-    () => {
-      if (__DEV__)
-        console.log(`[TCP Transport] Server listening on port ${SESSION_PORT}`);
-    },
-  );
+    pendingServerStartPromise = null;
+    const summary = errors.join("; ");
+    throw new Error(`All ${ALL_PORTS.length} ports failed: ${summary}`);
+  })();
+
+  return pendingServerStartPromise;
 };
+
 // ── TCP Client ──
 
-const connectToHost = (hostIp: string) => {
+const connectToHost = (hostIp: string, hostPort?: number) => {
+  const port = hostPort || state.listeningPort || PRIMARY_PORT;
+
   if (clientSocket) {
     try { clientSocket.destroy(); } catch { /* ignore */ }
     clientSocket = null;
@@ -234,16 +332,16 @@ const connectToHost = (hostIp: string) => {
 
   state.hostBuffer = Buffer.alloc(0);
 
+  devLog("Client", `Connecting to host ${hostIp}:${port}...`);
+
   // NET-4 FIX: declare timeout BEFORE the connection callback that clears it
   let connectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
   clientSocket = TcpSocket.createConnection(
-    { port: SESSION_PORT, host: hostIp },
+    { port, host: hostIp },
     () => {
       if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
-      if (__DEV__) {
-        console.log(`[TCP Transport] Connected to host: ${hostIp}:${SESSION_PORT}`);
-      }
+      devLog("Client", `Connected to host: ${hostIp}:${port}`);
     },
   );
 
@@ -251,7 +349,7 @@ const connectToHost = (hostIp: string) => {
   connectionTimeout = setTimeout(() => {
     connectionTimeout = null;
     if (clientSocket && !clientSocket.destroyed) {
-      if (__DEV__) console.warn(`[TCP Transport] Connection to host timed out: ${hostIp}`);
+      devWarn("Client", `Connection to host timed out: ${hostIp}:${port}`);
       clientSocket.destroy();
       clientSocket = null;
     }
@@ -263,11 +361,7 @@ const connectToHost = (hostIp: string) => {
     const [packets, remaining] = extractFrames(state.hostBuffer);
     state.hostBuffer = remaining;
     for (const envelope of packets) {
-      if (__DEV__) {
-        console.log(
-          `[TCP Transport] Incoming ${envelope.packet?.type ?? "UNKNOWN"} from host ${hostIp}`,
-        );
-      }
+      devLog("Client", `Incoming ${envelope.packet?.type ?? "UNKNOWN"} from host ${hostIp}`);
       packetHandler?.(envelope.packet, hostIp);
     }
   });
@@ -280,16 +374,16 @@ const connectToHost = (hostIp: string) => {
   // NET-3 FIX: auto-reconnect on drop instead of silently going dark
   clientSocket.on("close", () => {
     if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
-    if (__DEV__) console.log(`[TCP Transport] Disconnected from host: ${hostIp}`);
+    devLog("Client", `Disconnected from host: ${hostIp}`);
     clientSocket = null;
 
     // Only reconnect if we still have a valid hostIp stored (i.e. not intentionally stopped)
     if (state.hostIp === hostIp) {
       const delay = 1500;
-      if (__DEV__) console.log(`[TCP Transport] Auto-reconnecting in ${delay}ms...`);
+      devLog("Client", `Auto-reconnecting in ${delay}ms...`);
       setTimeout(() => {
         if (state.hostIp === hostIp) {
-          connectToHost(hostIp);
+          connectToHost(hostIp, port);
         }
       }, delay);
     }
@@ -300,9 +394,7 @@ const connectToHost = (hostIp: string) => {
 
 const safeSend = (socket: any, framedData: Buffer, label: string) => {
   if (!socket || socket.destroyed) {
-    if (__DEV__) {
-      console.warn(`[TCP Transport] Cannot send to ${label}: socket destroyed`);
-    }
+    devWarn("Send", `Cannot send to ${label}: socket destroyed`);
     return false;
   }
 
@@ -310,9 +402,7 @@ const safeSend = (socket: any, framedData: Buffer, label: string) => {
     socket.write(framedData);
     return true;
   } catch (error) {
-    if (__DEV__) {
-      console.warn(`[TCP Transport] Send failed to ${label}:`, error);
-    }
+    devWarn("Send", `Send failed to ${label}:`, error);
     return false;
   }
 };
@@ -324,51 +414,100 @@ export const GameSessionTransport = {
     isHost,
     localPlayerId,
     hostIp = null,
+    hostPort,
     onPacket,
   }: SessionConfig) => {
+    devLog("Lifecycle", `start() called — isHost=${isHost}, playerId=${localPlayerId}, hostIp=${hostIp}, hostPort=${hostPort ?? "default"}`);
+
     // Clean up any previous session
     await GameSessionTransport.stop();
     state.isHost = isHost;
     state.localPlayerId = localPlayerId;
     state.hostIp = hostIp;
+    if (hostPort) {
+      state.listeningPort = hostPort;
+    }
     updateDebugMetric("hostIp", hostIp ?? (isHost ? "self-hosted" : "N/A"));
     packetHandler = onPacket;
 
-    if (isHost) {
-      startTcpServer();
+    try {
+      if (isHost) {
+        await startTcpServer();
+        devLog("Lifecycle", `Server started successfully on port ${state.listeningPort}`);
+      }
+    } catch (error) {
+      console.error("[TCP Transport] Failed to start server:", error);
+      await GameSessionTransport.stop();
+      throw error;
     }
     // Client connects lazily when setHostIp is called
   },
 
   stop: async (): Promise<boolean> => {
-    return new Promise((resolve) => {
+    if (pendingServerStopPromise) {
+      return pendingServerStopPromise;
+    }
+
+    devLog("Lifecycle", "stop() called");
+
+    // Cancel any in-progress server start first
+    if (serverRetryTimer) {
+      clearTimeout(serverRetryTimer);
+      serverRetryTimer = null;
+    }
+    pendingServerStartPromise = null;
+
+    pendingServerStopPromise = new Promise((resolve) => {
+      let finished = false;
+      let closeFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const finish = (result: boolean) => {
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+        if (closeFallbackTimer) {
+          clearTimeout(closeFallbackTimer);
+          closeFallbackTimer = null;
+        }
+
+        performCleanup();
+        pendingServerStopPromise = null;
+        devLog("Lifecycle", `stop() finished — success=${result}`);
+        resolve(result);
+      };
+
       // 1. Handle Server Shutdown
       if (tcpServer) {
-        if (__DEV__) console.log("[TCP Transport] Stopping active server...");
+        devLog("Lifecycle", "Stopping active server...");
         try {
           // KICK EVERYONE IMMEDIATELY so the port closes faster
-          state.clientSockets.forEach((socket) => socket.destroy());
+          state.clientSockets.forEach((socket) => {
+            try { socket.destroy(); } catch { /* ignore */ }
+          });
           state.clientSockets.clear();
 
           tcpServer.removeAllListeners();
 
           tcpServer.close(() => {
-            if (__DEV__) console.log("[TCP Transport] Server port released.");
+            devLog("Lifecycle", "Server port released.");
             tcpServer = null;
-
-            // Resolve now so start() can proceed
-            performCleanup();
-            resolve(true);
+            finish(true);
           });
+          // Give Android 2.5s to release the port
+          closeFallbackTimer = setTimeout(() => {
+            devWarn("Lifecycle", "Server close timed out. Forcing cleanup.");
+            tcpServer = null;
+            finish(false);
+          }, 2500);
         } catch (e) {
           console.warn("[TCP Transport] Error closing server:", e);
           tcpServer = null;
-          performCleanup();
-          resolve(false);
+          finish(false);
         }
       } else {
-        performCleanup();
-        resolve(true);
+        finish(true);
       }
 
       // 2. Encapsulated State Cleanup
@@ -396,27 +535,31 @@ export const GameSessionTransport = {
         state.isHost = false;
         state.localPlayerId = "host_id";
         state.hostIp = null;
+        state.listeningPort = PRIMARY_PORT;
         state.clientSockets.clear();
         state.clientIps.clear();
         state.playerIdByIp.clear();
         state.ipByPlayerId.clear();
         state.clientBuffers.clear();
         state.hostBuffer = Buffer.alloc(0);
+        pendingServerStartPromise = null;
         updateDebugMetric("hostIp", "N/A");
       }
     });
-  },
-  setHostIp: (hostIp: string | null) => {
-    state.hostIp = hostIp;
-    updateDebugMetric("hostIp", hostIp ?? "N/A");
 
-    if (__DEV__) {
-      console.log(`[TCP Transport] Session host IP set to ${hostIp ?? "N/A"}`);
+    return pendingServerStopPromise;
+  },
+  setHostIp: (hostIp: string | null, hostPort?: number) => {
+    state.hostIp = hostIp;
+    if (hostPort) {
+      state.listeningPort = hostPort;
     }
+    updateDebugMetric("hostIp", hostIp ?? "N/A");
+    devLog("Config", `Host IP set to ${hostIp ?? "N/A"}, port ${hostPort ?? state.listeningPort}`);
 
     // Client: connect to host when IP is set
     if (hostIp && !state.isHost) {
-      connectToHost(hostIp);
+      connectToHost(hostIp, hostPort);
     }
   },
 
@@ -426,6 +569,7 @@ export const GameSessionTransport = {
     state.clientIps.add(ip);
     state.playerIdByIp.set(ip, playerId);
     state.ipByPlayerId.set(playerId, ip);
+    devLog("Peers", `Registered peer ${playerId} at ${ip}`);
   },
 
   unregisterPeer: (playerId: string) => {
@@ -447,11 +591,18 @@ export const GameSessionTransport = {
       state.clientSockets.delete(ip);
       state.clientBuffers.delete(ip);
     }
+    devLog("Peers", `Unregistered peer ${playerId} (was at ${ip})`);
   },
 
   getPlayerIdByIp: (ip: string) => state.playerIdByIp.get(ip),
 
   getIpByPlayerId: (playerId: string) => state.ipByPlayerId.get(playerId),
+
+  /**
+   * Returns the port the server is actually listening on.
+   * May differ from NETWORK.TCP_SERVER_PORT if the primary port was busy.
+   */
+  getListeningPort: (): number => state.listeningPort,
 
   sendToHost: (packet: any) => {
     if (!state.hostIp) {
@@ -464,11 +615,9 @@ export const GameSessionTransport = {
     if (clientSocket && !clientSocket.destroyed) {
       safeSend(clientSocket, framed, `host(${state.hostIp})`);
     } else {
-      if (__DEV__) {
-        console.warn("[TCP Transport] No active connection to host. Reconnecting...");
-      }
+      devWarn("Send", "No active connection to host. Reconnecting...");
       // NET-2 FIX: reconnect first, then retry with backoff (300ms then 800ms)
-      connectToHost(state.hostIp);
+      connectToHost(state.hostIp, state.listeningPort);
       const hostIpAtSend = state.hostIp;
       const retryDelays = [300, 800];
       retryDelays.forEach((delay) => {
@@ -487,8 +636,8 @@ export const GameSessionTransport = {
 
     if (socket) {
       safeSend(socket, framed, `peer(${ip})`);
-    } else if (__DEV__) {
-      console.warn(`[TCP Transport] No socket for peer: ${ip}`);
+    } else {
+      devWarn("Send", `No socket for peer: ${ip}`);
     }
   },
 
@@ -504,6 +653,7 @@ export const GameSessionTransport = {
     localPlayerId: state.localPlayerId,
     hostIp: state.hostIp,
     clientIps: Array.from(state.clientIps),
+    listeningPort: state.listeningPort,
   }),
 
   /**
@@ -525,7 +675,7 @@ export const GameSessionTransport = {
     if (state.isHost || !state.hostIp) return false;
 
     try {
-      connectToHost(state.hostIp);
+      connectToHost(state.hostIp, state.listeningPort);
       return true;
     } catch {
       return false;
