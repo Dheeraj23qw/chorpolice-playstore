@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from "react";
-import { Modal, View, Pressable, Animated, Platform } from "react-native";
+import { Modal, View, Pressable, Platform } from "react-native";
 import { Text } from "@/components/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-
+import { MotiView } from "moti";
+import { useDispatch } from "react-redux";
+import { openModalUI, closeModalUI } from "@/redux/reducers/uiStateSlice";
 interface AppExitModalProps {
   visible: boolean;
   onCancel: () => void;
@@ -16,59 +18,50 @@ export default function AppExitModal({
   onConfirm,
 }: AppExitModalProps) {
   const tapped = useRef(false);
-
-  const cardScale = useRef(new Animated.Value(0.92)).current;
-  const cardOpacity = useRef(new Animated.Value(0)).current;
-
+  const dispatch = useDispatch();
   useEffect(() => {
     if (visible) {
-      tapped.current = false;
-      requestAnimationFrame(() => {
-        cardScale.setValue(0.92);
-        cardOpacity.setValue(0);
-        Animated.parallel([
-          Animated.spring(cardScale, {
-            toValue: 1,
-            tension: 110,
-            friction: 9,
-            useNativeDriver: true,
-          }),
-          Animated.timing(cardOpacity, {
-            toValue: 1,
-            duration: 180,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
+      dispatch(openModalUI());
+    } else {
+      dispatch(closeModalUI());
     }
+
+    return () => {
+      dispatch(closeModalUI()); // safety cleanup
+    };
   }, [visible]);
 
   const safeTap = (action: () => void) => {
     if (tapped.current) return;
     tapped.current = true;
     action();
-    setTimeout(() => (tapped.current = false), 600);
+    setTimeout(() => (tapped.current = false), 500);
   };
+
+  if (!visible) return null;
 
   return (
     <Modal transparent visible={visible} animationType="fade">
       <View className="flex-1 items-center justify-center bg-black/70 px-6">
-        {/* Background tap */}
+        {/* BACKDROP TAP */}
         <Pressable
           className="absolute h-full w-full"
           onPress={() => safeTap(onCancel)}
         />
 
-        {/* Card */}
-        <Animated.View
-          style={{
-            transform: [{ scale: cardScale }],
-            opacity: cardOpacity,
-            width: "100%",
-            maxWidth: 380,
+        {/* CARD ANIMATION */}
+        <MotiView
+          from={{ scale: 0.92, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{
+            type: "spring",
+            damping: 14,
+            stiffness: 140,
           }}
+          style={{ width: "100%", maxWidth: 380 }}
         >
-          {/* Glass Layer */}
+          {/* GLASS CARD */}
           <BlurView
             intensity={25}
             tint="dark"
@@ -80,12 +73,11 @@ export default function AppExitModal({
                   : "transparent",
             }}
           >
-            {/* Neon top accent */}
+            {/* TOP ACCENT */}
             <View className="h-[3px] w-full bg-gradient-to-r from-red-500 via-pink-500 to-red-500" />
 
-            {/* Header */}
+            {/* HEADER */}
             <View className="items-center pb-3 pt-8">
-              {/* Glow Icon Container */}
               <View className="mb-5 h-20 w-20 items-center justify-center rounded-3xl border border-red-400/20 bg-red-500/10 shadow-lg">
                 <Ionicons name="exit-outline" size={40} color="#ff5c7a" />
               </View>
@@ -95,12 +87,12 @@ export default function AppExitModal({
               </Text>
             </View>
 
-            {/* Divider glow */}
+            {/* DIVIDER */}
             <View className="mx-6 my-4 h-[1px] bg-white/5" />
 
-            {/* Buttons */}
+            {/* BUTTONS */}
             <View className="p-6 pt-3">
-              {/* Cancel */}
+              {/* CANCEL */}
               <Pressable
                 onPress={() => safeTap(onCancel)}
                 className="mb-3 h-[52px] w-full items-center justify-center rounded-2xl border border-white/10 bg-white/10"
@@ -110,7 +102,7 @@ export default function AppExitModal({
                 </Text>
               </Pressable>
 
-              {/* Exit */}
+              {/* EXIT */}
               <Pressable
                 onPress={() => safeTap(onConfirm)}
                 className="h-[52px] w-full items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10"
@@ -119,7 +111,7 @@ export default function AppExitModal({
               </Pressable>
             </View>
           </BlurView>
-        </Animated.View>
+        </MotiView>
       </View>
     </Modal>
   );

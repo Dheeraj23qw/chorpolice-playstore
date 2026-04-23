@@ -2,18 +2,10 @@ import React, { useEffect } from "react";
 import { Modal, View, TouchableOpacity, Image } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  cancelAnimation,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-  ZoomIn,
-  withDelay,
-} from "react-native-reanimated";
+import { MotiView } from "moti";
 import { Text } from "@/components/Text";
+import { useDispatch } from "react-redux";
+import { openModalUI, closeModalUI } from "@/redux/reducers/uiStateSlice";
 
 interface WelcomeProps {
   isVisible: boolean;
@@ -24,75 +16,57 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
   isVisible,
   onClaim,
 }) => {
-  const floatY = useSharedValue(0);
-  const shimmerX = useSharedValue(-200);
+  const dispatch = useDispatch();
 
+  /* 🔥 SYNC WITH GLOBAL UI STATE */
   useEffect(() => {
-    if (isVisible) {
-      // Floating Thief
-      floatY.value = withRepeat(
-        withSequence(
-          withTiming(-15, {
-            duration: 1500,
-            easing: Easing.inOut(Easing.quad),
-          }),
-          withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
-        ),
-        -1,
-        true,
-      );
+    if (isVisible) dispatch(openModalUI());
+    else dispatch(closeModalUI());
 
-      // Glass Shimmer
-      shimmerX.value = withRepeat(
-        withDelay(
-          500,
-          withTiming(400, { duration: 2000, easing: Easing.linear }),
-        ),
-        -1,
-        false,
-      );
-    } else {
-      cancelAnimation(floatY);
-      cancelAnimation(shimmerX);
-      floatY.value = 0;
-      shimmerX.value = -200;
-    }
-  }, [floatY, isVisible, shimmerX]);
+    return () => {
+      dispatch(closeModalUI());
+    };
+  }, [isVisible]);
 
-  const thiefStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatY.value }],
-  }));
-  const shimmerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shimmerX.value }],
-  }));
+  if (!isVisible) return null;
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent
-      statusBarTranslucent
-      animationType="fade"
-    >
-      {/* REMOVED BLACK BACKGROUND: 
-          The flex-1 container is now completely transparent. 
-      */}
+    <Modal transparent animationType="fade">
       <View className="flex-1 items-center justify-center px-6">
-        <Animated.View
-          entering={ZoomIn.springify().damping(15)}
-          className="w-full max-w-sm overflow-hidden rounded-[50px] border border-white/40 shadow-2xl"
-          style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+        {/* CARD */}
+        <MotiView
+          from={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{
+            type: "spring",
+            damping: 15,
+            stiffness: 120,
+          }}
+          className="w-full max-w-sm overflow-hidden rounded-[50px] border border-white/40"
+          style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
         >
-          {/* HIGH INTENSITY BLUR: This makes the game screen behind it look like frosted glass */}
           <BlurView intensity={95} tint="dark" className="items-center p-10">
             {/* FLOATING THIEF */}
-            <Animated.View style={thiefStyle} className="mb-4">
+            <MotiView
+              from={{ translateY: 0 }}
+              animate={{ translateY: -15 }}
+              transition={{
+                loop: true,
+                type: "timing",
+                duration: 1500,
+                repeatReverse: true,
+              }}
+              className="mb-4"
+            >
               <Image
                 source={require("@/assets/images/chorsipahi/thief.png")}
                 className="h-32 w-32"
                 resizeMode="contain"
               />
-            </Animated.View>
+            </MotiView>
 
+            {/* TITLE */}
             <Text className="font-main-bold text-4xl tracking-tighter text-white">
               BIG WIN!
             </Text>
@@ -107,13 +81,13 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
               </Text>
             </View>
 
-            {/* CRYSTAL BUTTON */}
+            {/* BUTTON */}
             <TouchableOpacity
               onPress={onClaim}
               activeOpacity={0.9}
               className="w-full"
             >
-              <View className="overflow-hidden rounded-2xl border-t border-white/30 shadow-xl">
+              <View className="overflow-hidden rounded-2xl border-t border-white/30">
                 <BlurView intensity={40} tint="light">
                   <LinearGradient
                     colors={[
@@ -132,11 +106,12 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
               </View>
             </TouchableOpacity>
 
+            {/* FOOTER */}
             <Text className="mt-6 font-main-md text-[9px] uppercase tracking-[4px] text-white/20">
               TAP TO CONTINUE
             </Text>
           </BlurView>
-        </Animated.View>
+        </MotiView>
       </View>
     </Modal>
   );

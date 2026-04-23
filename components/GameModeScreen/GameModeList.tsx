@@ -8,11 +8,7 @@ import { optionsGameMode } from "@/constants/gamemode";
 import { GameModeCard } from "./GameModeCard";
 import GameModeModal from "../../modal/GameModeModal";
 
-interface GameModeListProps {
-  onModalToggle: (status: boolean) => void;
-}
-
-const GameModeList: React.FC<GameModeListProps> = ({ onModalToggle }) => {
+const GameModeList: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [selectedGame, setSelectedGame] = useState<any | null>(null);
 
@@ -20,7 +16,6 @@ const GameModeList: React.FC<GameModeListProps> = ({ onModalToggle }) => {
   const handleOpen = (item: any) => {
     if (item.id.endsWith("_online")) {
       setSelectedGame(item);
-      onModalToggle(true); // Fades out the background screen
     } else {
       router.push(item.route); // Navigates for offline modes
     }
@@ -28,7 +23,6 @@ const GameModeList: React.FC<GameModeListProps> = ({ onModalToggle }) => {
 
   const handleClose = () => {
     setSelectedGame(null);
-    onModalToggle(false); // Fades the background screen back in
   };
 
   return (

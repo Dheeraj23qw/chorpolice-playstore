@@ -1,17 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import {
-  View,
-  Modal,
-  TouchableOpacity,
-  Pressable,
-  Animated,
-  Easing,
-} from "react-native";
+import React, { useState, useEffect, useMemo } from "react";
+import { View, Modal, TouchableOpacity, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/Text";
 import { useSelector } from "react-redux";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
+import { MotiView } from "moti";
+import { RootState } from "@/redux/store";
 
 interface BettingModalProps {
   isVisible: boolean;
@@ -28,54 +23,13 @@ export const BettingModal: React.FC<BettingModalProps> = ({
   onClose,
   playerCount,
 }) => {
-  const userCoins = useSelector((state: any) => state.wallet.coins);
-  const [selectedCoins, setSelectedCoins] = useState<number>(COIN_OPTIONS[0]);
+  const userCoins = useSelector((state: RootState) => state.wallet.coins);
 
-  /* ---------------- ANIMATION ---------------- */
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [selectedCoins, setSelectedCoins] = useState(COIN_OPTIONS[0]);
 
   useEffect(() => {
     if (isVisible) {
       setSelectedCoins(COIN_OPTIONS[0]);
-
-      scaleAnim.setValue(0.9);
-      opacityAnim.setValue(0);
-
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 60,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 300,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      const loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1200,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-
-      loop.start();
-
-      return () => loop.stop(); // ✅ prevent leak
     }
   }, [isVisible]);
 
@@ -88,52 +42,44 @@ export const BettingModal: React.FC<BettingModalProps> = ({
 
   const isDisabled = selectedCoins > userCoins;
 
-  const handleClose = () => {
-    Animated.parallel([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => onClose());
-  };
+  if (!isVisible) return null;
 
   return (
-    <Modal visible={isVisible} transparent animationType="none">
+    <Modal visible transparent animationType="fade">
       {/* BACKDROP */}
       <Pressable
-        onPress={handleClose}
+        onPress={onClose}
         className="flex-1 items-center justify-center"
       >
-        {/* 🎯 PERFECT TOP → BOTTOM FADE */}
+        {/* GRADIENT (UNCHANGED) */}
         <LinearGradient
           colors={[
-            "rgba(5,5,10,0.85)", // strong at top
-            "rgba(5,5,10,0.45)", // soften
-            "rgba(5,5,10,0.15)", // very light mid
-            "rgba(5,5,10,0.05)", // almost invisible
-            "transparent", // fully clear
+            "rgba(5,5,10,0.85)",
+            "rgba(5,5,10,0.45)",
+            "rgba(5,5,10,0.15)",
+            "rgba(5,5,10,0.05)",
+            "transparent",
           ]}
           locations={[0, 0.25, 0.5, 0.75, 1]}
           className="absolute h-full w-full"
         />
-        {/* 🔒 Prevent inside close */}
+
+        {/* CONTENT BLOCK */}
         <Pressable onPress={() => {}} className="w-full items-center">
-          <Animated.View
-            style={{
-              opacity: opacityAnim,
-              transform: [{ scale: scaleAnim }],
+          {/* ENTRY ANIMATION */}
+          <MotiView
+            from={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{
+              type: "spring",
+              damping: 14,
+              stiffness: 120,
             }}
             className="w-[90%] max-w-sm overflow-hidden rounded-[32px]"
           >
-            {/* ✨ GLASS CARD */}
+            {/* GLASS CARD */}
             <BlurView intensity={70} tint="dark" className="p-6">
-              {/* BORDER GLOW */}
               <View className="absolute inset-0 rounded-[32px] border border-white/10" />
 
               {/* HEADER */}
@@ -200,9 +146,15 @@ export const BettingModal: React.FC<BettingModalProps> = ({
                 })}
               </View>
 
-              {/* 💎 REWARD CARD */}
-              <Animated.View
-                style={{ transform: [{ scale: pulseAnim }] }}
+              {/* REWARD CARD (PULSE via Moti) */}
+              <MotiView
+                from={{ scale: 1 }}
+                animate={{ scale: 1.05 }}
+                transition={{
+                  loop: true,
+                  type: "timing",
+                  duration: 1200,
+                }}
                 className="my-6 overflow-hidden rounded-2xl"
               >
                 <LinearGradient
@@ -217,9 +169,9 @@ export const BettingModal: React.FC<BettingModalProps> = ({
                     {totalReward} 🪙
                   </Text>
                 </LinearGradient>
-              </Animated.View>
+              </MotiView>
 
-              {/* 🚀 CTA */}
+              {/* CTA */}
               <TouchableOpacity
                 onPress={() => !isDisabled && onConfirm(selectedCoins)}
                 disabled={isDisabled}
@@ -243,14 +195,11 @@ export const BettingModal: React.FC<BettingModalProps> = ({
               </TouchableOpacity>
 
               {/* CANCEL */}
-              <TouchableOpacity
-                onPress={handleClose}
-                className="mt-4 items-center"
-              >
+              <TouchableOpacity onPress={onClose} className="mt-4 items-center">
                 <Text className="text-sm text-white/30">Cancel</Text>
               </TouchableOpacity>
             </BlurView>
-          </Animated.View>
+          </MotiView>
         </Pressable>
       </Pressable>
     </Modal>

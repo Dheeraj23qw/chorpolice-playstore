@@ -1,24 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, TouchableOpacity, Pressable } from "react-native";
-import Animated, {
-  FadeInDown,
-  FadeIn,
-  ZoomIn,
-  useAnimatedStyle,
-  withSpring,
-  LinearTransition,
-  withRepeat,
-  useSharedValue,
-} from "react-native-reanimated";
+import { MotiView, MotiText } from "moti";
+
 import { CustomRatingModalProps } from "@/types/models/RatingModal";
 import { handleAppReview } from "@/utils/reviewHelper";
 import { TextInput } from "@/components/Input";
 import { Text } from "@/components/Text";
 import { generateSmartReview } from "@/utils/handleAppReview";
+import { useDispatch } from "react-redux";
+import { closeModalUI, openModalUI } from "@/redux/reducers/uiStateSlice";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-/* ================= STAR BUTTON COMPONENT ================= */
+/* ================= STAR BUTTON ================= */
 
 interface StarButtonProps {
   index: number;
@@ -29,34 +21,27 @@ interface StarButtonProps {
 const StarButton: React.FC<StarButtonProps> = ({ index, rating, onPress }) => {
   const isActive = index <= rating;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        scale: withSpring(isActive ? 1.35 : 1, {
+  return (
+    <Pressable onPress={() => onPress(index)} className="mx-1.5">
+      <MotiText
+        animate={{
+          scale: isActive ? 1.35 : 1,
+        }}
+        transition={{
+          type: "spring",
           damping: 14,
           stiffness: 180,
-        }),
-      },
-    ],
-  }));
-
-  return (
-    <AnimatedPressable
-      onPress={() => onPress(index)}
-      style={animatedStyle}
-      className="mx-1.5"
-    >
-      <Text
+        }}
         className="text-5xl"
         style={{
-          color: isActive ? "#6366f1" : "#1e293b", // indigo-500 / slate-800
+          color: isActive ? "#6366f1" : "#1e293b",
           textShadowColor: isActive ? "rgba(99, 102, 241, 0.9)" : "transparent",
           textShadowRadius: isActive ? 18 : 0,
         }}
       >
         ★
-      </Text>
-    </AnimatedPressable>
+      </MotiText>
+    </Pressable>
   );
 };
 
@@ -66,12 +51,26 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
   visible,
   onClose,
   title = "Enjoying the game?",
-  description = "Your feedback helps us create a better experience for everyone!",
+  description = "Your feedback helps us create a better experience!",
 }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (visible) {
+      dispatch(openModalUI());
+    } else {
+      dispatch(closeModalUI());
+    }
+
+    return () => {
+      dispatch(closeModalUI()); // safety cleanup
+    };
+  }, [visible]);
+
+  /* RESET */
   useEffect(() => {
     if (!visible) {
       setRating(0);
@@ -79,16 +78,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
     }
   }, [visible]);
 
-  const floating = useSharedValue(0);
-
-  useEffect(() => {
-    floating.value = withRepeat(withSpring(-6, { damping: 5 }), -1, true);
-  }, []);
-
-  const floatingStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floating.value }],
-  }));
-
+  /* HANDLE SUBMIT */
   const handleSubmit = async () => {
     if (rating === 0 || isSubmitting) return;
 
@@ -103,17 +93,18 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
           onClose();
         },
       });
-    } catch (error) {
-      console.warn("Submit failed:", error);
+    } catch (e) {
+      console.warn("Submit failed:", e);
       setIsSubmitting(false);
     }
   };
-  const handleStarPress = async (value: number) => {
+
+  /* STAR CLICK */
+  const handleStarPress = (value: number) => {
     setRating((prev) => {
       const newRating = prev === value ? 0 : value;
 
-      // 🔥 Auto-fill suggestion only for 4 or 5 stars
-      if (newRating === 4 || newRating === 5) {
+      if (newRating >= 4) {
         setComment(generateSmartReview(newRating));
       } else {
         setComment("");
@@ -123,42 +114,47 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
     });
   };
 
-  return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View className="flex-1 bg-black/85 items-center justify-center px-[6%]">
-        <Animated.View
-         entering={FadeInDown.duration(200)}
-layout={LinearTransition.duration(200)}
-          className="w-full max-w-[400px] bg-[#0a0a0f] rounded-[40px] border-[1.5px] border-white/10 p-8 items-center overflow-hidden"
-        >
-          {/* Decorative Glow */}
-          <View className="absolute -top-10 w-32 h-10 bg-indigo-600/20 blur-2xl rounded-full" />
-          <View className="absolute top-0 w-24 h-1.5 bg-indigo-500 rounded-b-full" />
+  if (!visible) return null;
 
-          {/* Icon */}
-          <Animated.View
-            entering={ZoomIn.duration(500).springify()}
-            className="w-24 h-24 rounded-[32px] bg-indigo-500/10 border border-indigo-500/20 items-center justify-center mb-6 shadow-xl shadow-indigo-500/20"
+  return (
+    <Modal transparent visible animationType="fade">
+      <View className="flex-1 items-center justify-center bg-black/85 px-[6%]">
+        {/* CARD */}
+        <MotiView
+          from={{ opacity: 0, translateY: 40, scale: 0.95 }}
+          animate={{ opacity: 1, translateY: 0, scale: 1 }}
+          exit={{ opacity: 0, translateY: 20, scale: 0.95 }}
+          transition={{
+            type: "spring",
+            damping: 15,
+            stiffness: 120,
+          }}
+          className="w-full max-w-[400px] items-center overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f] p-8"
+        >
+          {/* TOP ACCENT */}
+          <View className="absolute top-0 h-1.5 w-24 rounded-b-full bg-indigo-500" />
+
+          {/* ICON */}
+          <MotiView
+            from={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 100 }}
+            className="mb-6 h-24 w-24 items-center justify-center rounded-[32px] border border-indigo-500/20 bg-indigo-500/10"
           >
             <Text className="text-5xl">⭐</Text>
-          </Animated.View>
+          </MotiView>
 
-          {/* Title */}
-          <Text className="text-white text-[26px] font-main-bold text-center leading-9">
+          {/* TITLE */}
+          <Text className="text-center font-main-bold text-[26px] text-white">
             {title}
           </Text>
 
-          <Text className="text-slate-400 text-[14px] font-main-md text-center mt-3 mb-6 px-4 leading-5 opacity-50">
+          <Text className="mb-6 mt-3 text-center text-[14px] text-slate-400 opacity-50">
             {description}
           </Text>
 
-          {/* Stars */}
-          <View className="flex-row justify-center items-center mb-6 h-16">
+          {/* STARS */}
+          <View className="mb-6 h-16 flex-row">
             {[1, 2, 3, 4, 5].map((num) => (
               <StarButton
                 key={num}
@@ -169,11 +165,12 @@ layout={LinearTransition.duration(200)}
             ))}
           </View>
 
-          {/* Rating Feedback Text */}
+          {/* FEEDBACK TEXT */}
           {rating > 0 && (
-            <Animated.Text
-              entering={FadeIn.duration(250)}
-              className="text-indigo-400 text-sm font-main-bold mb-6 tracking-wide"
+            <MotiText
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-6 font-main-bold text-sm text-indigo-400"
             >
               {rating === 5
                 ? "LEGENDARY! 🌟"
@@ -182,14 +179,15 @@ layout={LinearTransition.duration(200)}
                   : rating >= 3
                     ? "GOOD 🙂"
                     : "WE’LL IMPROVE 💪"}
-            </Animated.Text>
+            </MotiText>
           )}
 
-          {/* Comment Input */}
+          {/* INPUT */}
           {rating > 0 && (
-            <Animated.View
-              entering={FadeInDown.duration(300)}
-              className="w-full mb-8"
+            <MotiView
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              className="mb-8 w-full"
             >
               <TextInput
                 placeholder={
@@ -202,68 +200,38 @@ layout={LinearTransition.duration(200)}
                 placeholderTextColor="#475569"
                 value={comment}
                 onChangeText={setComment}
-                className="bg-white/[0.03] border border-white/10 rounded-3xl p-4 text-white font-main-regular min-h-[100px]"
+                className="min-h-[100px] rounded-3xl border border-white/10 bg-white/[0.03] p-4 text-white"
                 multiline
-                textAlignVertical="top"
               />
-              {rating >= 4 && (
-                <Animated.View
-                  entering={FadeIn.duration(300)}
-                  className="items-center mt-4"
-                >
-                  <Animated.Text style={floatingStyle} className="text-lg mb-1">
-                    👇
-                  </Animated.Text>
-
-                  <Pressable
-                    onPress={() => setComment(generateSmartReview(rating))}
-                    className="bg-indigo-500/10 border border-indigo-500/30 rounded-full px-5 py-2 flex-row items-center gap-1"
-                  >
-                    <Text className="text-indigo-400 text-xs font-main-bold tracking-widest uppercase">
-                      ✨ Shuffle Suggestion
-                    </Text>
-                  </Pressable>
-
-                  <Text className="text-[10px] text-indigo-300/60 mt-1">
-                    Tap to generate a new review
-                  </Text>
-                </Animated.View>
-              )}
-            </Animated.View>
+            </MotiView>
           )}
 
-          {/* Submit Button */}
+          {/* BUTTONS */}
           <View className="w-full gap-y-3">
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={rating === 0 || isSubmitting}
-              activeOpacity={0.8}
-              className={`h-16 rounded-[22px] items-center justify-center shadow-lg ${
+              className={`h-16 items-center justify-center rounded-[22px] ${
                 rating === 0 || isSubmitting
-                  ? "bg-slate-900/50 border border-white/5 opacity-60"
-                  : "bg-indigo-600 shadow-indigo-500/30"
+                  ? "bg-slate-900/50 opacity-60"
+                  : "bg-indigo-600"
               }`}
             >
-              <Text
-                className={`text-lg font-main-bold tracking-widest uppercase ${
-                  rating === 0 || isSubmitting ? "text-slate-500" : "text-white"
-                }`}
-              >
+              <Text className="font-main-bold text-lg text-white">
                 {isSubmitting ? "Submitting..." : "Submit Rating"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={onClose}
-              hitSlop={15}
               className="h-12 items-center justify-center"
             >
-              <Text className="text-slate-500 text-sm font-main-bold uppercase opacity-80">
-                Maybe  Later
+              <Text className="font-main-bold text-sm uppercase text-slate-500">
+                Maybe Later
               </Text>
             </TouchableOpacity>
           </View>
-        </Animated.View>
+        </MotiView>
       </View>
     </Modal>
   );

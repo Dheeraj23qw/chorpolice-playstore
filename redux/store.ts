@@ -22,6 +22,7 @@ import popupReducer from "./reducers/popupReducer";
 import playerReducer from "./reducers/playerReducer";
 import soundSlice from "./reducers/soundReducer";
 import { sessionSlice } from "./reducers/sessionSlice";
+import uiReducer from "./reducers/uiStateSlice";
 const preloadedWallet = loadWallet() ?? { coins: 0, firstLaunch: true };
 const storedStats = loadQuizStats();
 const preloadedQuizStats = storedStats
@@ -44,6 +45,7 @@ const store = configureStore({
     appFlow: appFlowReducer,
     modalQueue: modalQueueReducer,
     session: sessionSlice.reducer,
+    ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(listenerMiddleware.middleware),

@@ -3,20 +3,13 @@ import { Modal, View, TouchableOpacity, Image } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  cancelAnimation,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-  ZoomIn,
-} from "react-native-reanimated";
+import { MotiView } from "moti";
+import { useDispatch } from "react-redux";
+
 import { Text } from "@/components/Text";
+import { openModalUI, closeModalUI } from "@/redux/reducers/uiStateSlice";
 
 interface Props {
-  visible: boolean;
   onClose: () => void;
   onShare: () => void;
   onRate: () => void;
@@ -24,62 +17,50 @@ interface Props {
 }
 
 export const LowCoinModal = ({
-  visible,
   onClose,
   onShare,
   onRate,
   onDisable,
 }: Props) => {
-  const floatY = useSharedValue(0);
+  const dispatch = useDispatch();
 
+  /* 🔥 GLOBAL UI CONTROL */
   useEffect(() => {
-    if (visible) {
-      floatY.value = withRepeat(
-        withSequence(
-          withTiming(-12, {
-            duration: 2000,
-            easing: Easing.inOut(Easing.quad),
-          }),
-          withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.quad) }),
-        ),
-        -1,
-        true,
-      );
-    } else {
-      cancelAnimation(floatY);
-      floatY.value = 0;
-    }
-  }, [floatY, visible]);
-
-  const thiefStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatY.value }],
-  }));
+    dispatch(openModalUI());
+    return () => {
+      dispatch(closeModalUI());
+    };
+  }, []);
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      statusBarTranslucent
-      animationType="fade"
-    >
+    <Modal transparent statusBarTranslucent animationType="fade">
       <View className="flex-1 items-center justify-center px-8">
-        {/* THE GLASS SHELL */}
-        <Animated.View
-          entering={ZoomIn.duration(400)}
+        {/* CARD */}
+        <MotiView
+          from={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{
+            type: "spring",
+            damping: 14,
+            stiffness: 120,
+          }}
           className="w-full max-w-sm overflow-hidden rounded-[55px] border border-white/20"
           style={{ backgroundColor: "rgba(255, 255, 255, 0.02)" }}
         >
-          {/* FROSTED TEXTURE */}
           <BlurView intensity={90} tint="dark" className="items-center p-10">
-            {/* SUBTLE LIGHT REFLECTION */}
+            {/* LIGHT OVERLAY */}
             <LinearGradient
               colors={["rgba(255,255,255,0.08)", "transparent"]}
               className="absolute inset-0"
             />
 
-            {/* MINIMALIST CLOSE */}
+            {/* CLOSE */}
             <TouchableOpacity
-              onPress={onClose}
+              onPress={() => {
+                dispatch(closeModalUI());
+                onClose();
+              }}
               className="absolute right-6 top-6 h-10 w-10 items-center justify-center rounded-full border border-white/10"
             >
               <Ionicons
@@ -90,14 +71,25 @@ export const LowCoinModal = ({
             </TouchableOpacity>
 
             {/* FLOATING THIEF */}
-            <Animated.View style={thiefStyle} className="mb-6 mt-2">
+            <MotiView
+              from={{ translateY: 0 }}
+              animate={{ translateY: -12 }}
+              transition={{
+                loop: true,
+                duration: 2000,
+                type: "timing",
+                repeatReverse: true,
+              }}
+              className="mb-6 mt-2"
+            >
               <Image
                 source={require("@/assets/images/chorsipahi/thief.png")}
                 className="h-28 w-28 opacity-90"
                 resizeMode="contain"
               />
-            </Animated.View>
+            </MotiView>
 
+            {/* TEXT */}
             <Text className="font-main-bold text-3xl tracking-tight text-white/90">
               LOW COINS
             </Text>
@@ -106,9 +98,8 @@ export const LowCoinModal = ({
               Chor Police Bag
             </Text>
 
-            {/* BUTTONS (FROSTED TYPE) */}
+            {/* ACTIONS */}
             <View className="mt-10 w-full gap-4">
-              {/* PRIMARY FROSTED BUTTON */}
               <TouchableOpacity onPress={onShare} activeOpacity={0.8}>
                 <View className="overflow-hidden rounded-3xl border border-white/20 bg-white/10 py-5">
                   <Text className="text-center font-main-bold text-lg text-white/90">
@@ -117,7 +108,6 @@ export const LowCoinModal = ({
                 </View>
               </TouchableOpacity>
 
-              {/* SECONDARY TRANSPARENT BUTTON */}
               <TouchableOpacity onPress={onRate} activeOpacity={0.8}>
                 <View className="rounded-3xl border border-white/5 bg-transparent py-5">
                   <Text className="text-center font-main-bold text-lg text-white/40">
@@ -127,9 +117,14 @@ export const LowCoinModal = ({
               </TouchableOpacity>
             </View>
 
-            {/* FLAT MINIMAL FOOTER */}
+            {/* FOOTER */}
             <View className="mt-10 w-full flex-row items-center justify-between border-t border-white/5 px-2 pt-8">
-              <TouchableOpacity onPress={onClose}>
+              <TouchableOpacity
+                onPress={() => {
+                  dispatch(closeModalUI());
+                  onClose();
+                }}
+              >
                 <Text className="font-main-md text-[9px] uppercase tracking-[2px] text-white/20">
                   Later
                 </Text>
@@ -142,7 +137,7 @@ export const LowCoinModal = ({
               </TouchableOpacity>
             </View>
           </BlurView>
-        </Animated.View>
+        </MotiView>
       </View>
     </Modal>
   );

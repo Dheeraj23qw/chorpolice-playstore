@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 
 import { LowCoinModal } from "@/features/lowCoinReward";
-import UnlockedAwardModal from "@/modal/AchievmentModal";
+import UnlockedAwardModal from "@/modal/AwardModal";
 import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
 import type { ModalType } from "@/redux/reducers/modalQueueReducer";
 

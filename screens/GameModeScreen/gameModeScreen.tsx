@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,6 +9,7 @@ import { MotiView, MotiImage } from "moti";
 import { AppDispatch } from "@/redux/store";
 import { AudioEngine } from "@/audio/audioEngine";
 import { setIsGameReset } from "@/redux/reducers/playerReducer";
+import { selectIsModalOpenUI } from "@/redux/reducers/uiStateSlice";
 
 import {
   HeaderSection,
@@ -16,16 +17,15 @@ import {
   GameModeList,
 } from "@/components/GameModeScreen";
 
-import UnlockedAwardModal from "@/modal/AchievmentModal";
+import UnlockedAwardModal from "@/modal/AwardModal";
 import { hasUnclaimedAwards } from "@/features/awards/awardsSlice";
 import { BotEngine } from "@/service/QuizBotEngine";
 
 const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
-  const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
 
-  const showAwards = useSelector(hasUnclaimedAwards);
+  const isModalOpen = useSelector(selectIsModalOpenUI);
 
   useEffect(() => {
     BotEngine.prepareEngine(10);
@@ -37,7 +37,7 @@ const GameModeScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-black">
-      {/* 1. BACKGROUND (Moti animated) */}
+      {/* 1. BACKGROUND */}
       <MotiImage
         source={require("@/assets/images/bg/image.png")}
         className="absolute h-full w-full"
@@ -50,7 +50,7 @@ const GameModeScreen: React.FC = () => {
         }}
       />
 
-      {/* 2. KEEP YOUR GRADIENTS EXACTLY SAME */}
+      {/* 2. GRADIENTS (UNCHANGED) */}
       <BlurView intensity={25} tint="dark" className="absolute h-full w-full" />
 
       <LinearGradient
@@ -73,13 +73,14 @@ const GameModeScreen: React.FC = () => {
         className="absolute h-[800px] w-[800px] self-center rounded-full opacity-90 blur-3xl"
       />
 
-      {/* 3. CONTENT WITH STAGGER */}
+      {/* 3. CONTENT */}
       <MotiView
+        pointerEvents={isModalOpen ? "none" : "auto"} // 🔥 prevent clicks behind modal
         className="flex-1"
         style={{ paddingTop: insets.top }}
         animate={{
-          opacity: isAnyModalOpen ? 0 : 1,
-          scale: isAnyModalOpen ? 0.96 : 1,
+          opacity: isModalOpen ? 0 : 1,
+          scale: isModalOpen ? 0.96 : 1,
         }}
         transition={{
           type: "timing",
@@ -104,6 +105,7 @@ const GameModeScreen: React.FC = () => {
           <UserProfilecard />
         </MotiView>
 
+        {/* Game List */}
         <View className="flex-1">
           <MotiView
             from={{ opacity: 0, translateY: 30 }}
@@ -111,13 +113,12 @@ const GameModeScreen: React.FC = () => {
             transition={{ delay: 300, duration: 500 }}
             className="flex-1"
           >
-            <GameModeList onModalToggle={setIsAnyModalOpen} />
+            <GameModeList />
           </MotiView>
         </View>
       </MotiView>
 
-      {/* 4. MODAL */}
-      {showAwards && <UnlockedAwardModal />}
+      <UnlockedAwardModal />
     </View>
   );
 };
