@@ -1,31 +1,39 @@
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
-import { View, Pressable, TextInput, Image, Modal } from "react-native";
+import { Image, Modal, Pressable, TextInput, View } from "react-native";
 import Animated, {
   FadeInUp,
   Layout,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withSequence,
+  withSpring,
 } from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
+import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
 import { Text } from "@/components/Text";
-import { CollapsibleCard } from "../CollapsibleCard";
 import { DIFFICULTY_OPTIONS } from "@/constants/difficultyConfig";
 import RoundSelector from "@/screens/RoundSelector";
-import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
+import { CollapsibleCard } from "../CollapsibleCard";
+import { LobbyState } from "./types";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const PlayerProfileCard = ({
+interface PlayerProfileCardProps {
+  lobby: LobbyState;
+  getAvatarSource: (avatarId: number) => any;
+  onSettingsToggle?: (isOpen: boolean) => void;
+  showGameSettings?: boolean;
+}
+
+export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
   lobby,
   getAvatarSource,
   onSettingsToggle,
   showGameSettings = true,
-}: any) => {
+}) => {
   const [activeTab, setActiveTab] = useState<"settings" | null>(null);
   const scale = useSharedValue(1);
 
@@ -145,7 +153,7 @@ export const PlayerProfileCard = ({
               {lobby.gameType === "QUIZ" ? (
                 <View className="rounded-2xl border border-white/10 bg-white/5 p-2">
                   <View className="flex-row gap-2">
-                    {DIFFICULTY_OPTIONS.map((opt: any) => {
+                    {DIFFICULTY_OPTIONS.map((opt) => {
                       const isSelected = lobby.difficulty === opt;
 
                       return (

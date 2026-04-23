@@ -2,23 +2,31 @@ import React from "react";
 import { View } from "react-native";
 
 import { Text } from "@/components/Text";
-
 import { PlayerListItem } from "./PlayerListItem";
+import { LobbyState } from "./types";
 
-export const PlayersList = ({ lobby, getAvatarSource }: any) => (
+interface PlayersListProps {
+  lobby: LobbyState;
+  getAvatarSource: (avatarId: number) => any;
+}
+
+export const PlayersList: React.FC<PlayersListProps> = ({ 
+  lobby, 
+  getAvatarSource 
+}) => (
   <View className="mb-6 overflow-hidden rounded-[32px] border border-white/10 bg-white/5 p-4">
     <View className="mb-4 flex-row items-center justify-between">
       <Text className="text-[10px] uppercase tracking-[3px] text-white/35">
         Who Is In
       </Text>
       <Text className="text-[10px] uppercase tracking-[2px] text-white/35">
-        4 Seats Ready
+        {lobby.maxPlayers} Seats Ready
       </Text>
     </View>
 
     {lobby.players.length > 0 ? (
       <View>
-        {lobby.players.map((item: any, index: number) => (
+        {lobby.players.map((item, index) => (
           <PlayerListItem
             key={item.id}
             item={item}

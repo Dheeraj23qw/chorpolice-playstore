@@ -1,24 +1,34 @@
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { Text } from "@/components/Text";
+import { LobbyPlayer, LobbyState } from "./types";
 
-export const PlayerListItem = ({
+interface PlayerListItemProps {
+  item: LobbyPlayer;
+  index: number;
+  lobby: LobbyState;
+  getAvatarSource: (avatarId: number) => any;
+}
+
+export const PlayerListItem: React.FC<PlayerListItemProps> = ({
   item,
   index,
   lobby,
   getAvatarSource,
-}: any) => {
+}) => {
   const isBot = Boolean(item.isBot);
   const isLocalPlayer = item.id === lobby.localPlayerId;
   const isHostSlot = index === 0;
+  
   const accentColors: [string, string] = isBot
     ? ["rgba(14,165,233,0.16)", "rgba(14,165,233,0.04)"]
     : isHostSlot
       ? ["rgba(245,158,11,0.18)", "rgba(245,158,11,0.04)"]
       : ["rgba(124,58,237,0.16)", "rgba(124,58,237,0.04)"];
+      
   const subtitle = isBot
     ? "Open seat ready for a friend to join"
     : isHostSlot
