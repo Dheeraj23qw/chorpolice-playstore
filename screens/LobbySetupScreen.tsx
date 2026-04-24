@@ -3,14 +3,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 
-import { ApIsolationModal } from "@/components/Lobby/ApIsolationModal";
-import { LateJoinQrModal } from "@/components/Lobby/LateJoinQrModal";
-import { LobbyBackdrop } from "@/components/Lobby/LobbyBackdrop";
-import { LobbyHeader } from "@/components/Lobby/LobbyHeader";
-import { PlayerProfileCard } from "@/components/Lobby/PlayerProfileCard";
-import { PlayersList } from "@/components/Lobby/PlayersList";
-import { SetupActionCard } from "@/components/Lobby/SetupActionCard";
-import { LobbyState } from "@/components/Lobby/types";
+import { ApIsolationModal } from "@/components/LobbyScreen/ApIsolationModal";
+import { LateJoinQrModal } from "@/modal/LateJoinQrModal";
+import { LobbyBackdrop } from "@/components/LobbyScreen/LobbyBackdrop";
+import { LobbyHeader } from "@/components/LobbyScreen/LobbyHeader";
+import { PlayerProfileCard } from "@/components/LobbyScreen/PlayerProfileCard";
+import { PlayersList } from "@/components/LobbyScreen/PlayersList";
+import { SetupActionCard } from "@/components/LobbyScreen/SetupActionCard";
+import { LobbyState } from "@/components/LobbyScreen/types";
 import { Text } from "@/components/Text";
 import { toast } from "@/components/feedback/toast";
 import { playerImages } from "@/constants/playerData";
@@ -96,9 +96,6 @@ const LobbySetupScreen = () => {
           >
             <View className="px-6">
               <View className="mb-5">
-                <Text className="text-[10px] uppercase tracking-[3px] text-blue-200">
-                  Final Setup
-                </Text>
                 <Text className="mt-2 font-main-bold text-4xl text-white">
                   Make everybody ready
                 </Text>

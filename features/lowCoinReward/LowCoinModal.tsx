@@ -4,12 +4,12 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { MotiView } from "moti";
-import { useDispatch } from "react-redux";
-
 import { Text } from "@/components/Text";
-import { openModalUI, closeModalUI } from "@/redux/reducers/uiStateSlice";
+import { useDispatch } from "react-redux";
+import { closeModalUI, openModalUI } from "@/redux/reducers/uiStateSlice";
 
 interface Props {
+  visible: boolean;
   onClose: () => void;
   onShare: () => void;
   onRate: () => void;
@@ -17,6 +17,7 @@ interface Props {
 }
 
 export const LowCoinModal = ({
+  visible,
   onClose,
   onShare,
   onRate,
@@ -24,43 +25,41 @@ export const LowCoinModal = ({
 }: Props) => {
   const dispatch = useDispatch();
 
-  /* 🔥 GLOBAL UI CONTROL */
+  // ✅ FIXED Redux side-effect (no unnecessary cleanup)
   useEffect(() => {
-    dispatch(openModalUI());
-    return () => {
+    if (visible) {
+      dispatch(openModalUI());
+    } else {
       dispatch(closeModalUI());
-    };
-  }, []);
+    }
+  }, [visible]);
 
   return (
-    <Modal transparent statusBarTranslucent animationType="fade">
+    <Modal
+      visible={visible}
+      transparent
+      statusBarTranslucent
+      animationType="fade"
+    >
       <View className="flex-1 items-center justify-center px-8">
-        {/* CARD */}
+        {/* GLASS CONTAINER */}
         <MotiView
           from={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{
-            type: "spring",
-            damping: 14,
-            stiffness: 120,
-          }}
+          transition={{ type: "timing", duration: 400 }}
           className="w-full max-w-sm overflow-hidden rounded-[55px] border border-white/20"
-          style={{ backgroundColor: "rgba(255, 255, 255, 0.02)" }}
+          style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
         >
           <BlurView intensity={90} tint="dark" className="items-center p-10">
-            {/* LIGHT OVERLAY */}
+            {/* LIGHT REFLECTION */}
             <LinearGradient
               colors={["rgba(255,255,255,0.08)", "transparent"]}
               className="absolute inset-0"
             />
 
-            {/* CLOSE */}
+            {/* CLOSE BUTTON */}
             <TouchableOpacity
-              onPress={() => {
-                dispatch(closeModalUI());
-                onClose();
-              }}
+              onPress={onClose}
               className="absolute right-6 top-6 h-10 w-10 items-center justify-center rounded-full border border-white/10"
             >
               <Ionicons
@@ -70,17 +69,17 @@ export const LowCoinModal = ({
               />
             </TouchableOpacity>
 
-            {/* FLOATING THIEF */}
+            {/* FLOATING THIEF (MOTI) */}
             <MotiView
               from={{ translateY: 0 }}
               animate={{ translateY: -12 }}
               transition={{
-                loop: true,
-                duration: 2000,
                 type: "timing",
+                duration: 2000,
+                loop: true,
                 repeatReverse: true,
               }}
-              className="mb-6 mt-2"
+              style={{ marginBottom: 24, marginTop: 8 }}
             >
               <Image
                 source={require("@/assets/images/chorsipahi/thief.png")}
@@ -89,7 +88,7 @@ export const LowCoinModal = ({
               />
             </MotiView>
 
-            {/* TEXT */}
+            {/* TITLE */}
             <Text className="font-main-bold text-3xl tracking-tight text-white/90">
               LOW COINS
             </Text>
@@ -98,8 +97,9 @@ export const LowCoinModal = ({
               Chor Police Bag
             </Text>
 
-            {/* ACTIONS */}
+            {/* ACTION BUTTONS */}
             <View className="mt-10 w-full gap-4">
+              {/* PRIMARY */}
               <TouchableOpacity onPress={onShare} activeOpacity={0.8}>
                 <View className="overflow-hidden rounded-3xl border border-white/20 bg-white/10 py-5">
                   <Text className="text-center font-main-bold text-lg text-white/90">
@@ -108,6 +108,7 @@ export const LowCoinModal = ({
                 </View>
               </TouchableOpacity>
 
+              {/* SECONDARY */}
               <TouchableOpacity onPress={onRate} activeOpacity={0.8}>
                 <View className="rounded-3xl border border-white/5 bg-transparent py-5">
                   <Text className="text-center font-main-bold text-lg text-white/40">
@@ -119,12 +120,7 @@ export const LowCoinModal = ({
 
             {/* FOOTER */}
             <View className="mt-10 w-full flex-row items-center justify-between border-t border-white/5 px-2 pt-8">
-              <TouchableOpacity
-                onPress={() => {
-                  dispatch(closeModalUI());
-                  onClose();
-                }}
-              >
+              <TouchableOpacity onPress={onClose}>
                 <Text className="font-main-md text-[9px] uppercase tracking-[2px] text-white/20">
                   Later
                 </Text>

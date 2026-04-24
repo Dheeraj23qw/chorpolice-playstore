@@ -15,7 +15,7 @@ import {
   PermissionFallbackCard,
   PlayersList,
   PrimaryButton,
-} from "@/components/Lobby";
+} from "@/components/LobbyScreen";
 import { Text } from "@/components/Text";
 import { toast } from "@/components/feedback/toast";
 import { playerImages } from "@/constants/playerData";

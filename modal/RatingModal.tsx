@@ -64,13 +64,8 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
     } else {
       dispatch(closeModalUI());
     }
-
-    return () => {
-      dispatch(closeModalUI()); // safety cleanup
-    };
   }, [visible]);
 
-  /* RESET */
   useEffect(() => {
     if (!visible) {
       setRating(0);

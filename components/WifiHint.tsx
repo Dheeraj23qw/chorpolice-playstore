@@ -1,62 +1,64 @@
-import React, { useEffect } from "react";
-import { View, Image } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from "react-native-reanimated";
+import React from "react";
+import { View, Image, useWindowDimensions } from "react-native";
+import { MotiView } from "moti";
 import { Text } from "@/components/Text";
+import { rf } from "@/utils/responsive";
 
 const WifiHint = () => {
-  const floatY = useSharedValue(0);
+  const { width } = useWindowDimensions();
 
-  // 🎯 Smooth floating animation
-  useEffect(() => {
-    floatY.value = withRepeat(
-      withSequence(
-        withTiming(-10, {
-          duration: 1200,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withTiming(0, {
-          duration: 1200,
-          easing: Easing.inOut(Easing.ease),
-        }),
-      ),
-      -1,
-      true,
-    );
-  }, []);
-
-  const floatStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: floatY.value }],
-  }));
-
+  // 🔥 Responsive sizing
+  const imageSize = Math.min(width * 0.18, 80); // max 80
+  const glowSize = imageSize * 1.1;
   return (
-    <View className="mb-6 flex-row items-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4">
-      {/* 🔮 Soft Glow */}
-      <View className="absolute left-4 h-20 w-20 rounded-full bg-purple-500/20 blur-2xl" />
+    <MotiView
+      from={{ opacity: 0, translateY: 20 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: "timing", duration: 400 }}
+      className="mb-6 flex-row items-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4"
+    >
+      {/* 🔮 Responsive Glow */}
+      <View
+        style={{
+          width: glowSize,
+          height: glowSize,
+        }}
+        className="absolute left-3 rounded-full bg-purple-500/20 blur-2xl"
+      />
 
-      {/* 🕺 Floating Character */}
-      <Animated.View style={floatStyle} className="mr-4">
+      {/* 🕺 Floating Character (Moti) */}
+      <MotiView
+        from={{ translateY: 0 }}
+        animate={{ translateY: -10 }}
+        transition={{
+          type: "timing",
+          duration: 1200,
+          loop: true,
+          repeatReverse: true,
+        }}
+        style={{ marginRight: 12 }}
+      >
         <Image
           source={require("@/assets/images/chorsipahi/thief.png")}
-          className="h-20 w-20"
+          style={{
+            width: imageSize,
+            height: imageSize,
+          }}
           resizeMode="contain"
         />
-      </Animated.View>
+      </MotiView>
 
       {/* 📶 Text Content */}
       <View className="flex-1">
-        <Text className="mb-1 font-main-bold text-base text-white">
+        <Text
+          style={{ fontSize: rf(1.8) }}
+          className="mb-1 font-main-bold text-white"
+        >
           Play with Friends
         </Text>
 
-        {/* ✅ Instructions */}
-        <Text className="text-sm leading-5 text-white/70">
+        {/* Instructions */}
+        <Text style={{ fontSize: rf(1.5) }} className="leading-5 text-white/70">
           1. Connect everyone to the{" "}
           <Text className="text-purple-300">same WiFi 📶</Text>
           {"\n"}
@@ -65,15 +67,15 @@ const WifiHint = () => {
           3. Others tap <Text className="text-blue-300">Join Game</Text>
           {"\n"}
           4. No friends?{" "}
-          <Text className="text-yellow-300">Just tap Host or Join 😉</Text>
+          <Text className="text-yellow-300">Just tap Host Game 😉</Text>
         </Text>
 
-        {/* ⚠️ Warning */}
-        <Text className="mt-2 text-xs text-red-400/70">
+        {/* Warning */}
+        <Text style={{ fontSize: rf(1.2) }} className="mt-2 text-red-400/70">
           Won’t work on mobile data or different WiFi
         </Text>
       </View>
-    </View>
+    </MotiView>
   );
 };
 

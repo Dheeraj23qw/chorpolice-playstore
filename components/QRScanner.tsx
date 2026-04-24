@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Linking, Pressable, View } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { MotiView } from "moti";
+import * as Haptics from "expo-haptics";
 
 import { Text } from "@/components/Text";
 import {
@@ -17,100 +19,75 @@ export const QRScanner = ({
   const [scanned, setScanned] = useState(false);
   const hasAutoRequestedRef = useRef(false);
 
+  // ✅ AUTO PERMISSION FLOW
   useEffect(() => {
-    logPermissionDebug("QRScanner", "Camera permission snapshot changed", permission);
-
-    if (hasAutoRequestedRef.current || permission?.granted) {
-      return;
-    }
+    if (hasAutoRequestedRef.current || permission?.granted) return;
 
     if (permission?.canAskAgain === false) {
       hasAutoRequestedRef.current = true;
-      warnPermissionDebug(
-        "QRScanner",
-        "Camera permission is blocked and cannot be auto-requested again",
-        permission,
-      );
       return;
     }
 
     hasAutoRequestedRef.current = true;
-    void (async () => {
-      logPermissionDebug("QRScanner", "Auto-requesting camera permission");
-      const result = await requestPermission();
-      logPermissionDebug("QRScanner", "Auto-request result", result);
-    })();
-  }, [permission, requestPermission]);
+    void requestPermission();
+  }, [permission]);
 
-  const handleRequestPermission = () => {
-    hasAutoRequestedRef.current = true;
-    void (async () => {
-      logPermissionDebug("QRScanner", "Manual camera permission request started");
-      const result = await requestPermission();
-      logPermissionDebug("QRScanner", "Manual camera permission request result", result);
-    })();
-  };
+  // ✅ RESET SCAN AFTER DELAY (important UX)
+  useEffect(() => {
+    if (!scanned) return;
 
-  const handleScan = ({ data }: { data: string }) => {
-    if (scanned) {
-      return;
-    }
+    const t = setTimeout(() => setScanned(false), 2500);
+    return () => clearTimeout(t);
+  }, [scanned]);
+
+  const handleScan = async ({ data }: { data: string }) => {
+    if (scanned) return;
 
     try {
       const parsed = JSON.parse(data);
-      if (!parsed?.ip) {
-        warnPermissionDebug("QRScanner", "Scanned QR payload was missing host IP", {
-          parsed,
-        });
-        return;
-      }
+      if (!parsed?.ip) return;
 
-      logPermissionDebug("QRScanner", "QR payload parsed successfully", parsed);
       setScanned(true);
+
+      // 🔥 success haptic
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
       onScan(parsed);
     } catch {
-      warnPermissionDebug("QRScanner", "Invalid QR payload scanned", {
-        dataPreview: data.slice(0, 120),
-      });
-      if (__DEV__) {
-        console.warn("[LAN] Invalid QR payload scanned");
-      }
+      if (__DEV__) console.warn("Invalid QR");
     }
   };
 
+  // 🔒 LOADING
   if (!permission) {
     return (
       <View className="items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-6">
-        <Text className="text-center text-sm text-white/70">
+        <Text className="text-sm text-white/70">
           Checking camera permission...
         </Text>
       </View>
     );
   }
 
+  // ❌ NO PERMISSION
   if (!permission.granted) {
     const canAskAgain = permission.canAskAgain !== false;
 
     return (
-      <View className="items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-6">
-        <Text className="text-center text-sm leading-5 text-white/70">
+      <View className="items-center rounded-3xl border border-white/10 bg-white/5 p-6">
+        <Text className="text-center text-sm text-white/70">
           {canAskAgain
-            ? "Camera permission is required to scan the host QR code."
-            : "Camera permission is blocked for this app. Enable it in Settings to scan the host QR code."}
+            ? "Allow camera to scan QR"
+            : "Enable camera permission from settings"}
         </Text>
 
         <Pressable
           onPress={
-            canAskAgain
-              ? handleRequestPermission
-              : () => {
-                  logPermissionDebug("QRScanner", "Opening app settings for camera permission");
-                  Linking.openSettings();
-                }
+            canAskAgain ? requestPermission : () => Linking.openSettings()
           }
-          className="mt-4 rounded-2xl border border-white/10 bg-white/10 px-4 py-3"
+          className="mt-4 rounded-xl bg-white/10 px-4 py-3"
         >
-          <Text className="font-main-bold text-xs uppercase tracking-[2px] text-white">
+          <Text className="text-xs text-white">
             {canAskAgain ? "Allow Camera" : "Open Settings"}
           </Text>
         </Pressable>
@@ -118,15 +95,45 @@ export const QRScanner = ({
     );
   }
 
+  // ✅ MAIN SCANNER
   return (
     <View className="h-80 overflow-hidden rounded-3xl border border-white/10">
       <CameraView
         style={{ flex: 1 }}
         onBarcodeScanned={handleScan}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
+        barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
       />
+
+      {/* 🔲 SCAN FRAME */}
+      <View className="absolute inset-0 items-center justify-center">
+        <View className="h-52 w-52 rounded-2xl border-2 border-white/30" />
+      </View>
+
+      {/* 🔥 SCAN LINE ANIMATION */}
+      <MotiView
+        from={{ translateY: -100 }}
+        animate={{ translateY: 100 }}
+        transition={{
+          loop: true,
+          duration: 1500,
+          type: "timing",
+        }}
+        className="absolute left-1/2 h-1 w-40 -translate-x-20 rounded-full bg-green-400/80"
+      />
+
+      {/* 🎯 SUCCESS OVERLAY */}
+      {scanned && (
+        <MotiView
+          from={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 items-center justify-center bg-black/60"
+        >
+          <Text className="font-main-bold text-lg text-white">
+            Connected ✅
+          </Text>
+        </MotiView>
+      )}
     </View>
   );
 };

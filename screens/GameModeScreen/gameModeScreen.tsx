@@ -18,7 +18,6 @@ import {
 } from "@/components/GameModeScreen";
 
 import UnlockedAwardModal from "@/modal/AwardModal";
-import { hasUnclaimedAwards } from "@/features/awards/awardsSlice";
 import { BotEngine } from "@/service/QuizBotEngine";
 
 const GameModeScreen: React.FC = () => {
