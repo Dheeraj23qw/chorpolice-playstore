@@ -4,7 +4,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 
 interface VideoPlayerComponentProps {
   index: number;
-  onVideoEnd?: () => void; // Added back as optional for flexibility
+  onVideoEnd?: () => void;
 }
 
 const VIDEO_SOURCES: Record<number, any> = {
@@ -13,40 +13,36 @@ const VIDEO_SOURCES: Record<number, any> = {
 
 const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
   ({ index, onVideoEnd }) => {
-    // 1. Resolve source based on index
+    // ✅ Stable source resolution
     const videoSource = useMemo(
       () => VIDEO_SOURCES[index] || VIDEO_SOURCES[1],
       [index],
     );
 
-    // Using a Ref for the callback to prevent the Effect from re-running
-    // unnecessarily if the parent component re-renders the function.
+    // ✅ Stable callback ref (prevents effect re-run spam)
     const onVideoEndRef = useRef(onVideoEnd);
     onVideoEndRef.current = onVideoEnd;
 
-    // 2. Initialize the player.
+    // ✅ Let Expo fully control lifecycle
     const player = useVideoPlayer(videoSource, (instance) => {
       instance.loop = false;
       instance.play();
     });
 
-    // 3. Handle Lifecycle and Events
+    // ✅ Safe event subscription (no manual player control)
     useEffect(() => {
+      if (!player) return;
+
       const subscription = player.addListener("playToEnd", () => {
         onVideoEndRef.current?.();
       });
 
       return () => {
-        subscription.remove(); // Unsubscribe first
-        try {
-          player.pause();
-        } catch {
-          // Safe silence for native release
-        }
+        subscription.remove();
       };
     }, [player]);
 
-    // 4. Android performance tuning
+    // ✅ Android optimization (stable)
     const androidProps = useMemo(
       () =>
         Platform.OS === "android"
@@ -58,7 +54,6 @@ const VideoPlayerComponent: React.FC<VideoPlayerComponentProps> = memo(
     return (
       <View className="flex-1 bg-white">
         <VideoView
-          key={`video-view-${index}`}
           player={player}
           style={{ flex: 1 }}
           contentFit="contain"
