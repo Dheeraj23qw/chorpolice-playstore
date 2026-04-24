@@ -15,7 +15,7 @@ import { Text } from "@/components/Text";
 import { toast } from "@/components/feedback/toast";
 import { playerImages } from "@/constants/playerData";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
-import { BettingModal } from "@/modal/BettingModal";
+import { EntryModal } from "@/modal/EntryModal";
 
 type UIState = "normal" | "betting" | "share" | "apIsolation";
 
@@ -122,7 +122,7 @@ const LobbySetupScreen = () => {
       )}
 
       {/* 🎯 BETTING MODAL */}
-      <BettingModal
+      <EntryModal
         isVisible={uiState === "betting"}
         onConfirm={lobby.handleConfirmStake}
         onClose={() => {
