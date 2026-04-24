@@ -17,23 +17,28 @@ import { GameMode } from "@/types/redux/reducers";
 import { wp, hp, rf } from "@/utils/responsive";
 import { Text } from "../Text";
 
+import { MotiView, AnimatePresence } from "moti";
+
 interface ImageGridProps {
   selectedImages: number[];
   handleImageSelect: (imageId: number, gameMode: GameMode) => void;
   gameMode?: GameMode;
+  isTaken: (id: number) => boolean;
 }
 
-const CARD_WIDTH = wp(60); // Sized down for better "Deck" feel
+const CARD_WIDTH = wp(60);
 const SPACER = (wp(100) - CARD_WIDTH) / 2;
 
 const ImageGridComponent: React.FC<ImageGridProps> = ({
   selectedImages,
   handleImageSelect,
   gameMode = "OFFLINE",
+  isTaken,
 }) => {
   const playerImages = useSelector(
     (state: RootState) => state.playerImages.images,
   );
+
   const scrollX = useSharedValue(0);
   const arrowTranslateX = useSharedValue(0);
 
@@ -42,12 +47,11 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
     image: image.type === "local" ? image.src : { uri: image.src },
   }));
 
-  // Floating Arrow Animation
   useEffect(() => {
     arrowTranslateX.value = withRepeat(
       withSequence(
-        withTiming(15, { duration: 800 }),
-        withTiming(0, { duration: 800 }),
+        withTiming(12, { duration: 700 }),
+        withTiming(0, { duration: 700 }),
       ),
       -1,
       true,
@@ -60,19 +64,19 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
 
   const arrowStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: arrowTranslateX.value }],
-    opacity: interpolate(scrollX.value, [0, 50], [1, 0], Extrapolate.CLAMP),
+    opacity: interpolate(scrollX.value, [0, 40], [1, 0], Extrapolate.CLAMP),
   }));
 
   return (
     <View className="py-6">
-      {/* ↔️ SWIPE HINT */}
+      {/* SWIPE HINT */}
       <Animated.View
         style={arrowStyle}
         className="mb-4 flex-row items-center self-center"
       >
         <Text
           className="mr-2 font-main-bold text-white/40"
-          style={{ fontSize: rf(1.2), letterSpacing: 2 }}
+          style={{ fontSize: rf(1.2) }}
         >
           SWIPE TO EXPLORE
         </Text>
@@ -99,6 +103,7 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
             index={index}
             scrollX={scrollX}
             isSelected={selectedImages.includes(item.id)}
+            isTaken={isTaken?.(item.id) || false}
             onPress={() => handleImageSelect(item.id, gameMode)}
           />
         )}
@@ -107,9 +112,16 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   );
 };
 
-// ... existing imports
+/* ================= CARD ================= */
 
-const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
+const AvatarCard = ({
+  item,
+  index,
+  scrollX,
+  isSelected,
+  isTaken,
+  onPress,
+}: any) => {
   const animatedStyle = useAnimatedStyle(() => {
     const inputRange = [
       (index - 1) * (CARD_WIDTH + 20),
@@ -124,28 +136,18 @@ const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
       Extrapolate.CLAMP,
     );
 
-    // Smooth opacity for the glow: only the center card should glow intensely
-    const glowOpacity = interpolate(
-      scrollX.value,
-      inputRange,
-      [0, 0.35, 0],
-      Extrapolate.CLAMP,
-    );
-
     const rotateY = interpolate(
       scrollX.value,
       inputRange,
-      [15, 0, -15],
+      [12, 0, -12],
       Extrapolate.CLAMP,
     );
 
     return {
       transform: [{ scale }, { rotateY: `${rotateY}deg` }],
-      glowOpacity, // passing to use in the glow view
     };
   });
 
-  // Separate style for the glow underlay
   const glowStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
       scrollX.value,
@@ -154,9 +156,10 @@ const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
         index * (CARD_WIDTH + 20),
         (index + 1) * (CARD_WIDTH + 20),
       ],
-      [0, 0.6, 0], // Peak glow at 60% opacity when centered
+      [0, 0.6, 0],
       Extrapolate.CLAMP,
     );
+
     return { opacity };
   });
 
@@ -169,18 +172,17 @@ const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
         justifyContent: "center",
       }}
     >
-      {/* 🟣 THE DEEP GLOW UNDERLAY (Matching UserProfileCard) */}
+      {/* GLOW */}
       <Animated.View
         style={[
           glowStyle,
           {
             position: "absolute",
-            width: CARD_WIDTH * 0.8,
-            height: CARD_WIDTH * 0.8,
+            width: CARD_WIDTH * 0.9,
+            height: CARD_WIDTH * 0.9,
             borderRadius: CARD_WIDTH,
             backgroundColor: "#7C5CFF",
             alignSelf: "center",
-            filter: [{ blur: 40 }], // Blur for the neon light bleed effect
           },
         ]}
       />
@@ -191,53 +193,73 @@ const AvatarCard = ({ item, index, scrollX, isSelected, onPress }: any) => {
           {
             width: CARD_WIDTH,
             height: hp(38),
-            borderRadius: 32, // Increased for a smoother "premium" feel
-            borderWidth: isSelected ? 4 : 1.5,
-            // Dynamic border color
-            borderColor: isSelected ? "#7C5CFF" : "rgba(255,255,255,0.15)",
-            backgroundColor: "#151515",
+            borderRadius: 32,
             overflow: "hidden",
-            // Depth Shadow
-            shadowColor: isSelected ? "#7C5CFF" : "#000",
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: isSelected ? 0.5 : 0.3,
-            shadowRadius: 15,
-            elevation: 10,
+            borderWidth: isSelected ? 3 : 1,
+            borderColor: isSelected ? "#7C5CFF" : "rgba(255,255,255,0.12)",
+            backgroundColor: "#111",
+            opacity: isTaken ? 0.7 : 1,
           },
         ]}
       >
-        <Pressable onPress={onPress} className="flex-1">
+        <Pressable
+          onPress={() => {
+            if (isTaken) return;
+            onPress();
+          }}
+          className="flex-1"
+        >
+          {/* MAIN IMAGE */}
           <Image
             source={item.image}
             style={{ width: "100%", height: "100%" }}
             resizeMode="cover"
           />
 
-          {/* 🧊 GLASS SHINE (Matching the gloss top edge) */}
-          <View
-            className="absolute top-0 h-[1px] w-full bg-white/20"
-            style={{ marginTop: 2, marginHorizontal: 20, width: "80%" }}
-          />
-          <View className="absolute top-0 h-1/4 w-full bg-white/5" />
+          {/* DARK OVERLAY (taken effect) */}
+          {isTaken && <View className="absolute inset-0 bg-black/70" />}
 
-          {/* SELECTED BADGE (Enhanced) */}
-          {isSelected && (
-            <View
-              style={{
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-              }}
-              className="absolute right-4 top-4 h-10 w-10 items-center justify-center rounded-full border-2 border-white/30 bg-purple-600"
-            >
-              <Ionicons name="checkmark-circle" size={rf(2.5)} color="white" />
+          {/* SUBTLE GRAYSCALE LAYER */}
+          {isTaken && <View className="absolute inset-0 bg-white/5" />}
+
+          {/* SELECTED GLOW */}
+          {isSelected && !isTaken && (
+            <View className="absolute right-4 top-4 h-10 w-10 items-center justify-center rounded-full bg-purple-600">
+              <Ionicons name="checkmark-circle" size={22} color="white" />
             </View>
           )}
+
+          {/* 🔥 FULL SCREEN "TAKEN" POSTER */}
+          <AnimatePresence>
+            {isTaken && (
+              <MotiView
+                from={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{
+                  type: "timing",
+                  duration: 250,
+                }}
+                className="absolute inset-0 items-center justify-center"
+              >
+                {/* BIG CENTER STAMP */}
+                <View className="items-center">
+                  <View className="rounded-2xl bg-black/60 px-5 py-2">
+                    <Text className="font-main-bold text-sm tracking-[3px] text-white">
+                      ALREADY TAKEN
+                    </Text>
+                  </View>
+
+                  <Text className="mt-2 text-xs text-white/60">
+                    Choose another avatar
+                  </Text>
+                </View>
+              </MotiView>
+            )}
+          </AnimatePresence>
         </Pressable>
       </Animated.View>
     </View>
   );
 };
-
 export const ImageGrid = memo(ImageGridComponent);

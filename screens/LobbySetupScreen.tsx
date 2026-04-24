@@ -23,25 +23,24 @@ const LobbySetupScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const [uiState, setUiState] = useState<UIState>("normal");
-
   const lobby = useLobbyLogic(router, params) as LobbyState;
 
-  // 🔥 Sync external modal triggers (important)
+  const [uiState, setUiState] = useState<UIState>("normal");
+
+  /* ---------------- BLOCK UI FLAG ---------------- */
+  const isBlockingUI = uiState !== "normal";
+
+  /* ---------------- SYNC MODALS ---------------- */
   useEffect(() => {
-    if (lobby.isBettingModalVisible) {
-      setUiState("betting");
-    } else if (uiState === "betting") {
-      setUiState("normal");
-    }
+    if (lobby.isBettingModalVisible) setUiState("betting");
+    else if (uiState === "betting") setUiState("normal");
   }, [lobby.isBettingModalVisible]);
 
   useEffect(() => {
-    if (lobby.showApIsolation) {
-      setUiState("apIsolation");
-    }
+    if (lobby.showApIsolation) setUiState("apIsolation");
   }, [lobby.showApIsolation]);
 
+  /* ---------------- AVATAR ---------------- */
   const getAvatarSource = useCallback((avatarId: number) => {
     const imgData = playerImages[avatarId];
     return imgData
@@ -49,20 +48,21 @@ const LobbySetupScreen = () => {
       : require("@/assets/images/chorsipahi/kid1.png");
   }, []);
 
+  /* ---------------- COPY ---------------- */
   const copyRoomCode = useCallback(async () => {
     if (!lobby.roomCode) return;
     await Clipboard.setStringAsync(lobby.roomCode);
     toast.success("Room Code Copied", lobby.roomCode);
   }, [lobby.roomCode]);
 
+  /* ---------------- SUMMARY ---------------- */
   const setupSummary = useMemo(() => {
     return lobby.isHost
-      ? "Everyone can change their name and picture here. Only the host can chose Rounds and start."
-      : "Change your name and picture here. The host will pick the settings and start the match.";
+      ? "Everyone can change name and avatar."
+      : "Update your profile while waiting for host.";
   }, [lobby.isHost]);
 
-  const isBlockingUI = uiState !== "normal";
-
+  /* ---------------- NAVIGATION ---------------- */
   useEffect(() => {
     if (lobby.lobbyStage !== "room") return;
 
@@ -73,7 +73,7 @@ const LobbySetupScreen = () => {
         isHost: String(lobby.isHost),
       },
     } as any);
-  }, [lobby.gameType, lobby.isHost, lobby.lobbyStage, router]);
+  }, [lobby.lobbyStage]);
 
   return (
     <KeyboardAvoidingView
@@ -82,46 +82,56 @@ const LobbySetupScreen = () => {
     >
       <LobbyBackdrop />
 
-      {/* 🔒 MAIN UI (hidden when any modal is active) */}
+      {/* HEADER (hidden when modal active) */}
       {!isBlockingUI && (
-        <>
-          <LobbyHeader
-            onBack={lobby.isHost ? lobby.handleBackToRoom : lobby.handleBack}
-          />
+        <LobbyHeader
+          onBack={lobby.isHost ? lobby.handleBackToRoom : lobby.handleBack}
+        />
+      )}
 
+      {/* MAIN CONTENT */}
+      <View className="flex-1 px-6">
+        {/* TITLE */}
+        {!isBlockingUI && (
+          <View className="mb-5">
+            <Text className="mt-2 font-main-bold text-4xl text-white">
+              Make everyone ready
+            </Text>
+
+            <Text className="mt-2 text-sm leading-5 text-white/60">
+              {setupSummary}
+            </Text>
+          </View>
+        )}
+
+        {/* PROFILE CARD */}
+        {!isBlockingUI && (
+          <PlayerProfileCard
+            lobby={lobby}
+            getAvatarSource={getAvatarSource}
+            showGameSettings={lobby.isHost}
+          />
+        )}
+
+        {/* PLAYER LIST + ACTION CARD */}
+        {!isBlockingUI && (
           <ScrollView
             className="flex-1"
             contentContainerStyle={{ paddingBottom: 180 }}
             showsVerticalScrollIndicator={false}
           >
-            <View className="px-6">
-              <View className="mb-5">
-                <Text className="mt-2 font-main-bold text-4xl text-white">
-                  Make everybody ready
-                </Text>
-                <Text className="mt-2 text-sm leading-5 text-white/60">
-                  {setupSummary}
-                </Text>
-              </View>
+            <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
 
-              <PlayerProfileCard
-                lobby={lobby}
-                getAvatarSource={getAvatarSource}
-                showGameSettings={lobby.isHost}
-              />
-
-              <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
-
-              <SetupActionCard
-                lobby={lobby}
-                onOpenShare={() => setUiState("share")}
-              />
-            </View>
+            <SetupActionCard
+              lobby={lobby}
+              onOpenShare={() => setUiState("share")}
+            />
           </ScrollView>
-        </>
-      )}
+        )}
+      </View>
 
-      {/* 🎯 BETTING MODAL */}
+      {/* ---------------- MODALS ---------------- */}
+
       <EntryModal
         isVisible={uiState === "betting"}
         onConfirm={lobby.handleConfirmStake}
@@ -132,7 +142,6 @@ const LobbySetupScreen = () => {
         playerCount={lobby.players.length}
       />
 
-      {/* 🎯 SHARE MODAL */}
       <LateJoinQrModal
         visible={uiState === "share"}
         onClose={() => setUiState("normal")}
@@ -141,7 +150,6 @@ const LobbySetupScreen = () => {
         onCopyRoomCode={copyRoomCode}
       />
 
-      {/* 🎯 AP ISOLATION MODAL */}
       <ApIsolationModal
         visible={uiState === "apIsolation"}
         onClose={() => {

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { View, Pressable, TextInput, Image, Modal } from "react-native";
-import { MotiView, AnimatePresence } from "moti";
+import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,6 +10,7 @@ import { CollapsibleCard } from "../CollapsibleCard";
 import { DIFFICULTY_OPTIONS } from "@/constants/difficultyConfig";
 import RoundSelector from "@/screens/RoundSelector";
 import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
+import { toast } from "@/components/feedback/toast";
 
 export const PlayerProfileCard = ({
   lobby,
@@ -19,27 +20,56 @@ export const PlayerProfileCard = ({
   const [activeTab, setActiveTab] = useState<"settings" | null>(null);
   const [avatarPressed, setAvatarPressed] = useState(false);
 
+  /* ---------------- FAST LOOKUP (OPTIMIZED) ---------------- */
+  const takenSet = useMemo(() => {
+    const set = new Set<number>();
+    lobby?.players?.forEach((p: any) => {
+      if (p.avatarId && p.id !== lobby.localPlayerId) {
+        set.add(p.avatarId);
+      }
+    });
+    return set;
+  }, [lobby?.players, lobby?.localPlayerId]);
+
+  const isAvatarTaken = useCallback(
+    (id: number) => takenSet.has(id),
+    [takenSet],
+  );
+
+  /* ---------------- AVATAR PRESS ---------------- */
   const handleAvatarPress = async () => {
     setAvatarPressed(true);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setTimeout(() => setAvatarPressed(false), 150);
-
+    setTimeout(() => setAvatarPressed(false), 120);
     lobby.setShowAvatarGrid(true);
+  };
+
+  /* ---------------- SAFE SELECT ---------------- */
+  const handleAvatarSelect = async (id: number) => {
+    if (isAvatarTaken(id)) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
+      toast.error("Avatar already taken", "Please choose another avatar");
+      return;
+    }
+
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    lobby.handleAvatarSelect(id);
+    lobby.setShowAvatarGrid(false);
   };
 
   return (
     <>
-      {/* 🔥 CARD ENTRY */}
+      {/* ================= PROFILE CARD ================= */}
       <MotiView
-        from={{ opacity: 0, translateY: 40 }}
+        from={{ opacity: 0, translateY: 30 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 400 }}
+        transition={{ type: "timing", duration: 350 }}
         className="mb-6 overflow-hidden rounded-[36px]"
       >
-        {/* 🌈 GLOW */}
-        <View className="absolute inset-0 rounded-[36px] bg-indigo-500/20 blur-3xl" />
+        <View className="absolute inset-0 rounded-[36px] bg-indigo-500/20 blur-2xl" />
 
-        {/* 🌫 GLASS */}
         <LinearGradient
           colors={[
             "rgba(255,255,255,0.08)",
@@ -62,36 +92,22 @@ export const PlayerProfileCard = ({
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 className="mt-2 font-main-bold text-3xl text-white"
               />
-
-              <Text className="mt-1 text-[10px] uppercase tracking-[2px] text-white/30">
-                Tap avatar to change
-              </Text>
             </View>
 
-            {/* 🔥 AVATAR */}
+            {/* AVATAR */}
             <Pressable onPress={handleAvatarPress}>
               <MotiView
-                animate={{
-                  scale: avatarPressed ? 0.9 : 1,
-                }}
-                transition={{
-                  type: "spring",
-                  damping: 12,
-                  stiffness: 200,
-                }}
-                className="relative"
+                animate={{ scale: avatarPressed ? 0.92 : 1 }}
+                transition={{ type: "timing", duration: 120 }}
               >
                 <View className="h-24 w-24 rounded-full border border-white/20 p-[2px]">
-                  <View className="h-full w-full overflow-hidden rounded-full bg-black">
-                    <Image
-                      source={getAvatarSource(lobby.selectedImages[0] || 1)}
-                      className="h-full w-full"
-                    />
-                  </View>
+                  <Image
+                    source={getAvatarSource(lobby.selectedImages?.[0] || 1)}
+                    className="h-full w-full rounded-full"
+                  />
                 </View>
 
-                {/* CAMERA BADGE */}
-                <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center rounded-full border-2 border-black bg-indigo-500">
+                <View className="absolute -bottom-1 -right-1 h-8 w-8 items-center justify-center rounded-full bg-indigo-500">
                   <Ionicons name="camera" size={14} color="white" />
                 </View>
               </MotiView>
@@ -127,12 +143,7 @@ export const PlayerProfileCard = ({
                     return (
                       <Pressable
                         key={opt}
-                        onPress={async () => {
-                          await Haptics.notificationAsync(
-                            Haptics.NotificationFeedbackType.Success,
-                          );
-                          lobby.handleDifficultyChange(opt);
-                        }}
+                        onPress={() => lobby.handleDifficultyChange(opt)}
                         className="flex-1"
                       >
                         <LinearGradient
@@ -144,9 +155,11 @@ export const PlayerProfileCard = ({
                           className="items-center rounded-xl py-3"
                         >
                           <Text
-                            className={`font-main-bold ${
-                              isSelected ? "text-white" : "text-white/30"
-                            }`}
+                            className={
+                              isSelected
+                                ? "font-main-bold text-white"
+                                : "text-white/30"
+                            }
                           >
                             {opt}
                           </Text>
@@ -163,57 +176,43 @@ export const PlayerProfileCard = ({
         </LinearGradient>
       </MotiView>
 
-      {/* 🔥 AVATAR MODAL (PROPER SHEET ANIMATION) */}
+      {/* ================= AVATAR MODAL (SMOOTH SHEET) ================= */}
       <Modal visible={lobby.showAvatarGrid} transparent>
-        <AnimatePresence>
-          {lobby.showAvatarGrid && (
-            <>
-              {/* BACKDROP */}
-              <MotiView
-                from={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/80"
-              />
+        <MotiView
+          from={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ type: "timing", duration: 180 }}
+          className="flex-1 bg-black/80"
+        >
+          {/* SHEET (NO SPRING = NO LAG) */}
+          <MotiView
+            from={{ translateY: 600 }}
+            animate={{ translateY: 0 }}
+            exit={{ translateY: 600 }}
+            transition={{ type: "timing", duration: 220 }}
+            className="mt-auto h-[80%] rounded-t-[36px] bg-[#050507] p-6"
+          >
+            {/* HEADER */}
+            <View className="mb-6 flex-row items-center justify-between">
+              <Text className="font-main-bold text-lg text-white">
+                Select Avatar
+              </Text>
 
-              {/* SHEET */}
-              <MotiView
-                from={{ translateY: 500 }}
-                animate={{ translateY: 0 }}
-                exit={{ translateY: 500 }}
-                transition={{ type: "spring", damping: 18 }}
-                className="mt-auto h-[80%] rounded-t-[36px] border-t border-white/10 bg-[#050507] p-6"
-              >
-                <View className="mb-6 flex-row items-center justify-between">
-                  <Text className="font-main-bold text-lg text-white">
-                    Select Avatar
-                  </Text>
+              <Pressable onPress={() => lobby.setShowAvatarGrid(false)}>
+                <Ionicons name="close" size={26} color="white" />
+              </Pressable>
+            </View>
 
-                  <Pressable
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      lobby.setShowAvatarGrid(false);
-                    }}
-                  >
-                    <Ionicons name="close" size={28} color="white" />
-                  </Pressable>
-                </View>
-
-                <ImageGrid
-                  selectedImages={lobby.selectedImages}
-                  handleImageSelect={(id) => {
-                    Haptics.notificationAsync(
-                      Haptics.NotificationFeedbackType.Success,
-                    );
-                    lobby.handleAvatarSelect(id);
-                    lobby.setShowAvatarGrid(false);
-                  }}
-                  gameMode="ONLINE"
-                />
-              </MotiView>
-            </>
-          )}
-        </AnimatePresence>
+            {/* GRID */}
+            <ImageGrid
+              selectedImages={lobby.selectedImages}
+              handleImageSelect={handleAvatarSelect}
+              gameMode="ONLINE"
+              isTaken={(id: number) => takenSet.has(id)}
+            />
+          </MotiView>
+        </MotiView>
       </Modal>
     </>
   );

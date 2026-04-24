@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useCallback } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,21 +7,17 @@ import { MotiView } from "moti";
 
 import {
   ApIsolationModal,
-  HandshakeStatus,
-  HostInviteCard,
-  HostStartErrorCard,
   LobbyBackdrop,
   LobbyHeader,
-  PermissionFallbackCard,
-  PlayersList,
   PrimaryButton,
 } from "@/components/LobbyScreen";
+
 import { Text } from "@/components/Text";
 import { toast } from "@/components/feedback/toast";
-import { playerImages } from "@/constants/playerData";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import VideoPlayerComponent from "@/components/IntroVideo";
+import { LobbyContent } from "./LobbyContent";
 
 const LobbyScreen = ({
   forcedMode,
@@ -30,9 +26,11 @@ const LobbyScreen = ({
 }: any) => {
   const router = useRouter();
   const params = useLocalSearchParams();
+
   const { step, status, retry, errorMessage, openSettings } =
     useNetworkPermissions(requireLanReady);
 
+  /* ---------------- STABLE LOBBY HOOK ---------------- */
   const lobby = useLobbyLogic(
     router,
     {
@@ -44,88 +42,56 @@ const LobbyScreen = ({
     !requireLanReady || status === "granted",
   );
 
+  /* ---------------- SAFE NAVIGATION EFFECT ---------------- */
   useEffect(() => {
-    if (lobby.lobbyStage === "setup") {
-      router.replace({
-        pathname: "/lobby-setup",
-        params: { gameType: lobby.gameType, isHost: String(lobby.isHost) },
-      } as any);
-    }
-  }, [lobby.lobbyStage]);
+    if (lobby?.lobbyStage !== "setup") return;
 
-  const copyRoomCode = async () => {
-    if (lobby.roomCode) {
-      await Clipboard.setStringAsync(lobby.roomCode);
-      toast.success("Room Code Copied", lobby.roomCode);
-    }
-  };
+    router.replace({
+      pathname: "/lobby-setup",
+      params: {
+        gameType: lobby.gameType,
+        isHost: String(lobby.isHost),
+      },
+    });
+  }, [lobby?.lobbyStage, lobby?.gameType, lobby?.isHost, router]);
 
-  const renderContent = () => {
-    if (
-      requireLanReady &&
-      status !== "granted" &&
-      !lobby.isLocalOnlyLobby &&
-      lobby.connectionStatus !== "HOSTING"
-    ) {
-      return status === "pending" ? (
-        <HandshakeStatus
-          step={step === "idle" ? "checking_wifi" : step}
-          status="loading"
-          discoveredCount={0}
-          errorMessage={errorMessage}
-          isHost={!!lobby.isHost}
-          onRetry={retry}
-          onOpenSettings={openSettings}
-          wifiSSID="Secure LAN"
-        />
-      ) : (
-        <PermissionFallbackCard
-          isHost={!!lobby.isHost}
-          onPrimary={status === "denied" ? openSettings : retry}
-          onSecondary={
-            lobby.isHost ? lobby.handleContinueWithReadySeats : undefined
-          }
-          primaryLabel={status === "denied" ? "Open Settings" : "Try Again"}
-          message={
-            errorMessage ||
-            "Nearby Wi-Fi and location permission help find local rooms."
-          }
-        />
-      );
-    }
+  /* ---------------- COPY FUNCTION (STABLE) ---------------- */
+  const copyRoomCode = useCallback(async () => {
+    if (!lobby?.roomCode) return;
 
-    if (
-      lobby.isHost &&
-      lobby.connectionStatus === "ERROR" &&
-      lobby.errorMessage
-    ) {
-      return (
-        <HostStartErrorCard
-          message={lobby.errorMessage}
-          onRetry={lobby.handleRetryHosting}
-          retrying={lobby.isBootstrappingHost}
-          onUseReadySeats={lobby.handleContinueWithReadySeats}
-        />
-      );
-    }
+    await Clipboard.setStringAsync(lobby.roomCode);
+    toast.success("Room Code Copied", lobby.roomCode);
+  }, [lobby?.roomCode]);
 
+  /* ---------------- MEMOIZED CONTENT ---------------- */
+  const lobbyContent = useMemo(() => {
     return (
-      <View>
-        {lobby.isHost && (
-          <HostInviteCard lobby={lobby} onCopyRoomCode={copyRoomCode} />
-        )}
-        <PlayersList
-          lobby={lobby}
-          getAvatarSource={(id: number) =>
-            playerImages[id]?.src ||
-            require("@/assets/images/chorsipahi/kid1.png")
-          }
-        />
-      </View>
+      <LobbyContent
+        lobby={lobby}
+        requireLanReady={requireLanReady}
+        status={status}
+        step={step}
+        errorMessage={errorMessage}
+        retry={retry}
+        openSettings={openSettings}
+        copyRoomCode={copyRoomCode}
+      />
     );
-  };
+  }, [
+    lobby,
+    requireLanReady,
+    status,
+    step,
+    errorMessage,
+    retry,
+    openSettings,
+    copyRoomCode,
+  ]);
 
-  if (lobby.isTransitioning) return <VideoPlayerComponent index={1} />;
+  /* ---------------- TRANSITION STATE ---------------- */
+  if (lobby.isTransitioning) {
+    return <VideoPlayerComponent index={1} />;
+  }
 
   return (
     <KeyboardAvoidingView
@@ -141,6 +107,7 @@ const LobbyScreen = ({
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6">
+          {/* HEADER */}
           <MotiView
             from={{ opacity: 0, translateY: -20 }}
             animate={{ opacity: 1, translateY: 0 }}
@@ -149,28 +116,34 @@ const LobbyScreen = ({
             <Text className="text-[11px] uppercase tracking-[3px] text-white/35">
               {lobby.isHost ? "Host Room" : "Joined Room"}
             </Text>
+
             <Text className="mt-2 font-main-bold text-4xl text-white">
               {lobby.isHost ? "Invite and play" : "Wait for Let's Go"}
             </Text>
+
             <Text className="mt-2 text-sm leading-5 text-white/60">
               {lobby.isHost
                 ? "Invite friends first, then move everyone to setup."
                 : "Wait for the host to tap Let's Go."}
             </Text>
           </MotiView>
-          {renderContent()}
+
+          {/* CONTENT */}
+          {lobbyContent}
         </View>
       </ScrollView>
 
+      {/* BOTTOM CTA */}
       <View className="absolute bottom-0 left-0 right-0 px-6 pb-8">
         <LinearGradient
           colors={["transparent", "rgba(0,0,0,0.8)", "black"]}
           className="absolute inset-0 -top-10"
         />
+
         {lobby.isHost ? (
           <PrimaryButton
             title="LET'S GO"
-            subtitle="Setup names and coins next."
+            subtitle="Setup names and tokens next."
             onPress={lobby.handleOpenSetup}
             disabled={lobby.connectionStatus !== "HOSTING"}
           />
@@ -184,7 +157,7 @@ const LobbyScreen = ({
               Waiting for the host
             </Text>
             <Text className="mt-1 text-center text-xs text-white/65">
-              Stay here. The host will start the setup soon.
+              Stay here. The host will start the session soon.
             </Text>
           </MotiView>
         )}
