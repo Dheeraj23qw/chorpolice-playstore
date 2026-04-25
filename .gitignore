@@ -53,3 +53,14 @@ chor-police-playstore-7d7f6-firebase-adminsdk-fbsvc-e948242158.json
 # Keystore and Firebase keys
 *.jks
 chor-police-playstore-*.json
+
+
+# --- Claude / AI Assistant Tools ---
+.agent/
+.codex/
+.claudecode/
+
+# --- Local Output & Generation ---
+graphify-out/
+graphify/
+AGENTS.md
