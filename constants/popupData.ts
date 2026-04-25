@@ -10,25 +10,25 @@ export interface DataItem {
 export const data: DataItem[] = [
   {
     id: 1,
-    image: require("@/assets/images/chorsipahi/king.png"),
+    image: require("@/assets/images/chorsipahi/king.webp"),
     message: "You are the King!",
     point: "1000 POINTS",
   },
   {
     id: 2,
-    image: require("@/assets/images/chorsipahi/police.png"),
+    image: require("@/assets/images/chorsipahi/police.webp"),
     message: "You are the Police! Find the thief.",
     point: "",
   },
   {
     id: 3,
-    image: require("@/assets/modalImages/chor_win.png"),
+    image: require("@/assets/modalImages/chor_win.webp"),
     message: "The Thief Escaped the Trap! 🕶️",
     point: "500 POINTS",
   },
   {
     id: 4,
-    image: require("@/assets/modalImages/police_win.png"),
+    image: require("@/assets/modalImages/police_win.webp"),
     message: "Justice Has Been Served! 🚔",
     point: "500 POINTS",
   },

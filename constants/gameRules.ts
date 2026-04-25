@@ -3,7 +3,7 @@ export const rulesGroups = [
     id: "raja_group",
     title: "Raja Mantri Chor Sipahi",
     subtitle: "Chor Police",
-    image: require("@/assets/images/bg/gamemode/2.png"),
+    image: require("@/assets/images/bg/gamemode/2.webp"),
     rules: [
       {
         id: "1",
@@ -51,7 +51,7 @@ export const rulesGroups = [
     id: "think_count",
     title: "Think & Count",
     subtitle: "Math Quiz Game",
-    image: require("@/assets/images/bg/gamemode/1.png"),
+    image: require("@/assets/images/bg/gamemode/1.webp"),
     rules: [
       {
         id: "1",

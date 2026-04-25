@@ -60,7 +60,7 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
               className="mb-4"
             >
               <Image
-                source={require("@/assets/images/chorsipahi/thief.png")}
+                source={require("@/assets/images/chorsipahi/thief.webp")}
                 className="h-32 w-32"
                 resizeMode="contain"
               />

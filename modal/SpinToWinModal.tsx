@@ -62,7 +62,7 @@ const SpinController: React.FC<SpinControllerProps> = ({
       <View className="flex-1 bg-transparent">
         {/* 🎨 YOUR ORIGINAL BACKGROUND (UNCHANGED) */}
         <Animated.Image
-          source={require("@/assets/images/bg/image.png")}
+          source={require("@/assets/images/bg/image.webp")}
           className="absolute h-full w-full"
           resizeMode="cover"
         />

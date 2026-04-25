@@ -108,7 +108,7 @@ export const LobbyContent: React.FC<Props> = ({
         lobby={lobby} // ✅ FULL TYPE SAFE NOW
         getAvatarSource={(id: number) =>
           playerImages[id]?.src ||
-          require("@/assets/images/chorsipahi/kid1.png")
+          require("@/assets/images/chorsipahi/kid1.webp")
         }
       />
     </View>

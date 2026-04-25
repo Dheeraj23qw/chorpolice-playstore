@@ -10,7 +10,7 @@ export const useLeaderboard = (
       const imgData = playerImages[avatarId];
       return imgData
         ? imgData.src
-        : require("@/assets/images/chorsipahi/kid1.png");
+        : require("@/assets/images/chorsipahi/kid1.webp");
     };
 
     // 1. Determine if we are in the 'Finished' state

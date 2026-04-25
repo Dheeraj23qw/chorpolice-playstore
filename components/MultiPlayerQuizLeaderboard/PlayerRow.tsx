@@ -22,7 +22,7 @@ export const PlayerRow = ({
 
   const avatar =
     playerImages[item.avatarId]?.src ||
-    require("@/assets/images/chorsipahi/kid1.png");
+    require("@/assets/images/chorsipahi/kid1.webp");
 
   return (
     <Pressable

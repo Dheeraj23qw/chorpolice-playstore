@@ -62,7 +62,7 @@ const FinalResultView = ({ onExit }: any) => {
     <View className="flex-1 bg-black">
       {/* 🔥 Background Image */}
       <Image
-        source={require("@/assets/images/bg/image.png")}
+        source={require("@/assets/images/bg/image.webp")}
         className="absolute h-full w-full"
         resizeMode="cover"
       />

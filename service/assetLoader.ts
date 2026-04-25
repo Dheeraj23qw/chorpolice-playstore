@@ -2,11 +2,11 @@ import { Asset } from "expo-asset";
 
 const INTRO_ASSETS = [
   require("@/assets/gif/chorPolicescreen/chorpolice.mp4"),
-  require("@/assets/images/bg/image.png"),
-  require("@/assets/modalImages/intro.png"),
-  require("@/assets/images/chorsipahi/thief.png"),
-  require("@/assets/images/chorsipahi/police.png"),
-  require("@/assets/images/chorsipahi/king.png"),
+  require("@/assets/images/bg/image.webp"),
+  require("@/assets/modalImages/intro.webp"),
+  require("@/assets/images/chorsipahi/thief.webp"),
+  require("@/assets/images/chorsipahi/police.webp"),
+  require("@/assets/images/chorsipahi/king.webp"),
 ];
 
 const BACKGROUND_ASSETS = [
@@ -22,10 +22,10 @@ const BACKGROUND_ASSETS = [
   require("@/assets/audio/maingame/police.mp3"),
   require("@/assets/audio/QuizScreen/timer.mp3"),
   require("@/assets/audio/QuizScreen/timesup.mp3"),
-  require("@/assets/images/bg/gamemode/1.png"),
-  require("@/assets/images/bg/gamemode/2.png"),
-  require("@/assets/modalImages/chor_win.png"),
-  require("@/assets/modalImages/police_win.png"),
+  require("@/assets/images/bg/gamemode/1.webp"),
+  require("@/assets/images/bg/gamemode/2.webp"),
+  require("@/assets/modalImages/chor_win.webp"),
+  require("@/assets/modalImages/police_win.webp"),
 ];
 
 let introPreloadPromise: Promise<void> | null = null;

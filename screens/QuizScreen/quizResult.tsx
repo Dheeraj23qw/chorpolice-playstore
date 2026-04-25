@@ -53,7 +53,7 @@ export default function QuizResult() {
     const imgData = playerImages[avatarId];
     return imgData
       ? imgData.src
-      : require("@/assets/images/chorsipahi/kid1.png");
+      : require("@/assets/images/chorsipahi/kid1.webp");
   }, []);
 
   const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
@@ -103,7 +103,7 @@ export default function QuizResult() {
     <View className="flex-1 bg-black">
       {/* BACKGROUND */}
       <Image
-        source={require("@/assets/images/bg/image.png")}
+        source={require("@/assets/images/bg/image.webp")}
         className="absolute h-full w-full"
         resizeMode="cover"
       />

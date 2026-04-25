@@ -38,7 +38,7 @@ const GameModeScreen: React.FC = () => {
     <View className="flex-1 bg-black">
       {/* 1. BACKGROUND */}
       <MotiImage
-        source={require("@/assets/images/bg/image.png")}
+        source={require("@/assets/images/bg/image.webp")}
         className="absolute h-full w-full"
         resizeMode="cover"
         from={{ scale: 1.1 }}

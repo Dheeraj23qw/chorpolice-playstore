@@ -82,7 +82,7 @@ export const LowCoinModal = ({
               style={{ marginBottom: 24, marginTop: 8 }}
             >
               <Image
-                source={require("@/assets/images/chorsipahi/thief.png")}
+                source={require("@/assets/images/chorsipahi/thief.webp")}
                 className="h-28 w-28 opacity-90"
                 resizeMode="contain"
               />

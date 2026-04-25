@@ -39,7 +39,7 @@ const WifiHint = () => {
         style={{ marginRight: 12 }}
       >
         <Image
-          source={require("@/assets/images/chorsipahi/thief.png")}
+          source={require("@/assets/images/chorsipahi/thief.webp")}
           style={{
             width: imageSize,
             height: imageSize,

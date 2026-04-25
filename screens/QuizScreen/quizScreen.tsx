@@ -88,7 +88,7 @@ const QuizScreen = () => {
   return (
     <View className="flex-1 bg-black">
       <Image
-        source={require("@/assets/images/bg/image.png")}
+        source={require("@/assets/images/bg/image.webp")}
         className="absolute h-full w-full"
         resizeMode="cover"
       />
@@ -98,7 +98,7 @@ const QuizScreen = () => {
       {isWaitingForOthers && (
         <View className="absolute z-[70] h-full w-full items-center justify-center bg-black">
           <Image
-            source={require("@/assets/images/bg/image.png")}
+            source={require("@/assets/images/bg/image.webp")}
             className="absolute h-full w-full opacity-20"
             resizeMode="cover"
           />

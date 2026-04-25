@@ -10,21 +10,21 @@ type LobbyBackdropProps = {
 
 export const LobbyBackdrop = ({
   blurIntensity = 18,
-  gradientColors = [
-    "rgba(0,0,0,0.78)",
-    "rgba(0,0,0,0.38)",
-    "transparent",
-  ],
+  gradientColors = ["rgba(0,0,0,0.78)", "rgba(0,0,0,0.38)", "transparent"],
 }: LobbyBackdropProps) => (
   <View className="absolute inset-0">
     <Image
-      source={require("@/assets/images/bg/image.png")}
+      source={require("@/assets/images/bg/image.webp")}
       className="h-full w-full"
       resizeMode="cover"
     />
 
     {Platform.OS === "ios" ? (
-      <BlurView intensity={blurIntensity} tint="dark" className="absolute inset-0" />
+      <BlurView
+        intensity={blurIntensity}
+        tint="dark"
+        className="absolute inset-0"
+      />
     ) : (
       <View className="absolute inset-0 bg-black/45" />
     )}

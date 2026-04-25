@@ -75,7 +75,7 @@ const ChorPoliceMultiplayerScreen = () => {
     <View className="flex-1 bg-black">
       {/* Background */}
       <Image
-        source={require("@/assets/images/bg/image.png")}
+        source={require("@/assets/images/bg/image.webp")}
         className="absolute h-full w-full"
         resizeMode="cover"
       />

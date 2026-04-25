@@ -58,12 +58,12 @@ export const gifData: MediaItem[] = [
 export const imageData: MediaItem[] = [
   {
     id: 1,
-    url: require("@/assets/images/chorsipahi/king.png"),
+    url: require("@/assets/images/chorsipahi/king.webp"),
     description: "Great job! You earned points!",
   },
   {
     id: 2,
-    url: require("@/assets/images/chorsipahi/king.png"),
+    url: require("@/assets/images/chorsipahi/king.webp"),
     description: "Well done! Keep it up!",
   },
 ];
