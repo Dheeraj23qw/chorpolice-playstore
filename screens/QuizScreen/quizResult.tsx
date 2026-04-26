@@ -150,7 +150,7 @@ export default function QuizResult() {
         {/* ACTION BUTTONS */}
         <View className="mt-12 px-2">
           <ActionButtons
-            onStatsPress={() => handleNavigation("/stats")}
+            onReportBugPress={() => handleNavigation("/report-bug")}
             onEarnPress={() => handleNavigation("/earn")}
             onHomePress={() => handleNavigation("/mode-select")}
           />

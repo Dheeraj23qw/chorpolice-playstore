@@ -55,6 +55,9 @@ export const useLobbyLogic = (
   const selectedRounds = useSelector(
     (state: RootState) => state.player.gameRound,
   );
+  const currentTable = useSelector(
+    (state: RootState) => state.difficulty.table,
+  );
 
   const [showAvatarGrid, setShowAvatarGrid] = useState(false);
   const [difficulty, setDifficultyState] = useState<DifficultyOption>("easy");
@@ -297,6 +300,11 @@ export const useLobbyLogic = (
             packet.totalRounds,
           );
         }
+
+        // PROD-6: Sync table if provided in start packet
+        if (!isHost && packet.table) {
+          dispatch(setDifficulty({ level: packet.difficulty, table: packet.table }));
+        }
         // Always sync player names/images (even on host, to keep Redux in sync)
         if (packet.players?.length) {
           dispatch(
@@ -473,6 +481,13 @@ export const useLobbyLogic = (
       );
 
       if (gameType === "QUIZ") {
+        // PROD-6: Ensure table is generated if host didn't change difficulty manually
+        let finalTable = currentTable;
+        if (!finalTable || finalTable.length <= 1) {
+          finalTable = generateTable(difficulty);
+          dispatch(setDifficulty({ level: difficulty, table: finalTable }));
+        }
+
         // BOT-4 FIX: BotEngine.start() was never called — bots never answered quiz questions
         BotEngine.activeBots = botPlayers;
         BotEngine.start(); // registers QUESTION_SYNC listener so bots auto-answer
@@ -490,6 +505,7 @@ export const useLobbyLogic = (
             playerCount: finalPlayers.length,
             players: finalPlayers,
             totalRounds: QuizEngine.state.totalRounds,
+            table: finalTable,
           },
           { processLocally: false },
         );

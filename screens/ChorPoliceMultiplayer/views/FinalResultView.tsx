@@ -112,7 +112,7 @@ const FinalResultView = ({ onExit }: any) => {
           {/* Buttons */}
           <View className="mt-2 px-4">
             <ActionButtons
-              onStatsPress={() => onExit("stats")}
+              onReportBugPress={() => onExit("report-bug")}
               onEarnPress={() => onExit("earn")}
               onHomePress={() => onExit("home")}
             />

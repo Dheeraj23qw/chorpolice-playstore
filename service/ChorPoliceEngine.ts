@@ -118,7 +118,7 @@ export const ChorPoliceEngine = {
         ChorPoliceEngine.startRound();
         break;
 
-      case CP.PUBLIC_REVEAL:
+      case CP.PUBLIC_REVEAL: {
         ChorPoliceEngine.state.currentRound =
           packet.round ?? ChorPoliceEngine.state.currentRound;
         ChorPoliceEngine.state.policeIndex =
@@ -127,11 +127,23 @@ export const ChorPoliceEngine = {
           packet.kingIndex ?? ChorPoliceEngine.state.kingIndex;
         ChorPoliceEngine.state.isRoundActive = true;
 
+        let currentRoles = [...ChorPoliceEngine.state.roles];
+        if (currentRoles.length === 0) {
+          currentRoles = new Array(4).fill("Hidden");
+          if (packet.kingIndex !== undefined && packet.kingIndex !== null) {
+            currentRoles[packet.kingIndex] = "King";
+          }
+          if (packet.policeIndex !== undefined && packet.policeIndex !== null) {
+            currentRoles[packet.policeIndex] = "Police";
+          }
+          ChorPoliceEngine.state.roles = currentRoles;
+        }
+
         // ── Redux sync ──
         dispatch(setRoundActive(true));
         dispatch(setRoundState({
           round: ChorPoliceEngine.state.currentRound,
-          roles: [...ChorPoliceEngine.state.roles],
+          roles: currentRoles,
           policeIndex: ChorPoliceEngine.state.policeIndex,
           kingIndex: ChorPoliceEngine.state.kingIndex,
           thiefIndex: ChorPoliceEngine.state.thiefIndex,
@@ -139,6 +151,7 @@ export const ChorPoliceEngine = {
         }));
         dispatch(setGamePhase("dealing"));
         break;
+      }
 
       case CP.ROLE_ASSIGN:
         // Each player receives their own role via this packet.

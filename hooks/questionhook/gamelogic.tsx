@@ -495,6 +495,7 @@ export const useQuizGameLogic = () => {
       stakeDeductedRef.current = true;
       QuizEngine.state.stake = 0; // zero out so a re-mount can't re-deduct
       dispatch(updateCoins(-stake));
+      toast.info("Coins Deducted", `You paid ${stake} coins to join the game.`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

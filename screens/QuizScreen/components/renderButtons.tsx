@@ -6,24 +6,26 @@ import { Text } from "@/components/Text";
 import { BlurView } from "expo-blur";
 
 interface ActionButtonsProps {
-  onStatsPress: () => void;
+  onReportBugPress?: () => void;
   onEarnPress: () => void;
   onHomePress: () => void;
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = memo(({
-  onStatsPress,
+  onReportBugPress,
   onEarnPress,
   onHomePress,
 }) => {
   return (
     <View className="flex-row justify-between mt-8 px-4 w-full">
-      <CustomButton 
-        onPress={onStatsPress}
-        label="Stats"
-        icon="stats-chart"
-        colors={['#6366f1', '#4338ca']} 
-      />
+      {onReportBugPress && (
+        <CustomButton 
+          onPress={onReportBugPress}
+          label="Report"
+          icon="bug"
+          colors={['#ef4444', '#b91c1c']} 
+        />
+      )}
       <CustomButton 
         onPress={onEarnPress}
         label="Earn"

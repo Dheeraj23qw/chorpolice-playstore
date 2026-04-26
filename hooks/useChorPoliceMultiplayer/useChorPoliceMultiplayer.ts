@@ -395,6 +395,7 @@ export const useChorPoliceMultiplayer = () => {
 
     stakeDeductedRef.current = true;
     dispatch(updateCoins(-stake));
+    toast.info("Coins Deducted", `You paid ${stake} coins to join the game.`);
   }, [dispatch, getActiveStake, reduxStake]);
 
   useEffect(() => {
@@ -919,7 +920,9 @@ export const useChorPoliceMultiplayer = () => {
         void (async () => {
           if (refund > 0) {
             dispatch(updateCoins(refund));
-            toast.success("Refunded!", `${refund} coins returned.`);
+            toast.success("Refunded!", `Host left. ${refund} coins returned.`, 4000);
+          } else {
+            toast.error("Match Ended", "The host left the game.", 4000);
           }
           await stopSession();
           dispatch(clearSession());
@@ -937,9 +940,15 @@ export const useChorPoliceMultiplayer = () => {
 
         if (localPlayerId !== leaverId && refund > 0) {
           dispatch(updateCoins(refund));
-          toast.success("Refunded!", `${refund} coins returned.`, 3000);
+          const msg = packet.networkIssue 
+            ? "A player disconnected. " 
+            : "A player left. ";
+          toast.success("Refunded!", `${msg}${refund} coins returned.`, 4000);
         } else if (localPlayerId !== leaverId) {
-          toast.error("Match Ended", "A player left, so the match was closed.", 3000);
+          const msg = packet.networkIssue 
+            ? "A player disconnected due to network issues." 
+            : "A player left, so the match was closed.";
+          toast.error("Match Ended", msg, 4000);
         }
 
         void (async () => {
@@ -968,6 +977,7 @@ export const useChorPoliceMultiplayer = () => {
             reason: "player_left",
             leaverId: packet.playerId,
             stake: ChorPoliceEngine.state.stake,
+            networkIssue: packet.reason === "heartbeat_timeout",
           });
         }
         return;
@@ -1246,6 +1256,9 @@ export const useChorPoliceMultiplayer = () => {
         switch (target) {
           case "stats":
             router.replace("/stats" as any);
+            break;
+          case "report-bug":
+            router.replace("/report-bug" as any);
             break;
           case "earn":
             router.replace("/earn" as any);

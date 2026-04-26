@@ -19,6 +19,12 @@ export const PlayerProfileCard = ({
 }: any) => {
   const [activeTab, setActiveTab] = useState<"settings" | null>(null);
   const [avatarPressed, setAvatarPressed] = useState(false);
+  const [localName, setLocalName] = useState(lobby.userName);
+
+  const handleTextChange = useCallback((text: string) => {
+    setLocalName(text);
+    lobby.handleNameChange(text);
+  }, [lobby]);
 
   /* ---------------- FAST LOOKUP (OPTIMIZED) ---------------- */
   const takenSet = useMemo(() => {
@@ -86,8 +92,8 @@ export const PlayerProfileCard = ({
               </Text>
 
               <TextInput
-                value={lobby.userName}
-                onChangeText={lobby.handleNameChange}
+                value={localName}
+                onChangeText={handleTextChange}
                 placeholder="Enter Name..."
                 placeholderTextColor="rgba(255,255,255,0.2)"
                 className="mt-2 font-main-bold text-3xl text-white"

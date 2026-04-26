@@ -98,9 +98,9 @@ export const BotEngine = {
           BotEngine.activeBots.forEach((bot) => {
             const willAnswerInTime = Math.random() > 0.12; // Slightly higher engagement
 
-            // "Pro" global timing: 10% - 40% of duration
+            // "Pro" global timing: 1.5s - 6.5s range, capped well under 10s
             const delay = willAnswerInTime
-              ? Math.floor(durationMs * (0.1 + Math.random() * 0.3))
+              ? Math.floor(Math.random() * 5000 + 1500)
               : durationMs + 200;
 
             const timer = setTimeout(() => {
