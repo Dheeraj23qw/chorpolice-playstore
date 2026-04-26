@@ -3,6 +3,7 @@ import { MotiView } from "moti";
 import React from "react";
 import { Pressable, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
 
 import { Text } from "@/components/Text";
 import { LobbyState } from "./types";
@@ -19,101 +20,71 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
 }) => {
   const playerNames = lobby.players.map((p) => p.name.trim().toLowerCase());
   const hasDuplicateNames = new Set(playerNames).size !== playerNames.length;
-
   const playerAvatars = lobby.players.map((p) => p.avatarId);
-  const hasDuplicateAvatars = new Set(playerAvatars).size !== playerAvatars.length;
+  const hasDuplicateAvatars =
+    new Set(playerAvatars).size !== playerAvatars.length;
 
   const isBlockedByDuplicates = hasDuplicateNames || hasDuplicateAvatars;
-
   const canStart =
-    lobby.connectionStatus === "HOSTING" && !isBlockedByDuplicates;
+    lobby.connectionStatus === "HOSTING" &&
+    !isBlockedByDuplicates &&
+    lobby.players.length > 1;
 
   const getSubtitle = () => {
     if (lobby.connectionStatus === "ERROR") return "Connection Error";
     if (lobby.connectionStatus !== "HOSTING") return "Waiting for host...";
+    if (lobby.players.length <= 1) return "Need at least 2 players";
     if (hasDuplicateNames) return "All players must have unique names";
     if (hasDuplicateAvatars) return "All players must have unique avatars";
-    return "Begin match instantly";
+    return "Ready to play";
   };
 
   const canShare = !!lobby.qrPayload && !lobby.isLocalOnlyLobby;
 
-  const handleStart = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    lobby.setIsBettingModalVisible(true);
-  };
-
-  const handleShare = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onOpenShare();
-  };
-
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 20, scale: 0.96 }}
-      animate={{ opacity: 1, translateY: 0, scale: 1 }}
-      transition={{ type: "spring", damping: 16 }}
-      className="overflow-hidden rounded-[30px]"
+      from={{ opacity: 0, translateY: 20 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: "spring", damping: 20 }}
+      className="overflow-hidden rounded-[32px]"
     >
-      <View className="absolute inset-0 rounded-[30px] bg-indigo-500/10 blur-2xl" />
-
       <LinearGradient
-        colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]}
-        className="rounded-[30px] border border-white/10 p-5"
+        colors={["rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)"]}
+        className="border border-white/10 p-6"
       >
-        {/* HEADER */}
-        <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-[10px] uppercase tracking-[3px] text-white/35">
-              Lobby Status
-            </Text>
-
-            <Text className="mt-1 font-main-bold text-xl text-white">
-              {lobby.players.length} Players Ready
-            </Text>
-          </View>
-
-          <View className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1">
-            <Text className="text-[10px] uppercase tracking-[2px] text-emerald-200">
-              Ready
-            </Text>
-          </View>
-        </View>
-
-        {/* DESCRIPTION */}
-        <Text className="mt-3 text-sm leading-5 text-white/60">
-          Start the game anytime. One player is enough, or wait for friends.
-        </Text>
-
-        {/* SHARE/INVITE BUTTON (Host Only) */}
-        {canShare && lobby.isHost && (
-          <Pressable onPress={handleShare}>
-            {({ pressed }) => (
-              <MotiView
-                animate={{ scale: pressed ? 0.97 : 1 }}
-                className="mt-4 overflow-hidden rounded-2xl"
-              >
-                <LinearGradient
-                  colors={["rgba(59,130,246,0.25)", "rgba(37,99,235,0.1)"]}
-                  className="rounded-2xl border border-blue-400/20 px-4 py-4"
-                >
-                  <Text className="text-center font-main-bold uppercase tracking-[2px] text-blue-200">
-                    Invite Players
-                  </Text>
-                </LinearGradient>
-              </MotiView>
-            )}
-          </Pressable>
-        )}
-
-        {/* START BUTTON (Host Only) */}
         {lobby.isHost && (
-          <View className="mt-5">
+          <View className="gap-4">
+            {/* Invite Section */}
+            {canShare && (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onOpenShare();
+                }}
+              >
+                {({ pressed }) => (
+                  <MotiView
+                    animate={{ scale: pressed ? 0.98 : 1 }}
+                    className="flex-row items-center justify-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 py-4"
+                  >
+                    <Ionicons name="share-outline" size={18} color="#93c5fd" />
+                    <Text className="font-main-bold uppercase tracking-[2px] text-blue-200">
+                      Invite Players
+                    </Text>
+                  </MotiView>
+                )}
+              </Pressable>
+            )}
+
+            {/* Start Game Section */}
             <PrimaryButton
-              title="Start Game"
+              title="Start Match"
               subtitle={getSubtitle()}
               disabled={!canStart}
-              onPress={handleStart}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                lobby.setIsBettingModalVisible(true);
+              }}
             />
           </View>
         )}

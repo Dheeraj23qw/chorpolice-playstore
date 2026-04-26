@@ -1,7 +1,14 @@
 import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+  SafeAreaView,
+} from "react-native";
+import { AnimatePresence, MotiView } from "moti";
 
 import { ApIsolationModal } from "@/components/LobbyScreen/ApIsolationModal";
 import { LateJoinQrModal } from "@/modal/LateJoinQrModal";
@@ -23,15 +30,12 @@ type UIState = "normal" | "betting" | "share" | "apIsolation" | "help";
 const LobbySetupScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-
   const lobby = useLobbyLogic(router, params) as LobbyState;
 
   const [uiState, setUiState] = useState<UIState>("normal");
-
-  /* ---------------- BLOCK UI FLAG ---------------- */
   const isBlockingUI = uiState !== "normal";
 
-  /* ---------------- SYNC MODALS ---------------- */
+  // --- Sync Betting Modal State ---
   useEffect(() => {
     if (lobby.isBettingModalVisible) setUiState("betting");
     else if (uiState === "betting") setUiState("normal");
@@ -41,7 +45,6 @@ const LobbySetupScreen = () => {
     if (lobby.showApIsolation) setUiState("apIsolation");
   }, [lobby.showApIsolation]);
 
-  /* ---------------- AVATAR ---------------- */
   const getAvatarSource = useCallback((avatarId: number) => {
     const imgData = playerImages[avatarId];
     return imgData
@@ -49,94 +52,92 @@ const LobbySetupScreen = () => {
       : require("@/assets/images/chorsipahi/kid1.webp");
   }, []);
 
-  /* ---------------- COPY ---------------- */
   const copyRoomCode = useCallback(async () => {
     if (!lobby.roomCode) return;
     await Clipboard.setStringAsync(lobby.roomCode);
     toast.success("Room Code Copied", lobby.roomCode);
   }, [lobby.roomCode]);
 
-  /* ---------------- SUMMARY ---------------- */
-  const setupSummary = useMemo(() => {
-    return lobby.isHost
-      ? "Everyone can change name and avatar."
-      : "Wait for the host to finalize game settings.";
-  }, [lobby.isHost]);
-
-  /* ---------------- NAVIGATION ---------------- */
-  useEffect(() => {
-    if (lobby.lobbyStage !== "room") return;
-
-    router.replace({
-      pathname: "/lobby",
-      params: {
-        gameType: lobby.gameType,
-        isHost: String(lobby.isHost),
-      },
-    } as any);
-  }, [lobby.lobbyStage]);
-
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-black"
-    >
+    <View className="flex-1 bg-black">
       <LobbyBackdrop />
 
-      {/* HEADER (hidden when modal active) */}
-      {!isBlockingUI && (
-        <LobbyHeader
-          onBack={lobby.isHost ? lobby.handleBackToRoom : lobby.handleBack}
-          rightIcon="help-buoy-outline"
-          onRightPress={() => setUiState("help")}
-        />
-      )}
-
-      {/* MAIN CONTENT */}
-      <View className="flex-1 px-6">
-        {/* TITLE */}
-        {!isBlockingUI && (
-          <View className="mb-5">
-            <Text className="mt-2 font-main-bold text-4xl text-white">
-              {lobby.isHost ? "Make everyone ready" : "Lobby Setup"}
-            </Text>
-
-            <Text className="mt-2 text-sm leading-5 text-white/60">
-              {setupSummary}
-            </Text>
-          </View>
-        )}
-
-        {/* PROFILE CARD */}
-        {!isBlockingUI && (
-          <PlayerProfileCard
-            lobby={lobby}
-            getAvatarSource={getAvatarSource}
-            showGameSettings={lobby.isHost}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <SafeAreaView className="flex-1">
+          {/* FIXED HEADER */}
+          <LobbyHeader
+            onBack={lobby.isHost ? lobby.handleBackToRoom : lobby.handleBack}
+            rightIcon="help-buoy-outline"
+            onRightPress={() => setUiState("help")}
           />
-        )}
 
-        {/* PLAYER LIST + ACTION CARD */}
-        {!isBlockingUI && (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingBottom: 180 }}
-            showsVerticalScrollIndicator={false}
-          >
-            <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
+          <View className="flex-1 px-6">
+            {/* SCROLLABLE AREA */}
+            <ScrollView
+              className="flex-1"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingTop: 10, paddingBottom: 20 }}
+            >
+              <AnimatePresence>
+                {!isBlockingUI && (
+                  <MotiView
+                    from={{ opacity: 0, translateY: -10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <View className="mb-6">
+                      <Text className="font-main-bold text-3xl text-white md:text-4xl">
+                        {lobby.isHost ? "Make everyone ready" : "Lobby Setup"}
+                      </Text>
+                      <Text className="mt-2 text-sm text-white/50">
+                        {lobby.isHost
+                          ? "Customize your profile and wait for others to join."
+                          : "Wait for the host to finalize game settings."}
+                      </Text>
+                    </View>
 
-            {lobby.isHost && (
+                    <PlayerProfileCard
+                      lobby={lobby}
+                      getAvatarSource={getAvatarSource}
+                      showGameSettings={lobby.isHost}
+                    />
+
+                    <View className="mt-8">
+                      <View className="mb-4 flex-row items-center justify-between">
+                        <Text className="font-main-bold text-lg text-white">
+                          Players
+                        </Text>
+                        <View className="rounded-full bg-white/10 px-3 py-1">
+                          <Text className="text-xs text-white/80">
+                            {lobby.players.length}/4
+                          </Text>
+                        </View>
+                      </View>
+                      <PlayersList
+                        lobby={lobby}
+                        getAvatarSource={getAvatarSource}
+                      />
+                    </View>
+                  </MotiView>
+                )}
+              </AnimatePresence>
+            </ScrollView>
+
+            {/* FIXED FOOTER ACTION CARD */}
+            <View className="pb-6 pt-2">
               <SetupActionCard
                 lobby={lobby}
                 onOpenShare={() => setUiState("share")}
               />
-            )}
-          </ScrollView>
-        )}
-      </View>
+            </View>
+          </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
 
-      {/* ---------------- MODALS ---------------- */}
-
+      {/* MODALS */}
       <EntryModal
         isVisible={uiState === "betting"}
         onConfirm={lobby.handleConfirmStake}
@@ -169,7 +170,7 @@ const LobbySetupScreen = () => {
         visible={uiState === "help"}
         onClose={() => setUiState("normal")}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

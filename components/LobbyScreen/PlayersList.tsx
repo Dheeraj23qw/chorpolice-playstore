@@ -16,8 +16,8 @@ export const PlayersList: React.FC<PlayersListProps> = ({
   lobby,
   getAvatarSource,
 }) => {
-  // ✅ DEFAULT OPEN
-  const [open, setOpen] = useState(true);
+  // ✅ HOST: CLOSED BY DEFAULT | CLIENT: OPEN BY DEFAULT
+  const [open, setOpen] = useState(!lobby.isHost);
 
   const hasPlayers = lobby.players.length > 0;
 
