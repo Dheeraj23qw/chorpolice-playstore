@@ -134,6 +134,18 @@ export const useLobbyLogic = (
   }, []);
 
   useEffect(() => {
+    if (lanReady && allowLocalOnlyLobby) {
+      setAllowLocalOnlyLobby(false);
+      hostBootstrappedRef.current = false;
+      // If we were forced into setup, go back to room to allow joining
+      if (session.lobbyStage === "setup") {
+        dispatch(setLobbyStage("room"));
+      }
+      toast.success("Network Ready", "Multiplayer mode activated. You can now invite friends.");
+    }
+  }, [lanReady, allowLocalOnlyLobby, dispatch, session.lobbyStage]);
+
+  useEffect(() => {
     setApIsolationHandler(() => {
       setShowApIsolation(true);
     });
@@ -431,11 +443,11 @@ export const useLobbyLogic = (
 
     setAllowLocalOnlyLobby(true);
     hostBootstrappedRef.current = false;
-    dispatch(setLobbyStage("room"));
+    dispatch(setLobbyStage("setup"));
     toast.info(
-      "Ready seats opened",
-      "You can start now. To play with friends later, allow Chor Police network permissions.",
-      3500,
+      "Local Mode Active",
+      "To play with your friends, allow Chor Police network permissions.",
+      4500,
     );
   }, [dispatch, isHost]);
 

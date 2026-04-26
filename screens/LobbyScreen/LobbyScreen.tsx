@@ -42,6 +42,13 @@ const LobbyScreen = ({
     !requireLanReady || status === "granted",
   );
 
+  /* ---------------- PERMISSION FALLBACK ---------------- */
+  useEffect(() => {
+    if (lobby.isHost && status === "denied" && !lobby.isLocalOnlyLobby) {
+      lobby.handleContinueWithReadySeats();
+    }
+  }, [lobby.isHost, status, lobby.isLocalOnlyLobby, lobby.handleContinueWithReadySeats]);
+
   /* ---------------- SAFE NAVIGATION EFFECT ---------------- */
   useEffect(() => {
     if (lobby?.lobbyStage !== "setup") return;
