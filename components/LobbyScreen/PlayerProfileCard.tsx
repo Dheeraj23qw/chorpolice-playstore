@@ -16,6 +16,7 @@ export const PlayerProfileCard = ({
   lobby,
   getAvatarSource,
   onSettingsToggle,
+  showGameSettings,
 }: any) => {
   const [activeTab, setActiveTab] = useState<"settings" | null>(null);
   const [avatarPressed, setAvatarPressed] = useState(false);
@@ -120,65 +121,67 @@ export const PlayerProfileCard = ({
             </Pressable>
           </View>
 
-          {/* SETTINGS */}
-          <CollapsibleCard
-            label="Game Configuration"
-            title={
-              lobby.gameType === "QUIZ"
-                ? `LEVEL: ${lobby.difficulty || "SELECT"}`
-                : "SELECT ROUNDS"
-            }
-            icon={
-              lobby.gameType === "QUIZ"
-                ? "speedometer-outline"
-                : "timer-outline"
-            }
-            isOpen={activeTab === "settings"}
-            onToggle={() => {
-              const next = activeTab === "settings" ? null : "settings";
-              setActiveTab(next);
-              onSettingsToggle?.(next === "settings");
-            }}
-          >
-            {lobby.gameType === "QUIZ" ? (
-              <View className="rounded-2xl border border-white/10 bg-white/5 p-2">
-                <View className="flex-row gap-2">
-                  {DIFFICULTY_OPTIONS.map((opt: any) => {
-                    const isSelected = lobby.difficulty === opt;
+          {/* SETTINGS (Host Only) */}
+          {showGameSettings && (
+            <CollapsibleCard
+              label="Game Configuration"
+              title={
+                lobby.gameType === "QUIZ"
+                  ? `LEVEL: ${lobby.difficulty || "SELECT"}`
+                  : "SELECT ROUNDS"
+              }
+              icon={
+                lobby.gameType === "QUIZ"
+                  ? "speedometer-outline"
+                  : "timer-outline"
+              }
+              isOpen={activeTab === "settings"}
+              onToggle={() => {
+                const next = activeTab === "settings" ? null : "settings";
+                setActiveTab(next);
+                onSettingsToggle?.(next === "settings");
+              }}
+            >
+              {lobby.gameType === "QUIZ" ? (
+                <View className="rounded-2xl border border-white/10 bg-white/5 p-2">
+                  <View className="flex-row gap-2">
+                    {DIFFICULTY_OPTIONS.map((opt: any) => {
+                      const isSelected = lobby.difficulty === opt;
 
-                    return (
-                      <Pressable
-                        key={opt}
-                        onPress={() => lobby.handleDifficultyChange(opt)}
-                        className="flex-1"
-                      >
-                        <LinearGradient
-                          colors={
-                            isSelected
-                              ? ["#6366F1", "#8B5CF6"]
-                              : ["transparent", "transparent"]
-                          }
-                          className="items-center rounded-xl py-3"
+                      return (
+                        <Pressable
+                          key={opt}
+                          onPress={() => lobby.handleDifficultyChange(opt)}
+                          className="flex-1"
                         >
-                          <Text
-                            className={
+                          <LinearGradient
+                            colors={
                               isSelected
-                                ? "font-main-bold text-white"
-                                : "text-white/30"
+                                ? ["#6366F1", "#8B5CF6"]
+                                : ["transparent", "transparent"]
                             }
+                            className="items-center rounded-xl py-3"
                           >
-                            {opt}
-                          </Text>
-                        </LinearGradient>
-                      </Pressable>
-                    );
-                  })}
+                            <Text
+                              className={
+                                isSelected
+                                  ? "font-main-bold text-white"
+                                  : "text-white/30"
+                              }
+                            >
+                              {opt}
+                            </Text>
+                          </LinearGradient>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
                 </View>
-              </View>
-            ) : (
-              <RoundSelector />
-            )}
-          </CollapsibleCard>
+              ) : (
+                <RoundSelector />
+              )}
+            </CollapsibleCard>
+          )}
         </LinearGradient>
       </MotiView>
 

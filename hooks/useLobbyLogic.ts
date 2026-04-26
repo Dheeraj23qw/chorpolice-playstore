@@ -206,7 +206,7 @@ export const useLobbyLogic = (
       try {
         await hostLanLobby({
           localPlayerId,
-          name: userName.trim() || "You",
+          name: userName.trim() || "PLAYER_1",
           avatarId: currentAvatarId,
           gameType,
         });
@@ -498,7 +498,7 @@ export const useLobbyLogic = (
         broadcastPacket(
           {
             type: MODES.THINK_AND_COUNT.GAME_START,
-            hostName: userName.trim() || "PLAYER",
+            hostName: userName.trim() || "PLAYER_1",
             timestamp: Date.now(),
             difficulty,
             betAmount: stake,
@@ -515,7 +515,7 @@ export const useLobbyLogic = (
         broadcastPacket(
           {
             type: MODES.CHOR_POLICE.GAME_START,
-            hostName: userName.trim() || "PLAYER",
+            hostName: userName.trim() || "PLAYER_1",
             timestamp: Date.now(),
             betAmount: stake,
             playerCount: finalPlayers.length,

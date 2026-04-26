@@ -16,8 +16,8 @@ export const PlayersList: React.FC<PlayersListProps> = ({
   lobby,
   getAvatarSource,
 }) => {
-  // ✅ DEFAULT CLOSED (IMPORTANT FOR MODERN UI)
-  const [open, setOpen] = useState(false);
+  // ✅ DEFAULT OPEN
+  const [open, setOpen] = useState(true);
 
   const hasPlayers = lobby.players.length > 0;
 
@@ -45,7 +45,7 @@ export const PlayersList: React.FC<PlayersListProps> = ({
 
             <View className="mt-1 flex-row items-center gap-2">
               <Text className="font-main-bold text-white">
-                {lobby.players.length} Connected
+                {lobby.isHost ? `${lobby.players.length} Connected` : "Active Players"}
               </Text>
 
               {/* status dot */}

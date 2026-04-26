@@ -21,6 +21,7 @@ import { PermissionCard } from "@/components/JoinScreen/PermissionCard";
 import { JoinMethodToggle } from "@/components/JoinScreen/JoinMethodToggle";
 import { JoinQRSection } from "@/components/JoinScreen/JoinQRSection";
 import { JoinCodeSection } from "@/components/JoinScreen/JoinCodeSection";
+import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 
 /* ---------------- HELPERS ---------------- */
 const isValidIpv4 = (value: string) => {
@@ -54,6 +55,7 @@ const JoinScreen = () => {
 
   const [roomCode, setRoomCode] = useState("");
   const [joinMethod, setJoinMethod] = useState<"scan" | "code">("scan");
+  const [showHelp, setShowHelp] = useState(false);
 
   const gameType = String(params.gameType || "CHOR_POLICE");
 
@@ -167,6 +169,8 @@ const JoinScreen = () => {
           await leaveLanLobby();
           router.back();
         }}
+        rightIcon="help-buoy-outline"
+        onRightPress={() => setShowHelp(true)}
       />
 
       <View className="flex-1 px-6 pb-8">
@@ -174,7 +178,7 @@ const JoinScreen = () => {
         <JoinHeaderBlock />
 
         {/* STEPS */}
-        <JoinStepsCard connectionCopy={connectionCopy} />
+        <JoinStepsCard />
 
         {/* PERMISSION / CONTENT */}
         {!canAttemptJoin ? (
@@ -211,6 +215,11 @@ const JoinScreen = () => {
           </>
         )}
       </View>
+
+      <MultiplayerHelpModal
+        visible={showHelp}
+        onClose={() => setShowHelp(false)}
+      />
     </KeyboardAvoidingView>
   );
 };

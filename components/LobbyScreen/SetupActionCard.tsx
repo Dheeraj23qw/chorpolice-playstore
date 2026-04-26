@@ -17,7 +17,25 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   lobby,
   onOpenShare,
 }) => {
-  const canStart = lobby.connectionStatus === "HOSTING";
+  const playerNames = lobby.players.map((p) => p.name.trim().toLowerCase());
+  const hasDuplicateNames = new Set(playerNames).size !== playerNames.length;
+
+  const playerAvatars = lobby.players.map((p) => p.avatarId);
+  const hasDuplicateAvatars = new Set(playerAvatars).size !== playerAvatars.length;
+
+  const isBlockedByDuplicates = hasDuplicateNames || hasDuplicateAvatars;
+
+  const canStart =
+    lobby.connectionStatus === "HOSTING" && !isBlockedByDuplicates;
+
+  const getSubtitle = () => {
+    if (lobby.connectionStatus === "ERROR") return "Connection Error";
+    if (lobby.connectionStatus !== "HOSTING") return "Waiting for host...";
+    if (hasDuplicateNames) return "All players must have unique names";
+    if (hasDuplicateAvatars) return "All players must have unique avatars";
+    return "Begin match instantly";
+  };
+
   const canShare = !!lobby.qrPayload && !lobby.isLocalOnlyLobby;
 
   const handleStart = () => {
@@ -67,8 +85,8 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
           Start the game anytime. One player is enough, or wait for friends.
         </Text>
 
-        {/* SHARE BUTTON */}
-        {canShare && (
+        {/* SHARE/INVITE BUTTON (Host Only) */}
+        {canShare && lobby.isHost && (
           <Pressable onPress={handleShare}>
             {({ pressed }) => (
               <MotiView
@@ -88,17 +106,17 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
           </Pressable>
         )}
 
-        {/* START BUTTON */}
-        <View className="mt-5">
-          <PrimaryButton
-            title="Start Game"
-            subtitle={
-              canStart ? "Begin match instantly" : "Waiting for host..."
-            }
-            disabled={!canStart}
-            onPress={handleStart}
-          />
-        </View>
+        {/* START BUTTON (Host Only) */}
+        {lobby.isHost && (
+          <View className="mt-5">
+            <PrimaryButton
+              title="Start Game"
+              subtitle={getSubtitle()}
+              disabled={!canStart}
+              onPress={handleStart}
+            />
+          </View>
+        )}
       </LinearGradient>
     </MotiView>
   );

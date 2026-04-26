@@ -1,4 +1,5 @@
 import { NETWORK } from "@/constants/Networking";
+import { toast } from "@/components/feedback/toast";
 import {
   clearSession,
   configureSessionState,
@@ -67,9 +68,13 @@ const broadcastPlayerList = (players: SessionPlayer[]) => {
   );
 };
 
-const sanitizePlayer = (player: Partial<SessionPlayer> | undefined, fallbackId: string) => ({
+const sanitizePlayer = (
+  player: Partial<SessionPlayer> | undefined,
+  fallbackId: string,
+  humanIndex: number = 1,
+) => ({
   id: player?.id || fallbackId,
-  name: player?.name?.trim() || "PLAYER",
+  name: player?.name?.trim() || `PLAYER_${humanIndex}`,
   avatarId:
     typeof player?.avatarId === "number" && player.avatarId > 0
       ? player.avatarId
@@ -123,7 +128,7 @@ const updateHostLocalPlayer = ({
   const currentPlayer = state.players[localPlayerIndex];
   const nextPlayer = {
     ...currentPlayer,
-    ...(name !== undefined ? { name: name.trim() || "PLAYER" } : {}),
+    ...(name !== undefined ? { name: name.trim() || "PLAYER_1" } : {}),
     ...(avatarId !== undefined ? { avatarId } : {}),
   };
 
@@ -151,7 +156,12 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       return;
     }
 
-    const joiningPlayer = sanitizePlayer(packet.player, `guest_${Date.now()}`);
+    const humansCount = state.players.filter((p) => !p.isBot).length;
+    const joiningPlayer = sanitizePlayer(
+      packet.player,
+      `guest_${Date.now()}`,
+      humansCount + 1,
+    );
     const nextPlayers = replaceFirstBotWithPlayer(state.players, {
       ...joiningPlayer,
       isBot: false,
@@ -171,8 +181,14 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       registerRemotePeer(joiningPlayer.id, sourceIp);
     }
 
+    const isNewJoin = !state.players.some((p) => p.id === joiningPlayer.id);
+
     syncPlayerListLocally(nextPlayers);
     broadcastPlayerList(nextPlayers);
+
+    if (isNewJoin) {
+      toast.info(`${joiningPlayer.name} joined the room!`);
+    }
     return;
   }
 
@@ -181,8 +197,13 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
     syncPlayerListLocally(packet.players);
     store.dispatch(setLobbyStage(packet.lobbyStage === "setup" ? "setup" : "room"));
     if (!state.isHost) {
+      const wasConnecting = state.connectionStatus === "CONNECTING";
       store.dispatch(setConnectionStatus("CONNECTED"));
       store.dispatch(setSessionError(null));
+
+      if (wasConnecting) {
+        toast.success("Congrats! You connected with the host.");
+      }
     }
     return;
   }

@@ -16,8 +16,9 @@ import { toast } from "@/components/feedback/toast";
 import { playerImages } from "@/constants/playerData";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { EntryModal } from "@/modal/EntryModal";
+import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 
-type UIState = "normal" | "betting" | "share" | "apIsolation";
+type UIState = "normal" | "betting" | "share" | "apIsolation" | "help";
 
 const LobbySetupScreen = () => {
   const router = useRouter();
@@ -59,7 +60,7 @@ const LobbySetupScreen = () => {
   const setupSummary = useMemo(() => {
     return lobby.isHost
       ? "Everyone can change name and avatar."
-      : "Update your profile while waiting for host.";
+      : "Wait for the host to finalize game settings.";
   }, [lobby.isHost]);
 
   /* ---------------- NAVIGATION ---------------- */
@@ -86,6 +87,8 @@ const LobbySetupScreen = () => {
       {!isBlockingUI && (
         <LobbyHeader
           onBack={lobby.isHost ? lobby.handleBackToRoom : lobby.handleBack}
+          rightIcon="help-buoy-outline"
+          onRightPress={() => setUiState("help")}
         />
       )}
 
@@ -95,7 +98,7 @@ const LobbySetupScreen = () => {
         {!isBlockingUI && (
           <View className="mb-5">
             <Text className="mt-2 font-main-bold text-4xl text-white">
-              Make everyone ready
+              {lobby.isHost ? "Make everyone ready" : "Lobby Setup"}
             </Text>
 
             <Text className="mt-2 text-sm leading-5 text-white/60">
@@ -122,10 +125,12 @@ const LobbySetupScreen = () => {
           >
             <PlayersList lobby={lobby} getAvatarSource={getAvatarSource} />
 
-            <SetupActionCard
-              lobby={lobby}
-              onOpenShare={() => setUiState("share")}
-            />
+            {lobby.isHost && (
+              <SetupActionCard
+                lobby={lobby}
+                onOpenShare={() => setUiState("share")}
+              />
+            )}
           </ScrollView>
         )}
       </View>
@@ -158,6 +163,11 @@ const LobbySetupScreen = () => {
           setUiState("normal");
         }}
         isHost={lobby.isHost}
+      />
+
+      <MultiplayerHelpModal
+        visible={uiState === "help"}
+        onClose={() => setUiState("normal")}
       />
     </KeyboardAvoidingView>
   );
