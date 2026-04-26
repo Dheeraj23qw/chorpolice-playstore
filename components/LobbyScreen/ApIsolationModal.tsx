@@ -8,14 +8,25 @@ import { MotiView } from "moti";
 interface ApIsolationModalProps {
   visible: boolean;
   onClose: () => void;
+  isHost: boolean; // Tells us if this phone is the "Brother/Host"
 }
 
 export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
   visible,
   onClose,
+  isHost,
 }) => {
-  const openWifiSettings = () => {
+  const handleAction = () => {
     if (Platform.OS === "android") {
+      if (isHost) {
+        // Send Host directly to Hotspot settings
+        Linking.sendIntent("android.settings.TETHER_SETTINGS");
+      } else {
+        // Send Client directly to Wi-Fi list to find the Host
+        Linking.sendIntent("android.settings.WIFI_SETTINGS");
+      }
+    } else {
+      // iOS fallback (general settings)
       Linking.openSettings();
     }
   };
@@ -33,7 +44,7 @@ export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
           transition={{ type: "spring", damping: 14, stiffness: 120 }}
           className="mx-6 w-[90%] max-w-[400px] overflow-hidden rounded-[32px]"
         >
-          {/* Glow */}
+          {/* Glow Effect */}
           <View className="absolute inset-0 rounded-[32px] bg-amber-500/15 blur-3xl" />
 
           <LinearGradient
@@ -52,38 +63,44 @@ export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
               className="mb-4 items-center"
             >
               <View className="h-16 w-16 items-center justify-center rounded-full bg-amber-500/20">
-                <Ionicons
-                  name="shield-half-outline"
-                  size={32}
-                  color="#F59E0B"
-                />
+                <Ionicons name="wifi-outline" size={32} color="#F59E0B" />
               </View>
             </MotiView>
 
             {/* TITLE */}
             <Text className="mb-2 text-center font-main-bold text-lg text-amber-300">
-              Network Restricted
+              {isHost ? "Start a Hotspot" : "Join the Host"}
             </Text>
 
             {/* DESCRIPTION */}
             <Text className="mb-4 text-center text-sm leading-5 text-white/70">
-              Your router is blocking device-to-device connections (AP
-              Isolation). This is common on hostel & public Wi-Fi networks.
+              The current Wi-Fi is blocking player connections. To play
+              together, one player must provide a direct connection.
             </Text>
 
-            {/* FIX BOX */}
+            {/* DYNAMIC FIX BOX */}
             <View className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-4">
               <Text className="mb-2 font-main-bold text-xs uppercase tracking-widest text-indigo-300">
-                Quick Fix
+                {isHost ? "Your Action" : "Waiting for Host"}
               </Text>
 
               <Text className="text-sm leading-5 text-white/80">
-                Turn on one phone&apos;s{" "}
-                <Text className="font-main-bold text-white">
-                  Mobile Hotspot
-                </Text>{" "}
-                and connect the other phone to it. This gives a direct, stable
-                connection
+                {isHost ? (
+                  <>
+                    Turn on your{" "}
+                    <Text className="font-main-bold text-white">
+                      Mobile Hotspot
+                    </Text>{" "}
+                    and ask your friends to connect to your phone.
+                  </>
+                ) : (
+                  <>
+                    Please ask the{" "}
+                    <Text className="font-main-bold text-white">Host</Text> to
+                    turn on their Hotspot, then connect your Wi-Fi to their
+                    device.
+                  </>
+                )}
               </Text>
             </View>
 
@@ -99,7 +116,7 @@ export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
               </Pressable>
 
               <Pressable
-                onPress={openWifiSettings}
+                onPress={handleAction}
                 className="flex-1 overflow-hidden rounded-2xl"
               >
                 <LinearGradient
@@ -107,7 +124,7 @@ export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
                   className="items-center rounded-2xl py-3"
                 >
                   <Text className="font-main-bold text-sm text-black">
-                    Open Settings
+                    {isHost ? "Open Hotspot" : "Open Wi-Fi"}
                   </Text>
                 </LinearGradient>
               </Pressable>

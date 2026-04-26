@@ -148,6 +148,7 @@ const LobbySetupScreen = () => {
         qrPayload={lobby.qrPayload}
         roomCode={lobby.roomCode}
         onCopyRoomCode={copyRoomCode}
+        isHost={lobby.isHost}
       />
 
       <ApIsolationModal
@@ -156,6 +157,7 @@ const LobbySetupScreen = () => {
           lobby.setShowApIsolation(false);
           setUiState("normal");
         }}
+        isHost={lobby.isHost}
       />
     </KeyboardAvoidingView>
   );
