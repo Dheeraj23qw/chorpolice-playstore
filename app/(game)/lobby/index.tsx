@@ -1,6 +1,6 @@
 import React from "react";
 import { Stack } from "expo-router";
-import LobbyScreen from "@/screens/LobbyScreen/LobbyScreen";
+import LobbySetupScreen from "@/screens/LobbySetupScreen";
 
 /**
  * --- LOBBY ROUTE ENTRY ---
@@ -16,7 +16,7 @@ export default function LobbyRoute() {
         }}
       />
 
-      <LobbyScreen />
+      <LobbySetupScreen />
     </>
   );
 }

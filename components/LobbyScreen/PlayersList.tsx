@@ -51,7 +51,9 @@ export const PlayersList: React.FC<PlayersListProps> = ({
 
             <View className="mt-1 flex-row items-center gap-2">
               <Text className="font-main-bold text-white">
-                {lobby.isHost ? `${lobby.players.length} Connected` : "Active Players"}
+                {lobby.isHost
+                  ? `${lobby.players.length} Connected`
+                  : "Active Players"}
               </Text>
 
               {/* status dot */}

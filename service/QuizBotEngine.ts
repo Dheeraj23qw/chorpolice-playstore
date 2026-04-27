@@ -58,7 +58,7 @@ export const BotEngine = {
         id: `CP-BOT-${generateShortId()}`,
         name: botName,
         avatarId: getAvatar(),
-        type: "CLIENT", 
+        type: "CLIENT",
         isBot: true,
       });
     }
@@ -96,7 +96,7 @@ export const BotEngine = {
           BotEngine._answerTimers = [];
 
           BotEngine.activeBots.forEach((bot) => {
-            const willAnswerInTime = Math.random() > 0.12; // Slightly higher engagement
+            const willAnswerInTime = 1; // Slightly higher engagement
 
             // "Pro" global timing: 1.5s - 6.5s range, capped well under 10s
             const delay = willAnswerInTime

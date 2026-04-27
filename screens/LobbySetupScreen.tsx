@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { AnimatePresence, MotiView } from "moti";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ApIsolationModal } from "@/components/LobbyScreen/ApIsolationModal";
 import { LateJoinQrModal } from "@/modal/LateJoinQrModal";
@@ -11,27 +12,48 @@ import { LobbyHeader } from "@/components/LobbyScreen/LobbyHeader";
 import { PlayerProfileCard } from "@/components/LobbyScreen/PlayerProfileCard";
 import { PlayersList } from "@/components/LobbyScreen/PlayersList";
 import { SetupActionCard } from "@/components/LobbyScreen/SetupActionCard";
+import {
+  HandshakeStatus,
+  PermissionFallbackCard,
+  HostStartErrorCard,
+} from "@/components/LobbyScreen";
 import { LobbyState } from "@/components/LobbyScreen/types";
 import { Text } from "@/components/Text";
 import { toast } from "@/components/feedback/toast";
 import { playerImages } from "@/constants/playerData";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
+import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import { EntryModal } from "@/modal/EntryModal";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 type UIState = "normal" | "betting" | "share" | "apIsolation" | "help";
 
-const LobbySetupScreen = () => {
+const LobbySetupScreen = ({
+  forcedMode,
+  routeGameType,
+  requireLanReady = false,
+}: any) => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const lobby = useLobbyLogic(router, params) as LobbyState;
+
+  const { step, status, retry, errorMessage, openSettings } =
+    useNetworkPermissions(requireLanReady);
+
+  const lobby = useLobbyLogic(
+    router,
+    {
+      ...params,
+      gameType: routeGameType || params.gameType,
+      isHost: forcedMode ? String(forcedMode === "host") : params.isHost,
+    },
+    forcedMode,
+    !requireLanReady || status === "granted",
+  ) as LobbyState;
 
   const [uiState, setUiState] = useState<UIState>("normal");
   const isBlockingUI = uiState !== "normal";
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
 
-  // --- Sync Betting Modal State ---
   useEffect(() => {
     if (lobby.isBettingModalVisible) setUiState("betting");
     else if (uiState === "betting") setUiState("normal");
@@ -40,6 +62,32 @@ const LobbySetupScreen = () => {
   useEffect(() => {
     if (lobby.showApIsolation) setUiState("apIsolation");
   }, [lobby.showApIsolation]);
+
+  useEffect(() => {
+    if (lobby.isHost && status === "denied" && !lobby.isLocalOnlyLobby) {
+      lobby.handleContinueWithReadySeats();
+    }
+  }, [
+    lobby.isHost,
+    status,
+    lobby.isLocalOnlyLobby,
+    lobby.handleContinueWithReadySeats,
+  ]);
+
+  const ui = useMemo(() => {
+    const permissionBlocked =
+      requireLanReady &&
+      status !== "granted" &&
+      !lobby.isLocalOnlyLobby &&
+      lobby.connectionStatus !== "HOSTING";
+    const permissionPending = status === "pending";
+    const hostError =
+      lobby.isHost &&
+      lobby.connectionStatus === "ERROR" &&
+      !!lobby.errorMessage;
+
+    return { permissionBlocked, permissionPending, hostError };
+  }, [requireLanReady, status, lobby]);
 
   const getAvatarSource = useCallback((avatarId: number) => {
     const imgData = playerImages[avatarId];
@@ -62,25 +110,36 @@ const LobbySetupScreen = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        {/* MAIN CONTENT CONTAINER 
-           Fades out and scales down when any modal is open
-        */}
         <MotiView
           animate={{
-            opacity: isBlockingUI ? 0.3 : 1, // Dims background
-            scale: isBlockingUI ? 0.96 : 1, // Subtle push-back effect
+            opacity: isBlockingUI ? 0.3 : 1,
+            scale: isBlockingUI ? 0.96 : 1,
           }}
           transition={{ type: "timing", duration: 300 }}
           className="flex-1"
-          pointerEvents={isBlockingUI ? "none" : "auto"} // Prevents clicking background
+          pointerEvents={isBlockingUI ? "none" : "auto"}
         >
-          <SafeAreaView className="flex-1">
-            <LobbyHeader
-              onBack={lobby.isHost ? lobby.handleBackToRoom : lobby.handleBack}
-              onReportPress={() => router.push("/report-bug")}
-              rightIcon="help-buoy-outline"
-              onRightPress={() => setUiState("help")}
-            />
+          <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
+            {/* --- HEADER (Hidden when list open) --- */}
+            <View className="h-16 justify-center">
+              <AnimatePresence>
+                {!isPlayersListOpen && (
+                  <MotiView
+                    key="full-header"
+                    from={{ opacity: 0, translateY: -10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    exit={{ opacity: 0, translateY: -10 }}
+                  >
+                    <LobbyHeader
+                      onBack={lobby.handleBack}
+                      onReportPress={() => router.push("/report-bug")}
+                      rightIcon="help-buoy-outline"
+                      onRightPress={() => setUiState("help")}
+                    />
+                  </MotiView>
+                )}
+              </AnimatePresence>
+            </View>
 
             <View className="flex-1 px-6">
               <ScrollView
@@ -88,58 +147,127 @@ const LobbySetupScreen = () => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingTop: 10, paddingBottom: 20 }}
               >
-                <View className="mb-6">
-                  <Text className="font-main-bold text-3xl text-white">
-                    {lobby.isHost ? "Make everyone ready" : "Lobby Setup"}
-                  </Text>
-                  <Text className="mt-2 text-sm text-white/50">
-                    {lobby.isHost
-                      ? "Customize your profile and wait for others to join."
-                      : "Wait for the host to finalize game settings."}
-                  </Text>
-                </View>
-
+                {/* --- WELCOME TEXT (Hidden when list open) --- */}
                 <AnimatePresence>
-                  {(!lobby.isHost || !isPlayersListOpen) && (
-                    <PlayerProfileCard
-                      lobby={lobby}
-                      getAvatarSource={getAvatarSource}
-                      showGameSettings={lobby.isHost}
-                    />
+                  {!isPlayersListOpen && (
+                    <MotiView
+                      from={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-6 overflow-hidden"
+                    >
+                      <Text className="font-main-bold text-3xl text-white">
+                        {lobby.isHost ? "Make everyone ready" : "Lobby Setup"}
+                      </Text>
+                      <Text className="mt-2 text-sm text-white/50">
+                        {lobby.isHost
+                          ? "Customize your profile and wait for others to join."
+                          : "Wait for the host to finalize game settings."}
+                      </Text>
+                    </MotiView>
                   )}
                 </AnimatePresence>
 
-                <View className="mt-8">
-                  <View className="mb-4 flex-row items-center justify-between">
-                    <Text className="font-main-bold text-lg text-white">
-                      Players
-                    </Text>
-                    <View className="rounded-full bg-white/10 px-3 py-1">
-                      <Text className="text-xs text-white/80">
-                        {lobby.players.length}/4
-                      </Text>
-                    </View>
-                  </View>
-                  <PlayersList
-                    lobby={lobby}
-                    getAvatarSource={getAvatarSource}
-                    onOpenChange={setIsPlayersListOpen}
+                {ui.permissionBlocked ? (
+                  ui.permissionPending ? (
+                    <HandshakeStatus
+                      step={step === "idle" ? "checking_wifi" : step}
+                      status="loading"
+                      discoveredCount={0}
+                      errorMessage={errorMessage}
+                      isHost={lobby.isHost}
+                      onRetry={retry}
+                      onOpenSettings={openSettings}
+                      wifiSSID="Secure LAN"
+                    />
+                  ) : (
+                    <PermissionFallbackCard
+                      isHost={lobby.isHost}
+                      onPrimary={status === "denied" ? openSettings : retry}
+                      onSecondary={
+                        lobby.isHost
+                          ? lobby.handleContinueWithReadySeats
+                          : undefined
+                      }
+                      primaryLabel={
+                        status === "denied" ? "Open Settings" : "Try Again"
+                      }
+                      message={
+                        errorMessage ||
+                        "Permissions needed for local discovery."
+                      }
+                    />
+                  )
+                ) : ui.hostError ? (
+                  <HostStartErrorCard
+                    message={lobby.errorMessage!}
+                    onRetry={lobby.handleRetryHosting}
+                    retrying={lobby.isBootstrappingHost}
+                    onUseReadySeats={lobby.handleContinueWithReadySeats}
                   />
-                </View>
+                ) : (
+                  <>
+                    {/* --- PROFILE CARD (Hides when list open) --- */}
+                    <AnimatePresence>
+                      {!isPlayersListOpen && (
+                        <MotiView
+                          key="profile-card"
+                          from={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="mb-8"
+                        >
+                          <PlayerProfileCard
+                            lobby={lobby}
+                            getAvatarSource={getAvatarSource}
+                            showGameSettings={lobby.isHost}
+                          />
+                        </MotiView>
+                      )}
+                    </AnimatePresence>
+
+                    {/* --- HINT TEXT (Shown ONLY when list is open, centered above it) --- */}
+                    <AnimatePresence>
+                      {isPlayersListOpen && (
+                        <MotiView
+                          from={{ opacity: 0, translateY: 10 }}
+                          animate={{ opacity: 1, translateY: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="mb-4 items-center"
+                        >
+                          <Text className="text-center font-main text-[11px] text-white/40">
+                            Close player list to edit profile details
+                          </Text>
+                        </MotiView>
+                      )}
+                    </AnimatePresence>
+
+                    {/* --- PLAYERS LIST --- */}
+                    <View>
+                      <PlayersList
+                        lobby={lobby}
+                        getAvatarSource={getAvatarSource}
+                        onOpenChange={setIsPlayersListOpen}
+                      />
+                    </View>
+                  </>
+                )}
               </ScrollView>
 
-              <View className="pb-6 pt-2">
-                <SetupActionCard
-                  lobby={lobby}
-                  onOpenShare={() => setUiState("share")}
-                />
-              </View>
+              {lobby.isHost && (
+                <View className="pb-6 pt-2">
+                  <SetupActionCard
+                    lobby={lobby}
+                    onOpenShare={() => setUiState("share")}
+                  />
+                </View>
+              )}
             </View>
           </SafeAreaView>
         </MotiView>
       </KeyboardAvoidingView>
 
-      {/* MODALS (Kept outside the dimmed MotiView so they stay bright) */}
+      {/* --- MODALS --- */}
       <EntryModal
         isVisible={uiState === "betting"}
         onConfirm={lobby.handleConfirmStake}

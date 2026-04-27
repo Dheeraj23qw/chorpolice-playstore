@@ -1,7 +1,7 @@
 import React from "react";
 import { Stack } from "expo-router";
 
-import HostScreen from "@/screens/HostScreen";
+import LobbySetupScreen from "@/screens/LobbySetupScreen";
 
 export default function HostRoute() {
   return (
@@ -12,7 +12,7 @@ export default function HostRoute() {
           gestureEnabled: false,
         }}
       />
-      <HostScreen />
+      <LobbySetupScreen forcedMode="host" requireLanReady />
     </>
   );
 }

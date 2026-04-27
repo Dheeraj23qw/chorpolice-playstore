@@ -75,12 +75,10 @@ export const FullScreenMenu = ({
     { label: "Earn", icon: Flashlight, path: "/earn" },
     { label: "Stats", icon: BarChart3, path: "/stats" },
     { label: "Profile", icon: User, path: "/profile" },
-    { label: "Rules", icon: Book, path: "/rules-home" },
     { label: "Awards", icon: Medal, path: "/awards" },
     { label: "Rate Us", icon: Star, action: onRatePress },
     { label: "Share", icon: Share2, action: onSharePress },
     { label: "Bugs", icon: Bug, path: "/report-bug" },
-    { label: "Help", icon: HelpCircle, path: "/support" },
   ];
 
   return (
