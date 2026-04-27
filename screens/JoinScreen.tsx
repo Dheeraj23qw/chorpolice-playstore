@@ -45,6 +45,7 @@ const JoinScreen = () => {
   const selectedImages = useSelector(
     (state: RootState) => state.player.selectedImages,
   );
+  const userCoins = useSelector((state: RootState) => state.wallet.coins);
 
   const { step, status, retry, errorMessage, openSettings } =
     useNetworkPermissions({
@@ -104,6 +105,7 @@ const JoinScreen = () => {
         localPlayerId: session.localPlayerId,
         name: session.localPlayerName,
         avatarId: session.localAvatarId,
+        coins: userCoins,
         gameType,
       });
     },

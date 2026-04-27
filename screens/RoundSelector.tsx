@@ -14,7 +14,7 @@ const dispatch = useDispatch<AppDispatch>();
     (state: RootState) => state.player.gameRound,
   );
 
-  const roundOptions = Array.from({ length: 20 }, (_, i) => i + 1);
+  const roundOptions = Array.from({ length: 18 }, (_, i) => i + 3);
 
   const handleRoundSelect = useCallback((round: number) => {
     AudioEngine.play("select", "ui");

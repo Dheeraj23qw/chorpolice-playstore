@@ -11,7 +11,7 @@ export default function Section({
 }) {
   return (
     <View className="mb-8">
-      <Text className="mb-4 px-1 text-[12px] font-main-bold uppercase tracking-[2px] text-slate-500">
+      <Text className="mb-4 px-1 font-main-bold text-[12px] uppercase tracking-[2px] text-slate-500">
         {title}
       </Text>
       <View className="space-y-3">{children}</View>

@@ -9,10 +9,13 @@ import { Text } from "./Text";
 import { notificationService } from "../service/notification/NotificationService";
 import { useDebugData } from "../service/lanGameService";
 import { rf } from "../utils/responsive";
+import { useAppDispatch } from "@/hooks/useAppRedux";
+import { updateCoins } from "@/features/wallet/walletSlice";
 
 export const DebugOverlay: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState(true);
   const debug = useDebugData();
+  const dispatch = useAppDispatch();
 
   if (!runtimeConfig.isDevelopment) return null;
 
@@ -133,6 +136,17 @@ export const DebugOverlay: React.FC = () => {
         <TouchableOpacity style={styles.notifButton} onPress={handleTestNotification}>
           <Ionicons name="notifications-outline" size={rf(1.2)} color="white" />
           <Text style={styles.notifButtonText}>TEST NOTIF</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.notifButton, { backgroundColor: "#f59e0b", marginTop: 8 }]} 
+          onPress={() => {
+            dispatch(updateCoins(50000));
+            toast.success("Debug Action", "Added 50,000 coins.");
+          }}
+        >
+          <Ionicons name="cash-outline" size={rf(1.2)} color="white" />
+          <Text style={styles.notifButtonText}>+50K COINS</Text>
         </TouchableOpacity>
       </View>
     </View>

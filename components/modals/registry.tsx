@@ -12,15 +12,11 @@ export interface ModalRegistration {
 
 interface CreateModalRegistryParams {
   onClaimBonus: () => void;
-  onCloseLowCoin: () => void;
-  onDisableLowCoin: () => void;
   onCloseReward: () => void;
 }
 
 export function createModalRegistry({
   onClaimBonus,
-  onCloseLowCoin,
-  onDisableLowCoin,
   onCloseReward,
 }: CreateModalRegistryParams): ModalRegistration[] {
   return [
@@ -28,18 +24,6 @@ export function createModalRegistry({
       key: "BONUS_MODAL",
       render: (isActive) => (
         <WelcomeBonusModal isVisible={isActive} onClaim={onClaimBonus} />
-      ),
-    },
-    {
-      key: "LOW_COIN_MODAL",
-      render: (isActive) => (
-        <LowCoinModal
-          visible={isActive}
-          onShare={onCloseLowCoin}
-          onRate={onCloseLowCoin}
-          onClose={onCloseLowCoin}
-          onDisable={onDisableLowCoin}
-        />
       ),
     },
     {

@@ -12,20 +12,19 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onShare: () => void;
-  onRate: () => void;
   onDisable: () => void;
+  referralCode: string;
 }
 
 export const LowCoinModal = ({
   visible,
   onClose,
   onShare,
-  onRate,
   onDisable,
+  referralCode,
 }: Props) => {
   const dispatch = useDispatch();
 
-  // ✅ FIXED Redux side-effect (no unnecessary cleanup)
   useEffect(() => {
     if (visible) {
       dispatch(openModalUI());
@@ -41,93 +40,73 @@ export const LowCoinModal = ({
       statusBarTranslucent
       animationType="fade"
     >
-      <View className="flex-1 items-center justify-center px-8">
+      <View className="flex-1 items-center justify-center bg-black/60 px-8">
         {/* GLASS CONTAINER */}
         <MotiView
-          from={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "timing", duration: 400 }}
-          className="w-full max-w-sm overflow-hidden rounded-[55px] border border-white/20"
-          style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+          from={{ scale: 0.9, opacity: 0, translateY: 20 }}
+          animate={{ scale: 1, opacity: 1, translateY: 0 }}
+          transition={{ type: "spring", damping: 15 }}
+          className="w-full max-w-sm overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
         >
-          <BlurView intensity={90} tint="dark" className="items-center p-10">
-            {/* LIGHT REFLECTION */}
-            <LinearGradient
-              colors={["rgba(255,255,255,0.08)", "transparent"]}
-              className="absolute inset-0"
-            />
-
+          <BlurView intensity={60} tint="dark" className="items-center p-8">
             {/* CLOSE BUTTON */}
             <TouchableOpacity
               onPress={onClose}
-              className="absolute right-6 top-6 h-10 w-10 items-center justify-center rounded-full border border-white/10"
+              className="absolute right-4 top-4 z-10 h-8 w-8 items-center justify-center rounded-full bg-white/5"
             >
-              <Ionicons
-                name="close-outline"
-                size={22}
-                color="rgba(255,255,255,0.4)"
-              />
+              <Ionicons name="close" size={20} color="white" />
             </TouchableOpacity>
 
-            {/* FLOATING THIEF (MOTI) */}
-            <MotiView
-              from={{ translateY: 0 }}
-              animate={{ translateY: -12 }}
-              transition={{
-                type: "timing",
-                duration: 2000,
-                loop: true,
-                repeatReverse: true,
-              }}
-              style={{ marginBottom: 24, marginTop: 8 }}
-            >
-              <Image
-                source={require("@/assets/images/chorsipahi/thief.webp")}
-                className="h-28 w-28 opacity-90"
-                resizeMode="contain"
-              />
-            </MotiView>
+            {/* HEADER ICON */}
+            <View className="mb-6 h-20 w-20 items-center justify-center rounded-3xl bg-amber-500/10 border border-amber-500/20">
+              <Ionicons name="wallet-outline" size={40} color="#f59e0b" />
+            </View>
 
             {/* TITLE */}
-            <Text className="font-main-bold text-3xl tracking-tight text-white/90">
-              LOW COINS
+            <Text className="text-center font-main-bold text-2xl text-white">
+              Low on Coins?
+            </Text>
+            <Text className="mt-2 text-center text-sm text-white/50">
+              Complete quick tasks to refill your bag and keep playing!
             </Text>
 
-            <Text className="mt-1 font-main-md text-[9px] uppercase tracking-[6px] text-white/40">
-              Chor Police Bag
-            </Text>
+            {/* TASKS */}
+            <View className="mt-8 w-full gap-y-4">
+              {/* REFERRAL CODE DISPLAY */}
+              <View className="items-center rounded-2xl border border-white/10 bg-white/5 p-4">
+                <Text className="text-[10px] uppercase tracking-widest text-white/40">Your Referral Code</Text>
+                <Text className="mt-1 font-main-bold text-2xl tracking-[4px] text-amber-500">{referralCode}</Text>
+              </View>
 
-            {/* ACTION BUTTONS */}
-            <View className="mt-10 w-full gap-4">
-              {/* PRIMARY */}
-              <TouchableOpacity onPress={onShare} activeOpacity={0.8}>
-                <View className="overflow-hidden rounded-3xl border border-white/20 bg-white/10 py-5">
-                  <Text className="text-center font-main-bold text-lg text-white/90">
-                    SHARE FOR COINS
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* SECONDARY */}
-              <TouchableOpacity onPress={onRate} activeOpacity={0.8}>
-                <View className="rounded-3xl border border-white/5 bg-transparent py-5">
-                  <Text className="text-center font-main-bold text-lg text-white/40">
-                    ⭐ RATE & EARN
-                  </Text>
+              {/* SHARE TASK */}
+              <TouchableOpacity
+                onPress={onShare}
+                activeOpacity={0.7}
+                className="overflow-hidden rounded-2xl border border-white/5 bg-indigo-600"
+              >
+                <View className="flex-row items-center p-5">
+                  <Ionicons name="share-social" size={24} color="white" />
+                  <View className="ml-4 flex-1">
+                    <Text className="font-main-bold text-white">Share with Friends</Text>
+                    <Text className="text-[10px] text-white/70">Invite friends using your code</Text>
+                  </View>
+                  <View className="rounded-lg bg-black/20 px-2 py-1">
+                    <Text className="font-main-bold text-[10px] text-white">+5000</Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             </View>
 
             {/* FOOTER */}
-            <View className="mt-10 w-full flex-row items-center justify-between border-t border-white/5 px-2 pt-8">
+            <View className="mt-8 w-full flex-row items-center justify-between border-t border-white/5 pt-6">
               <TouchableOpacity onPress={onClose}>
-                <Text className="font-main-md text-[9px] uppercase tracking-[2px] text-white/20">
-                  Later
+                <Text className="text-[10px] font-main-bold uppercase tracking-widest text-white/30">
+                  Maybe Later
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={onDisable}>
-                <Text className="font-main-md text-[9px] uppercase tracking-[2px] text-indigo-400/40">
+                <Text className="text-[10px] font-main-bold uppercase tracking-widest text-indigo-400/40">
                   Don't show again
                 </Text>
               </TouchableOpacity>

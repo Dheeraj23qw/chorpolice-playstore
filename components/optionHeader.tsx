@@ -12,6 +12,8 @@ import { FullScreenMenu } from "@/components/sidebar";
 import CustomRatingModal from "@/modal/RatingModal";
 import { CircleBtn } from "./CircleBtn"; // Import from new chunk
 import { useHeaderActions } from "@/hooks/useHeaderActions";
+import { useAppSelector } from "@/hooks/useAppRedux";
+import { generateNumericCode } from "@/utils/referral";
 
 const SLATE_TRANSPARENT = "rgba(0, 0, 0, 0.1)";
 const ICON_COLOR = "#FFFFFF";
@@ -30,6 +32,9 @@ const OptionHeader = memo(function OptionHeader() {
   const btnDim = responsiveWidth(11);
   const iconSize = responsiveFontSize(2.8);
   const marginBetween = responsiveWidth(3);
+
+  const localPlayerId = useAppSelector((s) => s.session.localPlayerId);
+  const referralCode = generateNumericCode(localPlayerId);
 
   return (
     <View
@@ -65,18 +70,18 @@ const OptionHeader = memo(function OptionHeader() {
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={handleShare}
+        onPress={() => setModalVisible(true)}
       >
-        <Ionicons name="share-social" size={iconSize} color={ICON_COLOR} />
+        <MaterialIcons name="star" size={iconSize} color={ICON_COLOR} />
       </CircleBtn>
 
       <CircleBtn
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={() => setModalVisible(true)}
+        onPress={() => router.push("/report-bug")}
       >
-        <MaterialIcons name="star" size={iconSize} color={ICON_COLOR} />
+        <Ionicons name="bug" size={iconSize} color={ICON_COLOR} />
       </CircleBtn>
 
       <CircleBtn
@@ -99,7 +104,7 @@ const OptionHeader = memo(function OptionHeader() {
         onClose={() => setMenuOpen(false)}
         router={router}
         onRatePress={() => setModalVisible(true)}
-        onSharePress={handleShare}
+        onSharePress={() => handleShare(referralCode)}
       />
     </View>
   );

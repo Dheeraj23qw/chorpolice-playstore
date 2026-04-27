@@ -12,6 +12,7 @@ import OnboardingScreen from "@/screens/appFlow/OnboardingScreen";
 import SplashPhaseScreen from "@/screens/appFlow/SplashPhaseScreen";
 import VideoScreen from "@/screens/appFlow/VideoScreen";
 import { assetLoader } from "@/service/assetLoader";
+import { syncLocalLobbyProfile } from "@/service/lanLobbyCoordinator";
 import { getOnboardingDone, setOnboardingDone } from "@/storage/appStorage";
 import { canShowLowCoinModal } from "@/storage/lowCoinStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
@@ -25,6 +26,9 @@ export default function AppController() {
   const isSoundLoaded = useAppSelector((state) => state.sound.isLoaded);
   const unlockedAwardsCount = useAppSelector(
     (state) => state.awards.unlocked.length,
+  );
+  const connectionStatus = useAppSelector(
+    (state) => state.session.connectionStatus,
   );
   const loadingTaskRef = useRef<Promise<void> | null>(null);
   const bootstrappedRef = useRef(false);
@@ -79,6 +83,8 @@ export default function AppController() {
     }
   }, [dispatch, firstLaunch, phase]);
 
+  // LOW COIN MODAL REMOVED: Users now use referral system to earn coins manually.
+  /*
   useEffect(() => {
     if (
       phase === "HOME" &&
@@ -89,6 +95,7 @@ export default function AppController() {
       dispatch(enqueueModal("LOW_COIN_MODAL"));
     }
   }, [coins, dispatch, firstLaunch, phase]);
+  */
 
   useEffect(() => {
     if (phase === "HOME" && unlockedAwardsCount > 0 && !rewardQueuedRef.current) {
@@ -100,6 +107,13 @@ export default function AppController() {
       rewardQueuedRef.current = false;
     }
   }, [dispatch, phase, unlockedAwardsCount]);
+
+  useEffect(() => {
+    if (connectionStatus !== "IDLE") {
+      console.log("[AppController] Syncing coins to lobby:", coins);
+      syncLocalLobbyProfile({ coins });
+    }
+  }, [coins, connectionStatus]);
 
   const handleOnboardingComplete = useCallback(() => {
     setOnboardingDone(true);

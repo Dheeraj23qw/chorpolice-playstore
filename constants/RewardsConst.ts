@@ -1,6 +1,7 @@
 export type RewardTier = {
   id: number;
   coinsRequired: number;
+  rewardCoins: number; // New field
   reward: string;
   emoji: string;
   durationDays: number;
@@ -9,23 +10,26 @@ export type RewardTier = {
 export const REWARD_TIERS: RewardTier[] = [
   {
     id: 1,
-    coinsRequired: 2500000,
-    reward: "Badminton Racket",
-    emoji: "🏸",
-    durationDays: 20,
+    coinsRequired: 250000,
+    rewardCoins: 50000,
+    reward: "Silver Coin Bundle",
+    emoji: "🥈",
+    durationDays: 15,
   },
   {
     id: 2,
-    coinsRequired: 6000000,
-    reward: "Cricket Bat",
-    emoji: "🏏",
+    coinsRequired: 1000000,
+    rewardCoins: 250000,
+    reward: "Gold Treasure Chest",
+    emoji: "👑",
     durationDays: 30,
   },
   {
     id: 3,
-    coinsRequired: 10000000,
-    reward: "₹1,000 Cash",
-    emoji: "💰",
-    durationDays: 40,
+    coinsRequired: 5000000,
+    rewardCoins: 1500000,
+    reward: "Diamond Jackpot",
+    emoji: "💎",
+    durationDays: 60,
   },
 ];

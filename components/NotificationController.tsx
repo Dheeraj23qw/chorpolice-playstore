@@ -68,87 +68,61 @@ export default function NotificationController() {
     const granted = await notificationService.checkPermission();
 
     if (granted) {
-      await notificationService.configureChannels();
+      await notificationService.ensureChannelsExist();
     }
 
     setPermissionGranted(granted);
     return granted;
   }, []);
 
+  // --- PERMISSION & INITIALIZATION ---
   useEffect(() => {
-    notificationService.setRouteHandler((route) => {
-      setPendingRoute(route);
-    });
-    notificationService.setForegroundHandler(({ title, body, route }) => {
-      toast.info(title, body, {
-        duration: route ? 4500 : 3200,
-        actionLabel: route ? "Open" : undefined,
-        onAction: route ? () => setPendingRoute(route) : undefined,
-      });
-    });
-    notificationService.listen();
+    const init = async () => {
+      // 1. Setup channels
+      await notificationService.ensureChannelsExist();
 
-    void (async () => {
-      await syncPermissionState();
-      const initialRoute = await notificationService.consumeInitialRoute();
-      if (initialRoute) {
-        setPendingRoute(initialRoute);
+      // 2. Smart Request (Zomato Style)
+      // Only asks if needed, and only once every 7 days if denied.
+      if (appPhase === "HOME" && !activeModal) {
+        const granted = await notificationService.smartRequestPermissions();
+        setPermissionGranted(granted);
+      } else {
+        const granted = await notificationService.checkPermission();
+        setPermissionGranted(granted);
       }
-    })();
+
+      // 3. Listeners
+      notificationService.setRouteHandler(setPendingRoute);
+      notificationService.setForegroundHandler(({ title, body, route }) => {
+        toast.info(title, body, {
+          duration: route ? 4500 : 3200,
+          actionLabel: route ? "Open" : undefined,
+          onAction: route ? () => setPendingRoute(route) : undefined,
+        });
+      });
+      notificationService.listen();
+
+      // 4. Inactivity Reminders
+      await notificationService.cancelRetentionNudges();
+      await notificationService.scheduleRetentionNudges();
+    };
+
+    init();
 
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         if (appPhaseRef.current === "HOME") {
           dispatch(updateStreak());
         }
-        void syncPermissionState();
+        syncPermissionState();
       }
     });
 
     return () => {
       sub.remove();
-      notificationService.setForegroundHandler(null);
-      notificationService.setRouteHandler(null);
       notificationService.cleanup();
     };
-  }, [dispatch, syncPermissionState]);
-
-  useEffect(() => {
-    if (
-      !shouldPromptForNotifications({
-        prompted,
-        permissionGranted,
-        appPhase,
-        activeModal,
-      })
-    ) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      void (async () => {
-        markNotificationsPrompted();
-        setPrompted(true);
-
-        const granted = await notificationService.registerPermissions();
-        setPermissionGranted(granted);
-
-        if (granted) {
-          toast.success(
-            "Notifications enabled",
-            "Users will now get reminders and welcome alerts from the app.",
-          );
-        } else {
-          toast.info(
-            "Notifications skipped",
-            "Users can still enable them later from device settings.",
-          );
-        }
-      })();
-    }, runtimeConfig.notificationPermissionPromptDelayMs);
-
-    return () => clearTimeout(timeout);
-  }, [activeModal, appPhase, permissionGranted, prompted]);
+  }, [dispatch, syncPermissionState, appPhase, activeModal]);
 
   useEffect(() => {
     if (appPhase === "HOME") {

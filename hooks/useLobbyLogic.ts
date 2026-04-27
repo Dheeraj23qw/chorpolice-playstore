@@ -58,6 +58,7 @@ export const useLobbyLogic = (
   const currentTable = useSelector(
     (state: RootState) => state.difficulty.table,
   );
+  const userCoins = useSelector((state: RootState) => state.wallet.coins);
 
   const [showAvatarGrid, setShowAvatarGrid] = useState(false);
   const [difficulty, setDifficultyState] = useState<DifficultyOption>("easy");
@@ -99,10 +100,21 @@ export const useLobbyLogic = (
   const localIp = session.localIp || "unknown";
   const lobbyStage = session.lobbyStage;
   const isLocalOnlyLobby =
-    isHost &&
-    connectionStatus === "HOSTING" &&
-    !hostIp &&
-    !roomCode;
+    isHost && connectionStatus === "HOSTING" && !hostIp && !roomCode;
+
+  const minPlayerCoins = useMemo(() => {
+    // Only count human players for the bet limit
+    const humans = players.filter((p) => !p.isBot);
+    const min =
+      humans.length === 0 ? 0 : Math.min(...humans.map((p) => p.coins || 0));
+    console.log(
+      "[Lobby] Calculated min human coins:",
+      min,
+      "from humans:",
+      humans.length,
+    );
+    return min;
+  }, [players]);
 
   useEffect(() => {
     void (async () => {
@@ -141,7 +153,10 @@ export const useLobbyLogic = (
       if (session.lobbyStage === "setup") {
         dispatch(setLobbyStage("room"));
       }
-      toast.success("Network Ready", "Multiplayer mode activated. You can now invite friends.");
+      toast.success(
+        "Network Ready",
+        "Multiplayer mode activated. You can now invite friends.",
+      );
     }
   }, [lanReady, allowLocalOnlyLobby, dispatch, session.lobbyStage]);
 
@@ -220,6 +235,7 @@ export const useLobbyLogic = (
           localPlayerId,
           name: userName.trim() || "PLAYER_1",
           avatarId: currentAvatarId,
+          coins: userCoins,
           gameType,
         });
       } catch (error) {
@@ -245,6 +261,7 @@ export const useLobbyLogic = (
       lanReady,
       localPlayerId,
       userName,
+      userCoins,
     ],
   );
 
@@ -315,7 +332,9 @@ export const useLobbyLogic = (
 
         // PROD-6: Sync table if provided in start packet
         if (!isHost && packet.table) {
-          dispatch(setDifficulty({ level: packet.difficulty, table: packet.table }));
+          dispatch(
+            setDifficulty({ level: packet.difficulty, table: packet.table }),
+          );
         }
         // Always sync player names/images (even on host, to keep Redux in sync)
         if (packet.players?.length) {
@@ -463,6 +482,7 @@ export const useLobbyLogic = (
 
   const handleConfirmStake = useCallback(
     (stake: number) => {
+      console.log("[Lobby] Confirming stake:", stake, "isHost:", isHost);
       if (isStarting || !isHost) {
         return;
       }
@@ -481,7 +501,9 @@ export const useLobbyLogic = (
       const finalPlayers = players.slice(0, ROOM_MAX_PLAYERS);
       const botPlayers = finalPlayers.filter((player) => player.isBot);
 
-      dispatch(setSelectedImages(finalPlayers.map((player) => player.avatarId)));
+      dispatch(
+        setSelectedImages(finalPlayers.map((player) => player.avatarId)),
+      );
       dispatch(
         setReduxPlayerNames(
           finalPlayers.map((player) => ({
@@ -635,5 +657,6 @@ export const useLobbyLogic = (
     isTransitioning,
     showApIsolation,
     setShowApIsolation,
+    minPlayerCoins,
   };
 };

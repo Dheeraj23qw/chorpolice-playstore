@@ -3,17 +3,17 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
 import { runtimeConfig } from "@/constants/runtime";
-
+import { storage } from "@/storage/mmkv";
 import { AppNotificationData, AppRoute, isAppRoute } from "./types";
 
 if (Platform.OS !== "web") {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: false,
-      shouldShowBanner: false,
+      shouldShowAlert: true,
+      shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
     }),
   });
 }
@@ -139,6 +139,55 @@ class NotificationService {
     }
   }
 
+  /**
+   * Smart Permission Request (Zomato/Swiggy Style)
+   * Only asks if not granted. If denied, only asks again every 7 days.
+   */
+  async smartRequestPermissions(): Promise<boolean> {
+    if (!this.canRequestPermissions()) return false;
+
+    const { status: currentStatus, canAskAgain } = await Notifications.getPermissionsAsync();
+    
+    if (currentStatus === "granted") return true;
+    if (currentStatus === "denied" && !canAskAgain) return false;
+
+    const LAST_ASK_KEY = "NOTIF_LAST_ASK_TIME";
+    const lastAsk = storage.getNumber(LAST_ASK_KEY) || 0;
+    const now = Date.now();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+    if (currentStatus === "denied" && (now - lastAsk < sevenDays)) {
+      console.log("[Notifications] Permission denied recently, skipping prompt.");
+      return false;
+    }
+
+    storage.set(LAST_ASK_KEY, now);
+    const { status } = await Notifications.requestPermissionsAsync();
+    
+    if (status === "granted") {
+      await this.configureChannels();
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Android 13+ requires channels to be created before notifications are sent.
+   * This ensures the "default" and "alerts" channels exist.
+   */
+  async ensureChannelsExist(): Promise<void> {
+    if (Platform.OS !== "android") return;
+    const channels = await Notifications.getNotificationChannelsAsync();
+    const hasDefault = channels.some((c) => c.id === "default");
+    const hasAlerts = channels.some((c) => c.id === "alerts");
+
+    if (!hasDefault || !hasAlerts) {
+      console.log("[Notifications] Missing channels, re-configuring...");
+      await this.configureChannels();
+    }
+  }
+
   async schedule(params: {
     id: string;
     title: string;
@@ -163,24 +212,85 @@ class NotificationService {
           data: params.data,
           sound: "default",
           color: params.color ?? "#22c55e",
-          priority: Notifications.AndroidNotificationPriority.MAX,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
           ...(Platform.OS === "android" && {
             channelId: params.channelId ?? "default",
+            autoDismiss: true,
           }),
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
           seconds: safeSeconds,
           repeats: false,
-          ...(Platform.OS === "android" && {
-            channelId: params.channelId ?? "default",
-          }),
         },
       });
     } catch (error) {
       console.error("[Notifications] Schedule failed:", error);
       return null;
     }
+  }
+
+  // --- REWARD REMINDERS ---
+
+  async scheduleSpinReminder() {
+    await this.schedule({
+      id: "spin_ready",
+      title: "Wheel of Fortune Ready! 🎡",
+      body: "Your daily spin is waiting. Come and see what you win today!",
+      seconds: 2 * 60 * 60, // 2 Hours
+      channelId: "alerts",
+      data: { screen: "/earn" }
+    });
+  }
+
+  async scheduleDailyBonusReminder() {
+    await this.schedule({
+      id: "daily_bonus",
+      title: "Daily Treasure Available! 💰",
+      body: "Don't break your streak! Collect your daily 5,000 coins now.",
+      seconds: 24 * 60 * 60, // 24 Hours
+      channelId: "alerts",
+      data: { screen: "/earn" }
+    });
+  }
+
+  // --- RETENTION REMINDERS ---
+
+  async scheduleRetentionNudges() {
+    // 24h Inactivity
+    await this.schedule({
+      id: "retention_1d",
+      title: "The Thief is Getting Away! 🏃‍♂️",
+      body: "Chor Police is more fun with you. Jump back in for a quick match!",
+      seconds: 24 * 60 * 60,
+      data: { screen: "/mode-select" }
+    });
+
+    // 3d Inactivity
+    await this.schedule({
+      id: "retention_3d",
+      title: "We Miss You! 💔",
+      body: "New challenges and big rewards are waiting. Play now and beat the bots!",
+      seconds: 3 * 24 * 60 * 60,
+      data: { screen: "/mode-select" }
+    });
+  }
+
+  async scheduleMilestoneNudge(tierName: string, remainingCoins: number) {
+    await this.schedule({
+      id: `milestone_nudge_${tierName}`,
+      title: "So Close! 🎯",
+      body: `Only ${remainingCoins.toLocaleString()} coins left to unlock your ${tierName}. Play one more game!`,
+      seconds: 3 * 60 * 60, // 3 Hours later
+      channelId: "alerts",
+      data: { screen: "/earn" }
+    });
+  }
+
+  async cancelRetentionNudges() {
+    await this.cancel("retention_1d");
+    await this.cancel("retention_3d");
+    await this.cancel("retention_7d");
   }
 
   async cancel(id: string): Promise<void> {

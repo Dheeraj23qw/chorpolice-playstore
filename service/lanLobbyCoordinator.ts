@@ -80,6 +80,7 @@ const sanitizePlayer = (
       ? player.avatarId
       : 1,
   isBot: Boolean(player?.isBot),
+  coins: typeof player?.coins === "number" ? player.coins : 0,
 });
 
 const syncPlayerListLocally = (players: SessionPlayer[]) => {
@@ -100,6 +101,7 @@ const buildJoinPacketFromState = () => {
       name: state.localPlayerName.trim() || "PLAYER",
       avatarId: state.localAvatarId || 1,
       isBot: false,
+      coins: store.getState().wallet.coins,
     },
   };
 };
@@ -107,9 +109,11 @@ const buildJoinPacketFromState = () => {
 const updateHostLocalPlayer = ({
   name,
   avatarId,
+  coins,
 }: {
   name?: string;
   avatarId?: number;
+  coins?: number;
 }) => {
   const state = store.getState().session;
 
@@ -130,11 +134,13 @@ const updateHostLocalPlayer = ({
     ...currentPlayer,
     ...(name !== undefined ? { name: name.trim() || "PLAYER_1" } : {}),
     ...(avatarId !== undefined ? { avatarId } : {}),
+    ...(coins !== undefined ? { coins } : {}),
   };
 
   if (
     nextPlayer.name === currentPlayer.name &&
-    nextPlayer.avatarId === currentPlayer.avatarId
+    nextPlayer.avatarId === currentPlayer.avatarId &&
+    nextPlayer.coins === currentPlayer.coins
   ) {
     return state.players;
   }
@@ -152,6 +158,7 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
   }
 
   if (packet.type === NETWORK.PLAYER_JOIN) {
+    console.log(`[Lobby] Player joining from ${sourceIp}:`, packet.player);
     if (!state.isHost) {
       return;
     }
@@ -193,6 +200,7 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
   }
 
   if (packet.type === NETWORK.PLAYER_LIST_UPDATE && Array.isArray(packet.players)) {
+    console.log("[Lobby] Received player list update:", packet.players.length, "players");
     clearJoinAttempts();
     syncPlayerListLocally(packet.players);
     store.dispatch(setLobbyStage(packet.lobbyStage === "setup" ? "setup" : "room"));
@@ -263,16 +271,17 @@ const stopCoordinator = async () => {
   HeartbeatService.stop();
   await GameSessionTransport.stop();
 };
-
 export const hostLanLobby = async ({
   localPlayerId,
   name,
   avatarId,
+  coins,
   gameType,
 }: {
   localPlayerId: string;
   name: string;
   avatarId: number;
+  coins: number;
   gameType: string;
 }) => {
   if (pendingHostLobbyPromise) {
@@ -327,6 +336,7 @@ export const hostLanLobby = async ({
       id: localPlayerId,
       name,
       avatarId,
+      coins,
     });
 
     store.dispatch(
@@ -371,13 +381,11 @@ export const hostLanLobby = async ({
     pendingHostLobbyPromise = null;
   }
 };
-
 export const joinLanLobby = async ({
-  hostIp,
-  hostPort,
   localPlayerId,
   name,
   avatarId,
+  coins,
   gameType,
 }: {
   hostIp: string;
@@ -385,6 +393,7 @@ export const joinLanLobby = async ({
   localPlayerId: string;
   name: string;
   avatarId: number;
+  coins: number;
   gameType: string;
 }) => {
   await stopCoordinator();
@@ -468,15 +477,18 @@ export const joinLanLobby = async ({
 export const syncLocalLobbyProfile = ({
   name,
   avatarId,
+  coins,
 }: {
   name?: string;
   avatarId?: number;
+  coins?: number;
 }) => {
+  console.log("[Lobby] Syncing profile:", { name, avatarId, coins });
   store.dispatch(setLocalSessionIdentity({ name, avatarId }));
   const latestState = store.getState().session;
 
   if (latestState.isHost) {
-    const nextPlayers = updateHostLocalPlayer({ name, avatarId });
+    const nextPlayers = updateHostLocalPlayer({ name, avatarId, coins });
     if (nextPlayers && nextPlayers !== latestState.players) {
       syncPlayerListLocally(nextPlayers);
       broadcastPlayerList(nextPlayers);

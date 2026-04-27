@@ -266,6 +266,7 @@ const LobbySetupScreen = ({
           setUiState("normal");
         }}
         playerCount={lobby.players.length}
+        minPlayerCoins={lobby.minPlayerCoins}
       />
 
       <LateJoinQrModal

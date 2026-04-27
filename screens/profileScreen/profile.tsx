@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, ScrollView, FlatList } from "react-native";
-import * as LucideIcons from "lucide-react-native";
+import { View, ScrollView, FlatList, TouchableOpacity } from "react-native";
+import { Coins, Trophy, Users, Target, ShieldCheck, Zap, Network, Medal, Lock } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import ScreenWrapper from "@/components/screenwrapper";
 import { useSelector } from "react-redux";
@@ -13,10 +13,10 @@ import AvatarWithLevel from "@/components/ProfileScreen/AvatarWithLevel";
 import LevelProgressBar from "@/components/ProfileScreen/LevelProgressBar";
 import StatCard from "@/components/ProfileScreen/StatCard";
 import AchievementCard from "@/components/ProfileScreen/AchievementCard";
-import { loadAvatar, saveAvatar } from "@/storage/userStorage";
-
-const USER_IMAGE =
-  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1000&auto=format&fit=crop";
+import { loadAvatar, saveAvatar, loadUsername } from "@/storage/userStorage";
+import { loadReferralStats } from "@/storage/referralStatsStorage";
+import { BlurView } from "expo-blur";
+import { rf } from "@/utils/responsive";
 
 export default function UserProfile() {
   const quizStats = useSelector((state: RootState) => state.quizStats);
@@ -27,11 +27,14 @@ export default function UserProfile() {
   const { pickImage } = useGalleryPicker();
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [username, setUsername] = useState("PLAYER");
+  const referralStats = loadReferralStats();
 
-  /* ---------------- Avatar Load ---------------- */
   useEffect(() => {
     const saved = loadAvatar();
     if (saved) setAvatarUri(saved);
+    const savedName = loadUsername();
+    if (savedName) setUsername(savedName);
   }, []);
 
   const changeAvatar = async () => {
@@ -42,106 +45,149 @@ export default function UserProfile() {
     }
   };
 
-  /* ---------------- Awards Mapping (SAFE + FAST) ---------------- */
   const myAwards = useMemo((): Achievement[] => {
     const idSet = new Set(earnedAwardIds);
     return ACHIEVEMENT_DATA.filter((a) => idSet.has(a.id));
   }, [earnedAwardIds]);
 
-  /* ---------------- User Stats ---------------- */
-  const USER = {
-    xp,
-    nextLevelXp,
-    total_quizzes: quizStats.totalQuizzes || 0,
-    wins: quizStats.totalWins || 0,
-    accuracy: Math.round(quizStats.averageAccuracy || 0),
-    // 🎯 Chor Police
-    cpPlayed: quizStats.cpGamesPlayed || 0,
-    cpWins: quizStats.cpGamesWon || 0,
-  };
-
-  const winRate =
-    USER.total_quizzes === 0
-      ? 0
-      : Math.round((USER.wins / USER.total_quizzes) * 100);
-
-  const cpWinRate =
-    USER.cpPlayed === 0 ? 0 : Math.round((USER.cpWins / USER.cpPlayed) * 100);
-
-  /* ---------------- Stat Cards ---------------- */
-  const stats: {
+  const statsList: {
     label: string;
     value: string | number;
-    icon: keyof typeof LucideIcons;
+    icon: any;
     color: string;
     bg: string;
   }[] = [
     {
-      label: "TOTAL COINS",
+      label: "WALLET",
       value: coins,
-      icon: "Coins",
+      icon: Coins,
       color: "#fbbf24",
-      bg: "#fef3c7",
+      bg: "rgba(251, 191, 36, 0.1)",
     },
     {
-      label: "QUIZ WINS",
-      value: USER.wins,
-      icon: "Trophy",
+      label: "TOTAL WINS",
+      value: (quizStats.totalWins || 0) + (quizStats.cpGamesWon || 0),
+      icon: Trophy,
       color: "#f97316",
-      bg: "#fee2e2",
+      bg: "rgba(249, 115, 22, 0.1)",
     },
     {
-      label: "QUIZ MATCHES",
-      value: USER.total_quizzes,
-      icon: "Gamepad",
-      color: "#6366f1",
-      bg: "#e0e7ff",
-    },
-
-    {
-      label: "CP MATCHES",
-      value: USER.cpPlayed,
-      icon: "Users",
-      color: "#60a5fa",
-      bg: "#dbeafe",
+      label: "NETWORK",
+      value: referralStats.totalShares,
+      icon: Users,
+      color: "#818cf8",
+      bg: "rgba(129, 140, 248, 0.1)",
     },
     {
-      label: "CP WINS",
-      value: USER.cpWins,
-      icon: "Shield",
+      label: "ACCURACY",
+      value: `${Math.round(quizStats.averageAccuracy || 0)}%`,
+      icon: Target,
       color: "#34d399",
-      bg: "#d1fae5",
+      bg: "rgba(52, 211, 153, 0.1)",
     },
   ];
 
   return (
-    <ScreenWrapper title="User Profile" variant="dark">
+    <ScreenWrapper title="Personal Profile" variant="dark">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 60 }}
       >
-        {/* Avatar */}
-        <AvatarWithLevel
-          imageUri={avatarUri || USER_IMAGE}
-          level={level}
-          onPress={changeAvatar}
-        />
+        {/* Header Hero Section */}
+        <View className="items-center pb-4">
+          <AvatarWithLevel
+            imageUri={avatarUri}
+            level={level}
+            onPress={changeAvatar}
+          />
 
-        {/* Level Progress */}
-        <LevelProgressBar xp={USER.xp} nextLevelXp={USER.nextLevelXp} />
-
-        {/* Stats Grid */}
-        <View className="mt-8 flex-row flex-wrap justify-between px-6">
-          {stats.map((stat, i) => (
-            <StatCard key={i} {...stat} />
-          ))}
+          <View className="mt-8 items-center">
+            <Text
+              style={{ fontSize: rf(3.5) }}
+              className="font-main-bold uppercase tracking-tighter text-white"
+            >
+              {username}
+            </Text>
+            <View className="mt-2 flex-row items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+              <ShieldCheck size={14} color="#818cf8" />
+              <Text className="ml-2 font-main-bold text-[10px] uppercase tracking-widest text-indigo-300">
+                Verified Citizen
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Achievements */}
-        <View className="mt-6 px-6">
-          <Text className="mb-4 font-main-bold text-[12px] uppercase tracking-widest text-slate-400">
-            Collection ({myAwards.length})
-          </Text>
+        {/* Level Progress Card */}
+        <LevelProgressBar xp={xp} nextLevelXp={nextLevelXp} />
+
+        {/* Stats Grid */}
+        <View className="mt-10 px-6">
+          <View className="mb-6 flex-row items-center justify-between">
+            <Text className="font-main-bold text-[11px] uppercase tracking-[4px] text-slate-500">
+              Core Metrics
+            </Text>
+            <Zap size={14} color="#6366f1" />
+          </View>
+
+          <View className="flex-row flex-wrap justify-between">
+            {statsList.map((stat, i) => (
+              <StatCard key={i} {...stat} />
+            ))}
+          </View>
+        </View>
+
+        {/* Referral Success Summary */}
+        <View className="mt-6 px-5">
+          <View className="overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/5">
+            <BlurView
+              intensity={12}
+              tint="dark"
+              className="flex-row items-center px-5 py-5"
+            >
+              {/* ICON */}
+              <View className="h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/20">
+                <Network size={22} color="#818cf8" />
+              </View>
+
+              {/* CENTER CONTENT */}
+              <View className="ml-4 flex-1">
+                <Text className="font-main-bold text-[10px] uppercase tracking-wide text-indigo-300">
+                  Referrals
+                </Text>
+
+                <Text
+                  numberOfLines={1}
+                  className="mt-1 font-main-bold text-xl text-white"
+                >
+                  {referralStats.totalShares}
+                </Text>
+              </View>
+
+              {/* RIGHT SIDE */}
+              <View className="items-end justify-center">
+                <Text className="text-[9px] uppercase tracking-wide text-white/40">
+                  Earned
+                </Text>
+
+                <Text
+                  numberOfLines={1}
+                  className="mt-1 font-main-bold text-base text-yellow-500"
+                >
+                  {referralStats.totalEarned.toLocaleString()} 🪙
+                </Text>
+              </View>
+            </BlurView>
+          </View>
+        </View>
+
+        {/* Achievements Section */}
+        <View className="mt-10 px-6">
+          <View className="mb-6 flex-row items-center justify-between">
+            <Text className="font-main-bold text-[11px] uppercase tracking-[4px] text-slate-500">
+              Medals Case ({myAwards.length})
+            </Text>
+            <Medal size={14} color="#fbbf24" />
+          </View>
 
           {myAwards.length > 0 ? (
             <FlatList
@@ -153,9 +199,10 @@ export default function UserProfile() {
               renderItem={({ item }) => <AchievementCard achievement={item} />}
             />
           ) : (
-            <View className="h-24 w-full items-center justify-center rounded-3xl border-2 border-dashed border-white/5 bg-white/5">
-              <Text className="font-main-bold text-[10px] uppercase text-slate-600">
-                No medals won yet
+            <View className="h-32 w-full items-center justify-center rounded-[32px] border-2 border-dashed border-white/5 bg-white/5">
+              <Lock size={24} color="rgba(255,255,255,0.1)" />
+              <Text className="mt-3 font-main-bold text-[10px] uppercase tracking-widest text-slate-600">
+                Play games to win medals
               </Text>
             </View>
           )}

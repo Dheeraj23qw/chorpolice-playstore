@@ -67,15 +67,16 @@ export const useEarnLogic = () => {
           return;
         }
 
-        dispatch(updateCoins(-tier.coinsRequired));
+        // ✅ ADD Coins as reward (Milestone logic)
+        dispatch(updateCoins(tier.rewardCoins));
 
         // ✅ Mark as claimed (atomic behavior)
         markRewardClaimed(tier.id);
 
         // 🎉 Success
         Alerts.success(
-          "Reward Claimed 🎉",
-          `${tier.reward} unlocked successfully`,
+          "Milestone Reached! 🎉",
+          `Congratulations! You've received ${tier.rewardCoins.toLocaleString()} bonus coins.`
         );
       } catch (err) {
         console.error("Claim failed:", err);

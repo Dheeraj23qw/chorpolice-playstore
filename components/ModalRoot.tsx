@@ -4,7 +4,6 @@ import { createModalRegistry } from "@/components/modals/registry";
 import { claimFirstLaunchBonus } from "@/features/wallet/walletSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { dismissActiveModal } from "@/redux/reducers/modalQueueReducer";
-import { disableForever, dismissTemp } from "@/storage/lowCoinStorage";
 
 export default function ModalRoot() {
   const dispatch = useAppDispatch();
@@ -19,30 +18,13 @@ export default function ModalRoot() {
     dispatch(dismissActiveModal());
   }, [dispatch]);
 
-  const handleLowCoinClose = useCallback(() => {
-    dismissTemp();
-    closeActiveModal();
-  }, [closeActiveModal]);
-
-  const handleLowCoinDisable = useCallback(() => {
-    disableForever();
-    closeActiveModal();
-  }, [closeActiveModal]);
-
   const modalRegistry = useMemo(
     () =>
       createModalRegistry({
         onClaimBonus: handleBonusClaim,
-        onCloseLowCoin: handleLowCoinClose,
-        onDisableLowCoin: handleLowCoinDisable,
         onCloseReward: closeActiveModal,
       }),
-    [
-      closeActiveModal,
-      handleBonusClaim,
-      handleLowCoinClose,
-      handleLowCoinDisable,
-    ],
+    [closeActiveModal, handleBonusClaim],
   );
 
   return (

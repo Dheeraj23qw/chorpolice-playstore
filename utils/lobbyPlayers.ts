@@ -22,6 +22,7 @@ export const createBotPlayer = (
     name: getBotName(Math.max(0, slotIndex - BOT_START_INDEX)),
     avatarId,
     isBot: true,
+    coins: 9999999, // Bots have unlimited money
   };
 };
 
@@ -29,6 +30,7 @@ export const createInitialLobbyPlayers = (hostPlayer: {
   id: string;
   name: string;
   avatarId: number;
+  coins: number;
 }): SessionPlayer[] => {
   const usedAvatarIds = new Set<number>([hostPlayer.avatarId]);
   const players: SessionPlayer[] = [

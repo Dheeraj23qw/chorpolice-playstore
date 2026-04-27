@@ -77,7 +77,6 @@ export const FullScreenMenu = ({
     { label: "Profile", icon: User, path: "/profile" },
     { label: "Awards", icon: Medal, path: "/awards" },
     { label: "Rate Us", icon: Star, action: onRatePress },
-    { label: "Share", icon: Share2, action: onSharePress },
     { label: "Bugs", icon: Bug, path: "/report-bug" },
   ];
 

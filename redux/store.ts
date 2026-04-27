@@ -10,6 +10,7 @@ import quizStatsReducer, {
 import lockReducer from "@/features/locks/lockSlice";
 import walletReducer from "@/features/wallet/walletSlice";
 import { loadGameStreak } from "@/storage/gameStreakStorage";
+import { loadLocks } from "@/storage/lockStorage";
 import { loadQuizStats } from "@/storage/quizStatsStorage";
 import { loadWallet } from "@/storage/walletStorage";
 
@@ -29,6 +30,7 @@ const preloadedQuizStats = storedStats
   ? { ...defaultQuizStats, ...storedStats }
   : defaultQuizStats;
 const preloadedGameStreak = loadGameStreak() ?? initialGameStreakState;
+const preloadedLocks = loadLocks();
 
 const store = configureStore({
   reducer: {
@@ -53,6 +55,7 @@ const store = configureStore({
     wallet: preloadedWallet,
     quizStats: preloadedQuizStats,
     gameStreak: preloadedGameStreak,
+    ...(preloadedLocks ? { lock: preloadedLocks } : {}),
   },
 });
 

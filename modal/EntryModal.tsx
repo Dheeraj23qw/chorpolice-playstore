@@ -22,6 +22,7 @@ interface EntryModalProps {
   onConfirm: (amount: number) => void;
   onClose: () => void;
   playerCount: number;
+  minPlayerCoins?: number;
 }
 
 const SECTIONS = [
@@ -41,11 +42,12 @@ export const EntryModal: React.FC<EntryModalProps> = ({
   onConfirm,
   onClose,
   playerCount,
+  minPlayerCoins,
 }) => {
   const userCoins = useSelector((state: RootState) => state.wallet.coins);
-  const othersCoins = useSelector(
-    (state: RootState) => state.game?.minPlayerCoins ?? userCoins,
-  );
+  const othersCoins = minPlayerCoins ?? userCoins;
+
+  console.log("[EntryModal] userCoins:", userCoins, "minPlayerCoins (others):", minPlayerCoins, "limiting by (othersCoins):", othersCoins);
 
   const [selected, setSelected] = useState(10);
 

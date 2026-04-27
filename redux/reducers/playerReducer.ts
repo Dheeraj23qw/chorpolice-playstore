@@ -15,7 +15,7 @@ const initialState: PlayerState = {
   playerScoresByRound: [],
   gameMode: "OFFLINE",
   isGameReset: false,
-  gameRound: 1,
+  gameRound: 3,
 };
 
 const playerSlice = createSlice({
@@ -68,7 +68,7 @@ const playerSlice = createSlice({
 
     // -------------------- Round --------------------
     setGameRound(state, action: PayloadAction<number>) {
-      if (action.payload > 0) {
+      if (action.payload >= 3) {
         state.gameRound = action.payload | 0; // fast integer cast
       }
     },

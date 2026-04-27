@@ -7,6 +7,7 @@ export interface SessionPlayer {
   avatarId: number;
   isBot: boolean;
   type?: "HOST" | "CLIENT";
+  coins: number;
 }
 
 export type ConnectionStatus =
@@ -74,7 +75,7 @@ const DEFAULT_LOCAL_AVATAR_ID = 1;
 const INITIAL_GAME_STATE = {
   gamePhase: "idle" as GamePhase,
   currentRound: 1,
-  totalRounds: 5,
+  totalRounds: 3,
   roles: [] as string[],
   policeIndex: null as number | null,
   kingIndex: null as number | null,

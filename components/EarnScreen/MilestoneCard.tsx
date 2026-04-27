@@ -91,30 +91,57 @@ export const MilestoneCard = ({
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={handleCardPress}
-      style={{ width: cardWidth }}
-      className={`mr-5 rounded-[32px] p-6 ${
+      style={[
+        { width: cardWidth },
+        unlocked && !isDead
+          ? {
+              shadowColor: "#10b981",
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              elevation: 10,
+            }
+          : !isDead
+          ? {
+              shadowColor: "#6366f1",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.2,
+              shadowRadius: 15,
+              elevation: 5,
+            }
+          : {}
+      ]}
+      className={`relative mr-5 overflow-hidden rounded-[40px] border-2 p-7 ${
         isClaimed
-          ? "border border-slate-700 bg-slate-800 opacity-60"
+          ? "border-slate-800 bg-slate-900/60 opacity-60"
           : expired
-            ? "border border-red-500/20 bg-slate-900/40 opacity-50"
-            : unlocked
-              ? "border border-emerald-500/30 bg-slate-900"
-              : "border border-white/5 bg-slate-900/70"
+          ? "border-red-900/30 bg-slate-900/40 opacity-50"
+          : unlocked
+          ? "border-emerald-500/40 bg-slate-900"
+          : "border-white/10 bg-slate-900"
       }`}
     >
+      {/* Background Glows */}
+      {!isDead && (
+        <>
+          <View className={`absolute -right-10 -bottom-10 h-40 w-40 rounded-full blur-3xl opacity-20 ${unlocked ? "bg-emerald-500" : "bg-indigo-500"}`} />
+          <View className={`absolute -left-10 -top-10 h-32 w-32 rounded-full blur-2xl opacity-10 ${unlocked ? "bg-green-400" : "bg-blue-400"}`} />
+        </>
+      )}
+
       {/* 🔝 Top */}
-      <View className="mb-5 flex-row items-center justify-between">
-        <View className="h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800">
+      <View className="mb-6 flex-row items-center justify-between">
+        <View className="h-14 w-14 items-center justify-center rounded-[20px] border border-white/10 bg-white/5">
           <Text className="text-3xl">{tier.emoji}</Text>
         </View>
 
-        <View className="h-10 w-10 items-center justify-center rounded-xl bg-slate-800">
+        <View className={`h-10 w-10 items-center justify-center rounded-2xl ${unlocked && !isDead ? "bg-emerald-500/20" : "bg-white/5"}`}>
           {isClaimed ? (
             <Trophy size={16} color="#94a3b8" />
           ) : expired ? (
             <Lock size={16} color="#ef4444" />
           ) : unlocked ? (
-            <Trophy size={18} color="#10b981" />
+            <Trophy size={20} color="#10b981" />
           ) : (
             <Lock size={16} color="#64748b" />
           )}
@@ -122,49 +149,47 @@ export const MilestoneCard = ({
       </View>
 
       {/* 🎁 Reward */}
-      <Text className="font-main-bold text-lg text-white">{tier.reward}</Text>
-
-      {/* ⏳ STATUS BADGE */}
-      <View className="mt-3 flex-row items-center justify-between">
-        <Text className="text-[10px] uppercase text-slate-500">
-          {isClaimed ? "Completed" : "Limited Offer"}
-        </Text>
-
-        <View className="rounded-full border px-3 py-1">
-          <Text className="font-main-bold text-[10px] text-slate-300">
-            {isClaimed
-              ? "✅ Claimed"
-              : expired
-                ? "❌ Expired"
-                : isEndingSoon
-                  ? "🔥 " + formatTime()
-                  : "⏳ " + formatTime()}
+      <View className="mb-4">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-[10px] font-main-bold uppercase tracking-[3px] text-indigo-400/60">
+            Unlock Reward
+          </Text>
+          <Text className="font-main-bold text-xs text-emerald-400">
+            + {tier.rewardCoins.toLocaleString()} 🪙
           </Text>
         </View>
+        <Text className="font-main-bold text-xl text-white leading-tight mt-1">{tier.reward}</Text>
       </View>
 
       {/* 🎯 Goal */}
-      <View className="mt-2 flex-row items-center">
-        <Text className="text-[10px] uppercase text-slate-500">Goal</Text>
-        <Text className="ml-2 font-main-bold text-xs text-indigo-400">
-          {tier.coinsRequired.toLocaleString()} 🪙
-        </Text>
+      <View className="flex-row items-center justify-between rounded-2xl bg-black/40 p-3 border border-white/5">
+        <View className="flex-row items-center">
+           <Text className="mr-1.5 text-xs">🪙</Text>
+           <Text className="font-main-bold text-sm text-indigo-300">
+             {tier.coinsRequired.toLocaleString()}
+           </Text>
+        </View>
+        <View className="rounded-lg bg-indigo-500/10 px-2 py-1">
+          <Text className="font-main-bold text-[9px] text-indigo-300">
+            {isClaimed ? "CLAIMED" : expired ? "EXPIRED" : formatTime()}
+          </Text>
+        </View>
       </View>
 
       {/* 📊 Progress */}
       <View className="mt-6">
         <View className="mb-2 flex-row justify-between">
-          <Text className="text-[10px] uppercase text-slate-600">Progress</Text>
+          <Text className="text-[10px] uppercase tracking-widest text-slate-500">Progress</Text>
           <Text className="font-main-bold text-xs text-slate-400">
             {progress.toFixed(0)}%
           </Text>
         </View>
 
-        <View className="h-2 rounded-full bg-black/40">
+        <View className="h-2 rounded-full bg-black/40 overflow-hidden">
           <View
             style={{ width: `${progress}%` }}
             className={`h-full ${
-              unlocked ? "bg-emerald-500" : "bg-indigo-600"
+              unlocked ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-indigo-600 shadow-[0_0_8px_#6366f1]"
             }`}
           />
         </View>
@@ -174,9 +199,9 @@ export const MilestoneCard = ({
       {unlocked && !isDead && (
         <TouchableOpacity
           onPress={() => onClaim(tier)}
-          className="mt-6 items-center rounded-2xl bg-emerald-500 py-3 active:scale-95"
+          className="mt-6 items-center rounded-2xl bg-emerald-500 py-3 shadow-[0_4px_12px_rgba(16,185,129,0.3)] active:scale-95"
         >
-          <Text className="font-main-bold text-xs uppercase text-white">
+          <Text className="font-main-bold text-[11px] uppercase tracking-widest text-white">
             Claim Reward
           </Text>
         </TouchableOpacity>

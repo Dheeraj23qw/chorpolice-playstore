@@ -4,6 +4,7 @@ import { ScrollView } from "react-native";
 import { WalletCard } from "@/components/EarnScreen/WalletCard";
 import { MilestonesSection } from "@/components/EarnScreen/MilestonesSection";
 import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
+import { ReferralStatsCard } from "@/components/EarnScreen/ReferralStatsCard";
 import SpinToWinModal from "@/modal/SpinToWinModal";
 import { REWARD_TIERS, RewardTier } from "@/constants/RewardsConst";
 
@@ -35,21 +36,20 @@ export const EarnContent = ({
           className="flex-1 bg-slate-950"
           contentContainerClassName="pb-12 pt-4 px-5"
         >
-          <WalletCard balance={coins} />
-
-          <MilestonesSection
-            tiers={REWARD_TIERS}
-            coins={coins}
-            cardWidth={cardWidth}
-            onClaim={handleClaim}
-          />
-
           <SpinToWinCard
             isLocked={isLocked}
             formattedTime={formattedTime}
             onPress={() => {
               if (!isLocked) toggleSpinModal();
             }}
+          />
+          <ReferralStatsCard />
+
+          <MilestonesSection
+            tiers={REWARD_TIERS}
+            coins={coins}
+            cardWidth={cardWidth}
+            onClaim={handleClaim}
           />
         </ScrollView>
       )}
