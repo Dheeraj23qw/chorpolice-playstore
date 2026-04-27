@@ -14,6 +14,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { wp, hp } from "@/utils/responsive";
 
+import { loadUsername } from "@/storage/userStorage";
+
 // --- Types & Constants ---
 interface RoleConfig {
   color: string;
@@ -46,7 +48,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   },
   King: {
     color: "#F59E0B",
-    subtitle: "Help police to catch the  real thief.",
+    subtitle: "Help police to catch the real thief.",
     label: "THE KING",
   },
   Police: {
@@ -57,6 +59,8 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
 };
 
 export const RoleRevealView: React.FC<Props> = React.memo(({ role, round }) => {
+  const playerName = loadUsername() || "PLAYER";
+
   // Memoize configs to prevent re-instantiation
   const config = useMemo(
     () => ROLE_CONFIGS[role] || ROLE_CONFIGS.Thief,
@@ -115,6 +119,7 @@ export const RoleRevealView: React.FC<Props> = React.memo(({ role, round }) => {
         entering={FadeInDown.delay(400).duration(600)}
         style={styles.card}
       >
+        <Text style={styles.playerName}>{playerName}</Text>
         <Text style={styles.subtitle}>{config.subtitle}</Text>
       </Animated.View>
     </View>
@@ -170,5 +175,14 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.7)",
     textAlign: "center",
     lineHeight: 24,
+  },
+  playerName: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#6366f1",
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 3,
+    marginBottom: 8,
   },
 });

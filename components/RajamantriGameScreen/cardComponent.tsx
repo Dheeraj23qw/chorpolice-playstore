@@ -58,7 +58,19 @@ const PlayerCard = memo(function PlayerCard({
   };
 
   const renderResultBadge = () => {
-    if (!clicked) return null;
+    // Show 'SELECTED' if clicked but not yet flipped
+    if (clicked && !flipped) {
+      return (
+        <View className="absolute right-3 top-3 rounded-full border border-yellow-400/50 bg-yellow-500/20 px-3 py-1 shadow-lg">
+          <Text className="font-main-bold text-[10px] uppercase tracking-wider text-yellow-300">
+            Selected
+          </Text>
+        </View>
+      );
+    }
+
+    // Show Correct/Wrong only after it flips and if it was clicked
+    if (!clicked || !flipped) return null;
 
     return (
       <View
@@ -95,6 +107,15 @@ const PlayerCard = memo(function PlayerCard({
       return (
         <View className="flex-1 items-center justify-center p-3">
           <View className="absolute inset-0 rounded-[26px] bg-indigo-500/10" />
+
+          {/* Player Name Badge */}
+          <View className="absolute top-3 w-full items-center z-10">
+            <View className="rounded-full border border-indigo-400/30 bg-indigo-950/80 px-3 py-1 shadow-lg">
+              <Text numberOfLines={1} className="font-main-bold text-[9px] uppercase tracking-widest text-indigo-200">
+                {playerName}
+              </Text>
+            </View>
+          </View>
 
           <Image
             source={roleImages[role]}

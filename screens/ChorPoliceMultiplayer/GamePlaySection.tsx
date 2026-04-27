@@ -97,6 +97,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                   playerName={playerNames[index]}
                   flipped={flippedStates[index]}
                   clicked={clickedCards[index]}
+                  isCorrect={roles[index] === "Thief"}
                   onClick={handleCardClick}
                   onBounceEffect={() => handleCardClickWithBounce(index)}
                   animatedStyle={getCardStyle(index)}
@@ -115,6 +116,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                   playerName={playerNames[index + 2]}
                   flipped={flippedStates[index + 2]}
                   clicked={clickedCards[index + 2]}
+                  isCorrect={roles[index + 2] === "Thief"}
                   onClick={handleCardClick}
                   onBounceEffect={() => handleCardClickWithBounce(index + 2)}
                   animatedStyle={getCardStyle(index + 2)}
