@@ -739,11 +739,26 @@ export const useQuizGameLogic = () => {
           syncLocalQuizStats(packet.leaderboard);
         }
 
-        if (packet.isLastRound && packet.leaderboard[0]?.id === localPlayerId) {
-          const coins = QuizEngine.state.totalPot;
-          if (coins > 0) {
-            dispatch(updateCoins(coins));
-            toast.success("CHAMPION!", `You won ${coins} coins!`);
+        // 🔥 WINNER REWARD LOGIC (Multi-winner support)
+        if (packet.isLastRound) {
+          const leaderboard = packet.leaderboard ?? [];
+          if (leaderboard.length > 0) {
+            const maxScore = leaderboard[0].correctCount;
+            const winners = leaderboard.filter((p: any) => p.correctCount === maxScore);
+            const isLocalWinner = winners.some((p: any) => p.id === localPlayerId);
+
+            if (isLocalWinner) {
+              const totalPot = QuizEngine.state.totalPot;
+              const splitPot = Math.floor(totalPot / winners.length);
+
+              if (splitPot > 0) {
+                dispatch(updateCoins(splitPot));
+                const winMsg = winners.length > 1
+                  ? `You tied for 1st! Shared pot: ${splitPot} coins.`
+                  : `You won the full pot of ${splitPot} coins!`;
+                toast.success("CHAMPION! 🏆", winMsg);
+              }
+            }
           }
         }
       }
@@ -784,14 +799,14 @@ export const useQuizGameLogic = () => {
         if (shouldRefund && refund > 0) {
           dispatch(updateCoins(refund));
           toast.success(
-            "Coins Refunded!",
+            "Refunded (Fairness)",
             packet.reason === "host_quit"
-              ? `${refund} coins returned because the host left the game.`
-              : `${refund} coins returned because a player left the game.`,
-            4000,
+              ? `To ensure no injustice, your ${refund} coins were returned because the host left.`
+              : `To ensure no injustice, your ${refund} coins were returned because a player left.`,
+            5000,
           );
         } else if (packet.reason === "player_left" && leaverId !== localPlayerId) {
-          toast.error("Match Ended", "A player left, so the match was closed.", 3000);
+          toast.error("Match Ended", "A player left, so the match was closed for fairness.", 4000);
         }
 
         clearTimer();

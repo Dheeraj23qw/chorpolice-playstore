@@ -5,6 +5,7 @@ import ScoreTable from "@/modal/ShowTableModal";
 import OverlayPopUp from "@/modal/overlaypop";
 
 import { GamePlaySection } from "../GamePlaySection";
+import CinematicReveal from "./CinematicReveal";
 
 /**
  * Handles:
@@ -23,6 +24,8 @@ const BoardWithPopups = ({ g }: any) => {
         advisorIndex={g.advisorIndex}
         thiefIndex={g.thiefIndex}
         displayDuration={3000}
+        revealedRole={g.revealData?.role}
+        isCorrect={g.revealData?.isCorrect}
       />
     );
   }
@@ -38,7 +41,16 @@ const BoardWithPopups = ({ g }: any) => {
       />
 
       {/* Role Reveal Popup */}
-      {g.popupIndex != null && (
+      {g.popupIndex === 5 && g.revealData && (
+        <CinematicReveal
+          index={g.revealData.index}
+          role={g.revealData.role}
+          isCorrect={g.revealData.isCorrect}
+          onComplete={() => {}} // Hook handles timing
+        />
+      )}
+
+      {g.popupIndex != null && g.popupIndex !== 5 && (
         <OverlayPopUp
           index={g.popupIndex}
           policeIndex={g.policeIndex}
@@ -46,6 +58,8 @@ const BoardWithPopups = ({ g }: any) => {
           advisorIndex={g.advisorIndex}
           thiefIndex={g.thiefIndex}
           displayDuration={3500}
+          revealedRole={g.revealData?.role}
+          isCorrect={g.revealData?.isCorrect}
         />
       )}
 

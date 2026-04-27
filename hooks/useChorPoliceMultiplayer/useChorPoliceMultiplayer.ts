@@ -180,6 +180,10 @@ export const useChorPoliceMultiplayer = () => {
     imageType: null,
     name: null,
   });
+  
+  // 🔥 Store dramatic reveal data
+  const [revealData, setRevealData] = useState<{role: string; isCorrect: boolean; index: number} | null>(null);
+
   const [areCardsClickable, setAreCardsClickable] = useState(false);
   const [firstCardClicked, setFirstCardClicked] = useState(false);
 
@@ -630,58 +634,57 @@ export const useChorPoliceMultiplayer = () => {
           return updated;
         });
 
-        // Reveal all cards — use refs for current state
-        const currentFlipped = flippedStatesRef.current;
-        const currentClicked = clickedCardsRef.current;
-        const engineRoles = packet.allRoles?.map((info: any) => info.role) ?? [
-          ...ChorPoliceEngine.state.roles,
-        ];
+        // 🔥 STEP 1: Immediately trigger the dramatic 3D Spin Modal (Index 5)
+        const pickedRole = packet.correct ? "Thief" : "Advisor";
+        const targetIdx = packet.guessedIndex ?? (packet.correct ? reduxRoles.indexOf("Thief") : reduxRoles.indexOf("Advisor"));
+        
+        setPopupIndex(5);
+        setRevealData({ role: pickedRole, isCorrect: packet.correct, index: targetIdx });
+        AudioEngine.play(packet.correct ? "win" : "lose", "gameplay");
 
-        // FIX BUG-9: revealAllCards now returns its timer ID — push to timerRefs
-        // so it is cleared on unmount (prevents state-update-on-unmounted-component)
-        const revealTimer = revealAllCards(
-          engineRoles,
-          currentFlipped,
-          flipAnimsRef.current,
-          setFlippedStates,
-          currentClicked,
-          () => {},
-          () => {},
-          dispatch,
-        );
-        timerRefs.current.push(revealTimer);
+        // 🔥 STEP 2: Delay the normal board flip by 4.5 seconds (duration of spin modal)
+        const tReveal = setTimeout(() => {
+          const currentFlipped = flippedStatesRef.current;
+          const currentClicked = clickedCardsRef.current;
+          const engineRoles = packet.allRoles?.map((info: any) => info.role) ?? [
+            ...ChorPoliceEngine.state.roles,
+          ];
 
-        // Win/Lose sound
-        const t4 = setTimeout(() => {
-          AudioEngine.play(packet.correct ? "win" : "lose", "gameplay");
-        }, 2000);
-        timerRefs.current.push(t4);
+          const revealTimer = revealAllCards(
+            engineRoles,
+            currentFlipped,
+            flipAnimsRef.current,
+            setFlippedStates,
+            currentClicked,
+            () => {},
+            () => {},
+            dispatch,
+          );
+          timerRefs.current.push(revealTimer);
+        }, 4500);
+        timerRefs.current.push(tReveal);
 
-        // Win/Lose Overlay Logic
+        // 🔥 STEP 3: Win/Lose Overlay (Classic)
         const t5 = setTimeout(() => {
           console.log(`${D} 🎬 Triggering Win/Lose Overlay`);
-
           const winIndex = packet.correct ? 4 : 3;
-
           setPopupIndex(winIndex);
 
           const curPI = policeIndexRef.current;
           const curPN = playerNamesRef.current;
-
           console.log(
             `${D} Winner is: ${curPI !== null ? curPN[curPI] : "Unknown"}`,
           );
-        }, 4000);
-
+        }, 8500);
         timerRefs.current.push(t5);
 
+        // 🔥 STEP 4: Next Round / Quiz
         const t6 = setTimeout(() => {
           setIsDynamicPopUp(false);
           setShowTableButton(true);
 
           if (packet.isLastRound) {
             console.log(`${D} 🏁 LAST ROUND — transitioning to score quiz`);
-            // Prepare quiz state, then use ONLY playTransition (don't set gamePhase directly — that causes a flash)
             scoreQuizStartedRef.current = false;
             setQuizPlayerIndex(0);
             setQuizDone(false);
@@ -705,10 +708,9 @@ export const useChorPoliceMultiplayer = () => {
             dispatch(setReduxMyRole(null));
             setShowTableButton(false);
             hasGuessedRef.current = false;
-            // Play intro video between rounds instead of going straight to waiting
             dispatch(setReduxGamePhase("round_video"));
           }
-        }, 8000);
+        }, 12500);
         timerRefs.current.push(t6);
       }
 
@@ -882,7 +884,6 @@ export const useChorPoliceMultiplayer = () => {
       /* ── 4. GAME END (completed) ── */
       if (packet.type === CP.GAME_END && packet.reason === "completed") {
         console.log(`${D} 🏁 GAME END — completed`);
-        // gamePhase → "final_result" dispatched by engine
         scoreQuizStartedRef.current = false;
         roundStartPendingRef.current = false;
         currentQuizPlayerIdRef.current = null;
@@ -898,16 +899,28 @@ export const useChorPoliceMultiplayer = () => {
         );
         playTransition("final_result");
 
-        const isWinner = packet.leaderboard?.[0]?.id === _localPlayerId;
-        const totalPot = packet.totalPot ?? 0;
-
-        if (isWinner && totalPot > 0) {
-          dispatch(updateCoins(totalPot));
-
-          toast.success("CHAMPION! 🏆", `You won ${totalPot} coins!`);
+        // 🔥 WINNER REWARD LOGIC (Multi-winner support)
+        const leaderboard = packet.leaderboard ?? [];
+        if (leaderboard.length > 0) {
+          const maxScore = leaderboard[0].totalScore;
+          const winners = leaderboard.filter((p: any) => p.totalScore === maxScore);
+          const isLocalWinner = winners.some((p: any) => p.id === _localPlayerId);
+          
+          if (isLocalWinner) {
+            const totalPot = packet.totalPot ?? 0;
+            const splitPot = Math.floor(totalPot / winners.length);
+            
+            if (splitPot > 0) {
+              dispatch(updateCoins(splitPot));
+              const winMsg = winners.length > 1 
+                ? `You tied for 1st! Shared pot: ${splitPot} coins.`
+                : `You won the full pot of ${splitPot} coins!`;
+              toast.success("CHAMPION! 🏆", winMsg);
+            }
+          }
         }
 
-        recordCPGame(dispatch, isWinner, "completed");
+        recordCPGame(dispatch, leaderboard[0]?.id === _localPlayerId, "completed");
       }
 
       /* ── 5. HOST QUIT ── */
@@ -920,7 +933,7 @@ export const useChorPoliceMultiplayer = () => {
         void (async () => {
           if (refund > 0) {
             dispatch(updateCoins(refund));
-            toast.success("Refunded!", `Host left. ${refund} coins returned.`, 4000);
+            toast.success("Refunded (Fairness)", `Host left. To ensure no injustice, your ${refund} coins were returned.`, 5000);
           } else {
             toast.error("Match Ended", "The host left the game.", 4000);
           }
@@ -941,13 +954,13 @@ export const useChorPoliceMultiplayer = () => {
         if (localPlayerId !== leaverId && refund > 0) {
           dispatch(updateCoins(refund));
           const msg = packet.networkIssue 
-            ? "A player disconnected. " 
-            : "A player left. ";
-          toast.success("Refunded!", `${msg}${refund} coins returned.`, 4000);
+            ? "A player disconnected (Network Issue). " 
+            : "A player left the match. ";
+          toast.success("Refunded (Fairness)", `${msg}To ensure no injustice, your ${refund} coins were returned.`, 5000);
         } else if (localPlayerId !== leaverId) {
           const msg = packet.networkIssue 
             ? "A player disconnected due to network issues." 
-            : "A player left, so the match was closed.";
+            : "A player left, so the match was closed for fairness.";
           toast.error("Match Ended", msg, 4000);
         }
 
@@ -1389,6 +1402,7 @@ export const useChorPoliceMultiplayer = () => {
     mediaType,
     playerData,
     areCardsClickable,
+    revealData,
     // RULE 10: Game phase from Redux
     gamePhase: reduxGamePhase,
     // RULE 10: My role from Redux
