@@ -11,10 +11,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "chorpolice",
   userInterfaceStyle: "dark",
   backgroundColor: "#050508",
-  splash: {
-    image: "./assets/images/splash-icon.png",
-    resizeMode: "contain",
-    backgroundColor: "#050508",
+  statusBar: {
+    barStyle: "light-content",
+    backgroundColor: "#00000000",
+    translucent: true,
+    hidden: true,
   },
   icon: "./assets/images/adaptive-icon.png",
   runtimeVersion: { policy: "appVersion" },

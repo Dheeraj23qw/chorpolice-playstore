@@ -18,6 +18,8 @@ import { useAppExit } from "@/hooks/useAppExit";
 import ModalRoot from "@/components/ModalRoot";
 import NotificationController from "@/components/NotificationController";
 
+import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
+
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppLayout() {
@@ -101,14 +103,25 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View className="flex-1 bg-[#050508] items-center justify-center">
+        <Text className="text-white text-4xl font-main-bold tracking-[10px] uppercase">
+          Chor Police
+        </Text>
+        <View className="h-1 w-20 bg-indigo-600 mt-4 rounded-full" />
+      </View>
+    );
+  }
 
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <StatusBar hidden translucent backgroundColor="transparent" />
-        <AppLayout />
-        <ToastProvider />
+        <GlobalErrorBoundary>
+          <StatusBar hidden translucent backgroundColor="transparent" />
+          <AppLayout />
+          <ToastProvider />
+        </GlobalErrorBoundary>
       </SafeAreaProvider>
     </Provider>
   );

@@ -7,6 +7,7 @@ export const useSystemUI = () => {
   useEffect(() => {
     const applySystemStyles = async () => {
       if (Platform.OS === "android") {
+        // 🕵️ Hide the navigation bar
         await NavigationBar.setVisibilityAsync("hidden");
 
         await NavigationBar.setButtonStyleAsync("light");

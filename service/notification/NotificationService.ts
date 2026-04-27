@@ -140,6 +140,30 @@ class NotificationService {
   }
 
   /**
+   * Retrieves the Expo Push Token (required for remote push notifications)
+   */
+  async getPushToken(): Promise<string | null> {
+    if (!this.canRequestPermissions()) return null;
+
+    try {
+      const hasPermission = await this.checkPermission();
+      if (!hasPermission) return null;
+
+      const token = (await Notifications.getExpoPushTokenAsync({
+        projectId: "d2d7084f-7e5a-4b67-a860-dc2eddc33241"
+      })).data;
+      
+      if (__DEV__) {
+        console.log("[Notifications] Push Token:", token);
+      }
+      return token;
+    } catch (error) {
+      console.error("[Notifications] Failed to get push token:", error);
+      return null;
+    }
+  }
+
+  /**
    * Smart Permission Request (Zomato/Swiggy Style)
    * Only asks if not granted. If denied, only asks again every 7 days.
    */

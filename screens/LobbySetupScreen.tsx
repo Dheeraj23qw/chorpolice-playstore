@@ -25,6 +25,7 @@ import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import { EntryModal } from "@/modal/EntryModal";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
+import { PermissionGuardian } from "@/components/PermissionGuardian";
 
 type UIState = "normal" | "betting" | "share" | "apIsolation" | "help";
 
@@ -51,8 +52,20 @@ const LobbySetupScreen = ({
   ) as LobbyState;
 
   const [uiState, setUiState] = useState<UIState>("normal");
+  const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);
+  
   const isBlockingUI = uiState !== "normal";
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
+
+  if (!allPermissionsGranted) {
+    return (
+      <PermissionGuardian 
+        onAllGranted={() => setAllPermissionsGranted(true)} 
+        title="Game Setup"
+        description="We need a few permissions to get your multiplayer session started."
+      />
+    );
+  }
 
   useEffect(() => {
     if (lobby.isBettingModalVisible) setUiState("betting");
