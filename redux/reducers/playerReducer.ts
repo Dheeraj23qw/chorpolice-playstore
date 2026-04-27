@@ -15,7 +15,7 @@ const initialState: PlayerState = {
   playerScoresByRound: [],
   gameMode: "OFFLINE",
   isGameReset: false,
-  gameRound: 3,
+  gameRound: 5,
 };
 
 const playerSlice = createSlice({
