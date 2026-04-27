@@ -64,6 +64,10 @@ export default function AppController() {
     if (bootstrappedRef.current) return;
     bootstrappedRef.current = true;
 
+    // If the phase is already HOME (e.g. returning to the root route from a meta screen),
+    // do not restart the intro flow. The user has already seen it this session.
+    if (phase === "HOME") return;
+
     runAfterUI(() => {
       const shouldShowOnboarding =
         runtimeConfig.forceOnboardingEveryLaunch || !getOnboardingDone();
@@ -75,7 +79,7 @@ export default function AppController() {
 
       void prepareIntroFlow();
     });
-  }, [dispatch, prepareIntroFlow]);
+  }, [dispatch, prepareIntroFlow, phase]);
 
   useEffect(() => {
     if (phase === "HOME" && firstLaunch) {

@@ -202,7 +202,7 @@ const BugsScreen = () => {
               </Text>
             </View>
             <Text className="font-main-md text-[9px] text-slate-700">
-              Chor Police Build v{appVersion}
+              Chor Police . version {appVersion}
             </Text>
           </View>
         </ScrollView>

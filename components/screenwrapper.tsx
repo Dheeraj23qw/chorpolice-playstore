@@ -36,7 +36,7 @@ const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace("/mode-select");
+      router.replace("/");
     }
   };
 

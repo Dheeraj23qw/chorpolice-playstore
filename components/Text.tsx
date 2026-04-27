@@ -7,9 +7,9 @@ export function Text({ className, style, ...props }: TextProps) {
   return (
     <RNText
       {...props}
-      // If NO custom font is passed, we apply 'font-main'. 
-      // If a font IS passed, we don't add 'font-main' so they don't fight.
-      className={`text-white ${!hasCustomFont ? "font-main" : ""} ${className || ""}`}
+      // If NO custom font is passed, we apply 'font-main-md' (outfit-medium). 
+      // If a font IS passed, we don't add 'font-main-md' so they don't fight.
+      className={`text-white ${!hasCustomFont ? "font-main-md" : ""} ${className || ""}`}
       
       // Remove the styles.baseLock entirely. 
       // It was forcing 'outfit' and preventing 'myfont' from appearing.

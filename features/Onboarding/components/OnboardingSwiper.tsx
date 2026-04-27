@@ -77,7 +77,7 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
                       image={item.image}
                     />
 
-                    <Text className="mt-10 text-center text-3xl font-black tracking-tight text-white">
+                    <Text className="mt-10 text-center text-3xl font-main-bold tracking-tight text-white">
                       {item.title}
                     </Text>
 

@@ -85,10 +85,10 @@ const FinalResultView = ({ onExit }: any) => {
         {totalPot > 0 && (
           <View className="mb-3 items-center">
             <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-400/30 bg-indigo-950/40 py-3">
-              <Text className="text-base font-medium text-indigo-100">
+              <Text className="text-base font-main-md text-indigo-100">
                 {isLocalWinner ? "You won" : "Winner takes"}
               </Text>
-              <Text className="mx-2 text-base font-bold text-white">
+              <Text className="mx-2 text-base font-main-bold text-white">
                 + {Number(totalPot || 0).toLocaleString()} coins
               </Text>
               <Text className="text-base">💰⚡</Text>
