@@ -19,6 +19,7 @@ import ModalRoot from "@/components/ModalRoot";
 import NotificationController from "@/components/NotificationController";
 
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
+import { Text } from "@/components/Text";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -106,10 +107,15 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) {
     return (
       <View className="flex-1 bg-[#050508] items-center justify-center">
-        <Text className="text-white text-4xl font-main-bold tracking-[10px] uppercase">
-          Chor Police
-        </Text>
-        <View className="h-1 w-20 bg-indigo-600 mt-4 rounded-full" />
+        <View className="items-center">
+          <Text className="text-white text-5xl font-bold tracking-[15px] uppercase">
+            Chor
+          </Text>
+          <Text className="text-indigo-500 text-5xl font-bold tracking-[15px] uppercase -mt-2">
+            Police
+          </Text>
+          <View className="h-[2px] w-12 bg-indigo-500/50 mt-8 rounded-full" />
+        </View>
       </View>
     );
   }

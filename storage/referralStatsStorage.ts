@@ -3,7 +3,7 @@ import { storage } from "./mmkv";
 const SHARES_KEY = "REFERRAL_TOTAL_SHARES";
 const EARNED_KEY = "REFERRAL_TOTAL_EARNED";
 
-export interface ReferralStats {
+interface ReferralStats {
   totalShares: number;
   totalEarned: number;
 }
@@ -18,7 +18,7 @@ export const loadReferralStats = (): ReferralStats => {
 const LAST_REWARD_TIMESTAMP = "REFERRAL_LAST_REWARD_TS";
 const DAILY_REWARD_COUNT = "REFERRAL_DAILY_REWARD_COUNT";
 
-export const canEarnShareReward = (): boolean => {
+const canEarnShareReward = (): boolean => {
   const now = Date.now();
   const lastTs = storage.getNumber(LAST_REWARD_TIMESTAMP) || 0;
   const count = storage.getNumber(DAILY_REWARD_COUNT) || 0;

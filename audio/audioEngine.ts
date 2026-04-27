@@ -3,7 +3,7 @@ import { AppState } from "react-native";
 
 /* ---------------- TYPES ---------------- */
 
-export type SoundName =
+type SoundName =
   | "win"
   | "lose"
   | "spin"

@@ -1,12 +1,12 @@
 export type ToastType = "success" | "error" | "warning" | "info";
 
-export interface ToastOptions {
+interface ToastOptions {
   duration?: number;
   actionLabel?: string;
   onAction?: () => void;
 }
 
-export interface ToastInput extends ToastOptions {
+interface ToastInput extends ToastOptions {
   type: ToastType;
   title: string;
   body?: string;
@@ -17,7 +17,7 @@ export interface ToastPayload extends ToastInput {
   duration: number;
 }
 
-export interface ToastState {
+interface ToastState {
   activeToast: ToastPayload | null;
   queue: ToastPayload[];
 }

@@ -126,8 +126,6 @@ const quizStatsSlice = createSlice({
 export const {
   addQuizEntry,
   addChorPoliceEntry,
-  resetQuizStats,
-  setQuizStats,
 } = quizStatsSlice.actions;
 
 export default quizStatsSlice.reducer;

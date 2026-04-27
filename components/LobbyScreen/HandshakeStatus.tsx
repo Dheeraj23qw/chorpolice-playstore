@@ -14,7 +14,7 @@ import * as Haptics from "expo-haptics";
 import { Text } from "@/components/Text";
 
 // ───────────────── TYPES ─────────────────
-export type HandshakeStatusType =
+type HandshakeStatusType =
   | "no_wifi"
   | "denied"
   | "error"

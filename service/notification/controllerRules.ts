@@ -1,4 +1,4 @@
-export interface NotificationPromptSnapshot {
+interface NotificationPromptSnapshot {
   prompted: boolean;
   permissionGranted: boolean;
   appPhase: string;

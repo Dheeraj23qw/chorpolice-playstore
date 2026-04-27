@@ -5,7 +5,7 @@ import UnlockedAwardModal from "@/modal/AwardModal";
 import { WelcomeBonusModal } from "@/modal/WelcomeBonusModal";
 import type { ModalType } from "@/redux/reducers/modalQueueReducer";
 
-export interface ModalRegistration {
+interface ModalRegistration {
   key: ModalType;
   render: (isActive: boolean) => ReactNode;
 }

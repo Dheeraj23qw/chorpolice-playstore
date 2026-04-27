@@ -1,5 +1,5 @@
 
-export interface GameState {
+interface GameState {
     flippedStates: boolean[];
     clickedCards: boolean[];
     selectedPlayer: number;
@@ -30,7 +30,7 @@ export interface GameState {
 
 
 
-export interface PlayerData {
+interface PlayerData {
     image?: string | null;
     message?: string | null;
     imageType?: string | null;
@@ -54,7 +54,7 @@ export interface PlayerScore {
   export type GameMode = "OFFLINE" | "ONLINE";
   
   // Define the PlayerScoresByRound interface to store scores by round
-  export interface PlayerScoresByRound {
+  interface PlayerScoresByRound {
     playerName: string;
     scores: number[];  
   }

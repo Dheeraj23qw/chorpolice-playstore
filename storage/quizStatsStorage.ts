@@ -46,7 +46,7 @@ export const loadQuizStats = (): GameStatsState | null => {
 /**
  * 🗑️ Clear stats (for logout / testing)
  */
-export const clearQuizStats = () => {
+const clearQuizStats = () => {
   try {
     storage.remove(QUIZ_STATS_KEY);
   } catch (e) {

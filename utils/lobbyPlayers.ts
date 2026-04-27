@@ -10,7 +10,7 @@ const getNextAvailableAvatar = (usedAvatarIds: Set<number>) => {
   return nextAvatar ?? 1;
 };
 
-export const createBotPlayer = (
+const createBotPlayer = (
   slotIndex: number,
   usedAvatarIds: Set<number>,
 ): SessionPlayer => {
@@ -98,7 +98,7 @@ export const replacePlayerWithBot = (
   return nextPlayers;
 };
 
-export const normalizeLobbyPlayers = (players: SessionPlayer[]): SessionPlayer[] => {
+const normalizeLobbyPlayers = (players: SessionPlayer[]): SessionPlayer[] => {
   if (players.length >= TOTAL_PLAYERS) {
     return players.slice(0, TOTAL_PLAYERS);
   }

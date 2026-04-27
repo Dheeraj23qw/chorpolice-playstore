@@ -2,9 +2,8 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 /**
  * What action popup should trigger
- * Extend freely
  */
-export type PopupActionKey =
+type PopupActionKey =
   | "EXIT_GAME"
   | "RESET_MATCH"
   | "LOGOUT"
@@ -15,7 +14,7 @@ export type PopupActionKey =
 /**
  * Popup visual type
  */
-export type PopupVariant =
+type PopupVariant =
   | "confirm"
   | "alert"
   | "info"
@@ -24,12 +23,12 @@ export type PopupVariant =
 /**
  * Serializable payload for actions
  */
-export type PopupPayload = Record<string, any> | null;
+type PopupPayload = Record<string, any> | null;
 
 /**
  * Popup configuration
  */
-export type PopupConfig = {
+type PopupConfig = {
   id?: string;                      // useful for analytics
   title?: string;
   message: string;
@@ -49,10 +48,10 @@ export type PopupConfig = {
 /**
  * Popup State
  */
-export type PopupState = {
+interface PopupState {
   visible: boolean;
   config: PopupConfig | null;
-};
+}
 
 const initialState: PopupState = {
   visible: false,
@@ -84,5 +83,5 @@ const popupSlice = createSlice({
   },
 });
 
-export const { showPopup, hidePopup, updatePopup } = popupSlice.actions;
+const { showPopup, hidePopup } = popupSlice.actions;
 export default popupSlice.reducer;

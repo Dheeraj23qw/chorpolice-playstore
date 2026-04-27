@@ -1,10 +1,10 @@
-export type MediaItem = {
+type MediaItem = {
   id: number;
   url: any; // require() returns number in RN
   description: string;
 };
 
-export const videoData: MediaItem[] = [
+const videoData: MediaItem[] = [
   {
     id: 1,
     url: require("@/assets/gif/chorPolicescreen/chorpolice.mp4"),

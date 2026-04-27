@@ -2,7 +2,7 @@ import { storage } from "@/storage/mmkv";
 
 const STORAGE_KEY = "LockState";
 
-export interface LockState {
+interface LockState {
   spin: {
     lastUsedTimestamp: number | null;
     countToday: number;

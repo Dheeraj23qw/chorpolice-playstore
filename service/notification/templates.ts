@@ -32,7 +32,7 @@ export const DORMANT_PLAYER_TEMPLATE: NotificationTemplate = {
   data: { screen: "/mode-select" },
 };
 
-export const NEW_FEATURE_TEMPLATE: NotificationTemplate = {
+const NEW_FEATURE_TEMPLATE: NotificationTemplate = {
   id: "new-feature",
   titles: [
     "New Feature Alert!",
@@ -49,7 +49,7 @@ export const NEW_FEATURE_TEMPLATE: NotificationTemplate = {
   data: { screen: "/mode-select" },
 };
 
-export const REWARD_CLAIM_TEMPLATE: NotificationTemplate = {
+const REWARD_CLAIM_TEMPLATE: NotificationTemplate = {
   id: "reward-claim",
   titles: [
     "Your Reward Awaits!",

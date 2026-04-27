@@ -1,4 +1,4 @@
-export type RuntimeMode = "development" | "production";
+type RuntimeMode = "development" | "production";
 
 export const runtimeConfig = {
   mode: __DEV__ ? "development" : "production",

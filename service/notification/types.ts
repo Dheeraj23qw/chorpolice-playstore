@@ -1,4 +1,4 @@
-export const APP_NOTIFICATION_ROUTES = [
+const APP_NOTIFICATION_ROUTES = [
   "/",
   "/earn",
   "/mode-select",

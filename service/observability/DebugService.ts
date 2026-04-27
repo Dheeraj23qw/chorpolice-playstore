@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export interface DebugState {
+interface DebugState {
   lastPacketType: string;
   latency: number;
   connectionCount: number;
@@ -13,7 +13,7 @@ export interface DebugState {
   discoveredHostCount: number;
 }
 
-export const debugState: DebugState = {
+const debugState: DebugState = {
   lastPacketType: "NONE",
   latency: 0,
   connectionCount: 0,
@@ -26,7 +26,7 @@ export const debugState: DebugState = {
   discoveredHostCount: 0,
 };
 
-export const useDebugData = () => {
+const useDebugData = () => {
   const [data, setData] = useState<DebugState>(debugState);
 
   useEffect(() => {

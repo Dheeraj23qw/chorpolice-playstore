@@ -3,7 +3,7 @@ import { storage } from "@/storage/mmkv";
 const STREAK_KEY = "USER_STREAK";
 const LAST_DATE_KEY = "LAST_STREAK_DATE";
 
-export const getStreak = () => {
+const getStreak = () => {
   return storage.getNumber(STREAK_KEY) || 1;
 };
 

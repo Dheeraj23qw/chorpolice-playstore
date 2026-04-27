@@ -1,9 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from "../store";
 
 export type ModalType = "BONUS_MODAL" | "LOW_COIN_MODAL" | "REWARD_MODAL";
 
-export interface ModalQueueState {
+interface ModalQueueState {
   queue: ModalType[];
   activeModal: ModalType | null;
 }
@@ -40,6 +39,5 @@ const modalQueueSlice = createSlice({
   },
 });
 
-export const { enqueueModal, dismissActiveModal, resetModalQueue } =
-  modalQueueSlice.actions;
+export const { enqueueModal, dismissActiveModal } = modalQueueSlice.actions;
 export default modalQueueSlice.reducer;

@@ -1,6 +1,6 @@
 import { ImageSourcePropType } from "react-native";
 
-export interface DataItem {
+interface DataItem {
   id: number;
   image: ImageSourcePropType;
   message: string;

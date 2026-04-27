@@ -18,18 +18,11 @@ if (Platform.OS !== "web") {
   });
 }
 
-export interface ForegroundNotification {
+interface ForegroundNotification {
   title: string;
   body?: string;
   route: AppRoute | null;
 }
-
-export type NotificationTestResult =
-  | { status: "scheduled"; seconds: number }
-  | {
-      status: "blocked";
-      reason: "permission-denied" | "schedule-failed" | "unsupported-device";
-    };
 
 class NotificationService {
   private responseListener: Notifications.EventSubscription | null = null;
@@ -163,10 +156,6 @@ class NotificationService {
     }
   }
 
-  /**
-   * Smart Permission Request (Zomato/Swiggy Style)
-   * Only asks if not granted. If denied, only asks again every 7 days.
-   */
   async smartRequestPermissions(): Promise<boolean> {
     if (!this.canRequestPermissions()) return false;
 
@@ -196,10 +185,6 @@ class NotificationService {
     return false;
   }
 
-  /**
-   * Android 13+ requires channels to be created before notifications are sent.
-   * This ensures the "default" and "alerts" channels exist.
-   */
   async ensureChannelsExist(): Promise<void> {
     if (Platform.OS !== "android") return;
     const channels = await Notifications.getNotificationChannelsAsync();
@@ -254,8 +239,6 @@ class NotificationService {
     }
   }
 
-  // --- REWARD REMINDERS ---
-
   async scheduleSpinReminder() {
     await this.schedule({
       id: "spin_ready",
@@ -278,10 +261,7 @@ class NotificationService {
     });
   }
 
-  // --- RETENTION REMINDERS ---
-
   async scheduleRetentionNudges() {
-    // 24h Inactivity
     await this.schedule({
       id: "retention_1d",
       title: "The Thief is Getting Away! 🏃‍♂️",
@@ -290,24 +270,12 @@ class NotificationService {
       data: { screen: "/mode-select" }
     });
 
-    // 3d Inactivity
     await this.schedule({
       id: "retention_3d",
       title: "We Miss You! 💔",
       body: "New challenges and big rewards are waiting. Play now and beat the bots!",
       seconds: 3 * 24 * 60 * 60,
       data: { screen: "/mode-select" }
-    });
-  }
-
-  async scheduleMilestoneNudge(tierName: string, remainingCoins: number) {
-    await this.schedule({
-      id: `milestone_nudge_${tierName}`,
-      title: "So Close! 🎯",
-      body: `Only ${remainingCoins.toLocaleString()} coins left to unlock your ${tierName}. Play one more game!`,
-      seconds: 3 * 60 * 60, // 3 Hours later
-      channelId: "alerts",
-      data: { screen: "/earn" }
     });
   }
 
@@ -381,22 +349,16 @@ class NotificationService {
     }
   }
 
-  async triggerTestNotification(): Promise<NotificationTestResult> {
+  async triggerTestNotification(): Promise<{ status: 'scheduled' | 'blocked', seconds?: number, reason?: string }> {
     if (!this.canRequestPermissions()) {
-      return {
-        status: "blocked",
-        reason: "unsupported-device",
-      };
+      return { status: "blocked", reason: "unsupported-device" };
     }
 
     const hasPermission = await this.checkPermission();
     if (!hasPermission) {
       const granted = await this.registerPermissions();
       if (!granted) {
-        return {
-          status: "blocked",
-          reason: "permission-denied",
-        };
+        return { status: "blocked", reason: "permission-denied" };
       }
     }
 
@@ -411,16 +373,10 @@ class NotificationService {
     });
 
     if (!notificationId) {
-      return {
-        status: "blocked",
-        reason: "schedule-failed",
-      };
+      return { status: "blocked", reason: "schedule-failed" };
     }
 
-    return {
-      status: "scheduled",
-      seconds,
-    };
+    return { status: "scheduled", seconds };
   }
 
   cleanup(): void {

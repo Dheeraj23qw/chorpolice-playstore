@@ -12,7 +12,7 @@ export const LOSS_MESSAGES = [
   "Almost, {name}!"
 ];
 
-export const THINKING_MESSAGES = [
+const THINKING_MESSAGES = [
   "{name} is thinking...",
   "Decision time for {name}!",
   "Planning a move, {name}?",

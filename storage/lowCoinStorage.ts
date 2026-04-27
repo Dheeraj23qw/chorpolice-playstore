@@ -14,7 +14,7 @@ const defaultState: LowCoinState = {
   lastDismissed: null,
 };
 
-export const getLowCoinState = (): LowCoinState => {
+const getLowCoinState = (): LowCoinState => {
   try {
     const raw = storage.getString(KEY);
     return raw ? JSON.parse(raw) : defaultState;
@@ -23,18 +23,18 @@ export const getLowCoinState = (): LowCoinState => {
   }
 };
 
-export const setLowCoinState = (state: LowCoinState) => {
+const setLowCoinState = (state: LowCoinState) => {
   storage.set(KEY, JSON.stringify(state));
 };
 
-export const disableForever = () => {
+const disableForever = () => {
   setLowCoinState({
     disabledForever: true,
     lastDismissed: Date.now(),
   });
 };
 
-export const dismissTemp = () => {
+const dismissTemp = () => {
   setLowCoinState({
     disabledForever: false,
     lastDismissed: Date.now(),

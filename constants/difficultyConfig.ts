@@ -8,7 +8,7 @@ export const DIFFICULTY_OPTIONS: DifficultyOption[] = [
   "hard",
 ];
 
-export const difficultyConfig = {
+const difficultyConfig = {
   easy: {
     icon: "leaf-outline",
     color: "#22c55e",

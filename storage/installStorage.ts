@@ -2,7 +2,7 @@ import { storage } from "@/storage/mmkv";
 
 const INSTALL_TIME_KEY = "app_installed_at";
 
-export const initInstallTime = () => {
+const initInstallTime = () => {
   try {
     const existing = storage.getString(INSTALL_TIME_KEY);
 
@@ -24,7 +24,7 @@ export const getInstallTime = (): number => {
 };
 
 // 🔥 FOR TESTING
-export const resetInstallTime = () => {
+const resetInstallTime = () => {
   try {
     storage.set(INSTALL_TIME_KEY, Date.now().toString());
     console.log("⏳ Install time reset");

@@ -24,7 +24,7 @@ export const markRewardClaimed = (id: number) => {
   }
 };
 
-export const resetClaimedRewards = () => {
+const resetClaimedRewards = () => {
   try {
     storage.remove(CLAIMED_REWARDS_KEY);
     console.log("🗑️ Claimed rewards reset");

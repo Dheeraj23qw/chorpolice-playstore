@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export type AppPhase =
+type AppPhase =
   | "SPLASH"
   | "ONBOARDING"
   | "LOADING"

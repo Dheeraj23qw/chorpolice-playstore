@@ -39,7 +39,7 @@ import { getLocalIpAddress } from "@/utils/NetworkUtils";
 const ROOM_MAX_PLAYERS = 4;
 const DEFAULT_GAME_TYPE = "CHOR_POLICE";
 
-export interface Player extends SessionPlayer {}
+interface Player extends SessionPlayer {}
 
 export const useLobbyLogic = (
   router: any,

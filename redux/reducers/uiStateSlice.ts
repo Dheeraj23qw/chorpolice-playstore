@@ -25,7 +25,7 @@ const uiSlice = createSlice({
   },
 });
 
-export const { openModalUI, closeModalUI, setModalUI } = uiSlice.actions;
+export const { openModalUI, closeModalUI } = uiSlice.actions;
 
 /* 🔥 Your simple selector */
 export const selectIsModalOpenUI = (state: RootState) => state.ui.isModalOpen;

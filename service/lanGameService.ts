@@ -44,7 +44,7 @@ export const clearAllListeners = () => {
   listeners.clear();
 };
 
-export const configureSession = ({
+const configureSession = ({
   isHost,
   localPlayerId,
   hostIp = null,
@@ -197,8 +197,6 @@ export const startHeartbeat = (isHost: boolean) => {
   });
 };
 
-export const stopHeartbeat = () => {
+const stopHeartbeat = () => {
   HeartbeatService.stop();
 };
-
-export { useDebugData, debugState } from "./observability/DebugService";

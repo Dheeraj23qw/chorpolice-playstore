@@ -8,13 +8,13 @@ import {
   warnPermissionDebug,
 } from "@/utils/permissionDebug";
 
-export type PermissionStep =
+type PermissionStep =
   | "idle"
   | "checking_wifi"
   | "requesting_permissions"
   | "ready";
 
-export type PermissionStatus =
+type PermissionStatus =
   | "pending"
   | "granted"
   | "denied"

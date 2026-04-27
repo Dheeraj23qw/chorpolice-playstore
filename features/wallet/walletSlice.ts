@@ -41,6 +41,5 @@ export const {
   setCoins,
   setFirstLaunch,
   claimFirstLaunchBonus,
-  resetWallet,
 } = walletSlice.actions;
 export default walletSlice.reducer;

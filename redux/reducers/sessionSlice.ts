@@ -10,14 +10,14 @@ export interface SessionPlayer {
   coins: number;
 }
 
-export type ConnectionStatus =
+type ConnectionStatus =
   | "IDLE"
   | "HOSTING"
   | "CONNECTING"
   | "CONNECTED"
   | "ERROR";
 
-export type LobbyStage = "room" | "setup";
+type LobbyStage = "room" | "setup";
 
 export type GamePhase =
   | "idle"
@@ -31,7 +31,7 @@ export type GamePhase =
   | "score_quiz"
   | "final_result";
 
-export interface RoundRoleState {
+interface RoundRoleState {
   roles: string[];
   policeIndex: number | null;
   kingIndex: number | null;
@@ -276,4 +276,3 @@ export const {
   resetGameState,
 } = sessionSlice.actions;
 
-export default sessionSlice.reducer;

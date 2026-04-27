@@ -16,7 +16,7 @@ const generateShortId = customAlphabet(
  * PHASE 1: Generate and Persist User ID
  * This runs when the app starts. If an ID doesn't exist, it creates one.
  */
-export const getOrGeneratePermanentId = (): string => {
+const getOrGeneratePermanentId = (): string => {
   try {
     let id = storage.getString(PERMANENT_PLAYER_ID_KEY);
 
@@ -64,14 +64,4 @@ export const loadUsername = (): string => {
   }
 };
 
-/**
- * Resets user data but typically we keep the PERMANENT_ID
- * unless you want a total factory reset.
- */
-export const resetUserData = (includePermanentId = false) => {
-  storage.remove(AVATAR_KEY);
-  storage.remove(USERNAME_KEY);
-  if (includePermanentId) {
-    storage.remove(PERMANENT_PLAYER_ID_KEY);
-  }
-};
+

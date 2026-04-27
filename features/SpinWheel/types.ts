@@ -24,23 +24,23 @@ export interface SpinWheelViewProps {
   segments: SpinSegment[];
 }
 
-export interface SpinButtonProps {
+interface SpinButtonProps {
   status: SpinStatus;
   onSpin: () => void;
   onClose: () => void;
 }
 
-export interface VictoryOverlayProps {
+interface VictoryOverlayProps {
   visible: boolean;
   onComplete: () => void;
 }
 
-export interface SpinHeaderProps {
+interface SpinHeaderProps {
   status: SpinStatus;
   result: SpinSegment | null;
 }
 
-export interface SpinResultProps {
+interface SpinResultProps {
   status: SpinStatus;
   result: SpinSegment | null;
   pulseAnim: SharedValue<number>;

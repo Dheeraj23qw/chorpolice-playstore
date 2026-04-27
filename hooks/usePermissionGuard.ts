@@ -6,7 +6,7 @@ import * as Notifications from "expo-notifications";
 import { Camera } from "expo-camera";
 import { toast } from "@/components/feedback/toast";
 
-export type PermissionState = "idle" | "checking" | "granted" | "denied" | "blocked";
+type PermissionState = "idle" | "checking" | "granted" | "denied" | "blocked";
 
 export const usePermissionGuard = () => {
   const [state, setState] = useState<PermissionState>("idle");
