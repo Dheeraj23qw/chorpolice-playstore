@@ -10,14 +10,20 @@ import { LobbyState } from "./types";
 interface PlayersListProps {
   lobby: LobbyState;
   getAvatarSource: (avatarId: number) => any;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export const PlayersList: React.FC<PlayersListProps> = ({
   lobby,
   getAvatarSource,
+  onOpenChange,
 }) => {
   // ✅ HOST: CLOSED BY DEFAULT | CLIENT: OPEN BY DEFAULT
   const [open, setOpen] = useState(!lobby.isHost);
+
+  React.useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
 
   const hasPlayers = lobby.players.length > 0;
 

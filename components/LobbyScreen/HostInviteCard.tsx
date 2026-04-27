@@ -34,6 +34,7 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
+        exit={{ opacity: 0, translateY: -20, height: 0 }}
         className="mb-5 overflow-hidden rounded-[30px]"
       >
         <LinearGradient
@@ -54,6 +55,7 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
       <MotiView
         from={{ opacity: 0, translateY: 20, scale: 0.96 }}
         animate={{ opacity: 1, translateY: 0, scale: 1 }}
+        exit={{ opacity: 0, translateY: -20, scale: 0.96, height: 0 }}
         transition={{ type: "spring", damping: 16 }}
         className="mb-5 overflow-hidden rounded-[30px]"
       >

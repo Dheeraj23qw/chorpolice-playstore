@@ -12,6 +12,7 @@ import {
 import { playerImages } from "@/constants/playerData";
 import { PermissionStep } from "@/hooks/useNetworkPermissions";
 import { LobbyState } from "@/components/LobbyScreen/types"; // 👈 IMPORTANT
+import { AnimatePresence } from "moti";
 
 interface Props {
   lobby: LobbyState; // ✅ KEEP ORIGINAL TYPE
@@ -34,6 +35,8 @@ export const LobbyContent: React.FC<Props> = ({
   openSettings,
   copyRoomCode,
 }) => {
+  const [isPlayersListOpen, setIsPlayersListOpen] = React.useState(!lobby.isHost);
+
   /* ---------------- DERIVED UI STATE ---------------- */
   const ui = useMemo(() => {
     const permissionBlocked =
@@ -100,9 +103,11 @@ export const LobbyContent: React.FC<Props> = ({
   /* ---------------- MAIN CONTENT ---------------- */
   return (
     <View>
-      {lobby.isHost && (
-        <HostInviteCard lobby={lobby} onCopyRoomCode={copyRoomCode} />
-      )}
+      <AnimatePresence>
+        {lobby.isHost && !isPlayersListOpen && (
+          <HostInviteCard lobby={lobby} onCopyRoomCode={copyRoomCode} />
+        )}
+      </AnimatePresence>
 
       <PlayersList
         lobby={lobby} // ✅ FULL TYPE SAFE NOW
@@ -110,6 +115,7 @@ export const LobbyContent: React.FC<Props> = ({
           playerImages[id]?.src ||
           require("@/assets/images/chorsipahi/kid1.webp")
         }
+        onOpenChange={setIsPlayersListOpen}
       />
     </View>
   );

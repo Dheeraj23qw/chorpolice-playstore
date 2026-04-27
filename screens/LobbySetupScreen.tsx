@@ -29,6 +29,7 @@ const LobbySetupScreen = () => {
 
   const [uiState, setUiState] = useState<UIState>("normal");
   const isBlockingUI = uiState !== "normal";
+  const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
 
   // --- Sync Betting Modal State ---
   useEffect(() => {
@@ -98,11 +99,15 @@ const LobbySetupScreen = () => {
                   </Text>
                 </View>
 
-                <PlayerProfileCard
-                  lobby={lobby}
-                  getAvatarSource={getAvatarSource}
-                  showGameSettings={lobby.isHost}
-                />
+                <AnimatePresence>
+                  {(!lobby.isHost || !isPlayersListOpen) && (
+                    <PlayerProfileCard
+                      lobby={lobby}
+                      getAvatarSource={getAvatarSource}
+                      showGameSettings={lobby.isHost}
+                    />
+                  )}
+                </AnimatePresence>
 
                 <View className="mt-8">
                   <View className="mb-4 flex-row items-center justify-between">
@@ -118,6 +123,7 @@ const LobbySetupScreen = () => {
                   <PlayersList
                     lobby={lobby}
                     getAvatarSource={getAvatarSource}
+                    onOpenChange={setIsPlayersListOpen}
                   />
                 </View>
               </ScrollView>
