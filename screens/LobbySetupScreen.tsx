@@ -110,17 +110,18 @@ const LobbySetupScreen = ({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
+        {/* 🔥 ONLY CHANGE: stronger pushback */}
         <MotiView
           animate={{
-            opacity: isBlockingUI ? 0.3 : 1,
-            scale: isBlockingUI ? 0.96 : 1,
+            opacity: isBlockingUI ? 0.2 : 1,
+            scale: isBlockingUI ? 0.95 : 1,
           }}
-          transition={{ type: "timing", duration: 300 }}
+          transition={{ type: "timing", duration: 250 }}
           className="flex-1"
           pointerEvents={isBlockingUI ? "none" : "auto"}
         >
           <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
-            {/* --- HEADER (Hidden when list open) --- */}
+            {/* HEADER */}
             <View className="h-16 justify-center">
               <AnimatePresence>
                 {!isPlayersListOpen && (
@@ -147,7 +148,6 @@ const LobbySetupScreen = ({
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingTop: 10, paddingBottom: 20 }}
               >
-                {/* --- WELCOME TEXT (Hidden when list open) --- */}
                 <AnimatePresence>
                   {!isPlayersListOpen && (
                     <MotiView
@@ -207,16 +207,9 @@ const LobbySetupScreen = ({
                   />
                 ) : (
                   <>
-                    {/* --- PROFILE CARD (Hides when list open) --- */}
                     <AnimatePresence>
                       {!isPlayersListOpen && (
-                        <MotiView
-                          key="profile-card"
-                          from={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="mb-8"
-                        >
+                        <MotiView className="mb-8">
                           <PlayerProfileCard
                             lobby={lobby}
                             getAvatarSource={getAvatarSource}
@@ -226,30 +219,11 @@ const LobbySetupScreen = ({
                       )}
                     </AnimatePresence>
 
-                    {/* --- HINT TEXT (Shown ONLY when list is open, centered above it) --- */}
-                    <AnimatePresence>
-                      {isPlayersListOpen && (
-                        <MotiView
-                          from={{ opacity: 0, translateY: 10 }}
-                          animate={{ opacity: 1, translateY: 0 }}
-                          exit={{ opacity: 0 }}
-                          className="mb-4 items-center"
-                        >
-                          <Text className="text-center font-main text-[11px] text-white/40">
-                            Close player list to edit profile details
-                          </Text>
-                        </MotiView>
-                      )}
-                    </AnimatePresence>
-
-                    {/* --- PLAYERS LIST --- */}
-                    <View>
-                      <PlayersList
-                        lobby={lobby}
-                        getAvatarSource={getAvatarSource}
-                        onOpenChange={setIsPlayersListOpen}
-                      />
-                    </View>
+                    <PlayersList
+                      lobby={lobby}
+                      getAvatarSource={getAvatarSource}
+                      onOpenChange={setIsPlayersListOpen}
+                    />
                   </>
                 )}
               </ScrollView>
@@ -265,9 +239,25 @@ const LobbySetupScreen = ({
             </View>
           </SafeAreaView>
         </MotiView>
+
+        {/* 🔥 NEW: overlay (no logic touched) */}
+        <AnimatePresence>
+          {isBlockingUI && (
+            <MotiView
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 200 }}
+              className="absolute inset-0 z-40"
+              pointerEvents="none"
+            >
+              <View className="absolute inset-0 bg-black/60" />
+            </MotiView>
+          )}
+        </AnimatePresence>
       </KeyboardAvoidingView>
 
-      {/* --- MODALS --- */}
+      {/* MODALS (unchanged) */}
       <EntryModal
         isVisible={uiState === "betting"}
         onConfirm={lobby.handleConfirmStake}
