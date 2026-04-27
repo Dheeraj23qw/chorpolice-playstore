@@ -47,7 +47,12 @@ const LobbyScreen = ({
     if (lobby.isHost && status === "denied" && !lobby.isLocalOnlyLobby) {
       lobby.handleContinueWithReadySeats();
     }
-  }, [lobby.isHost, status, lobby.isLocalOnlyLobby, lobby.handleContinueWithReadySeats]);
+  }, [
+    lobby.isHost,
+    status,
+    lobby.isLocalOnlyLobby,
+    lobby.handleContinueWithReadySeats,
+  ]);
 
   /* ---------------- SAFE NAVIGATION EFFECT ---------------- */
   useEffect(() => {
@@ -106,8 +111,12 @@ const LobbyScreen = ({
       className="flex-1 bg-black"
     >
       <LobbyBackdrop />
-      <LobbyHeader onBack={lobby.handleBack} />
-
+      <LobbyHeader
+        onBack={lobby.handleBack}
+        // Advanced features for the Player
+        onReportPress={() => router.push("/report-bug")}
+        rightIcon="help-buoy-outline"
+      />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 164 }}
@@ -173,6 +182,7 @@ const LobbyScreen = ({
       <ApIsolationModal
         visible={lobby.showApIsolation}
         onClose={() => lobby.setShowApIsolation(false)}
+        isHost={lobby.isHost}
       />
     </KeyboardAvoidingView>
   );

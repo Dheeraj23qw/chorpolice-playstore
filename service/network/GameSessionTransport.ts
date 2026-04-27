@@ -266,7 +266,7 @@ const tryListenOnPort = (port: number): Promise<void> => {
       cleanup();
       if (settled) return;
       settled = true;
-      const msg = error?.message || error?.code || "Unknown server error";
+      const msg = error?.message || error?.code || (typeof error === 'string' ? error : JSON.stringify(error)) || "Unknown server error";
       devWarn("Server", `Bind on port ${port} failed: ${msg}`);
       try {
         server.removeAllListeners();
@@ -282,7 +282,8 @@ const tryListenOnPort = (port: number): Promise<void> => {
     });
 
     // Wire up event handlers before listen
-    server.listen({ port, host: "0.0.0.0", reuseAddress: true }, () => {
+    // Removing 'host' and 'reuseAddress' as they can cause "Unknown server error" on Android.
+    server.listen({ port }, () => {
       cleanup();
       if (settled) return;
       settled = true;

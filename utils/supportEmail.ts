@@ -1,63 +1,74 @@
 import { Platform, Linking, Alert } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 
 const SUPPORT_EMAIL = "chorpolice.app@gmail.com";
 
-export async function sendSupportEmail(userMessage?: string) {
-  try {
-    // 📦 App Info
-    const appName = Constants.expoConfig?.name ?? "Chor Police";
-    const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+interface SupportEmailProps {
+  message: string;
+  title?: string;
+}
 
-    const buildNumber =
-      Platform.OS === "ios"
-        ? Constants.expoConfig?.ios?.buildNumber
-        : Constants.expoConfig?.android?.versionCode;
+/**
+ * Advanced Support Email Utility
+ * Handles dynamic subjects, system info gathering, and copy-to-clipboard fallback.
+ */
+export async function sendSupportEmail({ message, title }: SupportEmailProps) {
+  const appName = Constants.expoConfig?.name ?? "Chor Police";
+  const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+  const buildNumber =
+    Platform.OS === "ios"
+      ? Constants.expoConfig?.ios?.buildNumber
+      : Constants.expoConfig?.android?.versionCode;
 
-    const packageId =
-      Platform.OS === "ios"
-        ? Constants.expoConfig?.ios?.bundleIdentifier
-        : Constants.expoConfig?.android?.package;
+  // Use the specific bug title in the subject line for better sorting in your inbox
+  const subject = title ? `Bug: ${title}` : `${appName} Support Request`;
 
-    const currentDate = new Date().toLocaleString();
+  const structuredBody = `
+ISSUE TITLE: ${title || "General Support"}
 
-    const subject = `${appName} Support Request`;
+DESCRIPTION:
+${message.trim() || "No message provided."}
 
-    // 📝 Structured Email Body
-    const structuredBody = `
-${userMessage?.trim() || "Please describe your issue here..."}
-
-----------------------------------------
+-- System Info --
 App: ${appName}
-Version: ${appVersion}
-Build: ${buildNumber ?? "N/A"}
-Platform: ${Platform.OS}
-Package ID: ${packageId ?? "N/A"}
-Reported At: ${currentDate}
-----------------------------------------
+Version: ${appVersion} (${buildNumber ?? "N/A"})
+Platform: ${Platform.OS.toUpperCase()}
+Date: ${new Date().toLocaleString()}
 `.trim();
 
-    const mailUrl = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(structuredBody)}`;
+  const mailUrl = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(structuredBody)}`;
 
+  try {
     const supported = await Linking.canOpenURL(mailUrl);
 
-    if (!supported) {
-      Alert.alert(
-        "No Email App Found",
-        "Please configure a mail app on your device."
-      );
-      return;
+    if (supported) {
+      await Linking.openURL(mailUrl);
+    } else {
+      // Direct attempt fallback for Android devices that return false for canOpenURL
+      await Linking.openURL(mailUrl).catch(() => showCopyAlert());
     }
-
-    await Linking.openURL(mailUrl);
   } catch (error) {
-    console.error("Support Email Error:", error);
-
-    Alert.alert(
-      "Something went wrong",
-      "Unable to open email app. Please try again."
-    );
+    showCopyAlert();
   }
 }
+
+const showCopyAlert = () => {
+  Alert.alert(
+    "Mail App Not Found",
+    `We couldn't open your email app. Reach us at:\n${SUPPORT_EMAIL}`,
+    [
+      {
+        text: "Copy Email Address",
+        onPress: async () => {
+          await Clipboard.setStringAsync(SUPPORT_EMAIL);
+          Alert.alert(
+            "Copied",
+            "Support email has been copied to your clipboard.",
+          );
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ],
+  );
+};

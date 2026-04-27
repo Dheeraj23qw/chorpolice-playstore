@@ -4,9 +4,6 @@ import {
   Modal,
   TouchableOpacity,
   Pressable,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +21,12 @@ interface EntryModalProps {
   playerCount: number;
 }
 
-const TOKEN_OPTIONS = [500, 1000, 5000, 10000, 25000, 50000, 100000];
+// Simple sections with clear coin values
+const SECTIONS = [
+  { title: "Beginner", values: [10, 100, 250, 500, 1000] },
+  { title: "Expert", values: [2500, 5000, 7500, 10000, 25000] },
+  { title: "Grandmaster", values: [50000, 75000, 100000] },
+];
 
 export const EntryModal: React.FC<EntryModalProps> = ({
   isVisible,
@@ -32,40 +34,22 @@ export const EntryModal: React.FC<EntryModalProps> = ({
   onClose,
   playerCount,
 }) => {
-  const userTokens = useSelector((state: RootState) => state.wallet.coins);
-
-  const minPlayerTokens = useSelector(
-    (state: RootState) => state.game?.minPlayerCoins ?? userTokens,
+  const userCoins = useSelector((state: RootState) => state.wallet.coins);
+  const othersCoins = useSelector(
+    (state: RootState) => state.game?.minPlayerCoins ?? userCoins,
   );
 
-  const [selectedTokens, setSelectedTokens] = useState(TOKEN_OPTIONS[0]);
-  const [customAmount, setCustomAmount] = useState<string>("");
+  const [selected, setSelected] = useState(10);
 
   useEffect(() => {
-    if (isVisible) {
-      setSelectedTokens(TOKEN_OPTIONS[0]);
-      setCustomAmount("");
-    }
+    if (isVisible) setSelected(10);
   }, [isVisible]);
 
-  const safePlayerCount = playerCount > 0 ? playerCount : 1;
+  const players = playerCount > 0 ? playerCount : 1;
+  const totalPrize = useMemo(() => selected * players, [selected, players]);
 
-  const selectedAmount = useMemo(() => {
-    if (customAmount.trim().length > 0) {
-      return Number(customAmount);
-    }
-    return selectedTokens;
-  }, [customAmount, selectedTokens]);
-
-  const totalPoints = useMemo(
-    () => selectedAmount * safePlayerCount,
-    [selectedAmount, safePlayerCount],
-  );
-
-  const isDisabled =
-    !selectedAmount ||
-    selectedAmount > userTokens ||
-    selectedAmount > minPlayerTokens;
+  // Check if anyone in the room can't afford the selected amount
+  const isTooExpensive = selected > userCoins || selected > othersCoins;
 
   if (!isVisible) return null;
 
@@ -73,180 +57,106 @@ export const EntryModal: React.FC<EntryModalProps> = ({
     <Modal visible transparent animationType="fade">
       <Pressable
         onPress={onClose}
-        className="flex-1 items-center justify-center"
+        className="flex-1 items-center justify-center bg-black/70"
       >
-        {/* BACKDROP */}
-        <LinearGradient
-          colors={[
-            "rgba(5,5,10,0.85)",
-            "rgba(5,5,10,0.45)",
-            "rgba(5,5,10,0.15)",
-            "transparent",
-          ]}
-          locations={[0, 0.25, 0.5, 1]}
-          className="absolute h-full w-full"
-        />
-
-        {/* IMPORTANT: keyboard safe container */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          className="w-full items-center"
+        <MotiView
+          from={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-[90%] max-w-md overflow-hidden rounded-[30px] border border-white/10"
         >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ alignItems: "center" }}
-            className="w-full"
-          >
-            <Pressable onPress={() => {}} className="w-full items-center">
-              <MotiView
-                from={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", damping: 14 }}
-                className="w-[90%] max-w-sm overflow-hidden rounded-[32px]"
-              >
-                <BlurView intensity={70} tint="dark" className="p-6">
-                  <View className="absolute inset-0 rounded-[32px] border border-white/10" />
+          <BlurView intensity={90} tint="dark" className="p-6">
+            {/* TOP ICON & TITLE */}
+            <View className="mb-6 items-center">
+              <View className="mb-3 h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/20">
+                <Ionicons name="trophy" size={22} color="#818cf8" />
+              </View>
+              <Text className="font-main-bold text-lg text-white">
+                Entry Fee
+              </Text>
+              <Text className="text-xs text-white/40">
+                Select coins to play
+              </Text>
+            </View>
 
-                  {/* HEADER */}
-                  <View className="mb-6 items-center">
-                    <View className="mb-3 h-16 w-16 items-center justify-center rounded-2xl bg-yellow-500/20">
-                      <Ionicons name="logo-bitcoin" size={28} color="#facc15" />
-                    </View>
+            <ScrollView
+              className="max-h-[350px]"
+              showsVerticalScrollIndicator={false}
+            >
+              {SECTIONS.map((section) => (
+                <View key={section.title} className="mb-5">
+                  <Text className="mb-2 font-main-bold text-[10px] uppercase tracking-widest text-indigo-400">
+                    {section.title}
+                  </Text>
 
-                    <Text className="font-main-bold text-xl text-white">
-                      Entry Setup
-                    </Text>
-
-                    <Text className="mt-1 text-center text-sm text-white/40">
-                      Choose entry tokens for this session
-                    </Text>
-                  </View>
-
-                  {/* OPTIONS */}
-                  <View className="flex-row flex-wrap justify-between">
-                    {TOKEN_OPTIONS.map((tokens) => {
-                      const isSelected =
-                        !customAmount && selectedTokens === tokens;
-
-                      const canAfford =
-                        tokens <= userTokens && tokens <= minPlayerTokens;
+                  <View className="flex-row flex-wrap gap-2">
+                    {section.values.map((val) => {
+                      const isPicked = selected === val;
+                      const canPlay = val <= userCoins && val <= othersCoins;
 
                       return (
                         <TouchableOpacity
-                          key={tokens}
-                          onPress={() => {
-                            if (canAfford) {
-                              setSelectedTokens(tokens);
-                              setCustomAmount("");
-                            }
-                          }}
-                          className="mb-3 w-[47%]"
-                          activeOpacity={0.85}
+                          key={val}
+                          disabled={!canPlay}
+                          onPress={() => setSelected(val)}
+                          style={{ width: "31%" }}
+                          className={`items-center justify-center rounded-xl border py-3 ${
+                            isPicked
+                              ? "border-indigo-400 bg-indigo-500/30"
+                              : "border-white/10 bg-white/5"
+                          } ${!canPlay ? "opacity-10" : ""}`}
                         >
-                          <LinearGradient
-                            colors={
-                              isSelected
-                                ? ["#FACC1533", "#FACC1510"]
-                                : ["rgba(255,255,255,0.05)", "transparent"]
-                            }
-                            className={`items-center rounded-2xl border p-4 ${
-                              isSelected
-                                ? "border-yellow-400"
-                                : "border-white/10"
-                            } ${!canAfford ? "opacity-30" : ""}`}
+                          <Text
+                            className={`font-main-bold text-xs ${isPicked ? "text-indigo-400" : "text-white"}`}
                           >
-                            <Text
-                              className={`font-main-bold text-lg ${
-                                isSelected ? "text-yellow-400" : "text-white"
-                              }`}
-                            >
-                              {tokens} 🪙
-                            </Text>
-                          </LinearGradient>
+                            {val.toLocaleString()}
+                          </Text>
+                          <Text className="text-[8px] uppercase text-white/30">
+                            Coins
+                          </Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
+                </View>
+              ))}
+            </ScrollView>
 
-                  {/* CUSTOM INPUT */}
-                  <View className="mt-4">
-                    <Text className="mb-2 text-xs uppercase tracking-widest text-white/40">
-                      Or enter custom tokens
-                    </Text>
+            {/* PRIZE BOARD */}
+            <View className="mt-4 items-center rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
+              <Text className="font-main-bold text-[10px] uppercase text-green-400/60">
+                Total Winner Reward
+              </Text>
+              <Text className="font-main-bold text-2xl text-green-400">
+                {totalPrize.toLocaleString()}{" "}
+                <Text className="text-sm">Coins</Text>
+              </Text>
+            </View>
 
-                    <TextInput
-                      value={customAmount}
-                      onChangeText={(text) => {
-                        setCustomAmount(text.replace(/[^0-9]/g, ""));
-                        setSelectedTokens(0);
-                      }}
-                      placeholder="Enter amount"
-                      placeholderTextColor="#666"
-                      keyboardType="numeric"
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-white"
-                    />
-                  </View>
+            {/* START BUTTON */}
+            <TouchableOpacity
+              onPress={() => !isTooExpensive && onConfirm(selected)}
+              disabled={isTooExpensive}
+              className="mt-6 h-14 overflow-hidden rounded-2xl"
+            >
+              <LinearGradient
+                colors={
+                  isTooExpensive ? ["#222", "#111"] : ["#6366F1", "#4F46E5"]
+                }
+                className="flex-1 items-center justify-center"
+              >
+                <Text
+                  className={`font-main-bold text-sm ${isTooExpensive ? "text-white/20" : "text-white"}`}
+                >
+                  {isTooExpensive ? "Not Enough Coins" : "Start Game"}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
 
-                  {/* TOTAL */}
-                  <MotiView
-                    animate={{ scale: 1.05 }}
-                    transition={{
-                      loop: true,
-                      type: "timing",
-                      duration: 1200,
-                    }}
-                    className="my-6 overflow-hidden rounded-2xl"
-                  >
-                    <LinearGradient
-                      colors={["#10B98133", "#10B98110"]}
-                      className="items-center border border-green-400/20 py-5"
-                    >
-                      <Text className="text-xs uppercase tracking-widest text-white/40">
-                        Total Points
-                      </Text>
-
-                      <Text className="mt-1 font-main-bold text-3xl text-green-400">
-                        {totalPoints || 0} 🪙
-                      </Text>
-                    </LinearGradient>
-                  </MotiView>
-
-                  {/* CTA */}
-                  <TouchableOpacity
-                    onPress={() => !isDisabled && onConfirm(selectedAmount)}
-                    disabled={isDisabled}
-                    className="overflow-hidden rounded-2xl"
-                  >
-                    <LinearGradient
-                      colors={
-                        isDisabled ? ["#333", "#222"] : ["#6366F1", "#8B5CF6"]
-                      }
-                      className="items-center py-4"
-                    >
-                      <Text
-                        className={`font-main-bold ${
-                          isDisabled ? "text-white/30" : "text-white"
-                        }`}
-                      >
-                        {isDisabled
-                          ? "Not available for all players"
-                          : "Start Session"}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-
-                  {/* CANCEL */}
-                  <TouchableOpacity
-                    onPress={onClose}
-                    className="mt-4 items-center"
-                  >
-                    <Text className="text-sm text-white/30">Cancel</Text>
-                  </TouchableOpacity>
-                </BlurView>
-              </MotiView>
-            </Pressable>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            <TouchableOpacity onPress={onClose} className="mt-4 items-center">
+              <Text className="text-xs text-white/20">Cancel</Text>
+            </TouchableOpacity>
+          </BlurView>
+        </MotiView>
       </Pressable>
     </Modal>
   );

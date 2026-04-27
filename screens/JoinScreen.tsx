@@ -163,12 +163,15 @@ const JoinScreen = () => {
       className="flex-1 bg-black"
     >
       <LobbyBackdrop />
-
       <LobbyHeader
+        // Handle Leaving Logic
         onBack={async () => {
           await leaveLanLobby();
           router.back();
         }}
+        // Bug Reporting (The "isDanger" icon)
+        onReportPress={() => router.push("/report-bug")}
+        // Help Documentation
         rightIcon="help-buoy-outline"
         onRightPress={() => setShowHelp(true)}
       />
