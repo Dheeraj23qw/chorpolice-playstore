@@ -64,13 +64,21 @@ const BoardWithPopups = ({ g }: any) => {
           }
           toggleModal={g.toggleModal}
           round={g.round}
-          message={
-            g.gamePhase === "result"
-              ? "Round Complete!"
-              : g.canInteract
-                ? "Tap a card to find the Thief 🔍"
-                : "Watching..."
-          }
+          message={(() => {
+            if (g.gamePhase === "result") return "Round Complete!";
+            if (g.gamePhase === "police_turn") {
+              const policeName = g.playerNames[g.policeIndex] || "Police";
+              const unflippedNames = g.playerNames.filter((_, idx) => !g.flippedStates[idx]);
+              const suspects = unflippedNames.join(" & ");
+              
+              if (g.canInteract) {
+                return `Find the Thief: ${suspects}`;
+              } else {
+                return `${policeName} is finding the Thief...`;
+              }
+            }
+            return g.canInteract ? "Tap a card to find the Thief 🔍" : "Watching...";
+          })()}
           getCardStyle={g.getCardStyle}
           showTableButton={g.showTableButton}
         />

@@ -61,45 +61,15 @@ const PlayerCard = memo(function PlayerCard({
     // Show 'SELECTED' if clicked but not yet flipped
     if (clicked && !flipped) {
       return (
-        <View className="absolute right-3 top-3 rounded-full border border-yellow-400/50 bg-yellow-500/20 px-3 py-1 shadow-lg">
+        <View className="absolute right-3 top-3 rounded-full border border-yellow-400/50 bg-yellow-500/20 px-3 py-1 shadow-lg z-20">
           <Text className="font-main-bold text-[10px] uppercase tracking-wider text-yellow-300">
             Selected
           </Text>
         </View>
       );
     }
-
-    // Show Correct/Wrong only after it flips and if it was clicked
-    if (!clicked || !flipped) return null;
-
-    return (
-      <View
-        className={`absolute right-3 top-3 flex-row items-center gap-1 rounded-full border px-2 py-1 ${
-          isCorrect
-            ? "border-green-400/40 bg-green-500/20"
-            : "border-red-400/40 bg-red-500/20"
-        }`}
-        style={{
-          shadowColor: isCorrect ? "#22c55e" : "#ef4444",
-          shadowOpacity: 0.6,
-          shadowRadius: 8,
-          elevation: 6,
-        }}
-      >
-        <Ionicons
-          name={isCorrect ? "checkmark-circle" : "close-circle"}
-          size={14}
-          color={isCorrect ? "#22c55e" : "#ef4444"}
-        />
-        <Text
-          className={`font-main-bold text-[10px] uppercase tracking-wider ${
-            isCorrect ? "text-green-300" : "text-red-300"
-          }`}
-        >
-          {isCorrect ? "Correct" : "Wrong"}
-        </Text>
-      </View>
-    );
+    
+    return null;
   };
 
   const renderContent = () => {
@@ -117,13 +87,22 @@ const PlayerCard = memo(function PlayerCard({
             </View>
           </View>
 
+          {/* Full Card Result Overlay */}
+          {clicked && (
+            <View 
+              className={`absolute inset-0 z-0 rounded-[26px] border-4 ${
+                isCorrect ? "bg-green-500/20 border-green-500/60" : "bg-red-500/20 border-red-500/60"
+              }`} 
+            />
+          )}
+
           <Image
             source={roleImages[role]}
-            className="h-full w-full"
+            className="h-full w-full z-10"
             resizeMode="contain"
           />
 
-          <View className="absolute bottom-3 rounded-full border border-indigo-400/40 bg-indigo-950/90 px-4 py-1.5 shadow-lg">
+          <View className="absolute bottom-3 rounded-full border border-indigo-400/40 bg-indigo-950/90 px-4 py-1.5 shadow-lg z-10">
             <Text className="font-main-bold text-[11px] uppercase tracking-[2px] text-indigo-100">
               {role}
             </Text>
