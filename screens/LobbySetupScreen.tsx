@@ -26,6 +26,9 @@ import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import { EntryModal } from "@/modal/EntryModal";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 import { PermissionGuardian } from "@/components/PermissionGuardian";
+import { checkAppUpdate } from "@/utils/versionCheck";
+import { UpdateAppModal } from "@/modal/UpdateAppModal";
+import { getDismissedUpdateVersion, setDismissedUpdateVersion } from "@/storage/appStorage";
 
 type UIState = "normal" | "betting" | "share" | "apIsolation" | "help" | "permissions";
 
@@ -54,6 +57,10 @@ const LobbySetupScreen = ({
   const [uiState, setUiState] = useState<UIState>("normal");
   const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
+  
+  // App Update State
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState({ url: "", version: "" });
 
   const isBlockingUI = uiState !== "normal";
 
@@ -105,13 +112,25 @@ const LobbySetupScreen = ({
     toast.success("Room Code Copied", lobby.roomCode);
   }, [lobby.roomCode]);
 
-  const handleOpenInvite = useCallback(() => {
+  const handleOpenInvite = useCallback(async () => {
+    // 🚀 NEW: Check for app update first if host
+    if (lobby.isHost) {
+      const update = await checkAppUpdate();
+      const dismissedVersion = getDismissedUpdateVersion();
+
+      if (update.isAvailable && update.latestVersion !== dismissedVersion) {
+        setUpdateInfo({ url: update.updateUrl, version: update.latestVersion });
+        setShowUpdateModal(true);
+        return;
+      }
+    }
+
     if (status !== "granted") {
       setUiState("permissions");
     } else {
       setUiState("share");
     }
-  }, [status]);
+  }, [status, lobby.isHost]);
 
   return (
     <View className="flex-1 bg-black">
@@ -301,6 +320,17 @@ const LobbySetupScreen = ({
       <MultiplayerHelpModal
         visible={uiState === "help"}
         onClose={() => setUiState("normal")}
+      />
+
+      <UpdateAppModal
+        isVisible={showUpdateModal}
+        onClose={() => {
+          // If the user manually closes/skips, respect it for this version
+          setDismissedUpdateVersion(updateInfo.version);
+          setShowUpdateModal(false);
+        }}
+        updateUrl={updateInfo.url}
+        latestVersion={updateInfo.version}
       />
 
       <AnimatePresence>

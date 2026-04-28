@@ -16,3 +16,12 @@ export const getPermissionReminderSuppressed = () =>
 export const setPermissionReminderSuppressed = (value: boolean) => {
   storage.set(PERMISSION_REMINDER_SUPPRESSED, value);
 };
+
+const DISMISSED_UPDATE_VERSION = "dismissed_update_version";
+
+export const getDismissedUpdateVersion = () =>
+  storage.getString(DISMISSED_UPDATE_VERSION);
+
+export const setDismissedUpdateVersion = (version: string) => {
+  storage.set(DISMISSED_UPDATE_VERSION, version);
+};
