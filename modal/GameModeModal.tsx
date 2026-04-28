@@ -66,13 +66,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
 
   const handleSelection = async (mode: "host" | "join") => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    if (mode === "host" && state !== "granted" && !getPermissionReminderSuppressed()) {
-      setPendingMode(mode);
-      setShowReminder(true);
-      return;
-    }
-
     proceedWithSelection(mode);
   };
 

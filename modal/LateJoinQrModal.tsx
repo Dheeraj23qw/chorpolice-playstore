@@ -48,11 +48,17 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
               /* ─── HOST: SHOW QR ─── */
               <View className="items-center">
                 <View className="rounded-[40px] bg-white p-6 shadow-2xl shadow-black/70">
-                  <QRCode value={qrPayload} size={270} />
+                  {qrPayload ? (
+                    <QRCode value={qrPayload} size={270} />
+                  ) : (
+                    <View style={{ width: 270, height: 270 }} className="items-center justify-center">
+                      <Text className="text-black font-main-bold">GENERATING...</Text>
+                    </View>
+                  )}
                 </View>
 
                 <Text className="mt-6 text-center text-sm text-white/70">
-                  Host: Share this with your friends
+                  {qrPayload ? "Share this with your friends" : "Setting up your room code..."}
                 </Text>
               </View>
             ) : (

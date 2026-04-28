@@ -12,7 +12,7 @@ export default function HostRoute() {
           gestureEnabled: false,
         }}
       />
-      <LobbySetupScreen forcedMode="host" requireLanReady />
+      <LobbySetupScreen forcedMode="host" requireLanReady={false} />
     </>
   );
 }

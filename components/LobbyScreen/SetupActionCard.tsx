@@ -39,7 +39,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
     return "Ready to play";
   };
 
-  const canShare = !!lobby.qrPayload && !lobby.isLocalOnlyLobby;
+  const canShare = lobby.isHost;
 
   return (
     <MotiView

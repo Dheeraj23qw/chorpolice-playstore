@@ -127,6 +127,10 @@ const LobbySetupScreen = ({
 
     if (status !== "granted") {
       setUiState("permissions");
+    } else if (!lobby.qrPayload) {
+      // If we have permissions but no QR yet, try to bootstrap the host again
+      lobby.handleRetryHosting();
+      setUiState("share");
     } else {
       setUiState("share");
     }
@@ -344,6 +348,7 @@ const LobbySetupScreen = ({
              <PermissionGuardian 
                 onAllGranted={() => {
                   setAllPermissionsGranted(true);
+                  lobby.handleRetryHosting(); // 🚀 Re-trigger hosting now that we have permissions
                   setUiState("share");
                 }} 
                 onSkip={() => {
