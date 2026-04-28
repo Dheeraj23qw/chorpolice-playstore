@@ -23,8 +23,11 @@ export const flipCard = (
   _setRound: Dispatch<SetStateAction<number>>,
   _resetForNextRound: () => void,
   _dispatch: AppDispatch,
+  silent: boolean = false,
 ) => {
-  AudioEngine.play("spin", "gameplay");
+  if (!silent) {
+    AudioEngine.play("spin", "gameplay");
+  }
 
   Animated.timing(flipAnims[index], {
     toValue,

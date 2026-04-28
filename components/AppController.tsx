@@ -6,11 +6,11 @@ import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { setAppPhase } from "@/redux/reducers/appFlowReducer";
 import { enqueueModal } from "@/redux/reducers/modalQueueReducer";
 import { loadSounds } from "@/redux/reducers/soundReducer";
-import LoadingScreen from "@/screens/appFlow/LoadingScreen";
 import HomeScreen from "@/screens/appFlow/HomeScreen";
 import OnboardingScreen from "@/screens/appFlow/OnboardingScreen";
 import SplashPhaseScreen from "@/screens/appFlow/SplashPhaseScreen";
 import VideoScreen from "@/screens/appFlow/VideoScreen";
+import { PremiumSplashCard } from "@/components/PremiumSplashCard";
 import { assetLoader } from "@/service/assetLoader";
 import { syncLocalLobbyProfile } from "@/service/lanLobbyCoordinator";
 import { getOnboardingDone, setOnboardingDone } from "@/storage/appStorage";
@@ -141,13 +141,16 @@ export default function AppController() {
     case "ONBOARDING":
       return wrapPhase("onboarding", <OnboardingScreen onComplete={handleOnboardingComplete} />);
     case "LOADING":
-      return wrapPhase("loading", <LoadingScreen />);
+      return wrapPhase("loading", <SplashPhaseScreen />);
     case "VIDEO":
       return wrapPhase("video", <VideoScreen onComplete={handleVideoComplete} />);
     case "HOME":
       return wrapPhase("home", <HomeScreen />);
     case "SPLASH":
     default:
-      return wrapPhase("splash", <SplashPhaseScreen />);
+      return wrapPhase(
+        "splash",
+        <PremiumSplashCard source={require("@/assets/modalImages/intro.webp")} />,
+      );
   }
 }

@@ -150,7 +150,7 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
                 }`}
                 style={styles.textShadow}
               >
-                {isCorrect ? "PAKDA GAYA" : "BACH GAYA"}
+                {isCorrect ? " CHOR PAKDA GAYA" : "CHOR BACH GAYA"}
               </Text>
             </MotiView>
           </View>

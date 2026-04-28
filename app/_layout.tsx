@@ -5,21 +5,20 @@ import { SplashScreen, Stack, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { AppState, View, Image } from "react-native";
+import { AppState, View, StyleSheet } from "react-native";
 
 import store, { RootState } from "@/redux/store";
 import { useSystemUI } from "@/hooks/useSystemUI";
 import { AudioEngine } from "@/audio/audioEngine";
 import ScreenWrapper from "@/Animations/ScreenWrapper";
 import { ToastProvider } from "@/components/feedback/ToastProvider";
-import { runAfterUI } from "@/utils/runAfterUI";
 import AppExitModal from "@/modal/AppExitModal";
 import { useAppExit } from "@/hooks/useAppExit";
 import ModalRoot from "@/components/ModalRoot";
 import NotificationController from "@/components/NotificationController";
 
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
-import { Text } from "@/components/Text";
+import { PremiumSplashCard } from "@/components/PremiumSplashCard";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -46,15 +45,14 @@ function AppLayout() {
   }, [appPhase, isSoundLoaded]);
 
   const screenLayout = useCallback(
-    ({ children }: { children: React.ReactNode }) => (
+    ({ children }: { children: React.ReactNode }) =>
       pathname === "/" ? (
         <>{children}</>
       ) : (
         <ScreenWrapper variant="default" breathing>
           {children}
         </ScreenWrapper>
-      )
-    ),
+      ),
     [pathname],
   );
 
@@ -104,21 +102,11 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) {
     return (
-      <View className="flex-1 bg-black">
-        <Image
+      <View className="flex-1 bg-black" onLayout={onLayoutRootView}>
+        <StatusBar hidden />
+        <PremiumSplashCard
           source={require("../assets/modalImages/intro.webp")}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
         />
-        {/* Overlay Branding */}
-        <View className="absolute inset-0 items-center justify-center bg-black/20">
-          <Text className="font-main-bold text-5xl tracking-tight text-white text-center">
-            Chor Police
-          </Text>
-          <Text className="mt-3 text-sm uppercase tracking-[4px] text-white/60">
-            Loading
-          </Text>
-        </View>
       </View>
     );
   }

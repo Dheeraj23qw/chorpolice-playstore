@@ -1142,6 +1142,7 @@ export const useChorPoliceMultiplayer = () => {
           () => {},
           () => {},
           dispatch,
+          true, // 🔇 silent after first two cards
         );
         setClickedCards((prev) => {
           const n = [...prev];

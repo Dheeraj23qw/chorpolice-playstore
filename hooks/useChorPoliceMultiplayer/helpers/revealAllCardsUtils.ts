@@ -35,6 +35,7 @@ export const revealAllCards = (
           setRound,
           resetForNextRound,
           dispatch,
+          true, // 🔇 silent after first two cards
         );
       }
     });
