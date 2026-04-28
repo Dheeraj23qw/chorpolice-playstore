@@ -35,7 +35,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     userInterfaceStyle: "dark",
     allowBackup: false,
     softwareKeyboardLayoutMode: "pan",
-    googleServicesFile: "./google-services.json",
+    versionCode: 100,
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
     permissions: [
       "android.permission.INTERNET",
       "android.permission.ACCESS_NETWORK_STATE",

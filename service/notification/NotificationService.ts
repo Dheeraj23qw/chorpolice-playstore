@@ -42,10 +42,7 @@ class NotificationService {
   }
 
   private canRequestPermissions() {
-    return (
-      Platform.OS !== "web" &&
-      (Device.isDevice || !runtimeConfig.isProduction)
-    );
+    return Platform.OS !== "web";
   }
 
   private extractRoute(data?: AppNotificationData): AppRoute | null {
@@ -186,14 +183,9 @@ class NotificationService {
 
   async ensureChannelsExist(): Promise<void> {
     if (Platform.OS !== "android") return;
-    const channels = await Notifications.getNotificationChannelsAsync();
-    const hasDefault = channels.some((c) => c.id === "default");
-    const hasAlerts = channels.some((c) => c.id === "alerts");
-
-    if (!hasDefault || !hasAlerts) {
-      console.log("[Notifications] Missing channels, re-configuring...");
-      await this.configureChannels();
-    }
+    
+    // Always re-configure to ensure settings like importance and sound are applied
+    await this.configureChannels();
   }
 
   async schedule(params: {
