@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, PermissionsAndroid, Linking } from "react-native";
+import { Platform, PermissionsAndroid, Linking, AppState, AppStateStatus } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 
 import {
@@ -84,7 +84,7 @@ export const useNetworkPermissions = (
   const activeRunIdRef = useRef(0);
   const inFlightRunRef = useRef<Promise<void> | null>(null);
 
-  const runFlow = useCallback(async () => {
+  const runFlow = useCallback(async (silent = false) => {
     if (inFlightRunRef.current) {
       logPermissionDebug(
         "NetworkPermissions",
@@ -128,9 +128,11 @@ export const useNetworkPermissions = (
         return;
       }
 
-      setStep("idle");
-      setStatus("pending");
-      setErrorMessage(null);
+      if (!silent) {
+        setStep("idle");
+        setStatus("pending");
+        setErrorMessage(null);
+      }
 
       try {
         setStep("checking_wifi");
@@ -425,6 +427,20 @@ export const useNetworkPermissions = (
 
     return unsubscribe;
   }, [enabled, requireWifiIpAddress]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        logPermissionDebug("NetworkPermissions", "App became active, retrying flow (silent)");
+        void runFlow(true);
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, [enabled, runFlow]);
 
   return {
     step,

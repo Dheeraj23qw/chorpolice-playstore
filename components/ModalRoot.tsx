@@ -4,6 +4,7 @@ import { createModalRegistry } from "@/components/modals/registry";
 import { claimFirstLaunchBonus } from "@/features/wallet/walletSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { dismissActiveModal } from "@/redux/reducers/modalQueueReducer";
+import { router } from "expo-router";
 
 export default function ModalRoot() {
   const dispatch = useAppDispatch();
@@ -16,6 +17,7 @@ export default function ModalRoot() {
   const handleBonusClaim = useCallback(() => {
     dispatch(claimFirstLaunchBonus());
     dispatch(dismissActiveModal());
+    router.push("/earn");
   }, [dispatch]);
 
   const modalRegistry = useMemo(

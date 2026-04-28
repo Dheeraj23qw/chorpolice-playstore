@@ -74,7 +74,7 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
             {/* COIN BOX */}
             <View className="my-8 w-full items-center rounded-[30px] border border-white/10 bg-white/5 py-6">
               <Text className="font-main-bold text-6xl text-yellow-400">
-                100000
+                25000
               </Text>
               <Text className="mt-1 font-main-bold text-sm tracking-[6px] text-white/70">
                 COINS

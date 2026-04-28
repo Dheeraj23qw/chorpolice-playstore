@@ -18,6 +18,9 @@ import { rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 import WifiHint from "@/components/WifiHint";
 import { openModalUI, closeModalUI } from "@/redux/reducers/uiStateSlice";
+import { usePermissionGuard } from "@/hooks/usePermissionGuard";
+import { PermissionReminderModal } from "./PermissionReminderModal";
+import { getPermissionReminderSuppressed } from "@/storage/appStorage";
 
 interface GameModeModalProps {
   isVisible: boolean;
@@ -33,6 +36,9 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
+  const { state, openSettings, checkAllPermissions } = usePermissionGuard();
+  const [showReminder, setShowReminder] = React.useState(false);
+  const [pendingMode, setPendingMode] = React.useState<"host" | "join" | null>(null);
 
   // ✅ Responsive glow size
   const glowSize = Math.min(width * 1.2, 500);
@@ -61,6 +67,16 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
   const handleSelection = async (mode: "host" | "join") => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    if (mode === "host" && state !== "granted" && !getPermissionReminderSuppressed()) {
+      setPendingMode(mode);
+      setShowReminder(true);
+      return;
+    }
+
+    proceedWithSelection(mode);
+  };
+
+  const proceedWithSelection = (mode: "host" | "join") => {
     router.push({
       pathname: mode === "host" ? "/host" : "/join",
       params: { gameType },
@@ -233,6 +249,23 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
           </Pressable>
         </View>
       </Pressable>
+
+      <PermissionReminderModal
+        isVisible={showReminder}
+        onClose={() => setShowReminder(false)}
+        onGrant={() => {
+          setShowReminder(false);
+          if (state === "blocked") {
+            openSettings();
+          } else {
+            checkAllPermissions();
+          }
+        }}
+        onContinue={() => {
+          setShowReminder(false);
+          if (pendingMode) proceedWithSelection(pendingMode);
+        }}
+      />
     </Modal>
   );
 };

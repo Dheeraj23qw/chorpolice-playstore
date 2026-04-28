@@ -28,7 +28,7 @@ const walletSlice = createSlice({
     },
 
     claimFirstLaunchBonus: (state) => {
-      state.coins += 100000;
+      state.coins += 25000;
       state.firstLaunch = false;
     },
 

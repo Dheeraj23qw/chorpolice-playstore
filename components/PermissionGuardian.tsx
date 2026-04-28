@@ -23,19 +23,24 @@ const PERMISSION_INFO: Record<string, { icon: string; desc: string }> = {
   Notifications: {
     icon: "bell-outline",
     desc: "Keeps you updated on game results and invitations from your friends.",
+    optional: true,
   },
 };
 
 export const PermissionGuardian: React.FC<Props> = ({ 
   onAllGranted,
   title = "Permissions Required",
-  description = "Chor Police needs the following permissions to provide the best multiplayer experience."
+  description = "Chor Police needs a few permissions to get started. Only Location and Camera are mandatory for multiplayer."
 }) => {
-  const { state, missingPermissions, checkAllPermissions, openSettings } = usePermissionGuard();
+  const { state, missingPermissions, attemptCount, checkAllPermissions, openSettings } = usePermissionGuard();
+
+  React.useEffect(() => {
+    if (state === "granted") {
+      onAllGranted();
+    }
+  }, [state, onAllGranted]);
 
   if (state === "granted") {
-    // Automatically trigger callback if granted
-    setTimeout(onAllGranted, 0);
     return null;
   }
 
@@ -69,7 +74,14 @@ export const PermissionGuardian: React.FC<Props> = ({
                 />
               </View>
               <View className="flex-1">
-                <Text className="font-main-bold text-white text-base">{perm}</Text>
+                <View className="flex-row items-center">
+                  <Text className="font-main-bold text-white text-base">{perm}</Text>
+                  {PERMISSION_INFO[perm]?.optional && (
+                    <View className="ml-2 bg-white/10 px-2 py-0.5 rounded-md">
+                      <Text className="text-[8px] text-white/40 uppercase font-main-bold tracking-tighter">Recommended</Text>
+                    </View>
+                  )}
+                </View>
                 <Text className="font-main-md text-white/40 text-xs mt-0.5">
                   {PERMISSION_INFO[perm]?.desc}
                 </Text>
@@ -91,6 +103,17 @@ export const PermissionGuardian: React.FC<Props> = ({
           <Text className="text-red-400 text-[10px] font-main-md text-center mt-4">
             You've permanently denied some permissions. You must enable them manually in settings.
           </Text>
+        )}
+        
+        {attemptCount >= 2 && (
+          <TouchableOpacity
+            onPress={onAllGranted}
+            className="mt-6 self-center"
+          >
+            <Text className="font-main-bold text-indigo-400 text-xs uppercase tracking-[3px] border-b border-indigo-400/30 pb-1">
+              Skip for Now & Play
+            </Text>
+          </TouchableOpacity>
         )}
       </MotiView>
     </View>
