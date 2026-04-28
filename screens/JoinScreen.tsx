@@ -185,39 +185,35 @@ const JoinScreen = () => {
         {/* STEPS */}
         <JoinStepsCard />
 
-        {/* PERMISSION / CONTENT */}
-        {!canAttemptJoin ? (
-          <PermissionCard
-            message={errorMessage || "Enable permissions to continue"}
-            primaryLabel={permissionPrimaryLabel}
-            onPrimary={permissionPrimaryAction}
-          />
-        ) : (
-          <>
-            {/* TOGGLE */}
-            <JoinMethodToggle
-              joinMethod={joinMethod}
-              setJoinMethod={setJoinMethod}
-            />
+        {/* CONTENT AREA */}
+        <JoinMethodToggle
+          joinMethod={joinMethod}
+          setJoinMethod={setJoinMethod}
+        />
 
-            {/* CONTENT */}
-            {joinMethod === "scan" ? (
-              <JoinQRSection
-                session={session}
-                onScan={(payload: any) => {
-                  if (!payload.ip) return;
-                  handleConnectToIp(payload.ip, payload.port);
-                }}
-              />
-            ) : (
-              <JoinCodeSection
-                roomCode={roomCode}
-                setRoomCode={setRoomCode}
-                onSubmit={handleRoomCodeConnect}
-                isConnecting={isConnecting}
-              />
-            )}
-          </>
+        {joinMethod === "scan" ? (
+          !canAttemptJoin ? (
+            <PermissionCard
+              message={errorMessage || "Camera permission is required to scan QR codes."}
+              primaryLabel={permissionPrimaryLabel}
+              onPrimary={permissionPrimaryAction}
+            />
+          ) : (
+            <JoinQRSection
+              session={session}
+              onScan={(payload: any) => {
+                if (!payload.ip) return;
+                handleConnectToIp(payload.ip, payload.port);
+              }}
+            />
+          )
+        ) : (
+          <JoinCodeSection
+            roomCode={roomCode}
+            setRoomCode={setRoomCode}
+            onSubmit={handleRoomCodeConnect}
+            isConnecting={isConnecting}
+          />
         )}
       </View>
 

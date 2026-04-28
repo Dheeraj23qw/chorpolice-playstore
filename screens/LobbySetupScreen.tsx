@@ -27,7 +27,7 @@ import { EntryModal } from "@/modal/EntryModal";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 import { PermissionGuardian } from "@/components/PermissionGuardian";
 
-type UIState = "normal" | "betting" | "share" | "apIsolation" | "help";
+type UIState = "normal" | "betting" | "share" | "apIsolation" | "help" | "permissions";
 
 const LobbySetupScreen = ({
   forcedMode,
@@ -53,19 +53,9 @@ const LobbySetupScreen = ({
 
   const [uiState, setUiState] = useState<UIState>("normal");
   const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);
-  
-  const isBlockingUI = uiState !== "normal";
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
 
-  if (!allPermissionsGranted) {
-    return (
-      <PermissionGuardian 
-        onAllGranted={() => setAllPermissionsGranted(true)} 
-        title="Game Setup"
-        description="We need a few permissions to get your multiplayer session started."
-      />
-    );
-  }
+  const isBlockingUI = uiState !== "normal";
 
   useEffect(() => {
     if (lobby.isBettingModalVisible) setUiState("betting");
@@ -114,6 +104,14 @@ const LobbySetupScreen = ({
     await Clipboard.setStringAsync(lobby.roomCode);
     toast.success("Room Code Copied", lobby.roomCode);
   }, [lobby.roomCode]);
+
+  const handleOpenInvite = useCallback(() => {
+    if (status !== "granted") {
+      setUiState("permissions");
+    } else {
+      setUiState("share");
+    }
+  }, [status]);
 
   return (
     <View className="flex-1 bg-black">
@@ -245,7 +243,7 @@ const LobbySetupScreen = ({
                 <View className="pb-6 pt-2">
                   <SetupActionCard
                     lobby={lobby}
-                    onOpenShare={() => setUiState("share")}
+                    onOpenShare={handleOpenInvite}
                   />
                 </View>
               )}
@@ -304,6 +302,30 @@ const LobbySetupScreen = ({
         visible={uiState === "help"}
         onClose={() => setUiState("normal")}
       />
+
+      <AnimatePresence>
+        {uiState === "permissions" && (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[100]"
+          >
+             <PermissionGuardian 
+                onAllGranted={() => {
+                  setAllPermissionsGranted(true);
+                  setUiState("share");
+                }} 
+                onSkip={() => {
+                  setAllPermissionsGranted(true);
+                  setUiState("share");
+                }}
+                title="Invite Friends"
+                description="We need Location permissions to generate a room code and help your friends find you."
+              />
+          </MotiView>
+        )}
+      </AnimatePresence>
     </View>
   );
 };

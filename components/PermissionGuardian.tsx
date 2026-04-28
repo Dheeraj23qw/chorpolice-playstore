@@ -7,6 +7,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface Props {
   onAllGranted: () => void;
+  onSkip?: () => void;
   title?: string;
   description?: string;
 }
@@ -29,6 +30,7 @@ const PERMISSION_INFO: Record<string, { icon: string; desc: string }> = {
 
 export const PermissionGuardian: React.FC<Props> = ({ 
   onAllGranted,
+  onSkip,
   title = "Permissions Required",
   description = "Chor Police needs a few permissions to get started. Only Location and Camera are mandatory for multiplayer."
 }) => {
@@ -107,7 +109,7 @@ export const PermissionGuardian: React.FC<Props> = ({
         
         {attemptCount >= 2 && (
           <TouchableOpacity
-            onPress={onAllGranted}
+            onPress={onSkip || onAllGranted}
             className="mt-6 self-center"
           >
             <Text className="font-main-bold text-indigo-400 text-xs uppercase tracking-[3px] border-b border-indigo-400/30 pb-1">

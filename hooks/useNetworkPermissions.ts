@@ -432,7 +432,7 @@ export const useNetworkPermissions = (
     if (!enabled) return;
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active") {
+      if (nextAppState === "active" && status !== "granted") {
         logPermissionDebug("NetworkPermissions", "App became active, retrying flow (silent)");
         void runFlow(true);
       }

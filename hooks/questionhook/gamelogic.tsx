@@ -488,17 +488,16 @@ export const useQuizGameLogic = () => {
   }, [applyQuestionSync, getTimeLimitMs, isHost, isMultiplayer, question]);
 
   useEffect(() => {
-    // BOT-5 FIX: use ref guard to prevent double-deduct if hook remounts
+    // BOT-5 FIX: use ref guard to prevent double-deduct
     if (!isMultiplayer || stakeDeductedRef.current) return;
+    
     const stake = QuizEngine.state.stake;
-    if (stake > 0 && questionIndex === 0) {
+    if (stake > 0) {
       stakeDeductedRef.current = true;
-      QuizEngine.state.stake = 0; // zero out so a re-mount can't re-deduct
       dispatch(updateCoins(-stake));
       toast.info("Coins Deducted", `You paid ${stake} coins to join the game.`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isMultiplayer, dispatch]);
 
   const handleAnswerSelection = useCallback(
     (answer: string) => {

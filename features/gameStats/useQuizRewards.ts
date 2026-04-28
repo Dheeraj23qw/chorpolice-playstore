@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { addQuizEntry } from "@/features/gameStats/gameStatsSlice";
 import { updateCoins } from "@/features/wallet/walletSlice";
+import { toast } from "@/components/feedback/toast";
 
 export function useQuizReward() {
   const dispatch: AppDispatch = useDispatch();
@@ -15,7 +16,6 @@ export function useQuizReward() {
   const rewardData = useMemo(() => {
     if (!level || totalQuestions === 0) return { totalReward: 0, accuracy: 0 };
 
-    // ✅ FIX: proper percentage
     const accuracy = (correctQuestions / totalQuestions) * 100;
 
     const maxRewardTable = {
@@ -28,7 +28,6 @@ export function useQuizReward() {
 
     let totalReward: number;
 
-    // ❌ FIXED CONDITION (0–100 scale)
     if (accuracy < 50) {
       totalReward = Math.floor(baseReward * -0.5);
     } else {
@@ -45,7 +44,15 @@ export function useQuizReward() {
 
     const { totalReward, accuracy } = rewardData;
 
-    dispatch(updateCoins(totalReward));
+    if (totalReward !== 0) {
+      dispatch(updateCoins(totalReward));
+      
+      if (totalReward > 0) {
+        toast.success("Coins Earned!", `You earned ${totalReward} coins for ${Math.round(accuracy)}% accuracy.`);
+      } else {
+        toast.warning("Low Accuracy", `Deducted ${Math.abs(totalReward)} coins. Practice more to earn rewards!`);
+      }
+    }
 
     dispatch(
       addQuizEntry({

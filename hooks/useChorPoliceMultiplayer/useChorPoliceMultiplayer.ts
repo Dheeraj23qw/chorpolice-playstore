@@ -1317,6 +1317,10 @@ export const useChorPoliceMultiplayer = () => {
         });
         shouldFlushNetwork = true;
       } else {
+        const stake = getActiveStake();
+        if (stake > 0) {
+          toast.warning("Stake Lost", `Your ${stake} coins are lost because you left the game.`, 4000);
+        }
         sendPacketToHost({
           type: NETWORK.PLAYER_LEAVE,
           playerId: localPlayerId,

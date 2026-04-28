@@ -24,7 +24,7 @@ interface ToastState {
 
 type ToastListener = (state: ToastState) => void;
 
-const DEFAULT_TOAST_DURATION_MS = 3200;
+const DEFAULT_TOAST_DURATION_MS = 3000;
 const INITIAL_STATE: ToastState = {
   activeToast: null,
   queue: [],

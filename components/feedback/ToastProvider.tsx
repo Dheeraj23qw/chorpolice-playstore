@@ -108,8 +108,6 @@ export const ToastProvider = () => {
     }
 
     dismissingId.current = null;
-    translateY.setValue(-120);
-    opacity.setValue(0);
 
     Animated.parallel([
       Animated.spring(translateY, {
@@ -120,7 +118,7 @@ export const ToastProvider = () => {
       }),
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 200,
+        duration: 250,
         useNativeDriver: true,
       }),
     ]).start();

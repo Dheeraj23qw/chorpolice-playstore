@@ -16,6 +16,7 @@ export const usePermissionGuard = () => {
   const [missingPermissions, setMissingPermissions] = useState<string[]>([]);
   const [missingCritical, setMissingCritical] = useState<string[]>([]);
   const [attemptCount, setAttemptCount] = useState(0);
+  const activeRunIdRef = useRef(0);
   const checkingRef = useRef(false);
 
   /**
@@ -78,20 +79,29 @@ export const usePermissionGuard = () => {
    * If 'request' is false, it performs a silent refresh.
    */
   const checkAllPermissions = useCallback(async (request = true) => {
-    if (checkingRef.current) return false;
+    if (checkingRef.current && request) return false;
+    
+    const runId = activeRunIdRef.current + 1;
+    activeRunIdRef.current = runId;
     checkingRef.current = true;
+
+    const isActive = () => activeRunIdRef.current === runId;
 
     try {
       if (request) setState("checking");
 
       const { missing, isBlocked } = await checkCurrentStatuses();
+      
+      if (!isActive()) return false;
       const criticalMissing = missing.filter(p => CRITICAL_PERMISSIONS.includes(p));
       const allCriticalGranted = criticalMissing.length === 0;
 
       if (allCriticalGranted) {
-        setMissingPermissions(missing); // Still keep track of optional ones
-        setMissingCritical([]);
-        setState("granted");
+        if (isActive()) {
+          setMissingPermissions(missing);
+          setMissingCritical([]);
+          setState("granted");
+        }
         return true;
       }
 
@@ -108,6 +118,8 @@ export const usePermissionGuard = () => {
           if (result !== true) newMissing.push("Location");
         }
 
+        if (!isActive()) return false;
+
         // 2. CAMERA (Critical)
         const camStatus = await Camera.getCameraPermissionsAsync();
         if (camStatus.status !== "granted") {
@@ -115,6 +127,8 @@ export const usePermissionGuard = () => {
           if (result === "blocked") nowBlocked = true;
           if (result !== true) newMissing.push("Camera");
         }
+
+        if (!isActive()) return false;
 
         // 3. NOTIFICATIONS (Optional)
         if (Platform.OS === "android" && Platform.Version >= 33) {
@@ -124,6 +138,8 @@ export const usePermissionGuard = () => {
             if (status !== "granted") newMissing.push("Notifications");
           }
         }
+
+        if (!isActive()) return false;
 
         const newCriticalMissing = newMissing.filter(p => CRITICAL_PERMISSIONS.includes(p));
         
@@ -141,9 +157,11 @@ export const usePermissionGuard = () => {
       }
 
       // Silent update
-      setMissingPermissions(missing);
-      setMissingCritical(criticalMissing);
-      setState(isBlocked ? "blocked" : "denied");
+      if (isActive()) {
+        setMissingPermissions(missing);
+        setMissingCritical(criticalMissing);
+        setState(isBlocked ? "blocked" : "denied");
+      }
       return criticalMissing.length === 0;
     } catch (err) {
       console.error("Permission Check Failed:", err);
@@ -162,8 +180,7 @@ export const usePermissionGuard = () => {
   // Listen for app state changes (user returning from settings)
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active") {
-        // When coming back to the app, check if permissions were granted in settings
+      if (nextAppState === "active" && state !== "granted") {
         void checkAllPermissions(false);
       }
     };
