@@ -100,6 +100,9 @@ export default function NotificationController() {
           onAction: route ? () => setPendingRoute(route) : undefined,
         });
       });
+      
+      // 🚀 HARDENING: Explicitly register and create channels on every mount
+      await notificationService.registerPermissions();
       notificationService.listen();
 
       // 4. Inactivity Reminders

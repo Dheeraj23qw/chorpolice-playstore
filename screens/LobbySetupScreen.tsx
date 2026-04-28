@@ -144,7 +144,6 @@ const LobbySetupScreen = ({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        {/* 🔥 ONLY CHANGE: stronger pushback */}
         <MotiView
           animate={{
             opacity: isBlockingUI ? 0.2 : 1,
@@ -155,7 +154,6 @@ const LobbySetupScreen = ({
           pointerEvents={isBlockingUI ? "none" : "auto"}
         >
           <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
-            {/* HEADER */}
             <View className="h-16 justify-center">
               <AnimatePresence>
                 {!isPlayersListOpen && (
@@ -202,7 +200,7 @@ const LobbySetupScreen = ({
                   )}
                 </AnimatePresence>
 
-                {ui.permissionBlocked ? (
+                {ui.permissionBlocked && !lobby.isHost ? (
                   ui.permissionPending ? (
                     <HandshakeStatus
                       step={step === "idle" ? "checking_wifi" : step}
