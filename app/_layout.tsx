@@ -5,7 +5,7 @@ import { SplashScreen, Stack, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { AppState, View } from "react-native";
+import { AppState, View, Image } from "react-native";
 
 import store, { RootState } from "@/redux/store";
 import { useSystemUI } from "@/hooks/useSystemUI";
@@ -96,25 +96,28 @@ export default function RootLayout() {
 
   useSystemUI();
 
-  useEffect(() => {
+  const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
-      runAfterUI(() => {
-        SplashScreen.hideAsync().catch(() => {});
-      });
+      await SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
     return (
-      <View className="flex-1 bg-[#050508] items-center justify-center">
-        <View className="items-center">
-          <Text className="text-white text-5xl font-bold tracking-[15px] uppercase">
-            Chor
+      <View className="flex-1 bg-black">
+        <Image
+          source={require("../assets/modalImages/intro.webp")}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+        />
+        {/* Overlay Branding */}
+        <View className="absolute inset-0 items-center justify-center bg-black/20">
+          <Text className="font-main-bold text-5xl tracking-tight text-white text-center">
+            Chor Police
           </Text>
-          <Text className="text-indigo-500 text-5xl font-bold tracking-[15px] uppercase -mt-2">
-            Police
+          <Text className="mt-3 text-sm uppercase tracking-[4px] text-white/60">
+            Loading
           </Text>
-          <View className="h-[2px] w-12 bg-indigo-500/50 mt-8 rounded-full" />
         </View>
       </View>
     );
@@ -124,9 +127,11 @@ export default function RootLayout() {
     <Provider store={store}>
       <SafeAreaProvider>
         <GlobalErrorBoundary>
-          <StatusBar hidden translucent backgroundColor="transparent" />
-          <AppLayout />
-          <ToastProvider />
+          <View className="flex-1 bg-black" onLayout={onLayoutRootView}>
+            <StatusBar hidden translucent backgroundColor="transparent" />
+            <AppLayout />
+            <ToastProvider />
+          </View>
         </GlobalErrorBoundary>
       </SafeAreaProvider>
     </Provider>

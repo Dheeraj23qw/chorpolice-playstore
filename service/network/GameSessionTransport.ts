@@ -288,12 +288,14 @@ const tryListenOnPort = (port: number): Promise<void> => {
       if (settled) return;
       settled = true;
 
+      const actualPort = server.address()?.port || port;
+
       // ✅ SUCCESS — assign the server ref and update state
       tcpServer = server;
-      state.listeningPort = port;
+      state.listeningPort = actualPort;
 
-      devLog("Server", `✅ Listening on port ${port}`);
-      updateDebugMetric("hostIp", `self:${port}`);
+      devLog("Server", `✅ Listening on port ${actualPort}`);
+      updateDebugMetric("hostIp", `self:${actualPort}`);
       resolve();
     });
   });
@@ -315,6 +317,7 @@ const startTcpServer = (): Promise<void> => {
   pendingServerStartPromise = (async () => {
     const errors: string[] = [];
 
+    // 1. Try our preferred range first
     for (let i = 0; i < ALL_PORTS.length; i++) {
       const port = ALL_PORTS[i];
       devLog(
@@ -324,26 +327,35 @@ const startTcpServer = (): Promise<void> => {
 
       try {
         await tryListenOnPort(port);
-        // Success — clear the pending promise reference
         pendingServerStartPromise = null;
         return;
       } catch (error: any) {
         errors.push(`Port ${port}: ${error?.message || "unknown"}`);
         devWarn(
           "Server",
-          `Port ${port} failed (${error?.message}). ${i < ALL_PORTS.length - 1 ? "Trying next port..." : "No more ports."}`,
+          `Port ${port} failed (${error?.message}). ${i < ALL_PORTS.length - 1 ? "Trying next port..." : "No more reserved ports."}`,
         );
 
-        // Small delay between attempts to let the OS breathe
         if (i < ALL_PORTS.length - 1) {
-          await new Promise((r) => setTimeout(r, 300));
+          await new Promise((r) => setTimeout(r, 200));
         }
       }
     }
 
+    // 2. 🚨 GRACEFUL FALLBACK: Try a random available port if the pool is exhausted
+    devWarn("Server", "Reserved port pool exhausted. Attempting dynamic port allocation (Port 0)...");
+    try {
+      await tryListenOnPort(0);
+      pendingServerStartPromise = null;
+      return;
+    } catch (error: any) {
+      errors.push(`Dynamic Port: ${error?.message || "unknown"}`);
+      devWarn("Server", "Dynamic port allocation failed.", error);
+    }
+
     pendingServerStartPromise = null;
     const summary = errors.join("; ");
-    throw new Error(`All ${ALL_PORTS.length} ports failed: ${summary}`);
+    throw new Error(`All ${ALL_PORTS.length + 1} port attempts failed (including dynamic fallback). Please restart your Wi-Fi or Hotspot: ${summary}`);
   })();
 
   return pendingServerStartPromise;
