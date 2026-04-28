@@ -22,6 +22,7 @@ build/
 chor-police-playstore-0ffb9b639886.json
 google-services.json
 service-account-key.json
+credentials/
 
 # Signing keys and certificates
 *.jks
