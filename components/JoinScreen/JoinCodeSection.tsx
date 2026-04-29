@@ -53,7 +53,11 @@ export const JoinCodeSection = ({
   };
 
   const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === "Backspace" && mainDigits[index] === "" && index > 0) {
+    if (
+      e.nativeEvent.key === "Backspace" &&
+      mainDigits[index] === "" &&
+      index > 0
+    ) {
       const next = [...mainDigits];
       next[index - 1] = "";
       setRoomCode(buildCode(next, portSuffix));
@@ -76,8 +80,8 @@ export const JoinCodeSection = ({
   };
 
   const mainCode = mainDigits.join("");
-  const isReady = mainCode.length === 3 &&
-    (!showPortInput || portSuffix.length === 3);
+  const isReady =
+    mainCode.length === 3 && (!showPortInput || portSuffix.length === 3);
 
   return (
     <View className="overflow-hidden rounded-[30px]">
@@ -150,16 +154,17 @@ export const JoinCodeSection = ({
                 transition={{ type: "spring", damping: 18 }}
                 style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
               >
-                <Text className="text-white/40 text-lg font-main-bold">-</Text>
+                <Text className="font-main-bold text-lg text-white/40">-</Text>
                 <View
                   style={{
                     width: 68,
                     height: 80,
                     borderRadius: 16,
                     borderWidth: 1.5,
-                    borderColor: portSuffix.length === 3
-                      ? "rgba(99,102,241,0.9)"
-                      : "rgba(255,255,255,0.12)",
+                    borderColor:
+                      portSuffix.length === 3
+                        ? "rgba(99,102,241,0.9)"
+                        : "rgba(255,255,255,0.12)",
                     backgroundColor: "rgba(0,0,0,0.4)",
                     alignItems: "center",
                     justifyContent: "center",
@@ -191,15 +196,15 @@ export const JoinCodeSection = ({
         </View>
 
         {/* PORT TOGGLE */}
-        <Pressable onPress={togglePortInput} className="mt-3 flex-row items-center justify-center gap-1 self-center">
+        <Pressable
+          onPress={togglePortInput}
+          className="mt-3 flex-row items-center justify-center gap-1 self-center"
+        >
           <MaterialCommunityIcons
             name={showPortInput ? "chevron-up" : "tune-variant"}
             size={12}
             color="rgba(255,255,255,0.3)"
           />
-          <Text className="text-[10px] text-white/30">
-            {showPortInput ? "Hide port" : "Code has a dash? (e.g. 055-236)"}
-          </Text>
         </Pressable>
 
         <Text className="mt-2 text-center text-[10px] text-white/20">
