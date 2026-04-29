@@ -70,7 +70,7 @@ type ScoreQuizParticipant = {
 
 const D = "🎭 [CPHook]";
 
-const HOST_TIMEOUT_MS = 10000;
+const HOST_TIMEOUT_MS = 15000;
 
 export const useChorPoliceMultiplayer = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -440,7 +440,7 @@ export const useChorPoliceMultiplayer = () => {
     const CP = MODES.CHOR_POLICE;
     console.log(`${D} 📡 Subscribing to CP_* packets (ONE TIME — side effects only)`);
 
-    const unsubscribe = subscribeToPackets((packet) => {
+    const unsubscribe = subscribeToPackets((packet, sourceIp) => {
       if (!packet?.type) {
         return;
       }
@@ -449,10 +449,7 @@ export const useChorPoliceMultiplayer = () => {
       const _isHost = isHostRef.current;
       const _localPlayerId = localPlayerIdRef.current;
 
-      if (
-        !_isHost &&
-        (packet.type === NETWORK.PING || packet.type.startsWith("CP_"))
-      ) {
+      if (!_isHost && sourceIp) {
         lastHostSignalAtRef.current = Date.now();
       }
 

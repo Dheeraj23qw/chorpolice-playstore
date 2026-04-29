@@ -41,7 +41,7 @@ const MEDIA = {
   TIMEUP: 8,
 } as const;
 
-const HOST_TIMEOUT_MS = 10000;
+const HOST_TIMEOUT_MS = 15000;
 
 export const useQuizGameLogic = () => {
   const { table, getRandomQuestion } = useGameTableAndScores();
@@ -689,16 +689,10 @@ export const useQuizGameLogic = () => {
   ]);
 
   useEffect(() => {
-    const unsubscribe = subscribeToPackets((packet) => {
+    const unsubscribe = subscribeToPackets((packet, sourceIp) => {
       if (!packet?.type) return;
 
-      if (
-        !isHost &&
-        (packet.type === NETWORK.PING ||
-          packet.type === MODES.THINK_AND_COUNT.QUESTION_SYNC ||
-          packet.type === "TC_ROUND_SUMMARY" ||
-          packet.type === MODES.THINK_AND_COUNT.GAME_END)
-      ) {
+      if (!isHost && sourceIp) {
         lastHostSignalAtRef.current = Date.now();
       }
 

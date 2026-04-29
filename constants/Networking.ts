@@ -25,7 +25,7 @@ export const NETWORK = {
   MAX_PACKET_SIZE: 1_048_576, // 1MB (same as transport)
 
   // ───────── RECONNECT ─────────
-  RECONNECT_ATTEMPTS: 5, // increased for real networks
+  RECONNECT_ATTEMPTS: 2, // decreased for faster disconnect detection
   RECONNECT_INTERVAL_MS: 1000, // base delay
   RECONNECT_BACKOFF_MULTIPLIER: 1.5, // exponential growth
 

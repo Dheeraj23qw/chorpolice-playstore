@@ -208,22 +208,14 @@ const tryListenOnPort = (port: number): Promise<void> => {
       });
 
       socket.on("close", () => {
-        // NET-1 FIX: clean up ALL maps and notify the game layer.
-        const playerId = state.playerIdByIp.get(remoteIp);
+        // NET-1 ROBUSTNESS: do NOT immediately unregister the peer or synthesize a LEAVE packet.
+        // TCP connections can flicker on mobile Wi-Fi. We keep the playerId mapping
+        // and allow the client to reconnect. If they don't reconnect within the
+        // heartbeat timeout (15s), the HeartbeatService will trigger a formal stale eviction.
         state.clientSockets.delete(remoteIp);
         state.clientBuffers.delete(remoteIp);
         state.clientIps.delete(remoteIp);
-        if (playerId) {
-          state.playerIdByIp.delete(remoteIp);
-          state.ipByPlayerId.delete(playerId);
-          // Synthesise a PLAYER_LEAVE so game engines and lobby coordinator react
-          if (packetHandler) {
-            packetHandler(
-              { type: "PLAYER_LEAVE", playerId, reason: "tcp_close" },
-              remoteIp,
-            );
-          }
-        }
+        devLog("Server", `Client connection paused (socket closed): ${remoteIp}`);
       });
     });
 
