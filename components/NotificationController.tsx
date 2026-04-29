@@ -9,7 +9,6 @@ import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { notificationService } from "@/service/notification/NotificationService";
 import {
   getSpinReminderDelaySeconds,
-  shouldPromptForNotifications,
 } from "@/service/notification/controllerRules";
 import {
   cancelDormantPlayerReminder,
@@ -26,9 +25,7 @@ import {
 import { scheduleWelcomeNotification } from "@/service/notification/notication_types/welcome.notification";
 import { AppRoute } from "@/service/notification/types";
 import {
-  hasPromptedForNotifications,
   hasScheduledWelcomeNotification,
-  markNotificationsPrompted,
   markWelcomeNotificationScheduled,
 } from "@/storage/notificationStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
@@ -53,7 +50,6 @@ export default function NotificationController() {
   );
 
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const [prompted, setPrompted] = useState(hasPromptedForNotifications());
   const [welcomeScheduled, setWelcomeScheduled] = useState(
     hasScheduledWelcomeNotification(),
   );
@@ -75,23 +71,19 @@ export default function NotificationController() {
     return granted;
   }, []);
 
-  // --- PERMISSION & INITIALIZATION ---
+  // --- ONE-TIME MOUNT: channels, listeners, retention nudges ---
+  // Must NOT depend on appPhase/activeModal — those would cause cleanup()
+  // to fire on every modal open/close, dropping in-flight notification events.
   useEffect(() => {
     const init = async () => {
-      // 1. Setup channels
+      // 1. Ensure notification channels exist (safe to call repeatedly)
       await notificationService.ensureChannelsExist();
 
-      // 2. Smart Request (Zomato Style)
-      // Only asks if needed, and only once every 7 days if denied.
-      if (appPhase === "HOME" && !activeModal) {
-        const granted = await notificationService.smartRequestPermissions();
-        setPermissionGranted(granted);
-      } else {
-        const granted = await notificationService.checkPermission();
-        setPermissionGranted(granted);
-      }
+      // 2. Register permission + listen (idempotent due to guard in listen())
+      await notificationService.registerPermissions();
+      notificationService.listen();
 
-      // 3. Listeners
+      // 3. Wire up handlers
       notificationService.setRouteHandler(setPendingRoute);
       notificationService.setForegroundHandler(({ title, body, route }) => {
         toast.info(title, body, {
@@ -100,14 +92,14 @@ export default function NotificationController() {
           onAction: route ? () => setPendingRoute(route) : undefined,
         });
       });
-      
-      // 🚀 HARDENING: Explicitly register and create channels on every mount
-      await notificationService.registerPermissions();
-      notificationService.listen();
 
-      // 4. Inactivity Reminders
+      // 4. Inactivity reminders — cancel stale ones first
       await notificationService.cancelRetentionNudges();
       await notificationService.scheduleRetentionNudges();
+
+      // 5. Sync initial permission state
+      const granted = await notificationService.checkPermission();
+      setPermissionGranted(granted);
     };
 
     init();
@@ -125,7 +117,18 @@ export default function NotificationController() {
       sub.remove();
       notificationService.cleanup();
     };
-  }, [dispatch, syncPermissionState, appPhase, activeModal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Mount-only — intentionally no deps
+
+  // --- PHASE/MODAL CHANGE: smart permission prompt only ---
+  useEffect(() => {
+    if (appPhase !== "HOME" || activeModal) return;
+
+    // Zomato-style: only ask if not yet granted, and not too recently denied
+    notificationService.smartRequestPermissions().then((granted) => {
+      setPermissionGranted(granted);
+    });
+  }, [appPhase, activeModal]);
 
   useEffect(() => {
     if (appPhase === "HOME") {

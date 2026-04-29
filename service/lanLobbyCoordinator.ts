@@ -382,6 +382,8 @@ export const hostLanLobby = async ({
   }
 };
 export const joinLanLobby = async ({
+  hostIp,
+  hostPort,
   localPlayerId,
   name,
   avatarId,

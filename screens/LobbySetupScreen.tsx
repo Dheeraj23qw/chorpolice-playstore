@@ -239,8 +239,10 @@ const LobbySetupScreen = ({
                   />
                 ) : (
                   <>
+                    {/* For joiners: always show profile card regardless of list state.
+                        For host: hide it when the players list is expanded. */}
                     <AnimatePresence>
-                      {!isPlayersListOpen && (
+                      {(!isPlayersListOpen || !lobby.isHost) && (
                         <MotiView className="mb-8">
                           <PlayerProfileCard
                             lobby={lobby}

@@ -112,6 +112,8 @@ class NotificationService {
       return false;
     }
 
+    // Always (re-)configure channels — covers fresh installs, updates,
+    // and cases where the user already had permission from a previous session.
     await this.configureChannels();
     return true;
   }
@@ -201,6 +203,11 @@ class NotificationService {
 
     const safeSeconds = Math.max(1, Math.floor(params.seconds));
 
+    // Ensure channels exist before scheduling — guards against cases where
+    // configureChannels() was never called (e.g. permission already granted
+    // on a prior install, so registerPermissions() was skipped).
+    await this.ensureChannelsExist();
+
     try {
       await this.cancel(params.id);
 
@@ -252,22 +259,55 @@ class NotificationService {
     });
   }
 
-  async scheduleRetentionNudges() {
+  /**
+   * Nudges the player when they are close to a milestone reward.
+   * Called from Redux middleware when wallet coins change.
+   */
+  async scheduleMilestoneNudge(reward: string, remaining: number): Promise<void> {
     await this.schedule({
-      id: "retention_1d",
-      title: "The Thief is Getting Away! 🏃‍♂️",
-      body: "Chor Police is more fun with you. Jump back in for a quick match!",
-      seconds: 24 * 60 * 60,
-      data: { screen: "/mode-select" }
+      id: "milestone_nudge",
+      title: `${remaining.toLocaleString()} coins to your next reward! 🎁`,
+      body: `Keep playing — your "${reward}" reward is almost unlocked.`,
+      seconds: 30, // fire shortly so the user sees it while still engaged
+      channelId: "alerts",
+      data: { screen: "/earn" },
     });
+  }
 
-    await this.schedule({
-      id: "retention_3d",
-      title: "We Miss You! 💔",
-      body: "New challenges and big rewards are waiting. Play now and beat the bots!",
-      seconds: 3 * 24 * 60 * 60,
-      data: { screen: "/mode-select" }
-    });
+  /**
+   * Schedules inactivity retention nudges ONLY if they are not already pending.
+   * This prevents the clock from resetting on every app launch — the nudge must
+   * fire relative to when it was first scheduled, not the current session.
+   */
+  async scheduleRetentionNudges() {
+    if (Platform.OS === "web") return;
+
+    try {
+      const pending = await Notifications.getAllScheduledNotificationsAsync();
+      const pendingIds = new Set(pending.map((n) => n.identifier));
+
+      if (!pendingIds.has("retention_1d")) {
+        await this.schedule({
+          id: "retention_1d",
+          title: "The Thief is Getting Away! 🏃\u200d♂️",
+          body: "Chor Police is more fun with you. Jump back in for a quick match!",
+          seconds: 24 * 60 * 60,
+          data: { screen: "/mode-select" },
+        });
+      }
+
+      if (!pendingIds.has("retention_3d")) {
+        await this.schedule({
+          id: "retention_3d",
+          title: "We Miss You! 💔",
+          body: "New challenges and big rewards are waiting. Play now and beat the bots!",
+          seconds: 3 * 24 * 60 * 60,
+          data: { screen: "/mode-select" },
+        });
+      }
+    } catch (error) {
+      console.error("[Notifications] scheduleRetentionNudges failed:", error);
+    }
   }
 
   async cancelRetentionNudges() {

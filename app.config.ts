@@ -50,6 +50,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "android.permission.VIBRATE",
       "android.permission.POST_NOTIFICATIONS",
       "android.permission.SCHEDULE_EXACT_ALARM",
+      // Android 13+ (API 33+): needed for exact local notification scheduling
+      // from Play Store builds. Works alongside SCHEDULE_EXACT_ALARM.
+      "android.permission.USE_EXACT_ALARM",
     ],
     adaptiveIcon: {
       foregroundImage: "./assets/images/adaptive-icon.png",
