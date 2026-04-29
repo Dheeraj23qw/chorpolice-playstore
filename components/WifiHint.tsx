@@ -60,7 +60,7 @@ const WifiHint = () => {
         {/* Instructions */}
         <Text style={{ fontSize: rf(1.5) }} className="leading-5 text-white/70">
           1. Connect everyone to the{" "}
-          <Text className="text-purple-300">same WiFi 📶</Text>
+          <Text className="text-purple-300">same WiFi or Hotspot 📶</Text>
           {"\n"}
           2. One player taps <Text className="text-green-300">Host Game</Text>
           {"\n"}

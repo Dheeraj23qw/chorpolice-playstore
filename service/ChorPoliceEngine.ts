@@ -67,7 +67,7 @@ export const ChorPoliceEngine = {
     players: [] as CPPlayer[],
     roles: [] as Role[],          // roles[i] = role of players[i]
     currentRound: 1,
-    totalRounds: 5,
+    totalRounds: 3,
     scores: {} as Record<string, CPScoreEntry>,
     stake: 0,
     totalPot: 0,
@@ -207,7 +207,7 @@ export const ChorPoliceEngine = {
   },
 
   /* ─── Initialize a new session ─── */
-  init: (players: CPPlayer[], stake: number, totalRounds: number = 5): void => {
+  init: (players: CPPlayer[], stake: number, totalRounds: number = 3): void => {
     ChorPoliceEngine.reset();
 
     // 🛡️ VALIDATION: Chor Police requires EXACTLY 4 players
@@ -460,7 +460,7 @@ export const ChorPoliceEngine = {
     ChorPoliceEngine.state.players = [];
     ChorPoliceEngine.state.roles = [];
     ChorPoliceEngine.state.currentRound = 1;
-    ChorPoliceEngine.state.totalRounds = 5;
+    ChorPoliceEngine.state.totalRounds = 3;
     ChorPoliceEngine.state.scores = {};
     ChorPoliceEngine.state.stake = 0;
     ChorPoliceEngine.state.totalPot = 0;

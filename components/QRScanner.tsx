@@ -100,8 +100,11 @@ export const QRScanner = ({
     <View className="h-80 overflow-hidden rounded-3xl border border-white/10">
       <CameraView
         style={{ flex: 1 }}
+        facing="back"
         onBarcodeScanned={handleScan}
-        barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+        barcodeScannerSettings={{
+          barcodeTypes: ["qr"],
+        }}
       />
 
       {/* 🔲 SCAN FRAME */}

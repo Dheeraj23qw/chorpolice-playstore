@@ -6,23 +6,35 @@ const BOT_START_INDEX = 1;
 const AVATAR_POOL = Array.from({ length: 13 }, (_, index) => index + 1);
 
 const getNextAvailableAvatar = (usedAvatarIds: Set<number>) => {
-  const nextAvatar = AVATAR_POOL.find((avatarId) => !usedAvatarIds.has(avatarId));
-  return nextAvatar ?? 1;
+  const available = AVATAR_POOL.filter((id) => !usedAvatarIds.has(id));
+  if (available.length === 0) return 1;
+  const randomIndex = Math.floor(Math.random() * available.length);
+  return available[randomIndex];
 };
 
 const createBotPlayer = (
   slotIndex: number,
   usedAvatarIds: Set<number>,
+  usedNames: Set<string>,
 ): SessionPlayer => {
   const avatarId = getNextAvailableAvatar(usedAvatarIds);
   usedAvatarIds.add(avatarId);
 
+  let name = getBotName(Math.floor(Math.random() * 100));
+  // Ensure name is unique among bots and players
+  let attempt = 0;
+  while (usedNames.has(name) && attempt < 10) {
+    name = getBotName(Math.floor(Math.random() * 100) + attempt);
+    attempt++;
+  }
+  usedNames.add(name);
+
   return {
-    id: `bot_${slotIndex}`,
-    name: getBotName(Math.max(0, slotIndex - BOT_START_INDEX)),
+    id: `bot_${slotIndex}_${Date.now()}`, // Unique ID even if replaced
+    name,
     avatarId,
     isBot: true,
-    coins: 9999999, // Bots have unlimited money
+    coins: 9999999,
   };
 };
 
@@ -33,6 +45,7 @@ export const createInitialLobbyPlayers = (hostPlayer: {
   coins: number;
 }): SessionPlayer[] => {
   const usedAvatarIds = new Set<number>([hostPlayer.avatarId]);
+  const usedNames = new Set<string>([hostPlayer.name]);
   const players: SessionPlayer[] = [
     {
       ...hostPlayer,
@@ -41,7 +54,7 @@ export const createInitialLobbyPlayers = (hostPlayer: {
   ];
 
   for (let slotIndex = BOT_START_INDEX; slotIndex < TOTAL_PLAYERS; slotIndex += 1) {
-    players.push(createBotPlayer(slotIndex, usedAvatarIds));
+    players.push(createBotPlayer(slotIndex, usedAvatarIds, usedNames));
   }
 
   return players;
@@ -53,28 +66,43 @@ export const replaceFirstBotWithPlayer = (
 ): SessionPlayer[] | null => {
   const existingIndex = players.findIndex((player) => player.id === joiningPlayer.id);
 
+  let nextPlayers = [...players];
   if (existingIndex >= 0) {
-    const nextPlayers = [...players];
     nextPlayers[existingIndex] = {
       ...nextPlayers[existingIndex],
       ...joiningPlayer,
       isBot: false,
     };
-    return nextPlayers;
+  } else {
+    const botIndex = players.findIndex((player, index) => index > 0 && player.isBot);
+    if (botIndex < 0) return null;
+    nextPlayers[botIndex] = {
+      ...joiningPlayer,
+      isBot: false,
+    };
   }
 
-  const botIndex = players.findIndex((player, index) => index > 0 && player.isBot);
+  // 🔥 SMART CONFLICT RESOLUTION
+  // Ensure NO other bots have the same avatar or name as humans
+  const humanAvatars = new Set(nextPlayers.filter(p => !p.isBot).map(p => p.avatarId));
+  const humanNames = new Set(nextPlayers.filter(p => !p.isBot).map(p => p.name));
+  
+  // Track all used attributes to ensure bots are also unique from each other
+  const usedAvatars = new Set(humanAvatars);
+  const usedNames = new Set(humanNames);
 
-  if (botIndex < 0) {
-    return null;
-  }
+  return nextPlayers.map((player, idx) => {
+    if (!player.isBot) return player;
 
-  const nextPlayers = [...players];
-  nextPlayers[botIndex] = {
-    ...joiningPlayer,
-    isBot: false,
-  };
-  return nextPlayers;
+    // If this bot conflicts with a human (or previous bot), re-randomize
+    if (usedAvatars.has(player.avatarId) || usedNames.has(player.name)) {
+      return createBotPlayer(idx, usedAvatars, usedNames);
+    }
+
+    usedAvatars.add(player.avatarId);
+    usedNames.add(player.name);
+    return player;
+  });
 };
 
 export const replacePlayerWithBot = (
@@ -87,14 +115,19 @@ export const replacePlayerWithBot = (
     return players;
   }
 
-  const usedAvatarIds = new Set(
+  const usedAvatars = new Set(
     players
       .filter((_, index) => index !== playerIndex)
       .map((player) => player.avatarId),
   );
+  const usedNames = new Set(
+    players
+      .filter((_, index) => index !== playerIndex)
+      .map((player) => player.name),
+  );
 
   const nextPlayers = [...players];
-  nextPlayers[playerIndex] = createBotPlayer(playerIndex, usedAvatarIds);
+  nextPlayers[playerIndex] = createBotPlayer(playerIndex, usedAvatars, usedNames);
   return nextPlayers;
 };
 
@@ -104,10 +137,11 @@ const normalizeLobbyPlayers = (players: SessionPlayer[]): SessionPlayer[] => {
   }
 
   const usedAvatarIds = new Set(players.map((player) => player.avatarId));
+  const usedNames = new Set(players.map((player) => player.name));
   const nextPlayers = [...players];
 
   for (let index = players.length; index < TOTAL_PLAYERS; index += 1) {
-    nextPlayers.push(createBotPlayer(index, usedAvatarIds));
+    nextPlayers.push(createBotPlayer(index, usedAvatarIds, usedNames));
   }
 
   return nextPlayers;

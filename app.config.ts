@@ -18,9 +18,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     hidden: true,
   },
   splash: {
-    image: "./assets/images/splash-icon.png",
-    resizeMode: "contain",
     backgroundColor: "#050508",
+    resizeMode: "contain",
   },
   icon: "./assets/images/adaptive-icon.png",
   runtimeVersion: { policy: "appVersion" },

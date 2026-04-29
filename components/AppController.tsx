@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
@@ -8,7 +8,6 @@ import { enqueueModal } from "@/redux/reducers/modalQueueReducer";
 import { loadSounds } from "@/redux/reducers/soundReducer";
 import HomeScreen from "@/screens/appFlow/HomeScreen";
 import OnboardingScreen from "@/screens/appFlow/OnboardingScreen";
-import SplashPhaseScreen from "@/screens/appFlow/SplashPhaseScreen";
 import VideoScreen from "@/screens/appFlow/VideoScreen";
 import { PremiumSplashCard } from "@/components/PremiumSplashCard";
 import { assetLoader } from "@/service/assetLoader";
@@ -39,11 +38,12 @@ export default function AppController() {
   const prepareIntroFlow = useCallback(() => {
     if (loadingTaskRef.current) return loadingTaskRef.current;
 
-    dispatch(setAppPhase("LOADING"));
-
     const task = (async () => {
       try {
+        // Perform preloading and the animation delay in parallel.
+        // We ensure the splash shows for at least 2500ms for the zoom effect.
         await Promise.all([
+          new Promise((resolve) => setTimeout(resolve, 2500)),
           isSoundLoaded
             ? Promise.resolve()
             : dispatch(loadSounds()).unwrap().catch(() => undefined),
@@ -132,7 +132,12 @@ export default function AppController() {
   // smooth 200ms entrances — wrapping with a stable key forces re-mount
   // (and re-animation) only when the phase actually changes.
   const wrapPhase = (key: string, child: React.ReactNode) => (
-    <Animated.View key={key} entering={FadeIn.duration(200)} style={{ flex: 1 }}>
+    <Animated.View
+      key={key}
+      entering={FadeIn.duration(600)}
+      exiting={FadeOut.duration(400)}
+      style={{ flex: 1 }}
+    >
       {child}
     </Animated.View>
   );
@@ -140,8 +145,6 @@ export default function AppController() {
   switch (phase) {
     case "ONBOARDING":
       return wrapPhase("onboarding", <OnboardingScreen onComplete={handleOnboardingComplete} />);
-    case "LOADING":
-      return wrapPhase("loading", <SplashPhaseScreen />);
     case "VIDEO":
       return wrapPhase("video", <VideoScreen onComplete={handleVideoComplete} />);
     case "HOME":

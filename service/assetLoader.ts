@@ -22,7 +22,6 @@ const BACKGROUND_ASSETS = [
   require("@/assets/audio/maingame/police.mp3"),
   require("@/assets/audio/QuizScreen/timer.mp3"),
   require("@/assets/audio/QuizScreen/timesup.mp3"),
-  require("@/assets/images/bg/gamemode/1.webp"),
   require("@/assets/images/bg/gamemode/2.webp"),
   require("@/assets/modalImages/chor_win.webp"),
   require("@/assets/modalImages/police_win.webp"),

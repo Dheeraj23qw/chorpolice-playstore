@@ -1,4 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { NUM_QUESTIONS } from "@/constants/quizConstants";
+
 
 interface DifficultyState {
   level: "easy" | "medium" | "hard" | null;
@@ -13,7 +15,7 @@ const initialState: DifficultyState = {
   level: null,
   table: [["Round", "Police", "Thief", "King", "Advisor"]],
   totalScores: { Police: 0, Thief: 0, King: 0, Advisor: 0 },
-  totalQuestions: 7,
+  totalQuestions: NUM_QUESTIONS,
   correctQuestions: 0,
   isWinner: false,
 };
@@ -34,6 +36,7 @@ const difficultySlice = createSlice({
       state.table = table || generateTable(level);
       state.totalScores = generateTotalScores(state.table);
       state.correctQuestions = 0;
+      state.totalQuestions = NUM_QUESTIONS;
       state.isWinner = false;
     },
 
@@ -42,6 +45,7 @@ const difficultySlice = createSlice({
       state.table = [["Round", "Police", "Thief", "King", "Advisor"]];
       state.totalScores = { Police: 0, Thief: 0, King: 0, Advisor: 0 };
       state.correctQuestions = 0;
+      state.totalQuestions = NUM_QUESTIONS;
       state.isWinner = false;
     },
     setCorrectAnswers: (state, action: PayloadAction<number>) => {

@@ -544,7 +544,7 @@ export const useLobbyLogic = (
           { processLocally: false },
         );
       } else {
-        ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 5);
+        ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 3);
         ChorPoliceBotBehavior.init(botPlayers);
         broadcastPacket(
           {
@@ -553,7 +553,7 @@ export const useLobbyLogic = (
             timestamp: Date.now(),
             betAmount: stake,
             playerCount: finalPlayers.length,
-            totalRounds: selectedRounds || 5,
+            totalRounds: selectedRounds || 3,
             players: finalPlayers,
           },
           { processLocally: false },

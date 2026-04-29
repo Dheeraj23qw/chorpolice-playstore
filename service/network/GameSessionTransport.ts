@@ -61,6 +61,7 @@ let packetHandler: PacketHandler | null = null;
 let pendingServerStartPromise: Promise<void> | null = null;
 let pendingServerStopPromise: Promise<boolean> | null = null;
 let serverRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let currentSessionId = 0;
 
 const state = {
   isHost: false,
@@ -467,17 +468,30 @@ const connectToHost = (hostIp: string, hostPort?: number) => {
 };
 // ── Safe send helper ──
 
-const safeSend = (socket: any, framedData: Buffer, label: string) => {
-  if (!socket || socket.destroyed) {
+const safeSend = (socket: any, framedData: Buffer, label: string, sessionId: number) => {
+  // CRITICAL: Stop immediately if the session has changed or socket is dead
+  if (sessionId !== currentSessionId) {
+    devWarn("Send", `Ignoring send to ${label}: session mismatch (${sessionId} vs ${currentSessionId})`);
+    return false;
+  }
+
+  if (!socket || socket.destroyed || socket._destroyed) {
     devWarn("Send", `Cannot send to ${label}: socket destroyed`);
     return false;
   }
 
   try {
+    // Some versions of the native module throw asynchronously if the socket is gone
+    // but the JS object doesn't know it yet.
     socket.write(framedData);
     return true;
-  } catch (error) {
-    devWarn("Send", `Send failed to ${label}:`, error);
+  } catch (error: any) {
+    const msg = error?.message || "";
+    if (msg.includes("No socket with id")) {
+       devWarn("Send", `Recovered from native socket crash (ID mismatch) for ${label}`);
+    } else {
+       devWarn("Send", `Send failed to ${label}:`, error);
+    }
     return false;
   }
 };
@@ -499,6 +513,10 @@ export const GameSessionTransport = {
 
     // Clean up any previous session
     await GameSessionTransport.stop();
+    
+    currentSessionId++;
+    const thisSessionId = currentSessionId;
+    
     state.isHost = isHost;
     state.localPlayerId = localPlayerId;
     state.hostIp = hostIp;
@@ -511,6 +529,10 @@ export const GameSessionTransport = {
     try {
       if (isHost) {
         await startTcpServer();
+        // Double check session hasn't been stopped while we were starting the server
+        if (thisSessionId !== currentSessionId) {
+          throw new Error("Session cancelled during startup");
+        }
         devLog(
           "Lifecycle",
           `Server started successfully on port ${state.listeningPort}`,
@@ -530,6 +552,10 @@ export const GameSessionTransport = {
     }
 
     devLog("Lifecycle", "stop() called");
+    
+    // Invalidate the current session ID so all pending async work stops
+    currentSessionId++; 
+    const thisSessionId = currentSessionId;
 
     // Cancel any in-progress server start first
     if (serverRetryTimer) {
@@ -580,12 +606,12 @@ export const GameSessionTransport = {
             tcpServer = null;
             finish(true);
           });
-          // Give Android 2.5s to release the port
+          // Give Android 800ms to release the port
           closeFallbackTimer = setTimeout(() => {
             devWarn("Lifecycle", "Server close timed out. Forcing cleanup.");
             tcpServer = null;
             finish(false);
-          }, 2500);
+          }, 800);
         } catch (e) {
           console.warn("[TCP Transport] Error closing server:", e);
           tcpServer = null;
@@ -607,6 +633,7 @@ export const GameSessionTransport = {
         // Close all client connections on the server side
         state.clientSockets.forEach((socket) => {
           try {
+            socket.removeAllListeners();
             socket.destroy();
           } catch {
             /* ignore */
@@ -616,6 +643,7 @@ export const GameSessionTransport = {
         // Close client-side connection
         if (clientSocket) {
           try {
+            clientSocket.removeAllListeners();
             clientSocket.destroy();
           } catch {
             /* ignore */
@@ -708,9 +736,10 @@ export const GameSessionTransport = {
     }
 
     const framed = framePacket(packet);
+    const sid = currentSessionId;
 
     if (clientSocket && !clientSocket.destroyed) {
-      safeSend(clientSocket, framed, `host(${state.hostIp})`);
+      safeSend(clientSocket, framed, `host(${state.hostIp})`, sid);
     } else {
       devWarn("Send", "No active connection to host. Reconnecting...");
       // NET-2 FIX: reconnect first, then retry with backoff (300ms then 800ms)
@@ -719,12 +748,14 @@ export const GameSessionTransport = {
       const retryDelays = [300, 800];
       retryDelays.forEach((delay) => {
         setTimeout(() => {
+          // Verify both the socket AND the session are still valid
           if (
             clientSocket &&
             !clientSocket.destroyed &&
-            state.hostIp === hostIpAtSend
+            state.hostIp === hostIpAtSend &&
+            currentSessionId === sid
           ) {
-            safeSend(clientSocket, framed, `host(${state.hostIp})`);
+            safeSend(clientSocket, framed, `host(${state.hostIp})`, sid);
           }
         }, delay);
       });
@@ -734,9 +765,10 @@ export const GameSessionTransport = {
   sendToPeer: (ip: string, packet: any) => {
     const framed = framePacket(packet);
     const socket = state.clientSockets.get(ip);
+    const sid = currentSessionId;
 
     if (socket) {
-      safeSend(socket, framed, `peer(${ip})`);
+      safeSend(socket, framed, `peer(${ip})`, sid);
     } else {
       devWarn("Send", `No socket for peer: ${ip}`);
     }
@@ -744,8 +776,9 @@ export const GameSessionTransport = {
 
   sendToClients: (packet: any) => {
     const framed = framePacket(packet);
+    const sid = currentSessionId;
     state.clientSockets.forEach((socket, ip) => {
-      safeSend(socket, framed, `client(${ip})`);
+      safeSend(socket, framed, `client(${ip})`, sid);
     });
   },
 

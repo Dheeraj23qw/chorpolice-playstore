@@ -55,7 +55,7 @@ const JoinScreen = () => {
     });
 
   const [roomCode, setRoomCode] = useState("");
-  const [joinMethod, setJoinMethod] = useState<"scan" | "code">("scan");
+  const [joinMethod, setJoinMethod] = useState<"scan" | "code">("code");
   const [showHelp, setShowHelp] = useState(false);
 
   const gameType = String(params.gameType || "CHOR_POLICE");

@@ -25,7 +25,7 @@ type AnswerPacket = {
   authoritative?: boolean;
 };
 
-const DEFAULT_TOTAL_ROUNDS = 7;
+const DEFAULT_TOTAL_ROUNDS = 5;
 
 /**
  * --- QUIZ ENGINE (Multiplayer Extension) ---
@@ -140,13 +140,14 @@ export const QuizEngine = {
   syncQuestion: (packet: any) => {
     QuizEngine.state.currentQuestion = packet.question;
     QuizEngine.state.currentQuestionId = packet.questionId || null;
-    QuizEngine.state.currentRound = packet.round || QuizEngine.state.currentRound;
+    QuizEngine.state.currentRound =
+      packet.round || QuizEngine.state.currentRound;
     QuizEngine.state.roundStartedAt =
       packet.roundStartedAt || packet.serverNow || Date.now();
     QuizEngine.state.roundDeadlineAt =
       packet.deadlineAt ||
-      ((packet.roundStartedAt || packet.serverNow || Date.now()) +
-        (packet.durationMs || 0));
+      (packet.roundStartedAt || packet.serverNow || Date.now()) +
+        (packet.durationMs || 0);
     QuizEngine.state.roundAnswersReceived = 0;
     QuizEngine.state.roundAnsweredIds = {};
   },
@@ -183,22 +184,28 @@ export const QuizEngine = {
     const { playerId } = packet;
     const isHost = GameSessionTransport.getSnapshot().isHost;
 
+    if (!playerId) return;
+
     if (QuizEngine.state.currentRound > QuizEngine.state.totalRounds) {
       if (__DEV__) {
         console.log(
-          `[QuizEngine] Game over; ignoring late answer from: ${playerId} (round ${QuizEngine.state.currentRound} > totalRounds ${QuizEngine.state.totalRounds})`,
+          `[QuizEngine] Game over; ignoring late answer from: ${playerId}`,
         );
       }
       return;
     }
 
+    // PROD-FIX: Strict round and question ID validation to prevent stale answers
+    // from triggering premature round completion.
     if (
       typeof packet.round === "number" &&
       packet.round !== QuizEngine.state.currentRound
     ) {
-      console.log(
-        `[QuizEngine] Ignoring stale answer for round ${packet.round} (current ${QuizEngine.state.currentRound})`,
-      );
+      if (__DEV__) {
+        console.log(
+          `[QuizEngine] Ignoring stale round answer: ${packet.round} (current: ${QuizEngine.state.currentRound})`,
+        );
+      }
       return;
     }
 
@@ -207,32 +214,32 @@ export const QuizEngine = {
       QuizEngine.state.currentQuestionId &&
       packet.questionId !== QuizEngine.state.currentQuestionId
     ) {
-      console.log(
-        `[QuizEngine] Ignoring answer for stale question ${packet.questionId}`,
-      );
+      if (__DEV__) {
+        console.log(
+          `[QuizEngine] Ignoring stale question answer: ${packet.questionId}`,
+        );
+      }
       return;
     }
 
-    if (
-      !QuizEngine.state.playerScores[playerId] ||
-      QuizEngine.state.roundAnsweredIds[playerId]
-    ) {
-      console.log(
-        `[QuizEngine] Ignoring duplicate or invalid answer from: ${playerId}`,
-      );
+    if (!QuizEngine.state.playerScores[playerId]) {
+      if (__DEV__) {
+        console.log(
+          `[QuizEngine] Ignoring answer from unknown player: ${playerId}`,
+        );
+      }
       return;
     }
 
+    // Authoritative check: Host must stamp all incoming answers
     if (!packet.authoritative) {
       if (!isHost) {
-        console.log(
-          `[QuizEngine] Ignoring non-authoritative answer on client from: ${playerId}`,
-        );
         return;
       }
 
       const roundStartedAt = QuizEngine.state.roundStartedAt ?? Date.now();
-      const roundDeadlineAt = QuizEngine.state.roundDeadlineAt ?? roundStartedAt;
+      const roundDeadlineAt =
+        QuizEngine.state.roundDeadlineAt ?? roundStartedAt;
       const now = Date.now();
       const maxDuration = Math.max(0, roundDeadlineAt - roundStartedAt);
       const authoritativeTimeTaken = Math.max(
@@ -252,8 +259,15 @@ export const QuizEngine = {
         }),
       };
 
+      // Process locally then broadcast
       QuizEngine.handleAnswer(authoritativePacket);
       GameSessionTransport.sendToClients(authoritativePacket);
+      return;
+    }
+
+    // If we reach here, the packet is authoritative.
+    // Duplicate guard: Only increment if this player hasn't answered this round.
+    if (QuizEngine.state.roundAnsweredIds[playerId]) {
       return;
     }
 
@@ -275,7 +289,18 @@ export const QuizEngine = {
     QuizEngine.state.roundAnswersReceived++;
 
     const totalPlayers = Object.keys(QuizEngine.state.playerScores).length;
-    if (QuizEngine.state.roundAnswersReceived >= totalPlayers) {
+
+    if (__DEV__) {
+      console.log(
+        `[QuizEngine] Progress: ${QuizEngine.state.roundAnswersReceived}/${totalPlayers} (Answer from: ${playerId})`,
+      );
+    }
+
+    // Completion Check: Only finish if every player (bots + humans) has answered.
+    if (
+      totalPlayers > 0 &&
+      QuizEngine.state.roundAnswersReceived >= totalPlayers
+    ) {
       QuizEngine.completeRound();
     }
   },
@@ -322,7 +347,8 @@ export const QuizEngine = {
           (a, b) =>
             b.correctCount - a.correctCount || a.totalTime - b.totalTime,
         ),
-      isLastRound: QuizEngine.state.currentRound >= QuizEngine.state.totalRounds,
+      isLastRound:
+        QuizEngine.state.currentRound >= QuizEngine.state.totalRounds,
     };
 
     QuizEngine.state.currentRound++;
