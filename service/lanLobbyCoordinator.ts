@@ -18,7 +18,7 @@ import {
   replaceFirstBotWithPlayer,
   replacePlayerWithBot,
 } from "@/utils/lobbyPlayers";
-import { decodeRoomCode, encodeRoomCode } from "@/utils/roomCode";
+import { decodeRoomCodeWithLocalContext, encodeRoomCode } from "@/utils/roomCode";
 
 import {
   broadcastPacket,
@@ -43,6 +43,13 @@ let pendingHostLobbyPromise: Promise<{
   roomCode: string | null;
   players: SessionPlayer[];
 }> | null = null;
+
+// 🚀 Deduplication: tracks player IDs that have already received a join toast
+// in this lobby session. Cleared when the lobby stops.
+const announcedPlayerIds = new Set<string>();
+
+// Tracks staggered bot announcement timers so they can be cancelled on stop
+const botAnnouncementTimers: ReturnType<typeof setTimeout>[] = [];
 
 const clearJoinAttempts = () => {
   if (joinRetryInterval) {
@@ -188,13 +195,14 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       registerRemotePeer(joiningPlayer.id, sourceIp);
     }
 
-    const isNewJoin = !state.players.some((p) => p.id === joiningPlayer.id);
+    const isNewJoin = !announcedPlayerIds.has(joiningPlayer.id);
 
     syncPlayerListLocally(nextPlayers);
     broadcastPlayerList(nextPlayers);
 
     if (isNewJoin) {
-      toast.info(`${joiningPlayer.name} joined the room!`);
+      announcedPlayerIds.add(joiningPlayer.id);
+      toast.success(`${joiningPlayer.name} joined!`);
     }
     return;
   }
@@ -218,13 +226,30 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
 
   if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId) {
     clearJoinAttempts();
+    
+    // 🚀 TERMINATE GAME IF IN PROGRESS
+    if (state.gamePhase !== "idle") {
+      store.dispatch(setConnectionStatus("ERROR"));
+      store.dispatch(setSessionError("Someone left the game. Session terminated."));
+      void leaveLanLobby();
+      return;
+    }
+
     if (state.isHost) {
       unregisterRemotePeer(packet.playerId);
+      const departingPlayer = state.players.find(p => p.id === packet.playerId);
       const nextPlayers = replacePlayerWithBot(state.players, packet.playerId);
 
       if (nextPlayers !== state.players) {
         syncPlayerListLocally(nextPlayers);
         broadcastPlayerList(nextPlayers);
+        
+        // 🤖 Realistic notification for bot substitution
+        const botIndex = state.players.findIndex(p => p.id === packet.playerId);
+        const bot = nextPlayers[botIndex];
+        if (bot && bot.isBot) {
+          toast.info(`${departingPlayer?.name || "Player"} left. ${bot.name} joined.`);
+        }
       }
       return;
     }
@@ -264,6 +289,14 @@ const ensurePacketSubscription = () => {
 
 const stopCoordinator = async () => {
   clearJoinAttempts();
+
+  // Cancel any pending bot announcement timers
+  botAnnouncementTimers.forEach((t) => clearTimeout(t));
+  botAnnouncementTimers.length = 0;
+
+  // Reset deduplication set for the next session
+  announcedPlayerIds.clear();
+
   if (unsubscribePackets) {
     unsubscribePackets();
     unsubscribePackets = null;
@@ -331,7 +364,8 @@ export const hostLanLobby = async ({
     }
 
     const hostIp = await getLocalIpAddress();
-    const roomCode = hostIp ? encodeRoomCode(hostIp) : null;
+    // 🚀 Include actual port so room code works even on fallback ports
+    const roomCode = hostIp ? encodeRoomCode(hostIp, actualPort) : null;
     const players = createInitialLobbyPlayers({
       id: localPlayerId,
       name,
@@ -364,6 +398,15 @@ export const hostLanLobby = async ({
     store.dispatch(setLobbyPlayers(players));
     store.dispatch(setSessionError(null));
     store.dispatch(setLobbyStage("room"));
+    
+    // 🚀 Realistic bot entry: announce one-by-one with staggered delay
+    const initialBots = players.filter((p) => p.isBot);
+    initialBots.forEach((bot, index) => {
+      const t = setTimeout(() => {
+        toast.info(`${bot.name} joined.`);
+      }, 900 * (index + 1));
+      botAnnouncementTimers.push(t);
+    });
 
     startHeartbeat(true);
 
@@ -429,7 +472,7 @@ export const joinLanLobby = async ({
   store.dispatch(
     setSessionNetworkInfo({
       hostIp,
-      roomCode: encodeRoomCode(hostIp),
+      roomCode: encodeRoomCode(hostIp, hostPort),
     }),
   );
   store.dispatch(setLobbyPlayers([]));
@@ -525,4 +568,8 @@ export const leaveLanLobby = async () => {
   store.dispatch(clearSession());
 };
 
-export const decodeLanRoomCode = (roomCode: string) => decodeRoomCode(roomCode);
+export const decodeLanRoomCode = async (roomCode: string) => {
+  const localIp = await getLocalIpAddress();
+  // Returns { ip, port } or null
+  return decodeRoomCodeWithLocalContext(roomCode, localIp);
+};

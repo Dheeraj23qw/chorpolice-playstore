@@ -81,10 +81,12 @@ const JoinScreen = () => {
   /* ---------------- CONNECT ---------------- */
   const handleConnectToIp = useCallback(
     async (ip: string, port?: number) => {
-      if (!canAttemptJoin) {
+      // 🚀 GRACEFUL: Only block if WiFi is physically off. 
+      // Don't block if Location is denied, as direct IP connection often works without it.
+      if (status === "no_wifi") {
         toast.error(
-          "Same Network Required",
-          "Connect both devices to same Wi-Fi",
+          "No Connection",
+          "Please connect to the same WiFi as the host."
         );
         return;
       }
@@ -109,32 +111,33 @@ const JoinScreen = () => {
         gameType,
       });
     },
-    [canAttemptJoin, session],
+    [status, session],
   );
 
   /* ---------------- AUTO NAV ---------------- */
   useEffect(() => {
-    if (
-      session.connectionStatus === "CONNECTED" &&
-      session.players.length === 4
-    ) {
-      router.replace({
-        pathname: "/lobby",
-        params: { gameType },
-      } as any);
+    if (session.connectionStatus === "CONNECTED") {
+      toast.success("Connected!", `Joined ${session.roomCode || "Lobby"}`);
+
+      if (session.players.length === 4) {
+        router.replace({
+          pathname: "/lobby",
+          params: { gameType },
+        } as any);
+      }
     }
   }, [session.connectionStatus, session.players.length]);
 
   /* ---------------- ROOM CODE ---------------- */
   const handleRoomCodeConnect = useCallback(async () => {
-    const decodedIp = decodeLanRoomCode(roomCode);
+    const decoded = await decodeLanRoomCode(roomCode);
 
-    if (!decodedIp) {
-      toast.error("Invalid Code", "Enter correct room code");
+    if (!decoded) {
+      toast.error("Invalid Code", "Make sure you're on the same WiFi as the host");
       return;
     }
 
-    await handleConnectToIp(decodedIp);
+    await handleConnectToIp(decoded.ip, decoded.port);
   }, [roomCode, handleConnectToIp]);
 
   /* ---------------- COPY TEXT ---------------- */
@@ -192,21 +195,13 @@ const JoinScreen = () => {
         />
 
         {joinMethod === "scan" ? (
-          !canAttemptJoin ? (
-            <PermissionCard
-              message={errorMessage || "Camera permission is required to scan QR codes."}
-              primaryLabel={permissionPrimaryLabel}
-              onPrimary={permissionPrimaryAction}
-            />
-          ) : (
-            <JoinQRSection
-              session={session}
-              onScan={(payload: any) => {
-                if (!payload.ip) return;
-                handleConnectToIp(payload.ip, payload.port);
-              }}
-            />
-          )
+          <JoinQRSection
+            session={session}
+            onScan={(payload: any) => {
+              if (!payload.ip) return;
+              handleConnectToIp(payload.ip, payload.port);
+            }}
+          />
         ) : (
           <JoinCodeSection
             roomCode={roomCode}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, PermissionsAndroid, Linking, AppState, AppStateStatus } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
+import * as Location from "expo-location";
 
 import {
   errorPermissionDebug,
@@ -146,32 +147,45 @@ export const useNetworkPermissions = (
           details: netState.details,
         });
 
-        const hasWifiConnection =
-          netState.type === "wifi" && netState.isConnected;
-        const hasValidWifi =
-          hasWifiConnection &&
-          (!requireWifiIpAddress || Boolean(netState.details?.ipAddress));
+        // 🚀 PROD-READY: WiFi detection can be tricky with Hotspots. 
+        // If type is 'wifi' it's obvious. If not, we check if we actually have a local IP.
+        const hasWifiConnection = netState.isConnected && (netState.type === "wifi" || netState.type === "ethernet");
+        const hasLocalIp = Boolean(netState.details && "ipAddress" in netState.details && netState.details.ipAddress);
+        
+        // If we require WiFi IP, we must have an IP. Otherwise, we just need a connection that isn't cellular (usually).
+        // But for LAN, cellular is almost always wrong unless it's a very specific setup.
+        const hasValidConnection = hasWifiConnection || (netState.isConnected && hasLocalIp && netState.type !== "cellular");
 
-        if (!hasValidWifi) {
+        if (!hasValidConnection) {
           if (!isActiveRun()) return;
           setStatus("no_wifi");
           setErrorMessage(
-            requireWifiIpAddress
-              ? "Please connect both devices to the same WiFi network."
-              : "Please connect both devices to the same WiFi or hotspot.",
+            "Please connect to a WiFi network or enable your Mobile Hotspot."
           );
           warnPermissionDebug(
             "NetworkPermissions",
-            "Wi-Fi validation failed",
+            "Network validation failed",
             {
               runId,
+              type: netState.type,
               hasWifiConnection,
-              hasValidWifi,
+              hasLocalIp,
               requireWifiIpAddress,
-              details: netState.details,
             },
           );
           return;
+        }
+
+        // 🚀 PROD-READY: On Android, even with permissions, WiFi scanning fails if Location Services (GPS) is OFF.
+        if (Platform.OS === "android") {
+          const isLocationEnabled = await Location.hasServicesEnabledAsync();
+          if (!isLocationEnabled) {
+            if (!isActiveRun()) return;
+            setStatus("denied");
+            setErrorMessage("Location Services (GPS) must be turned ON to discover nearby players.");
+            warnPermissionDebug("NetworkPermissions", "Location services disabled");
+            return;
+          }
         }
 
         if (Platform.OS === "android" && requireAndroidWifiPermissions) {

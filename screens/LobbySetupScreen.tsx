@@ -58,6 +58,8 @@ const LobbySetupScreen = ({
   const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
   
+
+
   // App Update State
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateInfo, setUpdateInfo] = useState({ url: "", version: "" });
@@ -200,44 +202,8 @@ const LobbySetupScreen = ({
                   )}
                 </AnimatePresence>
 
-                {ui.permissionBlocked && !lobby.isHost ? (
-                  ui.permissionPending ? (
-                    <HandshakeStatus
-                      step={step === "idle" ? "checking_wifi" : step}
-                      status="loading"
-                      discoveredCount={0}
-                      errorMessage={errorMessage}
-                      isHost={lobby.isHost}
-                      onRetry={retry}
-                      onOpenSettings={openSettings}
-                      wifiSSID="Secure LAN"
-                    />
-                  ) : (
-                    <PermissionFallbackCard
-                      isHost={lobby.isHost}
-                      onPrimary={status === "denied" ? openSettings : retry}
-                      onSecondary={
-                        lobby.isHost
-                          ? lobby.handleContinueWithReadySeats
-                          : undefined
-                      }
-                      primaryLabel={
-                        status === "denied" ? "Open Settings" : "Try Again"
-                      }
-                      message={
-                        errorMessage ||
-                        "Permissions needed for local discovery."
-                      }
-                    />
-                  )
-                ) : ui.hostError ? (
-                  <HostStartErrorCard
-                    message={lobby.errorMessage!}
-                    onRetry={lobby.handleRetryHosting}
-                    retrying={lobby.isBootstrappingHost}
-                    onUseReadySeats={lobby.handleContinueWithReadySeats}
-                  />
-                ) : (
+                {/* 🚀 GRACEFUL: No longer blocking the UI with PermissionFallbackCard or HostStartErrorCard.
+                    We let the user see the lobby. They will only be prompted when they click "Invite Players". */}
                   <>
                     {/* For joiners: always show profile card regardless of list state.
                         For host: hide it when the players list is expanded. */}
@@ -252,15 +218,14 @@ const LobbySetupScreen = ({
                         </MotiView>
                       )}
                     </AnimatePresence>
-
+ 
                     <PlayersList
                       lobby={lobby}
                       getAvatarSource={getAvatarSource}
                       onOpenChange={setIsPlayersListOpen}
                     />
                   </>
-                )}
-              </ScrollView>
+                </ScrollView>
 
               {lobby.isHost && (
                 <View className="pb-6 pt-2">
@@ -351,10 +316,7 @@ const LobbySetupScreen = ({
                   lobby.handleRetryHosting(); // 🚀 Re-trigger hosting now that we have permissions
                   setUiState("share");
                 }} 
-                onSkip={() => {
-                  setAllPermissionsGranted(true);
-                  setUiState("share");
-                }}
+                onSkip={() => setUiState("normal")}
                 title="Invite Friends"
                 description="We need Location permissions to generate a room code and help your friends find you."
               />

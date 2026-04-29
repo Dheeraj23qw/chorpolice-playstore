@@ -597,6 +597,13 @@ export const GameSessionTransport = {
 
       // 2. Encapsulated State Cleanup
       function performCleanup() {
+        // 🚀 CRITICAL: Null hostIp FIRST so the clientSocket's async 'close'
+        // event guard (`state.hostIp === hostIp`) prevents a reconnect attempt
+        // on a socket that is about to be destroyed. Without this, the timer
+        // fires after destroy() and creates a new socket with a stale ID,
+        // causing 'No socket with id 1000'.
+        state.hostIp = null;
+
         // Close all client connections on the server side
         state.clientSockets.forEach((socket) => {
           try {
@@ -619,7 +626,6 @@ export const GameSessionTransport = {
         packetHandler = null;
         state.isHost = false;
         state.localPlayerId = "host_id";
-        state.hostIp = null;
         state.listeningPort = PRIMARY_PORT;
         state.clientSockets.clear();
         state.clientIps.clear();

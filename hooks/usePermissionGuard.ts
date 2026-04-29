@@ -15,6 +15,7 @@ export const usePermissionGuard = () => {
   const [state, setState] = useState<PermissionState>("idle");
   const [missingPermissions, setMissingPermissions] = useState<string[]>([]);
   const [missingCritical, setMissingCritical] = useState<string[]>([]);
+  const [servicesDisabled, setServicesDisabled] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
   const activeRunIdRef = useRef(0);
   const checkingRef = useRef(false);
@@ -43,16 +44,20 @@ export const usePermissionGuard = () => {
   const checkCurrentStatuses = useCallback(async () => {
     const missing: string[] = [];
     let isBlocked = false;
+    let servicesDisabled = false;
 
     try {
-      const [locStatus, camStatus] = await Promise.all([
+      const [locStatus, camStatus, servicesEnabled] = await Promise.all([
         Location.getForegroundPermissionsAsync(),
         Camera.getCameraPermissionsAsync(),
+        Location.hasServicesEnabledAsync(),
       ]);
 
       if (locStatus.status !== "granted") {
         missing.push("Location");
         if (!locStatus.canAskAgain) isBlocked = true;
+      } else if (!servicesEnabled) {
+        servicesDisabled = true;
       }
 
       if (camStatus.status !== "granted") {
@@ -67,10 +72,10 @@ export const usePermissionGuard = () => {
         }
       }
 
-      return { missing, isBlocked };
+      return { missing, isBlocked, servicesDisabled };
     } catch (err) {
       console.error("Status Check Failed:", err);
-      return { missing: [], isBlocked: false };
+      return { missing: [], isBlocked: false, servicesDisabled: false };
     }
   }, []);
 
@@ -90,19 +95,27 @@ export const usePermissionGuard = () => {
     try {
       if (request) setState("checking");
 
-      const { missing, isBlocked } = await checkCurrentStatuses();
+      const { missing, isBlocked, servicesDisabled } = await checkCurrentStatuses();
       
       if (!isActive()) return false;
       const criticalMissing = missing.filter(p => CRITICAL_PERMISSIONS.includes(p));
-      const allCriticalGranted = criticalMissing.length === 0;
+      const allCriticalGranted = criticalMissing.length === 0 && !servicesDisabled;
 
       if (allCriticalGranted) {
         if (isActive()) {
           setMissingPermissions(missing);
           setMissingCritical([]);
+          setServicesDisabled(false);
           setState("granted");
         }
         return true;
+      }
+
+      if (servicesDisabled && criticalMissing.length === 0) {
+        // Location permission is granted, but GPS is OFF
+        if (request && isActive()) {
+          toast.error("Location Services Disabled", "Please turn on GPS/Location in your phone settings to find players.");
+        }
       }
 
       if (request) {
@@ -147,10 +160,12 @@ export const usePermissionGuard = () => {
         setMissingPermissions(newMissing);
         setMissingCritical(newCriticalMissing);
         
-        if (newCriticalMissing.length === 0) {
+        if (newCriticalMissing.length === 0 && !servicesDisabled) {
           setState("granted");
           return true;
         }
+
+        setServicesDisabled(servicesDisabled);
 
         setState(nowBlocked || isBlocked ? "blocked" : "denied");
         return false;
@@ -160,6 +175,7 @@ export const usePermissionGuard = () => {
       if (isActive()) {
         setMissingPermissions(missing);
         setMissingCritical(criticalMissing);
+        setServicesDisabled(servicesDisabled);
         setState(isBlocked ? "blocked" : "denied");
       }
       return criticalMissing.length === 0;
@@ -197,6 +213,7 @@ export const usePermissionGuard = () => {
     state,
     missingPermissions,
     missingCritical,
+    servicesDisabled,
     attemptCount,
     checkAllPermissions,
     openSettings,
