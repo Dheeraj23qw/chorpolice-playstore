@@ -14,7 +14,7 @@ export const checkAppUpdate = async (): Promise<{
     // Current app version from expo config
     const currentVersion = Constants.expoConfig?.version || "1.0.0";
 
-    const latestVersion = "4.0.0";
+    const latestVersion = "4.1.0";
 
     const isAvailable = compareVersions(currentVersion, latestVersion) < 0;
 
