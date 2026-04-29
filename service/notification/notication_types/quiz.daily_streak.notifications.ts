@@ -15,7 +15,7 @@ export async function scheduleDailyStreakReminder(dailyStreak: number) {
     seconds,
     { streak: dailyStreak },
     "#EF4444", // Red accent — urgency color
-    "alerts"   // High-priority channel
+    "chor_police_alerts"   // High-priority channel
   );
 }
 

@@ -2,6 +2,7 @@ import { storage } from "@/storage/mmkv";
 import { customAlphabet } from "nanoid/non-secure";
 
 const AVATAR_KEY = "user_avatar";
+const AVATAR_ID_KEY = "user_avatar_id";
 const USERNAME_KEY = "user_name";
 const PERMANENT_PLAYER_ID_KEY = "user_permanent_id";
 
@@ -48,6 +49,28 @@ export const loadAvatar = (): string | null => {
   return storage.getString(AVATAR_KEY) || null;
 };
 
+export const saveAvatarId = (id: number) => {
+  try {
+    storage.set(AVATAR_ID_KEY, id);
+  } catch (e) {
+    console.error("Avatar ID save failed", e);
+  }
+};
+
+export const loadAvatarId = (): number => {
+  try {
+    let id = storage.getNumber(AVATAR_ID_KEY);
+    if (!id) {
+      // Pick a random "kid" avatar from the 1-13 range
+      id = Math.floor(Math.random() * 13) + 1;
+      storage.set(AVATAR_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return 1;
+  }
+};
+
 export const saveUsername = (name: string) => {
   try {
     storage.set(USERNAME_KEY, name);
@@ -58,9 +81,16 @@ export const saveUsername = (name: string) => {
 
 export const loadUsername = (): string => {
   try {
-    return storage.getString(USERNAME_KEY) || "PLAYER";
+    let name = storage.getString(USERNAME_KEY);
+    if (!name) {
+      // Generate dynamic name: User_ followed by 3 random digits (e.g., User_132)
+      const randomDigits = Math.floor(100 + Math.random() * 900);
+      name = `User_${randomDigits}`;
+      storage.set(USERNAME_KEY, name);
+    }
+    return name;
   } catch {
-    return "PLAYER";
+    return "User_000";
   }
 };
 

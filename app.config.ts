@@ -36,7 +36,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     allowBackup: false,
     softwareKeyboardLayoutMode: "pan",
     versionCode: 100,
-    googleServicesFile: process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
+    googleServicesFile:
+      process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
     permissions: [
       "android.permission.INTERNET",
       "android.permission.ACCESS_NETWORK_STATE",
@@ -50,8 +51,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "android.permission.VIBRATE",
       "android.permission.POST_NOTIFICATIONS",
       "android.permission.SCHEDULE_EXACT_ALARM",
-      // Android 13+ (API 33+): needed for exact local notification scheduling
-      // from Play Store builds. Works alongside SCHEDULE_EXACT_ALARM.
       "android.permission.USE_EXACT_ALARM",
     ],
     adaptiveIcon: {
@@ -100,7 +99,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         icon: "./assets/images/notification-icon.png",
         color: "#A855F7",
-        defaultChannel: "default",
+        defaultChannel: "chor_police_general",
         enableBackgroundRemoteNotifications: false,
       },
     ],
@@ -115,7 +114,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           compiler: "r8",
           usesCleartextTraffic: true,
           extraProguardRules:
-            "-keep class com.google.android.gms.nearby.** { *; }",
+            "-keep class com.google.android.gms.nearby.** { *; }\n" +
+            "-keep class com.google.firebase.** { *; }\n" +
+            "-keep class expo.modules.notifications.** { *; }\n" +
+            "-keep class com.dieam.reactnativepushnotification.** { *; }",
           packagingOptions: {
             pickFirst: ["**/libc++_shared.so"],
             exclude: [

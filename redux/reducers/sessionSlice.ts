@@ -1,4 +1,4 @@
-import { loadOrCreateClientPlayerId, loadUsername } from "@/storage/userStorage";
+import { loadOrCreateClientPlayerId, loadUsername, loadAvatarId } from "@/storage/userStorage";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface SessionPlayer {
@@ -70,7 +70,7 @@ interface SessionState {
 
 const DEFAULT_LOCAL_PLAYER_ID = loadOrCreateClientPlayerId();
 const DEFAULT_LOCAL_PLAYER_NAME = loadUsername();
-const DEFAULT_LOCAL_AVATAR_ID = 1;
+const DEFAULT_LOCAL_AVATAR_ID = loadAvatarId();
 
 const INITIAL_GAME_STATE = {
   gamePhase: "idle" as GamePhase,

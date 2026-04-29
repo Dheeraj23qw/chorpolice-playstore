@@ -59,13 +59,13 @@ class NotificationService {
   async configureChannels(): Promise<void> {
     if (Platform.OS !== "android") return;
 
-    await Notifications.setNotificationChannelAsync("default", {
+    await Notifications.setNotificationChannelAsync("chor_police_general", {
       name: "General",
       description: "Game reminders, streaks, and rewards",
       importance: Notifications.AndroidImportance.MAX,
       sound: "default",
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#22c55e",
+      lightColor: "#A855F7",
       lockscreenVisibility:
         Notifications.AndroidNotificationVisibility.PUBLIC,
       enableLights: true,
@@ -73,10 +73,10 @@ class NotificationService {
       showBadge: true,
     });
 
-    await Notifications.setNotificationChannelAsync("alerts", {
+    await Notifications.setNotificationChannelAsync("chor_police_alerts", {
       name: "Alerts",
       description: "High-priority reminders and reward nudges",
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: Notifications.AndroidImportance.MAX, // Upgraded to MAX for production visibility
       sound: "default",
       vibrationPattern: [0, 500, 200, 500],
       lightColor: "#f97316",
@@ -196,7 +196,7 @@ class NotificationService {
     body: string;
     seconds: number;
     color?: string;
-    channelId?: "default" | "alerts";
+    channelId?: "chor_police_general" | "chor_police_alerts";
     data?: AppNotificationData;
   }): Promise<string | null> {
     if (Platform.OS === "web") return null;
@@ -221,8 +221,9 @@ class NotificationService {
           color: params.color ?? "#22c55e",
           priority: Notifications.AndroidNotificationPriority.HIGH,
           ...(Platform.OS === "android" && {
-            channelId: params.channelId ?? "default",
+            channelId: params.channelId ?? "chor_police_general",
             autoDismiss: true,
+            vibrationPattern: [0, 250, 250, 250],
           }),
         },
         trigger: {
@@ -243,7 +244,7 @@ class NotificationService {
       title: "Wheel of Fortune Ready! 🎡",
       body: "Your daily spin is waiting. Come and see what you win today!",
       seconds: 2 * 60 * 60, // 2 Hours
-      channelId: "alerts",
+      channelId: "chor_police_alerts",
       data: { screen: "/earn" }
     });
   }
@@ -254,7 +255,7 @@ class NotificationService {
       title: "Daily Treasure Available! 💰",
       body: "Don't break your streak! Collect your daily 5,000 coins now.",
       seconds: 24 * 60 * 60, // 24 Hours
-      channelId: "alerts",
+      channelId: "chor_police_alerts",
       data: { screen: "/earn" }
     });
   }
@@ -269,7 +270,7 @@ class NotificationService {
       title: `${remaining.toLocaleString()} coins to your next reward! 🎁`,
       body: `Keep playing — your "${reward}" reward is almost unlocked.`,
       seconds: 30, // fire shortly so the user sees it while still engaged
-      channelId: "alerts",
+      channelId: "chor_police_alerts",
       data: { screen: "/earn" },
     });
   }

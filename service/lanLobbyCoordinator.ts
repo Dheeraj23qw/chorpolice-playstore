@@ -105,7 +105,7 @@ const buildJoinPacketFromState = () => {
     type: NETWORK.PLAYER_JOIN,
     player: {
       id: state.localPlayerId,
-      name: state.localPlayerName.trim() || "PLAYER",
+      name: state.localPlayerName.trim() || loadUsername(),
       avatarId: state.localAvatarId || 1,
       isBot: false,
       coins: store.getState().wallet.coins,
@@ -139,7 +139,7 @@ const updateHostLocalPlayer = ({
   const currentPlayer = state.players[localPlayerIndex];
   const nextPlayer = {
     ...currentPlayer,
-    ...(name !== undefined ? { name: name.trim() || "PLAYER_1" } : {}),
+    ...(name !== undefined ? { name: name.trim() || `User_${Math.floor(100 + Math.random() * 900)}` } : {}),
     ...(avatarId !== undefined ? { avatarId } : {}),
     ...(coins !== undefined ? { coins } : {}),
   };

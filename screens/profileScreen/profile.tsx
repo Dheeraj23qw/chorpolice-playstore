@@ -13,7 +13,7 @@ import AvatarWithLevel from "@/components/ProfileScreen/AvatarWithLevel";
 import LevelProgressBar from "@/components/ProfileScreen/LevelProgressBar";
 import StatCard from "@/components/ProfileScreen/StatCard";
 import AchievementCard from "@/components/ProfileScreen/AchievementCard";
-import { loadAvatar, saveAvatar, loadUsername } from "@/storage/userStorage";
+import { loadAvatar, saveAvatar, loadUsername, loadAvatarId } from "@/storage/userStorage";
 import { loadReferralStats } from "@/storage/referralStatsStorage";
 import { BlurView } from "expo-blur";
 import { rf } from "@/utils/responsive";
@@ -27,7 +27,8 @@ export default function UserProfile() {
   const { pickImage } = useGalleryPicker();
 
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [username, setUsername] = useState("PLAYER");
+  const [avatarId, setAvatarId] = useState(loadAvatarId());
+  const [username, setUsername] = useState(loadUsername());
   const referralStats = loadReferralStats();
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function UserProfile() {
     if (saved) setAvatarUri(saved);
     const savedName = loadUsername();
     if (savedName) setUsername(savedName);
+    setAvatarId(loadAvatarId());
   }, []);
 
   const changeAvatar = async () => {
@@ -97,6 +99,7 @@ export default function UserProfile() {
         <View className="items-center pb-4">
           <AvatarWithLevel
             imageUri={avatarUri}
+            avatarId={avatarId}
             level={level}
             onPress={changeAvatar}
           />

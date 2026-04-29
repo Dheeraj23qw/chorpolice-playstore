@@ -11,17 +11,18 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { rf, wp } from "@/utils/responsive";
+import { playerImages } from "@/constants/playerData";
 
 interface Props {
   imageUri?: string | null;
+  avatarId?: number;
   level: number;
   onPress: () => void;
 }
 
-export default function AvatarWithLevel({ imageUri, level, onPress }: Props) {
+export default function AvatarWithLevel({ imageUri, avatarId = 1, level, onPress }: Props) {
   const SIZE = wp(38);
   const RADIUS = SIZE / 2;
-  const PLACEHOLDER = "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000&auto=format&fit=crop";
 
   const scale = useSharedValue(1);
   const borderGlow = useSharedValue(0);
@@ -77,7 +78,12 @@ export default function AvatarWithLevel({ imageUri, level, onPress }: Props) {
           >
             <View className="flex-1 overflow-hidden rounded-full bg-zinc-900">
                <Image
-                  source={imageUri ? { uri: imageUri } : { uri: PLACEHOLDER }}
+                  source={
+                    imageUri
+                      ? { uri: imageUri }
+                      : playerImages[avatarId]?.src ||
+                        require("@/assets/images/chorsipahi/thief.webp")
+                  }
                   className="h-full w-full"
                   resizeMode="cover"
                />

@@ -21,14 +21,14 @@ function injectVariables(
  * @param seconds     - How many seconds from now to fire
  * @param variables   - Optional key/value substitutions for {placeholders}
  * @param color       - Optional accent color for the notification
- * @param channelId   - Android channel ID: "default" or "alerts" (default: "default")
+ * @param channelId   - Android channel ID: "chor_police_general" or "chor_police_alerts" (default: "chor_police_general")
  */
 export async function scheduleFromTemplate(
   template: NotificationTemplate,
   seconds: number,
   variables?: Record<string, string | number>,
   color?: string,
-  channelId: "default" | "alerts" = "default"
+  channelId: "chor_police_general" | "chor_police_alerts" = "chor_police_general"
 ) {
   const title = injectVariables(getRandomItem(template.titles), variables);
   const body = injectVariables(getRandomItem(template.bodies), variables);

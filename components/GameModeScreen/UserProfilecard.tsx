@@ -21,7 +21,9 @@ import {
   saveAvatar,
   loadUsername,
   saveUsername,
+  loadAvatarId,
 } from "@/storage/userStorage";
+import { playerImages } from "@/constants/playerData";
 import { useEarnLogic } from "@/hooks/useEarnLogic";
 import { useAppSelector, useAppDispatch } from "@/hooks/useAppRedux";
 import { RedeemModal } from "@/modal/RedeemModal";
@@ -38,7 +40,8 @@ const UserProfileCard = () => {
   const { pickImage } = useGalleryPicker();
 
   const [avatar, setAvatar] = useState<string | null>(null);
-  const [name, setName] = useState("PLAYER");
+  const [avatarId, setAvatarId] = useState(loadAvatarId());
+  const [name, setName] = useState(loadUsername());
   const [isEditing, setIsEditing] = useState(false);
   const [isRedeemVisible, setIsRedeemVisible] = useState(false);
   const [streak, setStreak] = useState(1);
@@ -51,12 +54,14 @@ const UserProfileCard = () => {
 
   useEffect(() => {
     const init = async () => {
-      const [savedAvatar, savedName] = await Promise.all([
+      const [savedAvatar, savedName, savedAvatarId] = await Promise.all([
         loadAvatar(),
         loadUsername(),
+        loadAvatarId(),
       ]);
       if (savedAvatar) setAvatar(savedAvatar);
       if (savedName) setName(savedName.slice(0, 8)); // Ensure loaded name respects limit
+      setAvatarId(savedAvatarId);
       setStreak(updateStreak());
     };
     init();
@@ -169,7 +174,8 @@ const UserProfileCard = () => {
                   source={
                     avatar
                       ? { uri: avatar }
-                      : require("@/assets/images/chorsipahi/thief.webp")
+                      : playerImages[avatarId]?.src ||
+                        require("@/assets/images/chorsipahi/thief.webp")
                   }
                   className="h-full w-full"
                   resizeMode="cover"
@@ -192,7 +198,7 @@ const UserProfileCard = () => {
                 maxLength={8}
                 onBlur={() => {
                   setIsEditing(false);
-                  saveUsername(name || "PLAYER");
+                  saveUsername(name || loadUsername());
                 }}
                 autoFocus
                 className="min-w-[120px] p-0 font-main-bold text-white"
@@ -206,7 +212,7 @@ const UserProfileCard = () => {
                   style={{ fontSize: rf(3.2) }}
                   numberOfLines={1}
                 >
-                  {name || "PLAYER"}
+                  {name || loadUsername()}
                 </Text>
                 <Ionicons
                   name="pencil"

@@ -9,6 +9,6 @@ export async function scheduleWelcomeNotification() {
     WELCOME_NOTIFICATION_DELAY_SECONDS,
     undefined,
     "#22c55e",
-    "default",
+    "chor_police_general",
   );
 }
