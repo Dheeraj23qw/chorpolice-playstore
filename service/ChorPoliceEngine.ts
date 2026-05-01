@@ -119,6 +119,7 @@ export const ChorPoliceEngine = {
         break;
 
       case CP.PUBLIC_REVEAL: {
+        const isNewRound = (packet.round || 1) !== ChorPoliceEngine.state.currentRound;
         ChorPoliceEngine.state.currentRound =
           packet.round ?? ChorPoliceEngine.state.currentRound;
         ChorPoliceEngine.state.policeIndex =
@@ -128,15 +129,49 @@ export const ChorPoliceEngine = {
         ChorPoliceEngine.state.isRoundActive = true;
 
         let currentRoles = [...ChorPoliceEngine.state.roles];
-        if (currentRoles.length === 0) {
-          currentRoles = new Array(4).fill("Hidden");
-          if (packet.kingIndex !== undefined && packet.kingIndex !== null) {
-            currentRoles[packet.kingIndex] = "King";
+        
+        // 🛡️ STALE STATE PROTECTION:
+        // If it's a new round, or if the current roles don't match the new public indices,
+        // we must reset the client's role knowledge to "Hidden" for everything except
+        // what is publicly revealed in this packet.
+        const needsReset = isNewRound || currentRoles.length === 0 || 
+          currentRoles[ChorPoliceEngine.state.kingIndex] !== "King" || 
+          currentRoles[ChorPoliceEngine.state.policeIndex] !== "Police";
+
+        if (needsReset) {
+          // On the Host, ChorPoliceEngine.state.roles is already fully populated by startRound().
+          // If we are the host, we don't want to "Hide" our own roles.
+          // We check if the existing roles are actually a valid full set for this round.
+          const isHostWithFullRoles = currentRoles.length === 4 && 
+            currentRoles[ChorPoliceEngine.state.kingIndex] === "King" &&
+            currentRoles[ChorPoliceEngine.state.policeIndex] === "Police" &&
+            currentRoles.includes("Thief") && 
+            currentRoles.includes("Advisor");
+
+          if (!isHostWithFullRoles) {
+            console.log(`🎭 [CPEngine] 🧹 Resetting stale roles for round ${ChorPoliceEngine.state.currentRound}`);
+            
+            // Get my current role from Redux to preserve it during reset
+            const myRole = store.getState().session.myRole;
+            const localId = store.getState().session.localPlayerId;
+            const players = ChorPoliceEngine.state.players;
+            const myIndex = players.findIndex(p => p.id === localId);
+
+            currentRoles = new Array(4).fill("Hidden");
+            
+            // 🛡️ PRESERVE LOCAL PLAYER ROLE: if we already received ROLE_ASSIGN for this round
+            if (myRole && myIndex !== -1) {
+              currentRoles[myIndex] = myRole;
+            }
+
+            if (packet.kingIndex !== undefined && packet.kingIndex !== null) {
+              currentRoles[packet.kingIndex] = "King";
+            }
+            if (packet.policeIndex !== undefined && packet.policeIndex !== null) {
+              currentRoles[packet.policeIndex] = "Police";
+            }
+            ChorPoliceEngine.state.roles = currentRoles;
           }
-          if (packet.policeIndex !== undefined && packet.policeIndex !== null) {
-            currentRoles[packet.policeIndex] = "Police";
-          }
-          ChorPoliceEngine.state.roles = currentRoles;
         }
 
         // ── Redux sync ──
@@ -154,12 +189,28 @@ export const ChorPoliceEngine = {
       }
 
       case CP.ROLE_ASSIGN:
-        // Each player receives their own role via this packet.
-        // Dispatch to Redux so the UI can read myRole from the store.
         {
-          const sessionState = store.getState().session;
-          if (packet.playerId === sessionState.localPlayerId) {
+          const localPlayerId = store.getState().session.localPlayerId;
+          if (packet.playerId === localPlayerId) {
             dispatch(setMyRole(packet.role));
+            
+            // 🚀 SYNC: If the roles array is already initialized (e.g. from previous round or current dealing)
+            // update our own position in it so the UI shows our role immediately.
+            if (ChorPoliceEngine.state.roles.length === 4) {
+              const nextRoles = [...ChorPoliceEngine.state.roles];
+              nextRoles[packet.playerIndex] = packet.role;
+              ChorPoliceEngine.state.roles = nextRoles;
+              
+              // Sync Redux so UI reflects our role in the card list
+              dispatch(setRoundState({
+                round: ChorPoliceEngine.state.currentRound,
+                roles: nextRoles,
+                policeIndex: ChorPoliceEngine.state.policeIndex,
+                kingIndex: ChorPoliceEngine.state.kingIndex,
+                thiefIndex: ChorPoliceEngine.state.thiefIndex,
+                advisorIndex: ChorPoliceEngine.state.advisorIndex,
+              }));
+            }
           }
         }
         break;

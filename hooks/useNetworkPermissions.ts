@@ -149,12 +149,13 @@ export const useNetworkPermissions = (
 
         // 🚀 PROD-READY: WiFi detection can be tricky with Hotspots. 
         // If type is 'wifi' it's obvious. If not, we check if we actually have a local IP.
-        const hasWifiConnection = netState.isConnected && (netState.type === "wifi" || netState.type === "ethernet");
+        const isWifi = netState.type === "wifi" || netState.type === "ethernet";
+        const isCellular = netState.type === "cellular";
         const hasLocalIp = Boolean(netState.details && "ipAddress" in netState.details && netState.details.ipAddress);
         
-        // If we require WiFi IP, we must have an IP. Otherwise, we just need a connection that isn't cellular (usually).
-        // But for LAN, cellular is almost always wrong unless it's a very specific setup.
-        const hasValidConnection = hasWifiConnection || (netState.isConnected && hasLocalIp && netState.type !== "cellular");
+        // 🚀 HOTSPOT FIX: On Android, if a device is hosting a hotspot, NetInfo reports 'cellular'.
+        // We ensure the device is connected AND either has a local IP (standard) or is an Android hotspot (cellular fallback).
+        const hasValidConnection = netState.isConnected && (isWifi || hasLocalIp || (Platform.OS === 'android' && isCellular));
 
         if (!hasValidConnection) {
           if (!isActiveRun()) return;
@@ -414,10 +415,11 @@ export const useNetworkPermissions = (
         details: state.details,
       });
 
-      const hasWifiConnection = state.type === "wifi" && state.isConnected;
+      const isWifi = state.type === "wifi" && state.isConnected;
+      const isCellular = state.type === "cellular" && state.isConnected;
+      
       const hasValidWifi =
-        hasWifiConnection &&
-        (!requireWifiIpAddress || Boolean(state.details?.ipAddress));
+        isWifi || (Platform.OS === "android" && isCellular);
 
       if (!hasValidWifi && mountedRef.current) {
         setStatus("no_wifi");

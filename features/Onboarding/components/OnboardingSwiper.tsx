@@ -44,6 +44,14 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
     return { opacity };
   });
 
+  const [isCompleting, setIsCompleting] = React.useState(false);
+
+  const handlePress = React.useCallback(() => {
+    if (isCompleting) return;
+    setIsCompleting(true);
+    onComplete();
+  }, [isCompleting, onComplete]);
+
   return (
     <View className="flex-1 bg-[#050505]">
       <LinearGradient
@@ -56,6 +64,7 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
         keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
+        scrollEnabled={!isCompleting} // Disable scrolling when loading
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -95,7 +104,8 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
       <AnimatedCTA
         scrollX={scrollX}
         lastIndex={lastIndex}
-        onPress={onComplete}
+        onPress={handlePress}
+        isLoading={isCompleting}
       />
 
       <Animated.View
@@ -174,10 +184,12 @@ const AnimatedCTA = ({
   scrollX,
   lastIndex,
   onPress,
+  isLoading = false,
 }: {
   scrollX: SharedValue<number>;
   lastIndex: number;
   onPress: () => void;
+  isLoading?: boolean;
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
     const input = [(lastIndex - 1) * width, lastIndex * width];
@@ -222,16 +234,20 @@ const AnimatedCTA = ({
         },
       ]}
     >
-      <TouchableOpacity activeOpacity={0.92} onPress={onPress}>
+      <TouchableOpacity 
+        activeOpacity={0.92} 
+        onPress={onPress}
+        disabled={isLoading}
+      >
         <View className="overflow-hidden rounded-full">
           <LinearGradient
-            colors={["#A78BFA", "#60A5FA"]}
+            colors={isLoading ? ["#4B5563", "#374151"] : ["#A78BFA", "#60A5FA"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             className="rounded-full px-12 py-4"
           >
             <Text className="text-lg font-bold tracking-wide text-white">
-              Let's Get Started
+              {isLoading ? "Starting..." : "Let's Get Started"}
             </Text>
           </LinearGradient>
         </View>
