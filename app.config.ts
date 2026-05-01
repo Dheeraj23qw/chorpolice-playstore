@@ -49,8 +49,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "android.permission.WAKE_LOCK",
       "android.permission.VIBRATE",
       "android.permission.POST_NOTIFICATIONS",
-      "android.permission.SCHEDULE_EXACT_ALARM",
-      "android.permission.USE_EXACT_ALARM",
     ],
     adaptiveIcon: {
       foregroundImage: "./assets/images/adaptive-icon.png",
