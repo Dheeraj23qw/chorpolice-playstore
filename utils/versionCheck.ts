@@ -1,26 +1,30 @@
 import Constants from "expo-constants";
-import { Platform } from "react-native";
 
-/**
- * Utility to check if a new version is available.
- * In a real-world scenario, you would fetch this from your backend or a remote config.
- */
+// The Raw URL you provided
+const UPDATE_CONFIG_URL =
+  "https://gist.githubusercontent.com/Dheeraj23qw/895f8ccc58542c3c997ca6ca299b819e/raw/851276d1a51d80ecdcdd189e140259c8f2887fd2/version.json";
+
 export const checkAppUpdate = async (): Promise<{
   isAvailable: boolean;
   latestVersion: string;
   updateUrl: string;
 }> => {
   try {
-    // Current app version from expo config
-    const currentVersion = Constants.expoConfig?.version || "1.0.0";
+    // Append a timestamp to prevent the app from caching an old version.json
+    const response = await fetch(`${UPDATE_CONFIG_URL}?t=${Date.now()}`, {
+      cache: "no-store",
+    });
 
-    const latestVersion = "4.1.0";
+    if (!response.ok) throw new Error("Failed to fetch version info");
+
+    const data = await response.json();
+
+    // Get the current version from your app.json config
+    const currentVersion = Constants.nativeApplicationVersion || "4.2.0";
+    const latestVersion = data.latestVersion;
+    const updateUrl = data.updateUrl;
 
     const isAvailable = compareVersions(currentVersion, latestVersion) < 0;
-
-    const androidPackageName =
-      Constants.expoConfig?.android?.package || "com.dheeraj.chorpolice";
-    const updateUrl = `https://play.google.com/store/apps/details?id=${androidPackageName}`;
 
     return {
       isAvailable,
@@ -29,6 +33,7 @@ export const checkAppUpdate = async (): Promise<{
     };
   } catch (error) {
     console.error("Error checking for app update:", error);
+    // Fallback: assume no update is available if the network request fails
     return { isAvailable: false, latestVersion: "1.0.0", updateUrl: "" };
   }
 };
