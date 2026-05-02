@@ -163,30 +163,43 @@ export const setApIsolationHandler = (handler: (() => void) | null) => {
 };
 
 export const startHeartbeat = (isHost: boolean) => {
-  if (!isHost) {
-    return;
-  }
-
+  const context = GameSessionTransport.getSnapshot();
+  
   HeartbeatService.start({
     onPing: (packet) => {
-      GameSessionTransport.sendToClients(packet);
+      if (isHost) {
+        GameSessionTransport.sendToClients(packet);
+      } else if (context.hostIp) {
+        GameSessionTransport.sendToHost(packet);
+      }
     },
     onStale: (ip) => {
-      const playerId = GameSessionTransport.getPlayerIdByIp(ip);
-      if (!playerId) {
-        HeartbeatService.removeClient(ip);
-        return;
+      if (isHost) {
+        const playerId = GameSessionTransport.getPlayerIdByIp(ip);
+        if (!playerId) {
+          HeartbeatService.removeClient(ip);
+          return;
+        }
+
+        const leavePacket = {
+          type: NETWORK.PLAYER_LEAVE,
+          playerId,
+          reason: "heartbeat_timeout",
+        };
+
+        unregisterRemotePeer(playerId);
+        GameSessionTransport.sendToClients(leavePacket);
+        handleIncomingPacket(leavePacket, ip);
+      } else {
+        // Client side: Host is stale
+        console.log(`[LAN] Host at ${ip} is stale. Terminating session.`);
+        const leavePacket = {
+          type: NETWORK.PLAYER_LEAVE,
+          playerId: "host_id",
+          reason: "host_disconnected",
+        };
+        handleIncomingPacket(leavePacket, ip);
       }
-
-      const leavePacket = {
-        type: NETWORK.PLAYER_LEAVE,
-        playerId,
-        reason: "heartbeat_timeout",
-      };
-
-      unregisterRemotePeer(playerId);
-      GameSessionTransport.sendToClients(leavePacket);
-      handleIncomingPacket(leavePacket, ip);
     },
     onApIsolation: () => {
       if (__DEV__) {
@@ -195,6 +208,11 @@ export const startHeartbeat = (isHost: boolean) => {
       apIsolationCallback?.();
     },
   });
+
+  // If we are a client, immediately add the host IP to the monitor list
+  if (!isHost && context.hostIp) {
+    HeartbeatService.addClient(context.hostIp);
+  }
 };
 
 const stopHeartbeat = () => {

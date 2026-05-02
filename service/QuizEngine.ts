@@ -3,6 +3,7 @@ import { PacketRouter } from "./PacketRouter";
 import { updateDebugMetric } from "./observability/DebugService";
 import { IGameEngine } from "./interfaces/IGameEngine";
 import { GameSessionTransport } from "./network/GameSessionTransport";
+import store from "@/redux/store";
 
 type QuizPlayerScore = {
   id: string;
@@ -49,6 +50,8 @@ export const QuizEngine = {
     totalPot: 0,
   },
 
+  _safetyTimer: null as ReturnType<typeof setTimeout> | null,
+
   canHandle: (type: string) => {
     return (
       type === MODES.THINK_AND_COUNT.GAME_START ||
@@ -61,6 +64,10 @@ export const QuizEngine = {
 
   reset: () => {
     console.log("[QuizEngine] Full state reset.");
+    if (QuizEngine._safetyTimer) {
+      clearTimeout(QuizEngine._safetyTimer);
+      QuizEngine._safetyTimer = null;
+    }
     QuizEngine.state.difficulty = "easy";
     QuizEngine.state.currentRound = 1;
     QuizEngine.state.totalRounds = DEFAULT_TOTAL_ROUNDS;
@@ -134,6 +141,12 @@ export const QuizEngine = {
       case "TC_ROUND_SUMMARY":
         QuizEngine.applyRoundSummary(packet);
         break;
+
+      case NETWORK.PLAYER_LEAVE:
+        if (packet.playerId) {
+          QuizEngine.removePlayer(packet.playerId);
+        }
+        break;
     }
   },
 
@@ -150,6 +163,20 @@ export const QuizEngine = {
         (packet.durationMs || 0);
     QuizEngine.state.roundAnswersReceived = 0;
     QuizEngine.state.roundAnsweredIds = {};
+
+    // 🔥 Safety Timer (Host Only): If players get stuck (e.g. disconnect),
+    // force the round to complete after the duration + a small buffer.
+    const isHost = GameSessionTransport.getSnapshot().isHost || store.getState().session.isHost;
+    if (isHost) {
+      if (QuizEngine._safetyTimer) clearTimeout(QuizEngine._safetyTimer);
+      
+      const durationMs = packet.durationMs || 10000;
+      QuizEngine._safetyTimer = setTimeout(() => {
+        if (QuizEngine.state.currentRound > QuizEngine.state.totalRounds) return;
+        console.log(`[QuizEngine] ⏱️ Safety timeout reached for round ${QuizEngine.state.currentRound}. Forcing completion.`);
+        QuizEngine.completeRound();
+      }, durationMs + 4000); // 4s buffer for network jitter/lag
+    }
   },
 
   applyRoundSummary: (packet: any) => {
@@ -178,11 +205,16 @@ export const QuizEngine = {
     QuizEngine.state.currentQuestionId = null;
     QuizEngine.state.roundStartedAt = null;
     QuizEngine.state.roundDeadlineAt = null;
+
+    if (QuizEngine._safetyTimer) {
+      clearTimeout(QuizEngine._safetyTimer);
+      QuizEngine._safetyTimer = null;
+    }
   },
 
   handleAnswer: (packet: AnswerPacket) => {
     const { playerId } = packet;
-    const isHost = GameSessionTransport.getSnapshot().isHost;
+    const isHost = GameSessionTransport.getSnapshot().isHost || store.getState().session.isHost;
 
     if (!playerId) return;
 
@@ -332,6 +364,11 @@ export const QuizEngine = {
   },
 
   completeRound: () => {
+    if (QuizEngine._safetyTimer) {
+      clearTimeout(QuizEngine._safetyTimer);
+      QuizEngine._safetyTimer = null;
+    }
+
     if (__DEV__) {
       console.log(
         `[QuizEngine] completeRound — currentRound: ${QuizEngine.state.currentRound}, totalRounds: ${QuizEngine.state.totalRounds}`,
@@ -359,7 +396,8 @@ export const QuizEngine = {
     QuizEngine.state.roundStartedAt = null;
     QuizEngine.state.roundDeadlineAt = null;
 
-    if (GameSessionTransport.getSnapshot().isHost) {
+    const isHost = GameSessionTransport.getSnapshot().isHost || store.getState().session.isHost;
+    if (isHost) {
       PacketRouter.broadcast(summaryPacket);
     }
   },

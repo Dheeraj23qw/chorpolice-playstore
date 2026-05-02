@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, PermissionsAndroid, Linking, AppState, AppStateStatus } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import * as Location from "expo-location";
+import { getLocalIpAddress } from "@/utils/NetworkUtils";
 
 import {
   errorPermissionDebug,
   logPermissionDebug,
   warnPermissionDebug,
 } from "@/utils/permissionDebug";
+import { logLanDebug } from "@/service/observability/DebugService";
 
 type PermissionStep =
   | "idle"
@@ -121,11 +123,11 @@ const classifyNetworkContext = (state: any): NetworkContext => {
       reason = "iOS cellular but disconnected → truly offline";
     }
   } else if (type === "none" || type === "unknown") {
-    if (Platform.OS === "ios" && hasLocalIp) {
-      // iOS hotspot: NetInfo reports type=none but the device has a local IP
-      // because the AP interface is active.
+    // ✅ HOTSPOT FIX: If we have an IP address but NetInfo says 'none' or 'unknown',
+    // we are likely hosting a hotspot (especially on Android).
+    if (hasLocalIp) {
       result = "hotspot_host";
-      reason = "iOS type=none but has local IP → hosting hotspot";
+      reason = `${type} but has local IP → hosting hotspot`;
     } else if (isConnected) {
       result = "unknown";
       reason = `${type} but isConnected=true → transient/unknown`;
@@ -189,6 +191,7 @@ export const useNetworkPermissions = (
   const inFlightRunRef = useRef<Promise<void> | null>(null);
   // Internal ref so listeners always read LIVE status without stale closures
   const statusRef = useRef<PermissionStatus>("pending");
+  const flowStartTimeRef = useRef<number>(0);
 
   const runFlow = useCallback(async (silent = false) => {
     if (inFlightRunRef.current) {
@@ -208,6 +211,10 @@ export const useNetworkPermissions = (
       mountedRef.current && activeRunIdRef.current === runId;
 
     const flowPromise = (async () => {
+      if (flowStartTimeRef.current === 0) {
+        flowStartTimeRef.current = Date.now();
+      }
+
       logPermissionDebug("NetworkPermissions", "Starting permission flow", {
         runId,
         enabled,
@@ -219,8 +226,8 @@ export const useNetworkPermissions = (
 
       if (!enabled) {
         if (!isActiveRun()) return;
-        setStep("ready");
-        setStatus("granted");
+        setStep("idle");
+        setStatus("idle");
         setErrorMessage(null);
         setNetworkContext("unknown");
         return;
@@ -246,7 +253,22 @@ export const useNetworkPermissions = (
           details: netState.details,
         });
 
-        const ctx = classifyNetworkContext(netState);
+        let ctx = classifyNetworkContext(netState);
+
+        // ✅ HOTSPOT FIX: NetInfo is often pessimistic on Android when hosting.
+        // If it says 'none', we do a secondary check for a usable local IP.
+        if (ctx === "none" && Platform.OS === "android") {
+          const elapsed = Date.now() - flowStartTimeRef.current;
+          // If we've been trying for more than 5 seconds, allow fallback IPs
+          const useFallback = elapsed > 5000;
+          
+          const manualIp = await getLocalIpAddress({ useFallback });
+          if (manualIp && manualIp !== "0.0.0.0") {
+            console.log(`[NetworkPermissions] 📡 NetInfo says 'none' but found IP: ${manualIp}. Promoting to hotspot_host (after ${elapsed}ms).`);
+            ctx = "hotspot_host";
+          }
+        }
+
         if (isActiveRun()) {
           setNetworkContext(ctx);
         }
@@ -264,6 +286,7 @@ export const useNetworkPermissions = (
           if (!isActiveRun()) return;
           const msg = getErrorMessageForContext(ctx, !!requireWifiIpAddress);
           console.log(`[NetworkPermissions] ❌ STATUS → no_wifi (ctx=none, run=${runId})`);
+          logLanDebug("Permission result: no network detected");
           setStatus("no_wifi");
           setErrorMessage(msg);
           warnPermissionDebug("NetworkPermissions", "No network detected", { runId, ctx });
@@ -329,6 +352,7 @@ export const useNetworkPermissions = (
                   `[NetworkPermissions] ❌ STATUS → denied ` +
                   `(nearby=${isNearbyGranted}, location=${isLocationGranted}, permanent=${isPermanent})`,
                 );
+                logLanDebug(`Permission result: denied (nearby=${isNearbyGranted}, location=${isLocationGranted})`);
                 setStatus("denied");
 
                 setErrorMessage(
@@ -351,6 +375,7 @@ export const useNetworkPermissions = (
 
               if (result !== PermissionsAndroid.RESULTS.GRANTED) {
                 if (!isActiveRun()) return;
+                logLanDebug(`Permission result: denied (location=${result})`);
                 setStatus("denied");
                 setErrorMessage(
                   result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN
@@ -368,6 +393,7 @@ export const useNetworkPermissions = (
 
         setStep("ready");
         console.log(`[NetworkPermissions] ✅ STATUS → granted (ctx=${ctx}, run=${runId})`);
+        logLanDebug(`Permission result: granted (ctx=${ctx})`);
         setStatus("granted");
         setErrorMessage(null);
         logPermissionDebug("NetworkPermissions", "Permission flow completed", { runId, ctx });
@@ -394,6 +420,7 @@ export const useNetworkPermissions = (
 
   useEffect(() => {
     mountedRef.current = true;
+    flowStartTimeRef.current = Date.now();
     void runFlow();
     return () => {
       mountedRef.current = false;
@@ -405,9 +432,24 @@ export const useNetworkPermissions = (
     statusRef.current = status;
   }, [status]);
 
-  // Live NetInfo listener — only re-runs flow when network state actually changes meaningfully
+  // Live NetInfo listener — ALWAYS delegates to runFlow for classification.
+  // 
+  // ⚠️ CRITICAL BUG FIX: Previously this listener short-circuited to "no_wifi"
+  // when classifyNetworkContext returned "none". But classifyNetworkContext
+  // is UNRELIABLE for hotspot detection on Android — NetInfo often reports
+  // type="none"/isConnected=false even when a hotspot is active. The ONLY
+  // reliable check is the secondary getLocalIpAddress() probe that lives
+  // inside runFlow(). By short-circuiting, the listener was constantly
+  // overwriting runFlow's correct "hotspot_host" → "granted" result with
+  // "no_wifi", causing an infinite flip-flop and the user always seeing
+  // "Open Hotspot" even though it was already on.
+  //
+  // FIX: Always run the full flow. runFlow has deduplication (inFlightRunRef)
+  // so rapid-fire NetInfo events won't cause duplicate permission prompts.
   useEffect(() => {
     if (!enabled) return;
+
+    let prevCtx: NetworkContext | null = null;
 
     const unsubscribe = NetInfo.addEventListener((state) => {
       logPermissionDebug("NetworkPermissions", "NetInfo listener update", {
@@ -417,34 +459,32 @@ export const useNetworkPermissions = (
       });
 
       const ctx = classifyNetworkContext(state);
+
+      // Only update networkContext in state (for UI display)
       if (mountedRef.current) {
         setNetworkContext(ctx);
       }
 
-      // ── LOSS: network just dropped → mark immediately, no need to re-run full flow
-      if (ctx === "none" && mountedRef.current) {
-        statusRef.current = "no_wifi"; // sync ref immediately
-        setStatus("no_wifi");
-        setErrorMessage(
-          requireWifiIpAddress
-            ? "Network lost. Reconnect to WiFi or re-enable your Hotspot."
-            : "Network lost. Please reconnect to continue.",
-        );
-        warnPermissionDebug("NetworkPermissions", "Network lost in listener", { ctx });
-        return;
-      }
-
-      // ── RECOVERY: network came back but we were in a bad state → re-run full flow
-      // Skip if already granted and stable (avoid unnecessary permission re-checks on every tick)
+      // Only re-run the full flow if the classification actually changed,
+      // or if we're not yet in a "granted" state.
       const currentStatus = statusRef.current;
-      if (ctx !== "none" && currentStatus !== "granted" && mountedRef.current) {
-        logPermissionDebug("NetworkPermissions", "Network recovered, re-running flow", { ctx, currentStatus });
-        void runFlow(true);
+      const ctxChanged = ctx !== prevCtx;
+      prevCtx = ctx;
+
+      if (ctxChanged || currentStatus !== "granted") {
+        if (mountedRef.current) {
+          logPermissionDebug("NetworkPermissions", "NetInfo change → re-running full flow", {
+            ctx,
+            prevCtx,
+            currentStatus,
+          });
+          void runFlow(true);
+        }
       }
     });
 
     return unsubscribe;
-  }, [enabled, requireWifiIpAddress, runFlow]);
+  }, [enabled, runFlow]);
 
   // App foreground resume — ALWAYS re-run on active (catches grant AND revocation from Settings)
   useEffect(() => {
@@ -466,6 +506,21 @@ export const useNetworkPermissions = (
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);
     return () => subscription.remove();
+  }, [enabled, runFlow]);
+
+  // 🚀 BACKGROUND AUTO-RECOVERY: If we are not granted, keep checking every few seconds
+  useEffect(() => {
+    if (!enabled) return;
+    
+    const interval = setInterval(() => {
+      const currentStatus = statusRef.current;
+      if (currentStatus === "no_wifi" || currentStatus === "denied" || currentStatus === "error") {
+        console.log(`[NetworkPermissions] 🔄 Auto-recheck triggered (current status: ${currentStatus})`);
+        void runFlow(true);
+      }
+    }, 3000); // Check every 3s
+
+    return () => clearInterval(interval);
   }, [enabled, runFlow]);
 
   return {

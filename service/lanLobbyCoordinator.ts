@@ -34,7 +34,10 @@ import {
 } from "./lanGameService";
 import { HeartbeatService } from "./network/HeartbeatService";
 import { GameSessionTransport } from "./network/GameSessionTransport";
+import NetInfo from "@react-native-community/netinfo";
+import { logLanDebug, updateDebugMetric } from "./observability/DebugService";
 
+let unsubscribeNetInfo: (() => void) | null = null;
 let unsubscribePackets: (() => void) | null = null;
 let joinRetryInterval: ReturnType<typeof setInterval> | null = null;
 let joinTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -218,6 +221,8 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       store.dispatch(setSessionError(null));
 
       if (wasConnecting) {
+        logLanDebug("client connected");
+        updateDebugMetric("lanClientConnection", "connected");
         toast.success("Congrats! You connected with the host.");
       }
     }
@@ -227,12 +232,25 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
   if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId) {
     clearJoinAttempts();
     
-    // 🚀 TERMINATE GAME IF IN PROGRESS
+    // 🚀 TERMINATE GAME IF IN PROGRESS (Chor Police or Quiz)
+    // If any HUMAN player leaves while the game is NOT in the lobby (idle),
+    // we end the session immediately to preserve integrity.
     if (state.gamePhase !== "idle") {
-      store.dispatch(setConnectionStatus("ERROR"));
-      store.dispatch(setSessionError("Someone left the game. Session terminated."));
-      void leaveLanLobby();
-      return;
+      const leaver = state.players.find(p => p.id === packet.playerId);
+      const isBot = leaver?.isBot ?? false;
+
+      // Only end if it's a human (bots leaving/being replaced is handled differently)
+      if (!isBot) {
+        console.log(`[LobbyCoordinator] 🛑 Game terminating: Human player ${packet.playerId} left.`);
+        store.dispatch(setConnectionStatus("ERROR"));
+        store.dispatch(setSessionError(
+          state.isHost 
+            ? `${leaver?.name || "A player"} left the game. Session terminated.`
+            : "The host or a player disconnected. Game ended."
+        ));
+        void leaveLanLobby();
+        return;
+      }
     }
 
     if (state.isHost) {
@@ -255,8 +273,6 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
     }
 
     // PROD-2 FIX: Only show ERROR if this was NOT a self-initiated leave.
-    // A self-leave has reason "player_quit" or comes from our own leaveLanLobby().
-    // Avoid showing "You were disconnected" when the player tapped Back.
     if (
       packet.playerId === state.localPlayerId &&
       packet.reason !== "player_quit" &&
@@ -301,9 +317,64 @@ const stopCoordinator = async () => {
     unsubscribePackets();
     unsubscribePackets = null;
   }
+  if (unsubscribeNetInfo) {
+    unsubscribeNetInfo();
+    unsubscribeNetInfo = null;
+  }
   HeartbeatService.stop();
   await GameSessionTransport.stop();
 };
+/**
+ * 🚀 Step 1: Initialize the local lobby state (Offline/Local mode).
+ * This allows the user to see themselves and bots immediately.
+ * Does NOT start the server or check network.
+ */
+export const initHostLobby = ({
+  localPlayerId,
+  name,
+  avatarId,
+  coins,
+  gameType,
+}: {
+  localPlayerId: string;
+  name: string;
+  avatarId: number;
+  coins: number;
+  gameType: string;
+}) => {
+  console.log(`[LobbyCoordinator] 🏠 Initializing local lobby for player=${localPlayerId}`);
+  
+  const players = createInitialLobbyPlayers({
+    id: localPlayerId,
+    name,
+    avatarId,
+    coins,
+  });
+
+  store.dispatch(configureSessionState({
+    isHost: true,
+    localPlayerId,
+    gameType,
+  }));
+  store.dispatch(setLobbyPlayers(players));
+  store.dispatch(setLobbyStage("room"));
+  store.dispatch(setConnectionStatus("IDLE")); // Ready for local play
+  store.dispatch(setSessionError(null));
+
+  // 🤖 Realistic bot entry toasts
+  const initialBots = players.filter((p) => p.isBot);
+  initialBots.forEach((bot, index) => {
+    const t = setTimeout(() => {
+      toast.info(`${bot.name} joined.`);
+    }, 900 * (index + 1));
+    botAnnouncementTimers.push(t);
+  });
+};
+
+/**
+ * 🚀 Step 2: Activate LAN features (Online mode).
+ * Starts the TCP server on 0.0.0.0 and begins IP detection.
+ */
 export const hostLanLobby = async ({
   localPlayerId,
   name,
@@ -323,10 +394,10 @@ export const hostLanLobby = async ({
 
   const existingSession = store.getState().session;
   const existingTransport = GameSessionTransport.getSnapshot();
+  
+  // If already hosting on LAN, skip
   if (
     existingSession.isHost &&
-    existingSession.localPlayerId === localPlayerId &&
-    existingSession.gameType === gameType &&
     existingSession.connectionStatus === "HOSTING" &&
     existingTransport.isHost
   ) {
@@ -338,101 +409,95 @@ export const hostLanLobby = async ({
   }
 
   pendingHostLobbyPromise = (async () => {
-    console.log(`[LobbyCoordinator] 🚀 Starting host lobby for player=${localPlayerId}, game=${gameType}`);
-    await stopCoordinator();
+    console.log(`[LobbyCoordinator] 📡 Activating LAN server for player=${localPlayerId}`);
+    
+    // Ensure we have packet listeners
     ensurePacketSubscription();
 
+    // 1️⃣ START SERVER (on 0.0.0.0)
     try {
+      logLanDebug("Invite clicked, starting server on 0.0.0.0...");
+      updateDebugMetric("lanStatus", "starting");
       await GameSessionTransport.start({
         isHost: true,
         localPlayerId,
         onPacket: (packet, sourceIp) => handleIncomingPacket(packet, sourceIp),
       });
+      const port = GameSessionTransport.getListeningPort();
+      logLanDebug(`TCP server listening on 0.0.0.0:${port}`);
+      updateDebugMetric("lanStatus", "listening");
+      updateDebugMetric("lanPort", port);
     } catch (error) {
+      logLanDebug("TCP server failed", error);
+      updateDebugMetric("lanStatus", "failed");
+      updateDebugMetric("lanLastError", String(error));
+      console.error("[LobbyCoordinator] ❌ Server bootstrap failed:", error);
       store.dispatch(setConnectionStatus("ERROR"));
-      store.dispatch(
-        setSessionError(
-          "Could not start the local lobby server. Please reopen the lobby.",
-        ),
-      );
+      store.dispatch(setSessionError("Failed to start local server. Please retry."));
       throw error;
     }
 
-    // The transport may have bound on a fallback port if the primary was busy.
     const actualPort = GameSessionTransport.getListeningPort();
-    if (__DEV__) {
-      console.log(`[LobbyCoordinator] Server listening on port ${actualPort}`);
-    }
-
-    const players = createInitialLobbyPlayers({
-      id: localPlayerId,
-      name,
-      avatarId,
-      coins,
-    });
-
-    store.dispatch(
-      configureSessionState({
-        isHost: true,
-        localPlayerId,
-        gameType,
-      }),
-    );
-    store.dispatch(setLobbyPlayers(players));
-    store.dispatch(setLobbyStage("room"));
+    
+    // 2️⃣ UPDATE STATUS
+    store.dispatch(setConnectionStatus("HOSTING"));
     store.dispatch(setSessionError(null));
 
-    let hostIp = await getLocalIpAddress();
-    console.log(`[LobbyCoordinator] 🌐 Initial IP detection: ${hostIp || "null"}`);
-    
-    // 🚀 HOTSPOT RETRY: Sometimes hotspot IPs take a moment to settle
-    if (!hostIp) {
-      for (let i = 0; i < 5; i++) {
-        console.log(`[LobbyCoordinator] Retrying IP detection... (${i + 1}/5)`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        hostIp = await getLocalIpAddress();
-        if (hostIp) break;
-      }
-    }
-    // 🚀 Include actual port so room code works even on fallback ports
-    const roomCode = hostIp ? encodeRoomCode(hostIp, actualPort) : null;
-    console.log(
-      `[LobbyCoordinator] 📡 Host network: IP=${hostIp || "null"}, ` +
-      `port=${actualPort}, roomCode=${roomCode || "null"}, ` +
-      `players=${players.length} (${players.filter(p => p.isBot).length} bots)`,
-    );
+    // 3️⃣ ASYNC IP DETECTION LOOP
+    void (async () => {
+      let lastSyncedIp: string | null = "INITIAL_UNSET";
+      let attempts = 0;
+      const maxFastAttempts = 10; // First 5 seconds (500ms * 10)
+      const startTime = Date.now();
 
-    store.dispatch(
-      setLocalSessionIdentity({
-        localPlayerId,
-        name,
-        avatarId,
-        localIp: hostIp,
-      }),
-    );
-    store.dispatch(
-      setSessionNetworkInfo({
-        hostIp,
-        roomCode,
-      }),
-    );
-    store.dispatch(setConnectionStatus("HOSTING"));
-    
-    // 🚀 Realistic bot entry: announce one-by-one with staggered delay
-    const initialBots = players.filter((p) => p.isBot);
-    initialBots.forEach((bot, index) => {
-      const t = setTimeout(() => {
-        toast.info(`${bot.name} joined.`);
-      }, 900 * (index + 1));
-      botAnnouncementTimers.push(t);
-    });
+      console.log("[LobbyCoordinator] 🔍 Starting automatic IP detection loop...");
+
+      unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+        console.log(`[LobbyCoordinator] 📡 NetInfo changed (type=${state.type}, connected=${state.isConnected}) → triggering IP re-check`);
+      });
+
+      while (attempts < 200) { 
+        attempts++;
+        const elapsed = Date.now() - startTime;
+        
+        // After 5 seconds of scanning with no luck, we allow fallback IPs
+        const useFallback = elapsed > 5000;
+        
+        const currentIp = await getLocalIpAddress({ useFallback });
+        
+        if (currentIp !== lastSyncedIp) {
+           lastSyncedIp = currentIp;
+           const code = currentIp ? encodeRoomCode(currentIp, actualPort) : null;
+           
+           logLanDebug(`selected IP: ${currentIp || "NULL"} (fallback=${useFallback})`);
+           updateDebugMetric("hostIp", currentIp || "N/A");
+           updateDebugMetric("lanIsFallback", useFallback);
+           updateDebugMetric("lanQrPayload", code || "");
+
+           console.log(
+             `[LobbyCoordinator] 🔄 IP Detected: ${currentIp || "NULL"} (after ${elapsed}ms). ` +
+             `Fallback used: ${useFallback ? "YES" : "NO"}. Updating session.`
+           );
+           
+           store.dispatch(setSessionNetworkInfo({ 
+             hostIp: currentIp, 
+             roomCode: code 
+           }));
+           store.dispatch(setLocalSessionIdentity({ localIp: currentIp }));
+        }
+
+        const delay = attempts <= maxFastAttempts ? 500 : 2000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        if (store.getState().session.connectionStatus !== "HOSTING") break;
+      }
+    })();
 
     startHeartbeat(true);
 
     return {
-      hostIp,
-      roomCode,
-      players,
+      hostIp: null,
+      roomCode: null,
+      players: store.getState().session.players,
       port: actualPort,
     };
   })();
@@ -466,10 +531,12 @@ export const joinLanLobby = async ({
   if (__DEV__) {
     console.log(`[LobbyCoordinator] Joining host at ${hostIp}:${hostPort ?? "default"}`);
   }
-  console.log(
+   console.log(
     `[LobbyCoordinator] 🔗 Join attempt: hostIp=${hostIp}, port=${hostPort ?? "default"}, ` +
     `player=${localPlayerId}, game=${gameType}`,
   );
+  logLanDebug(`client connection attempt to ${hostIp}:${hostPort ?? "default"}`);
+  updateDebugMetric("lanClientConnection", "connecting");
 
   await GameSessionTransport.start({
     isHost: false,
@@ -524,6 +591,9 @@ export const joinLanLobby = async ({
   setTimeout(() => {
     sendJoinPacket();
   }, 350);
+
+  // 🚀 Start heartbeat on client side to monitor host
+  startHeartbeat(false);
 
   joinRetryInterval = setInterval(() => {
     sendJoinPacket();

@@ -11,6 +11,15 @@ interface DebugState {
   localIp: string;
   hostIp: string;
   discoveredHostCount: number;
+  // LAN DEBUG FIELDS
+  lanStatus: "idle" | "starting" | "listening" | "failed";
+  lanBindAddress: string;
+  lanPort: number;
+  lanCandidates: string[];
+  lanIsFallback: boolean;
+  lanQrPayload: string;
+  lanLastError: string;
+  lanClientConnection: string;
 }
 
 const debugState: DebugState = {
@@ -24,9 +33,25 @@ const debugState: DebugState = {
   localIp: "unknown",
   hostIp: "N/A",
   discoveredHostCount: 0,
+  lanStatus: "idle",
+  lanBindAddress: "0.0.0.0",
+  lanPort: 0,
+  lanCandidates: [],
+  lanIsFallback: false,
+  lanQrPayload: "",
+  lanLastError: "",
+  lanClientConnection: "none",
 };
 
-const useDebugData = () => {
+/**
+ * Logcat utility with the required tag
+ */
+export const logLanDebug = (message: string, data?: any) => {
+  const dataStr = data ? ` | Data: ${JSON.stringify(data)}` : "";
+  console.log(`[LAN_DEBUG] ${message}${dataStr}`);
+};
+
+export const useDebugData = () => {
   const [data, setData] = useState<DebugState>(debugState);
 
   useEffect(() => {

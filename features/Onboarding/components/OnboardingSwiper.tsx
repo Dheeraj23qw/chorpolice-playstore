@@ -50,10 +50,10 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
   const [loadingMessageIndex, setLoadingMessageIndex] = React.useState(0);
 
   const loadingMessages = [
-    "Preparing Assets...",
-    "Setting Up Room...",
-    "Syncing Coins...",
-    "Entering Game...",
+    "Preparing your experience...",
+    "Initializing game engines...",
+    "Syncing player profile...",
+    "Opening the world...",
   ];
 
   React.useEffect(() => {
@@ -61,7 +61,7 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
     if (isCompleting) {
       interval = setInterval(() => {
         setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-      }, 1200);
+      }, 1500);
     }
     return () => clearInterval(interval);
   }, [isCompleting]);
@@ -262,9 +262,19 @@ const AnimatedCTA = ({
         onPress={onPress}
         disabled={isLoading}
       >
-        <View className="overflow-hidden rounded-full">
+        <MotiView
+          animate={{
+            scale: isLoading ? [1, 1.02, 1] : 1,
+          }}
+          transition={{
+            type: "timing",
+            duration: 1200,
+            loop: true,
+          }}
+          className="overflow-hidden rounded-full"
+        >
           <LinearGradient
-            colors={isLoading ? ["#4B5563", "#374151"] : ["#A78BFA", "#60A5FA"]}
+            colors={isLoading ? ["#374151", "#1F2937"] : ["#A78BFA", "#60A5FA"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             className="flex-row items-center justify-center space-x-3 rounded-full px-10 py-5"
@@ -272,25 +282,24 @@ const AnimatedCTA = ({
             {isLoading && (
               <ActivityIndicator color="white" size="small" className="mr-2" />
             )}
-
             <AnimatePresence mode="wait">
               <MotiView
                 key={isLoading ? loadingMessage : "start"}
-                from={{ opacity: 0, translateY: 5 }}
+                from={{ opacity: 0, translateY: 10 }}
                 animate={{ opacity: 1, translateY: 0 }}
-                exit={{ opacity: 0, translateY: -5 }}
-                transition={{ type: "timing", duration: 250 }}
+                exit={{ opacity: 0, translateY: -10 }}
+                transition={{ type: "timing", duration: 500 }}
               >
                 <Text 
                   style={{ fontSize: rf(1.8) }}
-                  className="font-main-bold tracking-wide text-white"
+                  className="font-main-bold uppercase tracking-[2px] text-white"
                 >
                   {isLoading ? loadingMessage : "Let's Get Started"}
                 </Text>
               </MotiView>
             </AnimatePresence>
           </LinearGradient>
-        </View>
+        </MotiView>
       </TouchableOpacity>
     </Animated.View>
   );

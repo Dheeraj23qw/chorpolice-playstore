@@ -9,17 +9,24 @@ import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { LobbyState } from "./types";
 import { PrimaryButton } from "./PrimaryButton";
+import { LanDebugPanel } from "./LanDebugPanel";
 
 interface SetupActionCardProps {
   lobby: LobbyState;
   onOpenShare: () => void;
   isInviteLoading?: boolean;
+  networkStatus?: string;
+  networkContext?: string;
+  networkErrorMessage?: string | null;
 }
 
 export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   lobby,
   onOpenShare,
   isInviteLoading = false,
+  networkStatus,
+  networkContext,
+  networkErrorMessage,
 }) => {
   const playerNames = lobby.players.map((p) => p.name.trim().toLowerCase());
   const hasDuplicateNames = new Set(playerNames).size !== playerNames.length;
@@ -29,7 +36,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
 
   const isBlockedByDuplicates = hasDuplicateNames || hasDuplicateAvatars;
   const canStart =
-    lobby.connectionStatus === "HOSTING" &&
+    (lobby.connectionStatus === "HOSTING" || lobby.connectionStatus === "IDLE") &&
     !isBlockedByDuplicates &&
     lobby.players.length > 1;
 
@@ -40,10 +47,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
     !lobby.roomCode;
 
   const getSubtitle = () => {
-    if (lobby.connectionStatus === "ERROR") return "Connection Error — tap retry";
-    if (lobby.connectionStatus === "IDLE" || lobby.connectionStatus === "CONNECTING")
-      return "Setting up room...";
-    if (isHotspotInitializing) return "Detecting network interface...";
     if (lobby.players.length <= 1) return "Need at least 2 players";
     if (hasDuplicateNames) return "All players must have unique names";
     if (hasDuplicateAvatars) return "All players must have unique avatars";
@@ -103,6 +106,29 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                 }}
               </Pressable>
             )}
+            {/* 🚀 LAN GUIDANCE: Only shown if Invite was clicked but IP/Server not ready */}
+            {lobby.isHost && (isInviteLoading || isHotspotInitializing || (networkStatus && networkStatus !== "granted")) && (
+              <MotiView
+                from={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="overflow-hidden rounded-xl bg-white/5 p-3 border border-white/5"
+              >
+                <View className="flex-row items-center gap-2">
+                  <Ionicons 
+                    name={networkStatus === "denied" ? "lock-closed-outline" : "wifi-outline"} 
+                    size={rf(1.6)} 
+                    color={networkStatus === "denied" ? "#ef4444" : "#93c5fd"} 
+                  />
+                  <Text style={{ fontSize: rf(1.3) }} className="font-main-md text-white/70 flex-1">
+                    {networkStatus === "denied" 
+                      ? "Permission required for LAN play." 
+                      : (networkContext === "none" || !lobby.hostIp)
+                      ? "Waiting for Hotspot IP... Please turn ON your hotspot."
+                      : "Finalizing room setup..."}
+                  </Text>
+                </View>
+              </MotiView>
+            )}
 
             {/* Start Game Section */}
             <PrimaryButton
@@ -114,6 +140,8 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                 lobby.setIsBettingModalVisible(true);
               }}
             />
+
+            {(isInviteLoading || isHotspotInitializing) && <LanDebugPanel />}
           </View>
         )}
       </LinearGradient>

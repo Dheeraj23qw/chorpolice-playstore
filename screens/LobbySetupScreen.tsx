@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View, AppState } from "react-native";
 import { AnimatePresence, MotiView } from "moti";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -37,13 +37,39 @@ type UIState = "normal" | "betting" | "share" | "apIsolation" | "help" | "permis
 const LobbySetupScreen = ({
   forcedMode,
   routeGameType,
-  requireLanReady = false,
 }: any) => {
   const router = useRouter();
   const params = useLocalSearchParams();
 
+  const [isLanModeRequested, setIsLanModeRequested] = useState(false);
+
   const { step, status, retry, errorMessage, openSettings, networkContext } =
-    useNetworkPermissions(requireLanReady);
+    useNetworkPermissions({ 
+      enabled: isLanModeRequested,
+      requireWifiIpAddress: true,
+      requireAndroidWifiPermissions: true
+    });
+
+  // ✅ HOTSPOT FIX: Re-check network whenever screen is focused (ONLY if LAN is active)
+  useFocusEffect(
+    useCallback(() => {
+      if (isLanModeRequested) {
+        console.log("[LobbySetup] 🎯 Screen focused, re-checking network status...");
+        void retry(true);
+      }
+    }, [retry, isLanModeRequested])
+  );
+
+  // ✅ APP RESUME FIX: Also re-check when app returns from background (e.g. from hotspot settings)
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active" && isLanModeRequested) {
+        console.log("[LobbySetup] 🚀 App resumed, re-triggering network detection...");
+        void retry(true);
+      }
+    });
+    return () => subscription.remove();
+  }, [retry, isLanModeRequested]);
 
   const lobby = useLobbyLogic(
     router,
@@ -53,7 +79,7 @@ const LobbySetupScreen = ({
       isHost: forcedMode ? String(forcedMode === "host") : params.isHost,
     },
     forcedMode,
-    !requireLanReady || status === "granted",
+    isLanModeRequested, // Only start LAN logic if requested
   ) as LobbyState;
 
   const [uiState, setUiState] = useState<UIState>("normal");
@@ -129,7 +155,7 @@ const LobbySetupScreen = ({
 
   const ui = useMemo(() => {
     const permissionBlocked =
-      requireLanReady &&
+      isLanModeRequested &&
       status !== "granted" &&
       !lobby.isLocalOnlyLobby &&
       lobby.connectionStatus !== "HOSTING";
@@ -140,7 +166,7 @@ const LobbySetupScreen = ({
       !!lobby.errorMessage;
 
     return { permissionBlocked, permissionPending, hostError };
-  }, [requireLanReady, status, lobby]);
+  }, [status, isLanModeRequested, lobby.isLocalOnlyLobby, lobby.connectionStatus, lobby.isHost, lobby.errorMessage]);
 
   const getAvatarSource = useCallback((avatarId: number) => {
     const imgData = playerImages[avatarId];
@@ -176,6 +202,14 @@ const LobbySetupScreen = ({
 
   const handleOpenInvite = useCallback(async () => {
     if (isInviteLoading) return;
+
+    // 🚀 NEW: Activate LAN mode on demand if not already active
+    if (!isLanModeRequested) {
+      console.log("[LobbySetup] 🚀 User requested LAN mode via Invite click.");
+      setIsLanModeRequested(true);
+      // The useNetworkPermissions hook will now start its flow automatically.
+      // We'll wait for it in the polling block below.
+    }
 
     console.log(
       `[LobbySetup] 🎯 Invite tapped: status=${statusRef.current}, ` +
@@ -221,6 +255,7 @@ const LobbySetupScreen = ({
     let resolved = false;
     let pollTicks = 0;
     await new Promise<void>((resolve) => {
+      const startTime = Date.now();
       const interval = setInterval(() => {
         pollTicks++;
         if (qrPayloadRef.current && !resolved) {
@@ -236,7 +271,6 @@ const LobbySetupScreen = ({
           resolve();
         }
       }, 500);
-      const startTime = Date.now();
     });
 
     setIsInviteLoading(false);
@@ -328,19 +362,7 @@ const LobbySetupScreen = ({
                   )}
                 </AnimatePresence>
 
-                {/* 🚀 NETWORK STATUS BANNER — shown for all non-granted states */}
-                {requireLanReady && (
-                  <NetworkStatusBanner
-                    status={status}
-                    networkContext={networkContext}
-                    errorMessage={errorMessage}
-                    isHost={lobby.isHost}
-                    onRetry={retry}
-                    onOpenSettings={openSettings}
-                  />
-                )}
-
-                {/* 🚀 GRACEFUL: No longer blocking the UI with PermissionFallbackCard or HostStartErrorCard.
+                {/* 🚀 GRACEFUL: No longer blocking the UI.
                     We let the user see the lobby. They will only be prompted when they click "Invite Players". */}
                   <>
                     {/* For joiners: always show profile card regardless of list state.
@@ -371,6 +393,9 @@ const LobbySetupScreen = ({
                     lobby={lobby}
                     onOpenShare={handleOpenInvite}
                     isInviteLoading={isInviteLoading}
+                    networkStatus={isLanModeRequested ? status : undefined}
+                    networkContext={networkContext}
+                    networkErrorMessage={errorMessage}
                   />
                 </View>
               )}

@@ -31,6 +31,7 @@ import {
 import { GameSessionTransport } from "@/service/network/GameSessionTransport";
 import {
   hostLanLobby,
+  initHostLobby,
   leaveLanLobby,
   syncLocalLobbyProfile,
 } from "@/service/lanLobbyCoordinator";
@@ -71,6 +72,7 @@ export const useLobbyLogic = (
   const [allowLocalOnlyLobby, setAllowLocalOnlyLobby] = useState(false);
   const [isBootstrappingHost, setIsBootstrappingHost] = useState(false);
   const hostBootstrappedRef = useRef(false);
+  const lanServerStartedRef = useRef(false);
   const startNavigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -207,6 +209,19 @@ export const useLobbyLogic = (
   );
 
   useEffect(() => {
+    if (isHost && localPlayerId && !hostBootstrappedRef.current) {
+      hostBootstrappedRef.current = true;
+      initHostLobby({
+        localPlayerId,
+        name: userName.trim() || "PLAYER_1",
+        avatarId: currentAvatarId,
+        coins: userCoins,
+        gameType,
+      });
+    }
+  }, [isHost, localPlayerId, userName, currentAvatarId, userCoins, gameType]);
+
+  useEffect(() => {
     return () => {
       if (startNavigationTimerRef.current) {
         clearTimeout(startNavigationTimerRef.current);
@@ -221,12 +236,12 @@ export const useLobbyLogic = (
         !isHost ||
         (!lanReady && !allowLocalOnlyLobby) ||
         !localPlayerId ||
-        (hostBootstrappedRef.current && !forceRetry)
+        (lanServerStartedRef.current && !forceRetry)
       ) {
         return;
       }
 
-      hostBootstrappedRef.current = true;
+      lanServerStartedRef.current = true;
       setIsBootstrappingHost(true);
       dispatch(setSessionError(null));
 
@@ -270,8 +285,10 @@ export const useLobbyLogic = (
   );
 
   useEffect(() => {
-    void bootstrapHostLobby();
-  }, [bootstrapHostLobby]);
+    if (lanReady) {
+      void bootstrapHostLobby();
+    }
+  }, [bootstrapHostLobby, lanReady]);
 
   // 🚀 BACKGROUND IP MONITOR: If we are hosting but hostIp is missing (due to slow hotspot startup),
   // keep checking for it every few seconds.
@@ -291,30 +308,38 @@ export const useLobbyLogic = (
       `roomCode=${roomCode || "null"}, status=${connectionStatus})`,
     );
     let pollCount = 0;
+    const startTime = Date.now();
 
     const interval = setInterval(async () => {
       pollCount++;
-      console.log(`[Lobby] 🔄 Background IP poll #${pollCount}...`);
-      const ip = await getLocalIpAddress();
+      const elapsed = Date.now() - startTime;
+      const useFallback = elapsed > 5000;
+      
+      console.log(`[Lobby] 🔄 Background IP poll #${pollCount} (elapsed: ${elapsed}ms)...`);
+      const ip = await getLocalIpAddress({ useFallback });
+      
       if (ip) {
         const port = GameSessionTransport.getListeningPort();
         const code = encodeRoomCode(ip, port);
-        console.log(
-          `[Lobby] ✅ IP resolved after ${pollCount} polls: IP=${ip}, ` +
-          `port=${port}, roomCode=${code}`,
-        );
         
-        dispatch(setSessionNetworkInfo({
-          hostIp: ip,
-          roomCode: code,
-        }));
+        if (ip !== hostIp) {
+          console.log(
+            `[Lobby] ✅ IP resolved after ${pollCount} polls: IP=${ip}, ` +
+            `port=${port}, roomCode=${code}, fallback=${useFallback}`,
+          );
+          
+          dispatch(setSessionNetworkInfo({
+            hostIp: ip,
+            roomCode: code,
+          }));
+          
+          dispatch(setLocalSessionIdentity({ localIp: ip }));
+        }
         
-        // Also sync local profile with the new IP
-        dispatch(setLocalSessionIdentity({ localIp: ip }));
-        
-        clearInterval(interval);
-      } else {
-        console.log(`[Lobby] ⏳ Poll #${pollCount}: no IP yet, retrying in 2.5s...`);
+        // Stop polling if we have a real (non-fallback) IP, or after many attempts
+        if (!useFallback || pollCount > 60) {
+          clearInterval(interval);
+        }
       }
     }, 2500);
 
@@ -539,7 +564,7 @@ export const useLobbyLogic = (
         return;
       }
 
-      if (connectionStatus !== "HOSTING") {
+      if (connectionStatus !== "HOSTING" && connectionStatus !== "IDLE") {
         toast.error(
           "Lobby not ready",
           "Wait for the local lobby server to start, then try again.",
@@ -682,12 +707,16 @@ export const useLobbyLogic = (
     isLocalOnlyLobby,
     selectedHostIp: isHost ? null : hostIp,
     localAvatarId: currentAvatarId,
-    qrPayload: hostIp
-      ? JSON.stringify({
-          ip: hostIp,
-          port: GameSessionTransport.getListeningPort(),
-        })
-      : "",
+    qrPayload: useMemo(() => {
+      if (!hostIp) return "";
+      const payload = JSON.stringify({
+        ip: hostIp,
+        port: GameSessionTransport.getListeningPort(),
+        code: roomCode,
+      });
+      console.log(`[Lobby] 📱 Final QR Payload: ${payload}`);
+      return payload;
+    }, [hostIp, roomCode]),
     showAvatarGrid,
     setShowAvatarGrid,
     difficulty,

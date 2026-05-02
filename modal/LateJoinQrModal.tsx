@@ -3,6 +3,8 @@ import { Modal, Pressable, View, StyleSheet } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Text } from "@/components/Text";
+import { LanTroubleshootingCard } from "@/components/LobbyScreen/LanTroubleshootingCard";
+import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
 
 interface LateJoinQrModalProps {
   visible: boolean;
@@ -24,11 +26,20 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
   onScanSuccess,
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
+  const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
 
   useEffect(() => {
     if (visible && !isHost && !permission?.granted) {
       requestPermission();
     }
+    
+    let timer: ReturnType<typeof setTimeout>;
+    if (visible) {
+      timer = setTimeout(() => setShowTroubleshooting(true), 5000);
+    } else {
+      setShowTroubleshooting(false);
+    }
+    return () => clearTimeout(timer);
   }, [visible, isHost]);
 
   return (
@@ -71,6 +82,9 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                      Connect all players to the same network, then scan this QR or enter the Room Code.
                    </Text>
                 </View>
+
+                {showTroubleshooting && <LanTroubleshootingCard />}
+                {isHost && <LanDebugPanel />}
               </View>
             ) : (
               /* ─── CLIENT: SCANNER ─── */
@@ -102,6 +116,8 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                 <Text className="mt-6 text-center text-sm text-white/70">
                   Client: Scan the host's QR code
                 </Text>
+
+                {showTroubleshooting && <LanTroubleshootingCard />}
               </View>
             )}
 

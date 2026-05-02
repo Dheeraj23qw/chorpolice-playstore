@@ -38,31 +38,47 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
 }) => {
   // Don't show banner when everything is fine
   if (status === "granted") return null;
-  // Don't show while still loading
-  if (status === "pending") return null;
+  // Don't show while still loading (unless host is bootstrapping)
+  if (status === "pending" && !isHost) return null;
 
   const getBannerConfig = (): BannerConfig => {
-    // ── No network at all ──────────────────────────────────────────
-    if (status === "no_wifi" && networkContext === "none") {
-      if (isHost) {
+    // ── Progress States (for Host) ──────────────────────────────────
+    if (isHost && status !== "granted") {
+      if (status === "pending") {
+        return {
+          icon: "sync-outline",
+          iconColor: "#3b82f6",
+          gradientColors: ["rgba(59,130,246,0.15)", "rgba(59,130,246,0.05)"],
+          borderColor: "rgba(59,130,246,0.3)",
+          title: "Starting Local Server...",
+          subtitle: "Setting up your game lobby. Please wait.",
+        };
+      }
+      if (status === "no_wifi" && networkContext === "none") {
         return {
           icon: "wifi-outline",
           iconColor: "#f97316",
           gradientColors: ["rgba(249,115,22,0.15)", "rgba(249,115,22,0.05)"],
           borderColor: "rgba(249,115,22,0.3)",
-          title: "Hotspot Not Active",
-          subtitle: "Turn ON your Mobile Hotspot to host. Suggestion: Turn OFF Mobile Data if connection fails.",
-          action: { label: "Retry", onPress: onRetry },
+          title: "Checking Hotspot...",
+          subtitle: "Please turn ON your Mobile Hotspot. No internet required.",
+          action: { label: "Check Again", onPress: onRetry },
         };
       }
+    }
+
+    // ── No network at all ──────────────────────────────────────────
+    if (status === "no_wifi" && networkContext === "none") {
       return {
         icon: "wifi-outline",
         iconColor: "#f97316",
         gradientColors: ["rgba(249,115,22,0.15)", "rgba(249,115,22,0.05)"],
         borderColor: "rgba(249,115,22,0.3)",
         title: "No Network Detected",
-        subtitle: "Connect to the host's Mobile Hotspot or WiFi. Tip: Turn OFF Mobile Data if you can't see the host.",
-        action: { label: "Retry", onPress: onRetry },
+        subtitle: isHost 
+          ? "Still checking... Keep your hotspot ON."
+          : "Connect to the host's Mobile Hotspot or WiFi. Tip: Turn OFF Mobile Data if you can't see the host.",
+        action: { label: "Check Again", onPress: onRetry },
       };
     }
 
@@ -95,7 +111,7 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
         borderColor: "rgba(239,68,68,0.25)",
         title: "Connection Error",
         subtitle: errorMessage || "Something went wrong. Please try again.",
-        action: { label: "Retry", onPress: onRetry },
+        action: { label: "Check Again", onPress: onRetry },
       };
     }
 
@@ -111,7 +127,7 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
         (isHost
           ? "Enable your Mobile Hotspot so others can join."
           : "Connect to the host's network to join the lobby."),
-      action: { label: "Retry", onPress: onRetry },
+      action: { label: "Check Again", onPress: onRetry },
     };
   };
 
@@ -156,14 +172,29 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
               {config.action && (
                 <Pressable
                   onPress={config.action.onPress}
-                  className="mt-3 self-start rounded-xl px-4 py-2"
-                  style={{ backgroundColor: `${config.iconColor}25`, borderWidth: 1, borderColor: `${config.iconColor}50` }}
+                  disabled={status === "pending"}
+                  className="mt-3 self-start rounded-xl px-4 py-2 flex-row items-center gap-2"
+                  style={{ 
+                    backgroundColor: `${config.iconColor}25`, 
+                    borderWidth: 1, 
+                    borderColor: `${config.iconColor}50`,
+                    opacity: status === "pending" ? 0.7 : 1
+                  }}
                 >
+                  {status === "pending" && (
+                    <MotiView
+                      from={{ rotate: "0deg" }}
+                      animate={{ rotate: "360deg" }}
+                      transition={{ loop: true, duration: 1000, type: "timing" }}
+                    >
+                      <Ionicons name="sync-outline" size={rf(1.4)} color={config.iconColor} />
+                    </MotiView>
+                  )}
                   <Text
                     style={{ fontSize: rf(1.4), color: config.iconColor }}
                     className="font-main-bold uppercase tracking-wide"
                   >
-                    {config.action.label}
+                    {status === "pending" ? "Checking..." : config.action.label}
                   </Text>
                 </Pressable>
               )}

@@ -137,9 +137,11 @@ const JoinScreen = () => {
   );
   const userCoins = useSelector((state: RootState) => state.wallet.coins);
 
+  const [isLanModeRequested, setIsLanModeRequested] = useState(false);
+
   const { step, status, retry, errorMessage, openSettings, networkContext } =
     useNetworkPermissions({
-      enabled: true,
+      enabled: isLanModeRequested,
       requireWifiIpAddress: false,
       requireAndroidWifiPermissions: false,
     });
@@ -151,6 +153,12 @@ const JoinScreen = () => {
   const gameType = String(params.gameType || "CHOR_POLICE");
 
   const isConnecting = session.connectionStatus === "CONNECTING";
+  const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTroubleshooting(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   /* ---------------- AVATAR INIT ---------------- */
   useEffect(() => {
@@ -194,6 +202,13 @@ const JoinScreen = () => {
         `[JoinScreen] 🔗 Connect attempt: ip=${ip}, port=${port ?? "default"}, ` +
         `status=${status}, networkCtx=${networkContext}, playerId=${session.localPlayerId || "null"}`,
       );
+
+      // 🚀 ACTIVATE LAN: If not yet requested, enable it now.
+      if (!isLanModeRequested) {
+        setIsLanModeRequested(true);
+        // We don't return here, we let the logic below check the status.
+        // It might be 'pending' or 'idle' for a moment, but joinLanLobby handles retries.
+      }
 
       // Block only if truly no network — not for permission issues
       if (status === "no_wifi" && networkContext === "none") {
@@ -292,14 +307,16 @@ const JoinScreen = () => {
         {/* STEPS */}
         <JoinStepsCard />
 
-        {/* 🚀 NETWORK BANNER — all permutations */}
-        <JoinNetworkBanner
-          status={status}
-          networkContext={networkContext}
-          errorMessage={errorMessage}
-          onRetry={retry}
-          onOpenSettings={openSettings}
-        />
+        {/* 🚀 NETWORK BANNER — shown only when LAN is active */}
+        {isLanModeRequested && (
+          <JoinNetworkBanner
+            status={status}
+            networkContext={networkContext}
+            errorMessage={errorMessage}
+            onRetry={retry}
+            onOpenSettings={openSettings}
+          />
+        )}
 
         {/* CONTENT AREA */}
         <JoinMethodToggle
@@ -323,31 +340,8 @@ const JoinScreen = () => {
             isConnecting={isConnecting}
           />
         )}
-        {/* 🆘 TROUBLESHOOTING FOOTER */}
-        <MotiView
-          from={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 500 }}
-          className="mt-8 rounded-2xl border border-white/5 bg-white/5 p-4"
-        >
-          <Text className="mb-2 font-main-bold text-[10px] uppercase tracking-wider text-white/40">
-            If connection fails:
-          </Text>
-          <View className="gap-1.5">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="cellular-outline" size={12} color="rgba(255,255,255,0.3)" />
-              <Text className="text-xs text-white/60">Turn <Text className="font-main-bold text-white/80">OFF</Text> mobile data</Text>
-            </View>
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="share-social-outline" size={12} color="rgba(255,255,255,0.3)" />
-              <Text className="text-xs text-white/60">Turn <Text className="font-main-bold text-white/80">ON</Text> host hotspot</Text>
-            </View>
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="wifi-outline" size={12} color="rgba(255,255,255,0.3)" />
-              <Text className="text-xs text-white/60">Connect all players to same network</Text>
-            </View>
-          </View>
-        </MotiView>
+        
+        {showTroubleshooting && <LanTroubleshootingCard />}
       </View>
 
       <MultiplayerHelpModal
