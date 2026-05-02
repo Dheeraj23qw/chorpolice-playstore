@@ -42,15 +42,15 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
       ? playerNames[policeIndex]
       : "Police";
 
-  // 🔥 Dynamic duration (GLOBAL access)
+  // 🔥 Dynamic duration (GLOBAL access) - ⏱️ Reduced for faster flow
   const getDuration = () => {
     switch (index) {
       case 1:
       case 2:
-        return 3000;
+        return 1800; // Identity reveals: 1.8s
       case 3:
       case 4:
-        return 6000;
+        return 3000; // Win/Loss results: 3s (allows reading message)
       default:
         return displayDuration;
     }
@@ -86,12 +86,12 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
       switch (index) {
         case 1:
-          title = `THE MIGHTY\n${kingName.toUpperCase()}`;
+          title = `THE KING\n${kingName.toUpperCase()}`;
           accentColor = "#FACC15";
           break;
 
         case 2:
-          title = `THE CHIEF\n${policeName.toUpperCase()}`;
+          title = `THE POLICE\n${policeName.toUpperCase()}`;
           accentColor = "#3B82F6";
           break;
 
@@ -207,7 +207,10 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
           style={{ transform: [{ scale: scaleAnim }], width: wp(85) }}
           className="items-center"
         >
-          <Text className="mb-4 font-main-bold text-[9px] uppercase tracking-[8px] text-white/20">
+          <Text
+            style={{ fontSize: rf(1.2), letterSpacing: wp(2) }}
+            className="mb-4 font-main-bold uppercase text-white/20"
+          >
             Identity Revealed
           </Text>
 
@@ -241,15 +244,22 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
               className="mt-8 px-14 py-3"
             >
               <Text
-                style={{ color: modalData.theme }}
-                className="font-main-bold text-2xl tracking-[4px]"
+                style={{
+                  color: modalData.theme,
+                  fontSize: rf(3.2),
+                  letterSpacing: wp(1),
+                }}
+                className="font-main-bold"
               >
                 {modalData.point}
               </Text>
             </View>
           )}
 
-          <Text className="mt-10 px-8 text-center font-main-md text-xl leading-6 text-slate-500">
+          <Text
+            style={{ fontSize: rf(2.2), lineHeight: rf(3) }}
+            className="mt-10 px-8 text-center font-main-md text-slate-500"
+          >
             {modalData.message}
           </Text>
         </Animated.View>

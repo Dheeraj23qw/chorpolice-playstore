@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Dimensions, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { MotiView, AnimatePresence } from "moti";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -12,6 +13,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { Text } from "@/components/Text";
+import { rf, wp } from "@/utils/responsive";
 import { ONBOARDING_SLIDES } from "../data/onboardingSlides";
 import AnimatedSlideImage from "./AnimatedSlideImage";
 
@@ -45,6 +47,24 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
   });
 
   const [isCompleting, setIsCompleting] = React.useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = React.useState(0);
+
+  const loadingMessages = [
+    "Preparing Assets...",
+    "Setting Up Room...",
+    "Syncing Coins...",
+    "Entering Game...",
+  ];
+
+  React.useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isCompleting) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+      }, 1200);
+    }
+    return () => clearInterval(interval);
+  }, [isCompleting]);
 
   const handlePress = React.useCallback(() => {
     if (isCompleting) return;
@@ -106,6 +126,7 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
         lastIndex={lastIndex}
         onPress={handlePress}
         isLoading={isCompleting}
+        loadingMessage={loadingMessages[loadingMessageIndex]}
       />
 
       <Animated.View
@@ -185,11 +206,13 @@ const AnimatedCTA = ({
   lastIndex,
   onPress,
   isLoading = false,
+  loadingMessage = "Starting...",
 }: {
   scrollX: SharedValue<number>;
   lastIndex: number;
   onPress: () => void;
   isLoading?: boolean;
+  loadingMessage?: string;
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
     const input = [(lastIndex - 1) * width, lastIndex * width];
@@ -244,11 +267,28 @@ const AnimatedCTA = ({
             colors={isLoading ? ["#4B5563", "#374151"] : ["#A78BFA", "#60A5FA"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="rounded-full px-12 py-4"
+            className="flex-row items-center justify-center space-x-3 rounded-full px-10 py-5"
           >
-            <Text className="text-lg font-bold tracking-wide text-white">
-              {isLoading ? "Starting..." : "Let's Get Started"}
-            </Text>
+            {isLoading && (
+              <ActivityIndicator color="white" size="small" className="mr-2" />
+            )}
+
+            <AnimatePresence mode="wait">
+              <MotiView
+                key={isLoading ? loadingMessage : "start"}
+                from={{ opacity: 0, translateY: 5 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                exit={{ opacity: 0, translateY: -5 }}
+                transition={{ type: "timing", duration: 250 }}
+              >
+                <Text 
+                  style={{ fontSize: rf(1.8) }}
+                  className="font-main-bold tracking-wide text-white"
+                >
+                  {isLoading ? loadingMessage : "Let's Get Started"}
+                </Text>
+              </MotiView>
+            </AnimatePresence>
           </LinearGradient>
         </View>
       </TouchableOpacity>

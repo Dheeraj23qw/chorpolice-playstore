@@ -1,6 +1,6 @@
 import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { AnimatePresence, MotiView } from "moti";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,6 +29,8 @@ import { PermissionGuardian } from "@/components/PermissionGuardian";
 import { checkAppUpdate } from "@/utils/versionCheck";
 import { UpdateAppModal } from "@/modal/UpdateAppModal";
 import { getDismissedUpdateVersion, setDismissedUpdateVersion } from "@/storage/appStorage";
+import { rf } from "@/utils/responsive";
+import { NetworkStatusBanner } from "@/components/LobbyScreen/NetworkStatusBanner";
 
 type UIState = "normal" | "betting" | "share" | "apIsolation" | "help" | "permissions";
 
@@ -40,7 +42,7 @@ const LobbySetupScreen = ({
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const { step, status, retry, errorMessage, openSettings } =
+  const { step, status, retry, errorMessage, openSettings, networkContext } =
     useNetworkPermissions(requireLanReady);
 
   const lobby = useLobbyLogic(
@@ -74,6 +76,45 @@ const LobbySetupScreen = ({
   useEffect(() => {
     if (lobby.showApIsolation) setUiState("apIsolation");
   }, [lobby.showApIsolation]);
+
+  // ── Toast messages for every network state transition ──────────────────
+  const prevStatusRef = React.useRef(status);
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+
+    if (prev === status) return; // no change
+
+    console.log(
+      `[LobbySetup] 📶 Status transition: ${prev} → ${status} (networkCtx=${networkContext})`,
+    );
+
+    if (status === "granted" && prev !== "pending") {
+      // Only show if recovering from an error state (not initial grant)
+      if (prev === "no_wifi" || prev === "denied" || prev === "error") {
+        toast.success(
+          networkContext === "hotspot_host"
+            ? "Hotspot Ready 📡"
+            : "Network Connected ✓",
+          networkContext === "hotspot_host"
+            ? "Your hotspot is active. Share the code with friends!"
+            : "Network detected. You can now invite players."
+        );
+      }
+    } else if (status === "no_wifi" && networkContext === "none") {
+      toast.error(
+        "No Network",
+        lobby.isHost
+          ? "Enable your Mobile Hotspot — no internet needed."
+          : "Connect to the host's WiFi or Hotspot."
+      );
+    } else if (status === "denied") {
+      toast.error(
+        "Permission Needed",
+        "Location permission is required to find nearby players."
+      );
+    }
+  }, [status, networkContext]);
 
   useEffect(() => {
     if (lobby.isHost && status === "denied" && !lobby.isLocalOnlyLobby) {
@@ -114,29 +155,108 @@ const LobbySetupScreen = ({
     toast.success("Room Code Copied", lobby.roomCode);
   }, [lobby.roomCode]);
 
+  const [isInviteLoading, setIsInviteLoading] = useState(false);
+
+  // ✅ FIX: Use a ref so async callbacks always read the LIVE qrPayload,
+  // not the stale value captured when handleOpenInvite was created.
+  const qrPayloadRef = useRef(lobby.qrPayload);
+  useEffect(() => {
+    qrPayloadRef.current = lobby.qrPayload;
+  }, [lobby.qrPayload]);
+
+  const statusRef = useRef(status);
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  const networkContextRef = useRef(networkContext);
+  useEffect(() => {
+    networkContextRef.current = networkContext;
+  }, [networkContext]);
+
   const handleOpenInvite = useCallback(async () => {
-    // 🚀 NEW: Check for app update first if host
+    if (isInviteLoading) return;
+
+    console.log(
+      `[LobbySetup] 🎯 Invite tapped: status=${statusRef.current}, ` +
+      `qrPayload=${qrPayloadRef.current ? "YES" : "EMPTY"}, ` +
+      `networkCtx=${networkContextRef.current}, isHost=${lobby.isHost}`,
+    );
+
+    // 1️⃣ Check for app update first
     if (lobby.isHost) {
       const update = await checkAppUpdate();
       const dismissedVersion = getDismissedUpdateVersion();
-
       if (update.isAvailable && update.latestVersion !== dismissedVersion) {
+        console.log(`[LobbySetup] 📦 Update available: ${update.latestVersion}`);
         setUpdateInfo({ url: update.updateUrl, version: update.latestVersion });
         setShowUpdateModal(true);
         return;
       }
     }
 
-    if (status !== "granted") {
+    // 2️⃣ Read LIVE permission status from ref (not stale closure)
+    if (statusRef.current !== "granted") {
+      console.log(`[LobbySetup] 🔒 Permissions not granted (${statusRef.current}) → showing PermissionGuardian`);
       setUiState("permissions");
-    } else if (!lobby.qrPayload) {
-      // If we have permissions but no QR yet, try to bootstrap the host again
-      lobby.handleRetryHosting();
+      return;
+    }
+
+    // 3️⃣ Already have a QR payload → open share immediately (read from ref)
+    if (qrPayloadRef.current) {
+      console.log(`[LobbySetup] ✅ QR payload ready → opening share modal`);
+      setUiState("share");
+      return;
+    }
+
+    // 4️⃣ No QR yet — hotspot may still be initializing. Poll for IP.
+    console.log(`[LobbySetup] ⏳ No QR payload yet → starting 8s poll + retrying host bootstrap`);
+    setIsInviteLoading(true);
+    toast.info("Detecting Network...", "Looking for your hotspot or WiFi address.");
+
+    // Re-trigger hosting in case it failed silently
+    lobby.handleRetryHosting();
+
+    // Poll for up to 8 seconds (every 500ms), reading LIVE ref value each tick.
+    let resolved = false;
+    let pollTicks = 0;
+    await new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        pollTicks++;
+        if (qrPayloadRef.current && !resolved) {
+          resolved = true;
+          console.log(`[LobbySetup] ✅ QR appeared after ${pollTicks * 500}ms`);
+          clearInterval(interval);
+          resolve();
+          return;
+        }
+        if (Date.now() - startTime >= 8000) {
+          console.log(`[LobbySetup] ❌ QR poll timeout after 8s (${pollTicks} ticks)`);
+          clearInterval(interval);
+          resolve();
+        }
+      }, 500);
+      const startTime = Date.now();
+    });
+
+    setIsInviteLoading(false);
+
+    // 5️⃣ Check ref again after polling
+    if (qrPayloadRef.current) {
+      console.log(`[LobbySetup] ✅ Opening share modal (QR resolved)`);
       setUiState("share");
     } else {
-      setUiState("share");
+      const ctx = networkContextRef.current;
+      console.log(`[LobbySetup] ❌ No QR after 8s. networkCtx=${ctx}`);
+      toast.error(
+        "Network Not Ready",
+        ctx === "none"
+          ? "Enable your Mobile Hotspot (no internet needed) and try again."
+          : "Room code could not be generated. Check your hotspot/WiFi and retry.",
+        5000,
+      );
     }
-  }, [status, lobby.isHost]);
+  }, [isInviteLoading, lobby.isHost, lobby.handleRetryHosting]);
 
   return (
     <View className="flex-1 bg-black">
@@ -190,10 +310,16 @@ const LobbySetupScreen = ({
                       exit={{ opacity: 0, height: 0 }}
                       className="mb-6 overflow-hidden"
                     >
-                      <Text className="font-main-bold text-3xl text-white">
+                      <Text 
+                        style={{ fontSize: rf(3.5) }}
+                        className="font-main-bold text-white"
+                      >
                         {lobby.isHost ? "Make everyone ready" : "Lobby Setup"}
                       </Text>
-                      <Text className="mt-2 text-sm text-white/50">
+                      <Text 
+                        style={{ fontSize: rf(1.6) }}
+                        className="mt-2 text-white/50"
+                      >
                         {lobby.isHost
                           ? "Customize your profile and wait for others to join."
                           : "Wait for the host to finalize game settings."}
@@ -201,6 +327,18 @@ const LobbySetupScreen = ({
                     </MotiView>
                   )}
                 </AnimatePresence>
+
+                {/* 🚀 NETWORK STATUS BANNER — shown for all non-granted states */}
+                {requireLanReady && (
+                  <NetworkStatusBanner
+                    status={status}
+                    networkContext={networkContext}
+                    errorMessage={errorMessage}
+                    isHost={lobby.isHost}
+                    onRetry={retry}
+                    onOpenSettings={openSettings}
+                  />
+                )}
 
                 {/* 🚀 GRACEFUL: No longer blocking the UI with PermissionFallbackCard or HostStartErrorCard.
                     We let the user see the lobby. They will only be prompted when they click "Invite Players". */}
@@ -232,6 +370,7 @@ const LobbySetupScreen = ({
                   <SetupActionCard
                     lobby={lobby}
                     onOpenShare={handleOpenInvite}
+                    isInviteLoading={isInviteLoading}
                   />
                 </View>
               )}
@@ -312,11 +451,19 @@ const LobbySetupScreen = ({
           >
              <PermissionGuardian 
                 onAllGranted={() => {
+                  console.log(`[LobbySetup] 🔓 PermissionGuardian → all granted. Syncing status + retrying host bootstrap.`);
                   setAllPermissionsGranted(true);
-                  lobby.handleRetryHosting(); // 🚀 Re-trigger hosting now that we have permissions
+                  // ✅ FIX: Call retry() so useNetworkPermissions syncs to "granted".
+                  // Without this, status stays "denied" even after the user grants,
+                  // causing the next Invite tap to show the permission screen again.
+                  void retry();
+                  lobby.handleRetryHosting();
                   setUiState("share");
                 }} 
-                onSkip={() => setUiState("normal")}
+                onSkip={() => {
+                  console.log(`[LobbySetup] ⏭️ PermissionGuardian → user skipped permissions`);
+                  setUiState("normal");
+                }}
                 title="Invite Friends"
                 description="We need Location permissions to generate a room code and help your friends find you."
               />

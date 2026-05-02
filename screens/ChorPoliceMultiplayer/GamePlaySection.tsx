@@ -4,6 +4,7 @@ import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
 import { Text } from "@/components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { rf, wp } from "@/utils/responsive";
 interface GamePlaySectionProps {
   isPlayButtonDisabled: boolean;
   handlePlay: () => void;
@@ -56,7 +57,10 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
             {/* Specular Shine Reflection */}
             <View className="absolute inset-x-2 top-0 h-[1px] rounded-full bg-white/30" />
 
-            <Text className="font-main-bold text-[11px] uppercase tracking-[4px] text-indigo-300">
+            <Text 
+              style={{ fontSize: rf(1.4), letterSpacing: wp(1) }}
+              className="font-main-bold uppercase text-indigo-300"
+            >
               ROUND — {round}
             </Text>
           </View>

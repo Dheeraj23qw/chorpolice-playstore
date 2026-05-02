@@ -13,6 +13,7 @@ import { MotiView, AnimatePresence } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { rf } from "@/utils/responsive";
 
 interface MultiplayerHelpModalProps {
   visible: boolean;
@@ -95,31 +96,31 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
                       className="shrink"
                     >
                       <HelpSection
+                        title="Hotspot Troubleshooting"
+                        icon="alert-circle"
+                        color="#ef4444"
+                        content={"If connection fails:\n• Turn OFF mobile data\n• Turn ON hotspot on Host device\n• Connect all players to Host's network"}
+                      />
+
+                      <HelpSection
                         title="Network Setup"
                         icon="wifi"
                         color="#3b82f6"
-                        content="Ensure all players are connected to the same Wi-Fi network. For the best experience, use a mobile hotspot if public Wi-Fi is unstable."
+                        content="Ensure all players are on the same network. Hotspots work best for offline play (on trains, hostels, etc.)."
                       />
 
                       <HelpSection
                         title="Hosting a Game"
                         icon="desktop"
                         color="#8b5cf6"
-                        content="As a host, share your QR Code or Room Code. Once  players are connected, you can set the entry coins and start the match."
-                      />
-
-                      <HelpSection
-                        title="Player Identity"
-                        icon="person-circle"
-                        color="#10b981"
-                        content="Every player must choose a unique name and avatar. The game will block starting if there are duplicate identities in the lobby."
+                        content="As a host, share your Room Code. If the code fails, players can enter your IP address manually from the Late Join screen."
                       />
 
                       <HelpSection
                         title="Joining a Game"
                         icon="qr-code"
                         color="#f59e0b"
-                        content="Scan the Host's QR code or enter the Room Code manually. You'll enter the lobby setup to customize your profile while waiting."
+                        content="Scan the Host's QR code or enter the Room Code. Ensure your WiFi is connected to the host's hotspot first."
                       />
                     </ScrollView>
 
@@ -148,17 +149,29 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
   );
 };
 
-const HelpSection = ({ title, icon, color, content }: any) => (
+interface HelpSectionProps {
+  title: string;
+  icon: any;
+  color: string;
+  content: string;
+}
+
+const HelpSection = ({ title, icon, color, content }: HelpSectionProps) => (
   <View className="mb-5">
     <View className="mb-1.5 flex-row items-center gap-2">
-      <Ionicons name={icon} size={16} color={color} />
+      <Ionicons name={icon} size={rf(1.8)} color={color} />
       <Text
-        className="font-main-bold text-[10px] uppercase tracking-[2px] md:text-xs"
-        style={{ color }}
+        className="font-main-bold uppercase"
+        style={{ color, fontSize: rf(1.2), letterSpacing: 1.5 }}
       >
         {title}
       </Text>
     </View>
-    <Text className="text-sm leading-5 text-white/60">{content}</Text>
+    <Text 
+      style={{ fontSize: rf(1.5), lineHeight: rf(2.2) }}
+      className="text-white/60 font-main-md"
+    >
+      {content}
+    </Text>
   </View>
 );

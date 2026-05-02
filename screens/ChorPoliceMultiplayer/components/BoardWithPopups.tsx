@@ -1,7 +1,6 @@
 import React from "react";
 import { View } from "react-native";
 
-import ScoreTable from "@/modal/ShowTableModal";
 import OverlayPopUp from "@/modal/overlaypop";
 
 import { GamePlaySection } from "../GamePlaySection";
@@ -23,7 +22,7 @@ const BoardWithPopups = ({ g }: any) => {
         kingIndex={g.kingIndex}
         advisorIndex={g.advisorIndex}
         thiefIndex={g.thiefIndex}
-        displayDuration={3000}
+        displayDuration={2500} // Snappier 2.5s
         revealedRole={g.revealData?.role}
         isCorrect={g.revealData?.isCorrect}
       />
@@ -32,14 +31,6 @@ const BoardWithPopups = ({ g }: any) => {
 
   return (
     <>
-      {/* Score Table */}
-      <ScoreTable
-        playerNames={g.playerNames}
-        playerScores={g.playerScores}
-        popupTable={g.popupTable}
-        onClose={() => g.setPopupTable(false)}
-      />
-
       {/* Role Reveal Popup */}
       {g.popupIndex === 5 && g.revealData && (
         <CinematicReveal
@@ -57,7 +48,7 @@ const BoardWithPopups = ({ g }: any) => {
           kingIndex={g.kingIndex}
           advisorIndex={g.advisorIndex}
           thiefIndex={g.thiefIndex}
-          displayDuration={3500}
+          displayDuration={2500} // Snappier 2.5s
           revealedRole={g.revealData?.role}
           isCorrect={g.revealData?.isCorrect}
         />

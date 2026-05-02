@@ -15,6 +15,7 @@ import {
   setLobbyStage,
   setLocalSessionIdentity,
   setSessionError,
+  setSessionNetworkInfo,
   type SessionPlayer,
 } from "@/redux/reducers/sessionSlice";
 import { AppDispatch, RootState } from "@/redux/store";
@@ -35,6 +36,7 @@ import {
 } from "@/service/lanLobbyCoordinator";
 import { saveUsername } from "@/storage/userStorage";
 import { getLocalIpAddress } from "@/utils/NetworkUtils";
+import { encodeRoomCode } from "@/utils/roomCode";
 
 const ROOM_MAX_PLAYERS = 4;
 const DEFAULT_GAME_TYPE = "CHOR_POLICE";
@@ -117,11 +119,13 @@ export const useLobbyLogic = (
   }, [players]);
 
   useEffect(() => {
-    void (async () => {
-      const ip = await getLocalIpAddress();
-      dispatch(setLocalSessionIdentity({ localIp: ip || null }));
-    })();
-  }, [dispatch]);
+    if (lanReady) {
+      void (async () => {
+        const ip = await getLocalIpAddress();
+        dispatch(setLocalSessionIdentity({ localIp: ip || null }));
+      })();
+    }
+  }, [dispatch, lanReady]);
 
   useEffect(() => {
     if (
@@ -268,6 +272,54 @@ export const useLobbyLogic = (
   useEffect(() => {
     void bootstrapHostLobby();
   }, [bootstrapHostLobby]);
+
+  // 🚀 BACKGROUND IP MONITOR: If we are hosting but hostIp is missing (due to slow hotspot startup),
+  // keep checking for it every few seconds.
+  useEffect(() => {
+    if (!isHost || connectionStatus !== "HOSTING" || (hostIp && roomCode)) {
+      if (isHost && connectionStatus === "HOSTING" && hostIp && roomCode) {
+        console.log(
+          `[Lobby] 📡 Host ready: IP=${hostIp}, roomCode=${roomCode}, ` +
+          `port=${GameSessionTransport.getListeningPort()}, players=${players.length}`,
+        );
+      }
+      return;
+    }
+
+    console.log(
+      `[Lobby] ⏳ Starting background IP monitor (hostIp=${hostIp || "null"}, ` +
+      `roomCode=${roomCode || "null"}, status=${connectionStatus})`,
+    );
+    let pollCount = 0;
+
+    const interval = setInterval(async () => {
+      pollCount++;
+      console.log(`[Lobby] 🔄 Background IP poll #${pollCount}...`);
+      const ip = await getLocalIpAddress();
+      if (ip) {
+        const port = GameSessionTransport.getListeningPort();
+        const code = encodeRoomCode(ip, port);
+        console.log(
+          `[Lobby] ✅ IP resolved after ${pollCount} polls: IP=${ip}, ` +
+          `port=${port}, roomCode=${code}`,
+        );
+        
+        dispatch(setSessionNetworkInfo({
+          hostIp: ip,
+          roomCode: code,
+        }));
+        
+        // Also sync local profile with the new IP
+        dispatch(setLocalSessionIdentity({ localIp: ip }));
+        
+        clearInterval(interval);
+      } else {
+        console.log(`[Lobby] ⏳ Poll #${pollCount}: no IP yet, retrying in 2.5s...`);
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [isHost, connectionStatus, hostIp, roomCode, dispatch]);
 
   useEffect(() => {
     if (

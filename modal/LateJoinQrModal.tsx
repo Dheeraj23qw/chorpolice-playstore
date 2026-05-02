@@ -46,20 +46,31 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
           >
             {isHost ? (
               /* ─── HOST: SHOW QR ─── */
-              <View className="items-center">
+              <View className="items-center w-full">
+                <Text className="mb-4 text-xs font-main-bold uppercase tracking-[2px] text-indigo-400">
+                  Step 1: Turn on Hotspot
+                </Text>
+                
                 <View className="rounded-[40px] bg-white p-6 shadow-2xl shadow-black/70">
                   {qrPayload ? (
-                    <QRCode value={qrPayload} size={270} />
+                    <QRCode value={qrPayload} size={250} />
                   ) : (
-                    <View style={{ width: 270, height: 270 }} className="items-center justify-center">
+                    <View style={{ width: 250, height: 250 }} className="items-center justify-center">
                       <Text className="text-black font-main-bold">GENERATING...</Text>
                     </View>
                   )}
                 </View>
 
-                <Text className="mt-6 text-center text-sm text-white/70">
-                  {qrPayload ? "Share this with your friends" : "Setting up your room code..."}
-                </Text>
+                <View className="mt-8 items-center gap-2">
+                   <View className="items-center rounded-[30px] border border-white/10 bg-white/5 px-8 py-4">
+                      <Text className="text-[10px] uppercase tracking-[3px] text-white/40">Room Code</Text>
+                      <Text className="font-main-bold text-3xl text-white mt-1">{roomCode || "---"}</Text>
+                   </View>
+                   
+                   <Text className="mt-6 text-center text-xs text-white/50 px-8">
+                     Connect all players to the same network, then scan this QR or enter the Room Code.
+                   </Text>
+                </View>
               </View>
             ) : (
               /* ─── CLIENT: SCANNER ─── */
@@ -94,19 +105,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
               </View>
             )}
 
-            {/* SHARED ROOM CODE ACTION */}
-            {roomCode && isHost && (
-              <Pressable
-                onPress={onCopyRoomCode}
-                className="mt-8 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 active:bg-white/10"
-              >
-                <Text className="text-center font-main-bold text-xs uppercase tracking-[2px] text-white">
-                  Copy Room Code: {roomCode}
-                </Text>
-              </Pressable>
-            )}
-
-            <Pressable onPress={onClose} className="mt-10">
+            <Pressable onPress={onClose} className="mt-12">
               <Text className="text-xs uppercase tracking-widest text-white/30">
                 Tap anywhere to close
               </Text>

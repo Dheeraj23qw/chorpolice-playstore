@@ -1,6 +1,9 @@
 import React, { useEffect, memo } from "react";
-import { View, BackHandler, Image } from "react-native";
+import { View, BackHandler, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import ScoreTable from "@/modal/ShowTableModal";
 
 import { useChorPoliceMultiplayer } from "@/hooks/useChorPoliceMultiplayer/useChorPoliceMultiplayer";
 
@@ -83,6 +86,32 @@ const ChorPoliceMultiplayerScreen = () => {
 
       {/* Content */}
       <View className="flex-1">{renderView()}</View>
+
+      {/* 🏆 PERSISTENT RANKING BUTTON */}
+      <View 
+        className="absolute right-6 z-[1000]"
+        style={{ top: insets.top + 10 }}
+      >
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={g.toggleModal}
+          className="h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
+        >
+          <BlurView intensity={10} style={StyleSheet.absoluteFill} tint="dark" />
+          <Ionicons name="trophy-outline" size={20} color="#FACC15" />
+          
+          <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-indigo-500" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Score Table (Global) */}
+      <ScoreTable
+        playerNames={g.playerNames}
+        playerScores={g.playerScores}
+        popupTable={g.popupTable}
+        gamePhase={g.gamePhase}
+        onClose={() => g.setPopupTable(false)}
+      />
 
       {/* Exit Modal */}
       <QuizExitModal

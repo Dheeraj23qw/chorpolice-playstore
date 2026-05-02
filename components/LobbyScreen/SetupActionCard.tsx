@@ -1,22 +1,25 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Text } from "@/components/Text";
+import { rf } from "@/utils/responsive";
 import { LobbyState } from "./types";
 import { PrimaryButton } from "./PrimaryButton";
 
 interface SetupActionCardProps {
   lobby: LobbyState;
   onOpenShare: () => void;
+  isInviteLoading?: boolean;
 }
 
 export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   lobby,
   onOpenShare,
+  isInviteLoading = false,
 }) => {
   const playerNames = lobby.players.map((p) => p.name.trim().toLowerCase());
   const hasDuplicateNames = new Set(playerNames).size !== playerNames.length;
@@ -30,9 +33,17 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
     !isBlockedByDuplicates &&
     lobby.players.length > 1;
 
+  // Is the host still bootstrapping (IP not yet resolved)?
+  const isHotspotInitializing =
+    lobby.connectionStatus === "HOSTING" &&
+    !lobby.hostIp &&
+    !lobby.roomCode;
+
   const getSubtitle = () => {
-    if (lobby.connectionStatus === "ERROR") return "Connection Error";
-    if (lobby.connectionStatus !== "HOSTING") return "Waiting for host...";
+    if (lobby.connectionStatus === "ERROR") return "Connection Error — tap retry";
+    if (lobby.connectionStatus === "IDLE" || lobby.connectionStatus === "CONNECTING")
+      return "Setting up room...";
+    if (isHotspotInitializing) return "Detecting network interface...";
     if (lobby.players.length <= 1) return "Need at least 2 players";
     if (hasDuplicateNames) return "All players must have unique names";
     if (hasDuplicateAvatars) return "All players must have unique avatars";
@@ -54,25 +65,42 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
       >
         {lobby.isHost && (
           <View className="gap-4">
-            {/* Invite Section */}
+            {/* Invite / Share Section */}
             {canShare && (
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   onOpenShare();
                 }}
+                disabled={isInviteLoading}
               >
-                {({ pressed }) => (
-                  <MotiView
-                    animate={{ scale: pressed ? 0.98 : 1 }}
-                    className="flex-row items-center justify-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 py-4"
-                  >
-                    <Ionicons name="share-outline" size={18} color="#93c5fd" />
-                    <Text className="font-main-bold uppercase tracking-[2px] text-blue-200">
-                      Invite Players
-                    </Text>
-                  </MotiView>
-                )}
+                {({ pressed }) => {
+                  // Show spinner when: parent is polling for IP, OR hotspot interface not yet ready
+                  const showSpinner = isInviteLoading || isHotspotInitializing;
+                  const label = isInviteLoading
+                    ? "Detecting Network..."
+                    : isHotspotInitializing
+                    ? "Initializing Hotspot..."
+                    : "Invite Players";
+                  return (
+                    <MotiView
+                      animate={{ scale: pressed && !showSpinner ? 0.98 : 1, opacity: showSpinner ? 0.7 : 1 }}
+                      className="flex-row items-center justify-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 py-4"
+                    >
+                      {showSpinner ? (
+                        <ActivityIndicator size="small" color="#93c5fd" />
+                      ) : (
+                        <Ionicons name="share-outline" size={rf(2)} color="#93c5fd" />
+                      )}
+                      <Text
+                        style={{ fontSize: rf(1.5) }}
+                        className={`font-main-bold uppercase tracking-[2px] ${showSpinner ? "text-blue-300/60" : "text-blue-200"}`}
+                      >
+                        {label}
+                      </Text>
+                    </MotiView>
+                  );
+                }}
               </Pressable>
             )}
 

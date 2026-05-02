@@ -194,11 +194,20 @@ export const usePermissionGuard = () => {
   }, [checkAllPermissions]);
 
   // Listen for app state changes (user returning from settings)
+  // ✅ FIX: Always re-check on background→active transition.
+  // Previous code used `state !== "granted"` which was a stale closure —
+  // if the user granted in Settings and came back, `state` was still "denied"
+  // in the closure, causing an unnecessary re-check (harmless) BUT if state
+  // was "granted" and user REVOKED, it would skip the check entirely (bug).
   useEffect(() => {
+    let prevAppState = AppState.currentState;
+
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active" && state !== "granted") {
+      // Only fire on genuine background → active (not inactive flickers)
+      if (prevAppState === "background" && nextAppState === "active") {
         void checkAllPermissions(false);
       }
+      prevAppState = nextAppState;
     };
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);

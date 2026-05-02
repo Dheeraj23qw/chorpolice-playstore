@@ -275,8 +275,8 @@ const tryListenOnPort = (port: number): Promise<void> => {
     });
 
     // Wire up event handlers before listen
-    // Removing 'host' and 'reuseAddress' as they can cause "Unknown server error" on Android.
-    server.listen({ port }, () => {
+    // ✅ HOTSPOT FIX: Bind to '0.0.0.0' to ensure we listen on all interfaces (WiFi, Hotspot, etc.)
+    server.listen({ port, host: '0.0.0.0' }, () => {
       cleanup();
       if (settled) return;
       settled = true;
@@ -287,8 +287,9 @@ const tryListenOnPort = (port: number): Promise<void> => {
       tcpServer = server;
       state.listeningPort = actualPort;
 
-      devLog("Server", `✅ Listening on port ${actualPort}`);
-      updateDebugMetric("hostIp", `self:${actualPort}`);
+      devLog("Server", `✅ TCP Server is LIVE on 0.0.0.0:${actualPort}`);
+      devLog("Server", "Accepting connections from all local network interfaces.");
+      updateDebugMetric("hostIp", `0.0.0.0:${actualPort}`);
       resolve();
     });
   });

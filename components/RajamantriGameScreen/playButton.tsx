@@ -47,10 +47,15 @@ const PlayButton: React.FC<PlayButtonProps> = ({
         <View className="absolute inset-0 bg-white/5" />
 
         {/* 🎯 CONTENT */}
-        <View className="items-center justify-center py-6">
+        <View className="items-center justify-center py-6 px-4">
           <Text
-            style={{ fontSize: rf(2) }}
-            className="font-main-bold uppercase tracking-[5px] text-white"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={{ 
+              fontSize: buttonText.length > 25 ? rf(1.2) : buttonText.length > 15 ? rf(1.5) : rf(1.9),
+              letterSpacing: buttonText.length > 15 ? 1 : 4 
+            }}
+            className="font-main-bold uppercase text-white text-center"
           >
             {buttonText}
           </Text>

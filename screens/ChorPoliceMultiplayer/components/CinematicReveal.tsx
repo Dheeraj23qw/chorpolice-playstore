@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { View, StyleSheet, Image } from "react-native";
 import { MotiView } from "moti";
-import { wp, hp } from "@/utils/responsive";
+import { wp, hp, rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 import { Easing } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
@@ -113,30 +113,6 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
               pointerEvents="none"
             />
 
-            {/* 5. SPECULAR SHINE (Diagonal Light Streak) */}
-            <MotiView
-              from={{ translateX: -wp(100) }}
-              animate={{ translateX: wp(100) }}
-              transition={{
-                delay: 1000,
-                duration: 1500,
-                loop: true,
-                type: "timing",
-              }}
-              style={styles.specularShine}
-            >
-              <LinearGradient
-                colors={[
-                  "transparent",
-                  "rgba(255,255,255,0.15)",
-                  "transparent",
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-            </MotiView>
-
             {/* RESULT TEXT */}
             <MotiView
               from={{ opacity: 0, translateY: 20 }}
@@ -145,12 +121,19 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
               style={styles.textContainer}
             >
               <Text
-                className={`font-main-bold text-[22px] tracking-[4px] ${
+                className={`text-center font-main-bold ${
                   isCorrect ? "text-yellow-400" : "text-red-500"
                 }`}
-                style={styles.textShadow}
+                style={[
+                  styles.textShadow,
+                  { 
+                    fontSize: rf(2.4), 
+                    letterSpacing: wp(0.8),
+                    paddingHorizontal: wp(2)
+                  }
+                ]}
               >
-                {isCorrect ? " CHOR PAKDA GAYA" : "CHOR BACH GAYA"}
+                {isCorrect ? "CHOR PAKDA GAYA" : "CHOR BHAG GAYA"}
               </Text>
             </MotiView>
           </View>
@@ -195,14 +178,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: "12%",
     zIndex: 0,
-  },
-  specularShine: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: wp(40),
-    transform: [{ rotate: "25deg" }, { scale: 2 }],
-    zIndex: 2,
   },
   textContainer: {
     position: "absolute",

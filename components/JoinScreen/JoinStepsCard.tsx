@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/Text";
 import { MotiView } from "moti";
+import { rf } from "@/utils/responsive";
 
 export const JoinStepsCard = () => {
   return (
@@ -24,7 +25,10 @@ export const JoinStepsCard = () => {
               <View className="h-6 w-6 items-center justify-center rounded-full bg-white/10">
                 <Text className="font-main-bold text-xs text-white">1</Text>
               </View>
-              <Text className="text-sm text-white/80">
+              <Text 
+                style={{ fontSize: rf(1.6) }}
+                className="text-white/80"
+              >
                 Connect to same Wi-Fi / hotspot
               </Text>
             </View>
@@ -33,7 +37,10 @@ export const JoinStepsCard = () => {
               <View className="h-6 w-6 items-center justify-center rounded-full bg-white/10">
                 <Text className="font-main-bold text-xs text-white">2</Text>
               </View>
-              <Text className="text-sm text-white/80">
+              <Text 
+                style={{ fontSize: rf(1.6) }}
+                className="text-white/80"
+              >
                 Scan QR or enter room code
               </Text>
             </View>
@@ -42,7 +49,10 @@ export const JoinStepsCard = () => {
               <View className="h-6 w-6 items-center justify-center rounded-full bg-white/10">
                 <Text className="font-main-bold text-xs text-white">3</Text>
               </View>
-              <Text className="text-sm text-white/80">
+              <Text 
+                style={{ fontSize: rf(1.6) }}
+                className="text-white/80"
+              >
                 Wait for host to start
               </Text>
             </View>

@@ -658,7 +658,7 @@ export const useChorPoliceMultiplayer = () => {
             dispatch,
           );
           timerRefs.current.push(revealTimer);
-        }, 4500);
+        }, 2800); // ⏱️ Reduced from 4.5s to 2.8s for faster reveal transition
         timerRefs.current.push(tReveal);
 
         // 🔥 STEP 3: Win/Lose Overlay (Classic)
@@ -672,7 +672,7 @@ export const useChorPoliceMultiplayer = () => {
           console.log(
             `${D} Winner is: ${curPI !== null ? curPN[curPI] : "Unknown"}`,
           );
-        }, 8500);
+        }, 5500); // ⏱️ Reduced from 8.5s to 5.5s for faster overlay transition
         timerRefs.current.push(t5);
 
         // 🔥 STEP 4: Next Round / Quiz
@@ -707,7 +707,7 @@ export const useChorPoliceMultiplayer = () => {
             hasGuessedRef.current = false;
             dispatch(setReduxGamePhase("round_video"));
           }
-        }, 12500);
+        }, 8500); // ⏱️ Reduced from 12.5s to 8.5s to move to next round faster
         timerRefs.current.push(t6);
       }
 

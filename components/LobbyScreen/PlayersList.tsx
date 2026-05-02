@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/Text";
 import { PlayerListItem } from "./PlayerListItem";
 import { LobbyState } from "./types";
+import { rf } from "@/utils/responsive";
 
 interface PlayersListProps {
   lobby: LobbyState;
@@ -95,11 +96,17 @@ export const PlayersList: React.FC<PlayersListProps> = ({
                 </View>
               ) : (
                 <View className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                  <Text className="font-main-bold text-white">
+                  <Text 
+                    style={{ fontSize: rf(1.8) }}
+                    className="font-main-bold text-white"
+                  >
                     Waiting for players
                   </Text>
 
-                  <Text className="mt-2 text-sm text-white/60">
+                  <Text 
+                    style={{ fontSize: rf(1.4) }}
+                    className="mt-2 text-white/60"
+                  >
                     Players will appear here automatically.
                   </Text>
                 </View>

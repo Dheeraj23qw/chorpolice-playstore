@@ -9,6 +9,7 @@ import {
   logPermissionDebug,
   warnPermissionDebug,
 } from "@/utils/permissionDebug";
+import { rf } from "@/utils/responsive";
 
 export const QRScanner = ({
   onScan,
@@ -62,7 +63,10 @@ export const QRScanner = ({
   if (!permission) {
     return (
       <View className="items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-6">
-        <Text className="text-sm text-white/70">
+        <Text 
+          style={{ fontSize: rf(1.6) }}
+          className="text-white/70"
+        >
           Checking camera permission...
         </Text>
       </View>
@@ -75,7 +79,10 @@ export const QRScanner = ({
 
     return (
       <View className="items-center rounded-3xl border border-white/10 bg-white/5 p-6">
-        <Text className="text-center text-sm text-white/70">
+        <Text 
+          style={{ fontSize: rf(1.6) }}
+          className="text-center text-white/70"
+        >
           {canAskAgain
             ? "Allow camera to scan QR"
             : "Enable camera permission from settings"}
@@ -87,7 +94,10 @@ export const QRScanner = ({
           }
           className="mt-4 rounded-xl bg-white/10 px-4 py-3"
         >
-          <Text className="text-xs text-white">
+          <Text 
+            style={{ fontSize: rf(1.4) }}
+            className="text-white"
+          >
             {canAskAgain ? "Allow Camera" : "Open Settings"}
           </Text>
         </Pressable>
@@ -132,7 +142,10 @@ export const QRScanner = ({
           exit={{ opacity: 0 }}
           className="absolute inset-0 items-center justify-center bg-black/60"
         >
-          <Text className="font-main-bold text-lg text-white">
+          <Text 
+            style={{ fontSize: rf(2.2) }}
+            className="font-main-bold text-white"
+          >
             Connected ✅
           </Text>
         </MotiView>

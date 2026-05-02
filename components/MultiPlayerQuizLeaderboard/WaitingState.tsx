@@ -11,6 +11,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/Text";
+import { rf } from "@/utils/responsive";
 
 export const WaitingState = () => {
   const pulse = useSharedValue(0);
@@ -133,13 +134,14 @@ export const WaitingState = () => {
         </View>
 
         {/* TEXT */}
-        <View className="mt-8 items-center">
-          <Text className="font-main-bold text-lg uppercase tracking-[6px] text-white">
+        <View className="mt-8 w-full items-center px-4">
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="clip"
+            style={{ fontSize: rf(2.2), letterSpacing: 2 }}
+            className="text-center font-main-bold uppercase text-white"
+          >
             Waiting for Friends
-          </Text>
-
-          <Text className="font-main-regular mt-1 text-[10px] uppercase tracking-[2px] text-white/30">
-            syncing live game state...
           </Text>
         </View>
 

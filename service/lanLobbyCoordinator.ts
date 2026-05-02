@@ -12,7 +12,7 @@ import {
   setSessionNetworkInfo,
 } from "@/redux/reducers/sessionSlice";
 import store from "@/redux/store";
-import { getLocalIpAddress } from "@/utils/NetworkUtils";
+import { getLocalIpAddress, getGatewayIpAddress } from "@/utils/NetworkUtils";
 import {
   createInitialLobbyPlayers,
   replaceFirstBotWithPlayer,
@@ -338,6 +338,7 @@ export const hostLanLobby = async ({
   }
 
   pendingHostLobbyPromise = (async () => {
+    console.log(`[LobbyCoordinator] 🚀 Starting host lobby for player=${localPlayerId}, game=${gameType}`);
     await stopCoordinator();
     ensurePacketSubscription();
 
@@ -363,9 +364,6 @@ export const hostLanLobby = async ({
       console.log(`[LobbyCoordinator] Server listening on port ${actualPort}`);
     }
 
-    const hostIp = await getLocalIpAddress();
-    // 🚀 Include actual port so room code works even on fallback ports
-    const roomCode = hostIp ? encodeRoomCode(hostIp, actualPort) : null;
     const players = createInitialLobbyPlayers({
       id: localPlayerId,
       name,
@@ -380,6 +378,30 @@ export const hostLanLobby = async ({
         gameType,
       }),
     );
+    store.dispatch(setLobbyPlayers(players));
+    store.dispatch(setLobbyStage("room"));
+    store.dispatch(setSessionError(null));
+
+    let hostIp = await getLocalIpAddress();
+    console.log(`[LobbyCoordinator] 🌐 Initial IP detection: ${hostIp || "null"}`);
+    
+    // 🚀 HOTSPOT RETRY: Sometimes hotspot IPs take a moment to settle
+    if (!hostIp) {
+      for (let i = 0; i < 5; i++) {
+        console.log(`[LobbyCoordinator] Retrying IP detection... (${i + 1}/5)`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        hostIp = await getLocalIpAddress();
+        if (hostIp) break;
+      }
+    }
+    // 🚀 Include actual port so room code works even on fallback ports
+    const roomCode = hostIp ? encodeRoomCode(hostIp, actualPort) : null;
+    console.log(
+      `[LobbyCoordinator] 📡 Host network: IP=${hostIp || "null"}, ` +
+      `port=${actualPort}, roomCode=${roomCode || "null"}, ` +
+      `players=${players.length} (${players.filter(p => p.isBot).length} bots)`,
+    );
+
     store.dispatch(
       setLocalSessionIdentity({
         localPlayerId,
@@ -395,9 +417,6 @@ export const hostLanLobby = async ({
       }),
     );
     store.dispatch(setConnectionStatus("HOSTING"));
-    store.dispatch(setLobbyPlayers(players));
-    store.dispatch(setSessionError(null));
-    store.dispatch(setLobbyStage("room"));
     
     // 🚀 Realistic bot entry: announce one-by-one with staggered delay
     const initialBots = players.filter((p) => p.isBot);
@@ -447,6 +466,10 @@ export const joinLanLobby = async ({
   if (__DEV__) {
     console.log(`[LobbyCoordinator] Joining host at ${hostIp}:${hostPort ?? "default"}`);
   }
+  console.log(
+    `[LobbyCoordinator] 🔗 Join attempt: hostIp=${hostIp}, port=${hostPort ?? "default"}, ` +
+    `player=${localPlayerId}, game=${gameType}`,
+  );
 
   await GameSessionTransport.start({
     isHost: false,
@@ -480,6 +503,7 @@ export const joinLanLobby = async ({
   store.dispatch(setSessionError(null));
   store.dispatch(setLobbyStage("room"));
 
+  console.log(`[LobbyCoordinator] Target Host: ${hostIp}:${hostPort || "default"}`);
   setSessionHostIp(hostIp, hostPort);
 
   clearJoinAttempts();
@@ -509,10 +533,14 @@ export const joinLanLobby = async ({
     const latestState = store.getState().session;
     if (latestState.connectionStatus === "CONNECTING") {
       clearJoinAttempts();
+      console.log(
+        `[LobbyCoordinator] ❌ Join timeout after 8s. hostIp=${hostIp}, ` +
+        `port=${hostPort ?? "default"}, status=${latestState.connectionStatus}`,
+      );
       store.dispatch(setConnectionStatus("ERROR"));
       store.dispatch(
         setSessionError(
-          "Could not reach the host. Check same Wi-Fi or try mobile hotspot.",
+          "Could not reach the host. Make sure you're on the same WiFi or Hotspot.",
         ),
       );
     }
@@ -570,6 +598,7 @@ export const leaveLanLobby = async () => {
 
 export const decodeLanRoomCode = async (roomCode: string) => {
   const localIp = await getLocalIpAddress();
+  const gatewayIp = await getGatewayIpAddress();
   // Returns { ip, port } or null
-  return decodeRoomCodeWithLocalContext(roomCode, localIp);
+  return decodeRoomCodeWithLocalContext(roomCode, localIp, gatewayIp);
 };

@@ -5,6 +5,7 @@ import { Text } from "@/components/Text";
 import { MotiView, AnimatePresence } from "moti";
 import * as Haptics from "expo-haptics";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { rf } from "@/utils/responsive";
 
 interface JoinCodeSectionProps {
   roomCode: string;
@@ -234,6 +235,7 @@ export const JoinCodeSection = ({
                 className="rounded-2xl px-4 py-4"
               >
                 <Text
+                  style={{ fontSize: rf(1.8) }}
                   className={`text-center font-main-bold uppercase tracking-[2px] ${
                     isConnecting || !isReady ? "text-white/35" : "text-white"
                   }`}
