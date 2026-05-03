@@ -356,7 +356,7 @@ export const useChorPoliceMultiplayer = () => {
 
       const endTimer = setTimeout(() => {
         ChorPoliceEngine.endGame();
-      }, 1200);
+      }, 500); // ⏱️ Reduced from 1200ms for faster end transition
       timerRefs.current.push(endTimer);
       return;
     }
@@ -818,7 +818,7 @@ export const useChorPoliceMultiplayer = () => {
 
         const nextTurnTimer = setTimeout(() => {
           queueScoreQuizTurn(playerIndex + 1);
-        }, 4000);
+        }, 3800); // ⏱️ Reduced from 4000ms to match popup duration
         timerRefs.current.push(nextTurnTimer);
       }
 
@@ -873,8 +873,11 @@ export const useChorPoliceMultiplayer = () => {
         setIsDynamicPopUp(true);
 
         const popupTimer = setTimeout(() => {
-          setIsDynamicPopUp(false);
-        }, 3500);
+          // FIX: Only hide if NOT the last player to prevent flicker before final results
+          if (safePlayerIndex < players.length - 1) {
+            setIsDynamicPopUp(false);
+          }
+        }, 3800); // ⏱️ Increased from 3500ms to match next turn trigger
         timerRefs.current.push(popupTimer);
       }
 

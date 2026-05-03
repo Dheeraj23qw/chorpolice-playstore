@@ -232,7 +232,11 @@ const JoinScreen = () => {
       return;
     }
     const gateway = await getGatewayIpAddress();
+    console.log(`[JoinScreen] Manual Join: code=${roomCode}, local=${session.localIp}, gateway=${gateway}`);
+    
     const candidates = getCandidateIpsForRoomCode(roomCode, session.localIp, gateway);
+    console.log(`[JoinScreen] Candidates generated:`, candidates);
+
     if (candidates.length === 0) {
       toast.error("Invalid Code", "Please enter a valid 3-digit room code.");
       return;
@@ -243,7 +247,8 @@ const JoinScreen = () => {
   /* ─────────────────── UI ─────────────────── */
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior="padding"
+      keyboardVerticalOffset={20}
       style={{ flex: 1, backgroundColor: "#050508" }}
     >
       <LobbyBackdrop />
@@ -259,7 +264,12 @@ const JoinScreen = () => {
       />
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, flexGrow: 1 }}
+        contentContainerStyle={{ 
+          paddingHorizontal: 20, 
+          paddingBottom: 32, 
+          flexGrow: 1,
+          backgroundColor: "#050508" 
+        }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

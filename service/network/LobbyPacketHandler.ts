@@ -167,7 +167,7 @@ export const handleLobbyPacket = (
         deps.broadcastPlayerList(nextPlayers);
         const botIndex = state.players.findIndex(p => p.id === packet.playerId);
         const bot = nextPlayers[botIndex];
-        if (bot?.isBot) toast.info(`${departingPlayer?.name || "Player"} left. ${bot.name} joined.`);
+        if (bot?.isBot) toast.info(`${departingPlayer?.name || "Player"} left. ${bot.name} is now ready.`);
       }
       return;
     }

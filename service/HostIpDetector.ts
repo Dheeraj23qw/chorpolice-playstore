@@ -52,10 +52,14 @@ export const startIpDetectionLoop = (opts: {
       if (currentIp && (isIpChanged || isHardwareFoundOverFallback)) {
         lastSyncedIp = currentIp;
 
+        const finalRoomCode = (opts.roomCode === "000" || !opts.roomCode) 
+          ? (currentIp.split(".")[3].padStart(3, "0"))
+          : opts.roomCode;
+
         const qrPayloadObj = {
           ip: currentIp,
           port: opts.actualPort,
-          roomCode: opts.roomCode,
+          roomCode: finalRoomCode,
           candidateIps: LanCandidateIpService.getCandidateIps(
             parseInt(currentIp.split(".")[3], 10),
             { localIp: currentIp, gatewayIp: null },
@@ -63,23 +67,23 @@ export const startIpDetectionLoop = (opts: {
         };
         const qrPayload = JSON.stringify(qrPayloadObj);
 
-        logLanDebug(`selected IP: ${currentIp} (fallback=${currentIsFallback})`);
+        logLanDebug(`selected IP: ${currentIp} (code=${finalRoomCode}, fallback=${currentIsFallback})`);
         updateDebugMetric("hostIp", currentIp);
         updateDebugMetric("lanIsFallback", currentIsFallback);
         updateDebugMetric("lanQrPayload", qrPayload);
 
-        console.log(`[HostIpDetector] 🔄 IP: ${currentIp} (${elapsed}ms). Fallback: ${currentIsFallback ? "YES" : "NO"}`);
+        console.log(`[HostIpDetector] 🔄 IP: ${currentIp} (code=${finalRoomCode}, ${elapsed}ms). Fallback: ${currentIsFallback ? "YES" : "NO"}`);
 
         store.dispatch(setSessionNetworkInfo({
           hostIp: currentIp,
-          roomCode: opts.roomCode,
+          roomCode: finalRoomCode,
           isFallback: currentIsFallback,
         }));
         store.dispatch(setLocalSessionIdentity({ localIp: currentIp }));
 
-        if (opts.roomCode) {
+        if (finalRoomCode) {
           LanDiscoveryService.startBroadcasting({
-            roomCode: opts.roomCode,
+            roomCode: finalRoomCode,
             tcpPort: opts.actualPort,
             hostName: opts.hostName,
             lobbyId: opts.lobbyId,

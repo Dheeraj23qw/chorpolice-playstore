@@ -100,9 +100,16 @@ export const initHostLobby = ({ localPlayerId, name, avatarId, coins, gameType }
   store.dispatch(setConnectionStatus("IDLE"));
   store.dispatch(setSessionError(null));
 
-  players.filter(p => p.isBot).forEach((bot, i) => {
-    botAnnouncementTimers.push(setTimeout(() => toast.info(`${bot.name} joined.`), 900 * (i + 1)));
-  });
+  const botNames = players.filter(p => p.isBot).map(p => p.name);
+  if (botNames.length > 0) {
+    const list = botNames.length > 2 
+      ? `${botNames.slice(0, 2).join(", ")}, and ${botNames.length - 2} other`
+      : botNames.join(" and ");
+    
+    botAnnouncementTimers.push(setTimeout(() => {
+      toast.info(`${list} joined the room!`);
+    }, 1500));
+  }
 };
 
 export const hostLanLobby = async ({ localPlayerId, name, avatarId, coins, gameType }: {
@@ -116,7 +123,8 @@ export const hostLanLobby = async ({ localPlayerId, name, avatarId, coins, gameT
   }
 
   pendingHostLobbyPromise = (async () => {
-    const roomCode = LanRoomCodeService.generateRandom();
+    // Use a placeholder initially; HostIpDetector will calculate it from the IP
+    const roomCode = "000"; 
     ensurePacketSubscription();
 
     await GameSessionTransport.start({ isHost: true, localPlayerId, onPacket: (p, ip) => handleIncomingPacket(p, ip) });
@@ -156,11 +164,22 @@ export const joinLanLobby = async ({ hostIp, hostPort, candidateIps = [], roomCo
   });
 
   const allCandidates = Array.from(new Set([...(hostIp ? [hostIp] : []), ...candidateIps, ...LanCandidateIpService.getCommonGateways()]));
+  const portsToTry = hostPort ? [hostPort] : [NETWORK.TCP_SERVER_PORT, 41236, 41237, 41238, 41239, 41240];
   let connectedIp: string | null = null;
+  let finalPort = NETWORK.TCP_SERVER_PORT;
 
   for (const ip of allCandidates) {
-    try { await GameSessionTransport.connectAsync(ip, actualPort); connectedIp = ip; break; }
-    catch { /* try next */ }
+    for (const port of portsToTry) {
+      try {
+        await GameSessionTransport.connectAsync(ip, port);
+        connectedIp = ip;
+        finalPort = port;
+        break;
+      } catch {
+        /* try next port/ip */
+      }
+    }
+    if (connectedIp) break;
   }
 
   if (!connectedIp) {
@@ -171,12 +190,15 @@ export const joinLanLobby = async ({ hostIp, hostPort, candidateIps = [], roomCo
 
   store.dispatch(configureSessionState({ isHost: false, localPlayerId, gameType }));
   store.dispatch(setLocalSessionIdentity({ localPlayerId, name, avatarId }));
-  store.dispatch(setSessionNetworkInfo({ hostIp: connectedIp, roomCode: roomCode || encodeRoomCode(connectedIp, actualPort) }));
+  store.dispatch(setSessionNetworkInfo({
+    hostIp: connectedIp,
+    roomCode: roomCode || encodeRoomCode(connectedIp, finalPort)
+  }));
   store.dispatch(setLobbyPlayers([]));
   store.dispatch(setConnectionStatus("CONNECTING"));
   store.dispatch(setSessionError(null));
   store.dispatch(setLobbyStage("room"));
-  setSessionHostIp(connectedIp, actualPort);
+  setSessionHostIp(connectedIp, finalPort);
 
   clearJoinAttempts();
 
@@ -222,23 +244,53 @@ export const joinLanLobby = async ({ hostIp, hostPort, candidateIps = [], roomCo
 };
 
 export const syncLocalLobbyProfile = ({ name, avatarId, coins }: { name?: string; avatarId?: number; coins?: number }) => {
-  store.dispatch(setLocalSessionIdentity({ name, avatarId }));
   const s = store.getState().session;
+  const localPlayer = s.players.find(p => p.id === s.localPlayerId);
+  
+  const targetName = name?.trim() || s.localPlayerName;
+  const targetAvatarId = avatarId !== undefined ? avatarId : s.localAvatarId;
+  const targetCoins = coins !== undefined ? coins : store.getState().wallet.coins;
+
+  const nameChanged = targetName !== localPlayer?.name;
+  const avatarChanged = targetAvatarId !== localPlayer?.avatarId;
+  const coinsChanged = targetCoins !== localPlayer?.coins;
+
+  if (!nameChanged && !avatarChanged && !coinsChanged && s.connectionStatus !== "IDLE") {
+    return;
+  }
+
+  // 1. INSTANT LOCAL UPDATE: Update Redux state immediately for a "goated" feel
+  store.dispatch(setLocalSessionIdentity({ name: targetName, avatarId: targetAvatarId }));
+  
+  // Optimistically update the local player list for BOTH host and client
+  const idx = s.players.findIndex(p => p.id === s.localPlayerId);
+  let nextPlayers = s.players;
+  if (idx >= 0) {
+    const cur = s.players[idx];
+    const next = { ...cur, name: targetName, avatarId: targetAvatarId, coins: targetCoins };
+    nextPlayers = [...s.players]; 
+    nextPlayers[idx] = next;
+    syncPlayerListLocally(nextPlayers); 
+  }
 
   if (s.isHost) {
-    const idx = s.players.findIndex(p => p.id === s.localPlayerId);
+    // 2. DEBOUNCED BROADCAST: Host tells everyone else
     if (idx >= 0) {
-      const cur = s.players[idx];
-      const next = { ...cur, ...(name !== undefined ? { name: name.trim() || `User_${Math.floor(100 + Math.random() * 900)}` } : {}), ...(avatarId !== undefined ? { avatarId } : {}), ...(coins !== undefined ? { coins } : {}) };
-      if (next.name !== cur.name || next.avatarId !== cur.avatarId || next.coins !== cur.coins) {
-        const nextPlayers = [...s.players]; nextPlayers[idx] = next;
-        syncPlayerListLocally(nextPlayers); broadcastPlayerList(nextPlayers);
-      }
+      clearTimeout((syncLocalLobbyProfile as any).broadcastTimer);
+      (syncLocalLobbyProfile as any).broadcastTimer = setTimeout(() => {
+        broadcastPlayerList(nextPlayers);
+      }, 500);
     }
     return;
   }
+
+  // Client side: Debounce the JOIN packet to tell the host
   if (s.connectionStatus === "CONNECTED" || s.connectionStatus === "CONNECTING") {
-    const pkt = buildJoinPacketFromState(); if (pkt) sendPacketToHost(pkt);
+    clearTimeout((syncLocalLobbyProfile as any).broadcastTimer);
+    (syncLocalLobbyProfile as any).broadcastTimer = setTimeout(() => {
+      const pkt = buildJoinPacketFromState(); 
+      if (pkt) sendPacketToHost(pkt);
+    }, 500);
   }
 };
 
@@ -250,6 +302,6 @@ export const leaveLanLobby = async () => {
   store.dispatch(clearSession());
 };
 
-export const getCandidateIpsForRoomCode = (_roomCode: string, _localIp: string | null, _gatewayIp: string | null): string[] => LanCandidateIpService.getCommonGateways();
+export { getCandidateIpsForRoomCode } from "@/utils/roomCode";
 export const startLanDiscovery = (onDiscovery: (result: DiscoveryResult) => void) => LanDiscoveryService.startListening(onDiscovery);
 export const stopLanDiscovery = () => LanDiscoveryService.stopListening();

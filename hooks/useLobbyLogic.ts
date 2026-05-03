@@ -219,7 +219,11 @@ export const useLobbyLogic = (
   );
 
   useEffect(() => {
-    if (isHost && localPlayerId && !hostBootstrappedRef.current) {
+    // Only initialize the host lobby if we haven't bootstrapped yet
+    // and we aren't already in a hosting/active state.
+    const isAlreadyActive = session.connectionStatus === "HOSTING" || session.players.length > 0;
+    
+    if (isHost && localPlayerId && !hostBootstrappedRef.current && !isAlreadyActive) {
       hostBootstrappedRef.current = true;
       initHostLobby({
         localPlayerId,
@@ -229,7 +233,7 @@ export const useLobbyLogic = (
         gameType,
       });
     }
-  }, [isHost, localPlayerId, userName, currentAvatarId, userCoins, gameType]);
+  }, [isHost, localPlayerId, session.connectionStatus, session.players.length]); // Removed dynamic profile deps to prevent resets during typing
 
   useEffect(() => {
     return () => {
@@ -357,25 +361,14 @@ export const useLobbyLogic = (
   }, [isHost, connectionStatus, hostIp, roomCode, dispatch]);
 
   useEffect(() => {
-    if (
-      connectionStatus !== "HOSTING" &&
-      connectionStatus !== "CONNECTED" &&
-      connectionStatus !== "CONNECTING"
-    ) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      syncLocalLobbyProfile({
-        name: userName.trim() || "PLAYER",
-        avatarId: currentAvatarId,
-      });
-    }, 160);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [connectionStatus, currentAvatarId, userName]);
+    // Call instantly. The coordinator handles debouncing the network broadcast.
+    // We do NOT block by connection status here, because we want the LOCAL 
+    // player list to update visually even before the LAN server starts.
+    syncLocalLobbyProfile({
+      name: userName.trim() || "PLAYER",
+      avatarId: currentAvatarId,
+    });
+  }, [currentAvatarId, userName]);
 
   const handleDifficultyChange = useCallback(
     (newLevel: DifficultyOption) => {
