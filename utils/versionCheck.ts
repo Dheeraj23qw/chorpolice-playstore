@@ -20,7 +20,7 @@ export const checkAppUpdate = async (): Promise<{
     const data = await response.json();
 
     // Get the current version from your app.json config
-    const currentVersion = Constants.nativeApplicationVersion || "4.2.0";
+    const currentVersion = Constants.nativeApplicationVersion || "4.0.0";
     const latestVersion = data.latestVersion;
     const updateUrl = data.updateUrl;
 
