@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { View } from "react-native";
 
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
@@ -16,7 +17,12 @@ import { getOnboardingDone, setOnboardingDone } from "@/storage/appStorage";
 import { canShowLowCoinModal } from "@/storage/lowCoinStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
 
+import { useOTAUpdate } from "@/hooks/useOTAUpdate";
+import { Text } from "@/components/Text";
+import { rf } from "@/utils/responsive";
+
 export default function AppController() {
+  const { isUpdating } = useOTAUpdate();
   const dispatch = useAppDispatch();
   const phase = useAppSelector((state) => state.appFlow.phase);
   const activeModal = useAppSelector((state) => state.modalQueue.activeModal);
@@ -133,6 +139,22 @@ export default function AppController() {
       {child}
     </Animated.View>
   );
+
+  if (isUpdating) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#050508", alignItems: "center", justifyContent: "center" }}>
+        <PremiumSplashCard source={require("@/assets/modalImages/intro.webp")} />
+        <View style={{ position: "absolute", bottom: 100, alignItems: "center" }}>
+          <Text style={{ fontSize: rf(2), color: "#fff" }} className="font-main-bold uppercase tracking-widest">
+            Downloading Update...
+          </Text>
+          <Text style={{ fontSize: rf(1.4), color: "rgba(255,255,255,0.5)", marginTop: 8 }}>
+            The app will reload automatically.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   switch (phase) {
     case "ONBOARDING":

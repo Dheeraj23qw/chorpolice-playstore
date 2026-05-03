@@ -17,6 +17,8 @@ interface CinematicRevealProps {
   index: number;
   role: string;
   isCorrect: boolean;
+  policeName?: string;
+  advisorName?: string;
   onComplete?: () => void;
 }
 
@@ -24,6 +26,8 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
   index,
   role,
   isCorrect,
+  policeName,
+  advisorName,
   onComplete,
 }) => {
   const startX = index % 2 === 0 ? -wp(60) : wp(60);
@@ -133,7 +137,7 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
                   }
                 ]}
               >
-                {isCorrect ? "CHOR PAKDA GAYA" : "CHOR BHAG GAYA"}
+                {isCorrect ? `POLICE ${policeName?.toUpperCase() || ""} CAUGHT THIEF` : `POLICE CAUGHT ADVISOR ${advisorName?.toUpperCase() || ""}`}
               </Text>
             </MotiView>
           </View>

@@ -32,22 +32,11 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
 
   const playerNames = useSelector(selectPlayerNames).map((p) => p?.name);
 
-  const kingName =
-    kingIndex !== null && playerNames[kingIndex]
-      ? playerNames[kingIndex]
-      : "King";
 
-  const policeName =
-    policeIndex !== null && playerNames[policeIndex]
-      ? playerNames[policeIndex]
-      : "Police";
 
   // 🔥 Dynamic duration (GLOBAL access) - ⏱️ Reduced for faster flow
   const getDuration = () => {
     switch (index) {
-      case 1:
-      case 2:
-        return 1800; // Identity reveals: 1.8s
       case 3:
       case 4:
         return 3000; // Win/Loss results: 3s (allows reading message)
@@ -85,16 +74,6 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
       let accentColor = "#FFD700";
 
       switch (index) {
-        case 1:
-          title = `THE KING\n${kingName.toUpperCase()}`;
-          accentColor = "#FACC15";
-          break;
-
-        case 2:
-          title = `THE POLICE\n${policeName.toUpperCase()}`;
-          accentColor = "#3B82F6";
-          break;
-
         case 3:
           title = "Thief Escaped! 😈";
           accentColor = "#8B5CF6";
@@ -149,7 +128,7 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
     return () => {
       if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
     };
-  }, [index, kingName, policeName, closeModal, duration, onStateChange]);
+  }, [index, closeModal, duration, onStateChange]);
 
   if (!modalData) return null;
 

@@ -68,25 +68,17 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
         {/* 🚀 Play Button Glass Stage */}
         <View className="mb-9">
-          {showTableButton ? (
-            <PlayButton
-              disabled={false}
-              onPress={toggleModal}
-              buttonText="Show Score Table"
-            />
-          ) : (
-            <PlayButton
-              disabled={isPlayButtonDisabled}
-              onPress={handlePlay}
-              buttonText={
-                isPlayButtonDisabled
+          <PlayButton
+            disabled={isPlayButtonDisabled}
+            onPress={handlePlay}
+            buttonText={
+              isPlayButtonDisabled
+                ? message
                   ? message
-                    ? message
-                    : `Round ${round}`
-                  : `Press me to play!`
-              }
-            />
-          )}
+                  : `Round ${round}`
+                : `Press me to play!`
+            }
+          />
         </View>
 
         {/* 🎴 Card Arena */}

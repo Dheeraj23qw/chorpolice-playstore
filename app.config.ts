@@ -26,7 +26,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   assetBundlePatterns: ["assets/images/*", "assets/audio/*", "assets/gif/*"],
   updates: {
     url: "https://u.expo.dev/d2d7084f-7e5a-4b67-a860-dc2eddc33241",
-    checkAutomatically: "ON_LOAD",
+    checkAutomatically: "NEVER",
     fallbackToCacheTimeout: 0,
   },
   android: {

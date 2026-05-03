@@ -50,7 +50,7 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
           iconColor: "#3b82f6",
           gradientColors: ["rgba(59,130,246,0.15)", "rgba(59,130,246,0.05)"],
           title: "Setting up your room...",
-          subtitle: "Getting things ready for your friends. Please wait.",
+          subtitle: "Setting up your room. Please wait.",
         };
       }
       if (status === "no_wifi" && networkContext === "none") {
@@ -60,7 +60,7 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
           gradientColors: ["rgba(249,115,22,0.15)", "rgba(249,115,22,0.05)"],
           borderColor: "rgba(249,115,22,0.3)",
           title: "Checking your connection...",
-          subtitle: "Please turn ON your Hotspot so friends can find you.",
+          subtitle: "Please turn ON your Hotspot.",
           action: { label: "Check Again", onPress: onRetry },
         };
       }
@@ -75,8 +75,8 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
         borderColor: "rgba(249,115,22,0.3)",
         title: "No Connection Found",
         subtitle: isHost 
-          ? "Looking for your room... Make sure your hotspot is ON."
-          : "Connect to the same hotspot or WiFi as your friends.",
+          ? "Turn your Hotspot ON."
+          : "Connect to the host's Hotspot or WiFi.",
         action: { label: "Check Again", onPress: onRetry },
       };
     }
@@ -94,7 +94,7 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
         title: "Permission Required",
         subtitle:
           errorMessage ||
-          "We need this permission to find your friends nearby.",
+          "Permission needed to find nearby friends.",
         action: isPermanent
           ? { label: "Open Settings", onPress: onOpenSettings }
           : { label: "Grant Permission", onPress: onRetry },
@@ -124,8 +124,8 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
       subtitle:
         errorMessage ||
         (isHost
-          ? "Enable your Mobile Hotspot so others can join."
-          : "Connect to the host's network to join the lobby."),
+          ? "Enable your Hotspot so others can join."
+          : "Connect to the host's network."),
       action: { label: "Check Again", onPress: onRetry },
     };
   };

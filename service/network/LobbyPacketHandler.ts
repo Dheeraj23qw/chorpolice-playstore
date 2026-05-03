@@ -66,6 +66,15 @@ export const handleLobbyPacket = (
       return;
     }
 
+    // Reject late joins if the game is already in progress or ended
+    if (state.gamePhase !== "idle") {
+      console.warn(`[Lobby] Rejecting join: game already in progress or ended (${state.gamePhase})`);
+      if (sourceIp) {
+        sendPacketToPeer(sourceIp, { type: NETWORK.PLAYER_JOIN_REJECT, reason: "game_in_progress" });
+      }
+      return;
+    }
+
     const humansCount = state.players.filter(p => !p.isBot).length;
     const joiningPlayer = sanitizeJoiningPlayer(packet.player, `guest_${Date.now()}`, humansCount + 1);
 

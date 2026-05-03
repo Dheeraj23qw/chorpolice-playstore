@@ -86,7 +86,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                    </View>
                    
                    <Text className="mt-6 text-center text-xs text-white/50 px-8">
-                     Ask friends to connect to your hotspot and scan the QR code.
+                     Ask friends to scan this QR code.
                    </Text>
                 </View>
 
@@ -121,7 +121,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                 </View>
 
                 <Text className="mt-6 text-center text-sm text-white/70">
-                  Client: Scan the host's QR code
+                  Scan the host's QR code
                 </Text>
 
                 {showTroubleshooting && <LanTroubleshootingCard />}

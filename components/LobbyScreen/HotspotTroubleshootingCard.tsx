@@ -56,7 +56,7 @@ export const HotspotTroubleshootingCard: React.FC = () => {
               </Text>
             </View>
             <Text style={{ fontSize: rf(1.25) }} className="text-center text-white/50 mb-4 px-2">
-              If you are using your phone hotspot, tap below to continue.
+              Using Hotspot? Tap below.
             </Text>
             
             <Pressable 
@@ -82,7 +82,7 @@ export const HotspotTroubleshootingCard: React.FC = () => {
               </Text>
             </View>
             <Text style={{ fontSize: rf(1.25) }} className="text-center text-white/60 px-2">
-              Ask friends to connect to your hotspot and scan the QR code.
+              Hotspot mode active. Ask friends to scan.
             </Text>
           </MotiView>
         )}

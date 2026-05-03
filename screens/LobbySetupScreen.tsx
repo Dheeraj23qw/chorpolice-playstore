@@ -373,15 +373,7 @@ const LobbySetupScreen = ({
                         style={{ fontSize: rf(3.5) }}
                         className="font-main-bold text-white"
                       >
-                        {lobby.isHost ? "Make everyone ready" : "Lobby Setup"}
-                      </Text>
-                      <Text 
-                        style={{ fontSize: rf(1.6) }}
-                        className="mt-2 text-white/50"
-                      >
-                        {lobby.isHost
-                          ? "Customize your profile and wait for others to join."
-                          : "Wait for the host to finalize game settings."}
+                        {lobby.isHost ? "Lobby Setup" : "Lobby Setup"}
                       </Text>
                     </MotiView>
                   )}

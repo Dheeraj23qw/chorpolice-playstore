@@ -15,15 +15,15 @@ interface Props {
 const PERMISSION_INFO: Record<string, { icon: string; desc: string }> = {
   Location: {
     icon: "map-marker-radius",
-    desc: "Used to find nearby players and host game lobbies on your local network.",
+    desc: "Needed to find nearby players.",
   },
   Camera: {
     icon: "camera-outline",
-    desc: "Needed to scan QR codes for quickly joining a game room.",
+    desc: "Needed to scan QR codes.",
   },
   Notifications: {
     icon: "bell-outline",
-    desc: "Keeps you updated on game results and invitations from your friends.",
+    desc: "Keeps you updated on game results.",
     optional: true,
   },
 };
@@ -32,7 +32,7 @@ export const PermissionGuardian: React.FC<Props> = ({
   onAllGranted,
   onSkip,
   title = "Permissions Required",
-  description = "Chor Police needs a few permissions to get started. Only Location and Camera are mandatory for multiplayer."
+  description = "Chor Police needs these permissions to start multiplayer."
 }) => {
   const { state, missingPermissions, servicesDisabled, attemptCount, checkAllPermissions, openSettings } = usePermissionGuard();
 
@@ -56,22 +56,22 @@ export const PermissionGuardian: React.FC<Props> = ({
     Location: {
       icon: "map-marker-radius",
       title: "Location Permission",
-      desc: "Required to find nearby players and host game lobbies on your local network.",
+      desc: "Find nearby players and host lobbies.",
     },
     "Location Services": {
       icon: "crosshairs-gps",
       title: "GPS / Location Services",
-      desc: "Your device's GPS is turned off. Please enable it in the quick settings to discover players.",
+      desc: "Turn on GPS to discover players.",
     },
     Camera: {
       icon: "camera-outline",
       title: "Camera Access",
-      desc: "Used to scan QR codes for instantly joining a game room.",
+      desc: "Scan QR codes to join rooms.",
     },
     Notifications: {
       icon: "bell-outline",
       title: "Notifications",
-      desc: "Keeps you updated on game results, streaks, and invitations.",
+      desc: "Updates on results and invites.",
       optional: true,
     },
   };

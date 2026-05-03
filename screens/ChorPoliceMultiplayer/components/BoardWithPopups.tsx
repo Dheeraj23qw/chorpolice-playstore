@@ -37,6 +37,8 @@ const BoardWithPopups = ({ g }: any) => {
           index={g.revealData.index}
           role={g.revealData.role}
           isCorrect={g.revealData.isCorrect}
+          policeName={g.playerNames[g.policeIndex]}
+          advisorName={g.playerNames[g.advisorIndex]}
           onComplete={() => {}} // Hook handles timing
         />
       )}
@@ -73,16 +75,9 @@ const BoardWithPopups = ({ g }: any) => {
             if (g.gamePhase === "result") return "Round Complete!";
             if (g.gamePhase === "police_turn") {
               const policeName = g.playerNames[g.policeIndex] || "Police";
-              const unflippedNames = g.playerNames.filter((_, idx) => !g.flippedStates[idx]);
-              const suspects = unflippedNames.join(" & ");
-              
-              if (g.canInteract) {
-                return `Find the Thief: ${suspects}`;
-              } else {
-                return `${policeName} is finding the Thief...`;
-              }
+              return `${policeName}, find the Thief! 🔍`;
             }
-            return g.canInteract ? "Tap a card to find the Thief 🔍" : "Watching...";
+            return g.canInteract ? "Find the Thief! 🔍" : "Watching...";
           })()}
           getCardStyle={g.getCardStyle}
           showTableButton={g.showTableButton}

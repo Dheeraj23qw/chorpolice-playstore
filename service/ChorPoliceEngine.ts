@@ -324,10 +324,24 @@ export const ChorPoliceEngine = {
 
     // FIX BUG-8: was a deterministic LCG — same seed = same roles every game.
     // Host is authoritative and broadcasts the result, so Math.random() is correct.
-    const shuffled: Role[] = [...ROLES];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    let shuffled: Role[] = [...ROLES];
+    
+    // Custom logic: 70% chance for human to be Police if 1 human, 3 bots
+    const humanIndices = players.reduce<number[]>((acc, p, i) => (!p.isBot ? [...acc, i] : acc), []);
+    if (humanIndices.length === 1 && Math.random() < 0.70) {
+      const humanIndex = humanIndices[0];
+      shuffled = ["King", "Thief", "Advisor"];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      shuffled.splice(humanIndex, 0, "Police");
+      console.log(`🎭 [CPEngine] 🎲 Custom rule applied: Human granted Police role (70% chance hit)`);
+    } else {
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
     }
 
     ChorPoliceEngine.state.roles = shuffled;

@@ -2,7 +2,7 @@ import Constants from "expo-constants";
 
 // The Raw URL you provided
 const UPDATE_CONFIG_URL =
-  "https://gist.githubusercontent.com/Dheeraj23qw/895f8ccc58542c3c997ca6ca299b819e/raw/851276d1a51d80ecdcdd189e140259c8f2887fd2/version.json";
+  "https://gist.githubusercontent.com/Dheeraj23qw/895f8ccc58542c3c997ca6ca299b819e/raw/version.json";
 
 export const checkAppUpdate = async (): Promise<{
   isAvailable: boolean;
@@ -20,7 +20,7 @@ export const checkAppUpdate = async (): Promise<{
     const data = await response.json();
 
     // Get the current version from your app.json config
-    const currentVersion = Constants.nativeApplicationVersion || "4.0.0";
+    const currentVersion = Constants.nativeApplicationVersion || "5.0.0";
     const latestVersion = data.latestVersion;
     const updateUrl = data.updateUrl;
 

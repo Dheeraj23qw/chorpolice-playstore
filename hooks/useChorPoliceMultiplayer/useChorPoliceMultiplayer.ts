@@ -566,23 +566,7 @@ export const useChorPoliceMultiplayer = () => {
           dispatch,
         );
 
-        // Step B: Police popup (4.5s)
-        const t1 = setTimeout(() => {
-          console.log(`${D} 🚔 Police popup`);
-          setPopupIndex(2);
-          AudioEngine.play("police", "gameplay");
-        }, 4500);
-        timerRefs.current.push(t1);
-
-        // Step C: King popup (8.5s)
-        const t2 = setTimeout(() => {
-          console.log(`${D} 👑 King popup`);
-          setPopupIndex(1);
-          AudioEngine.play("king", "gameplay");
-        }, 8500);
-        timerRefs.current.push(t2);
-
-        // Step D: ROLE SPLIT (11.5s) — NOW views diverge
+        // Step B: ROLE SPLIT (4.5s) — NOW views diverge
         const t3 = setTimeout(() => {
           // re-read role from ref in case Redux updated after closure was created
           const resolvedRole = myRoleRef.current || hostRole;
@@ -602,7 +586,7 @@ export const useChorPoliceMultiplayer = () => {
               `${D} 🔒 ${resolvedRole}: Switching to PRIVATE role card view`,
             );
           }
-        }, 11500);
+        }, 4500);
         timerRefs.current.push(t3);
       }
 
