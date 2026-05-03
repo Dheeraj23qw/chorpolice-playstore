@@ -1,19 +1,17 @@
-import { useEffect, useState } from "react";
-import { Alert, Platform } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Updates from "expo-updates";
 
-/**
- * Hook to handle OTA updates using expo-updates.
- * - Checks for updates on mount
- * - If available, downloads and applies immediately
- * - Provides status for UI feedback
- */
 export const useOTAUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const checkAndApplyUpdate = async () => {
-    // Only run in production builds with expo-updates enabled
+  const hasCheckedRef = useRef(false);
+  const reloadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkAndApplyUpdate = useCallback(async () => {
+    if (hasCheckedRef.current) return;
+    hasCheckedRef.current = true;
+
     if (__DEV__ || !Updates.isEnabled) {
       console.log("[OTA] Updates disabled or in DEV mode.");
       return;
@@ -21,37 +19,50 @@ export const useOTAUpdate = () => {
 
     try {
       console.log("[OTA] Checking for updates...");
+
       const update = await Updates.checkForUpdateAsync();
 
-      if (update.isAvailable) {
-        console.log("[OTA] Update found! Downloading...");
-        setIsUpdating(true);
-
-        // Download the update
-        await Updates.fetchUpdateAsync();
-
-        console.log("[OTA] Update downloaded. Reloading app...");
-        
-        // Final alert before reload (optional but good for UX)
-        // We use a small delay to ensure the UI has time to show the "Updating" state
-        setTimeout(async () => {
-          await Updates.reloadAsync();
-        }, 1000);
-      } else {
+      if (!update.isAvailable) {
         console.log("[OTA] App is up to date.");
+        return;
+      }
+
+      console.log("[OTA] Update found. Downloading...");
+      setIsUpdating(true);
+      setUpdateError(null);
+
+      const result = await Updates.fetchUpdateAsync();
+
+      if (result.isNew) {
+        console.log("[OTA] Update downloaded. Reloading...");
+
+        reloadTimeoutRef.current = setTimeout(() => {
+          Updates.reloadAsync();
+        }, 800);
+      } else {
+        console.log("[OTA] No new update fetched.");
+        setIsUpdating(false);
       }
     } catch (error: any) {
       console.error("[OTA] Update failed:", error);
-      setUpdateError(error.message);
+      setUpdateError(error?.message ?? "OTA update failed");
       setIsUpdating(false);
-      
-      // We don't block the user if update fails, just log it.
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkAndApplyUpdate();
-  }, []);
 
-  return { isUpdating, updateError, checkAndApplyUpdate };
+    return () => {
+      if (reloadTimeoutRef.current) {
+        clearTimeout(reloadTimeoutRef.current);
+      }
+    };
+  }, [checkAndApplyUpdate]);
+
+  return {
+    isUpdating,
+    updateError,
+    checkAndApplyUpdate,
+  };
 };
