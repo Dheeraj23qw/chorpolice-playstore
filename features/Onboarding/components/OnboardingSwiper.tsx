@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Dimensions, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  View,
+  Dimensions,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { MotiView, AnimatePresence } from "moti";
 import Animated, {
   useSharedValue,
@@ -106,7 +112,7 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
                       image={item.image}
                     />
 
-                    <Text className="mt-10 text-center text-3xl font-main-bold tracking-tight text-white">
+                    <Text className="mt-10 text-center font-main-bold text-3xl tracking-tight text-white">
                       {item.title}
                     </Text>
 
@@ -257,8 +263,8 @@ const AnimatedCTA = ({
         },
       ]}
     >
-      <TouchableOpacity 
-        activeOpacity={0.92} 
+      <TouchableOpacity
+        activeOpacity={0.92}
         onPress={onPress}
         disabled={isLoading}
       >
@@ -269,7 +275,7 @@ const AnimatedCTA = ({
           transition={{
             type: "timing",
             duration: 1200,
-            loop: true,
+            loop: isLoading,
           }}
           className="overflow-hidden rounded-full"
         >
@@ -277,27 +283,53 @@ const AnimatedCTA = ({
             colors={isLoading ? ["#374151", "#1F2937"] : ["#A78BFA", "#60A5FA"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="flex-row items-center justify-center space-x-3 rounded-full px-10 py-5"
+            className="items-center justify-center rounded-full px-10 py-5"
           >
             {isLoading && (
-              <ActivityIndicator color="white" size="small" className="mr-2" />
+              <ActivityIndicator
+                color="white"
+                size="small"
+                style={{ marginBottom: 8 }}
+              />
             )}
-            <AnimatePresence mode="wait">
-              <MotiView
-                key={isLoading ? loadingMessage : "start"}
-                from={{ opacity: 0, translateY: 10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                exit={{ opacity: 0, translateY: -10 }}
-                transition={{ type: "timing", duration: 500 }}
-              >
-                <Text 
-                  style={{ fontSize: rf(1.8) }}
-                  className="font-main-bold uppercase tracking-[2px] text-white"
+
+            <View
+              style={{
+                minWidth: wp(58),
+                minHeight: rf(3),
+                overflow: "hidden",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <AnimatePresence exitBeforeEnter>
+                <MotiView
+                  key={isLoading ? loadingMessage : "start"}
+                  from={{ opacity: 0, translateY: 16 }}
+                  animate={{ opacity: 1, translateY: 0 }}
+                  exit={{ opacity: 0, translateY: -16 }}
+                  transition={{
+                    type: "timing",
+                    duration: 420,
+                  }}
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  {isLoading ? loadingMessage : "Let's Get Started"}
-                </Text>
-              </MotiView>
-            </AnimatePresence>
+                  <Text
+                    style={{
+                      fontSize: rf(1.8),
+                      textAlign: "center",
+                    }}
+                    className="font-main-bold uppercase tracking-[2px] text-white"
+                    numberOfLines={2}
+                  >
+                    {isLoading ? loadingMessage : "Let's Get Started"}
+                  </Text>
+                </MotiView>
+              </AnimatePresence>
+            </View>
           </LinearGradient>
         </MotiView>
       </TouchableOpacity>

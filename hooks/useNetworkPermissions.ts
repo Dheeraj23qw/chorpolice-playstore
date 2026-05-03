@@ -317,44 +317,64 @@ export const useNetworkPermissions = (
 
           if (apiLevel >= 33) {
             const NEARBY_PERM = "android.permission.NEARBY_WIFI_DEVICES";
+            const LOCAL_NET_PERM = "android.permission.ACCESS_LOCAL_NETWORK";
+            
             const hasNearby = await PermissionsAndroid.check(NEARBY_PERM as any);
             const hasLocation = await PermissionsAndroid.check(LOCATION_PERM);
+            
+            // Only mandatory in API 37+. Safely check if it exists in PermissionsAndroid to avoid crashes.
+            let hasLocalNet = true;
+            if (apiLevel >= 37) {
+               try {
+                  hasLocalNet = await PermissionsAndroid.check(LOCAL_NET_PERM as any);
+               } catch (e) {
+                  // Fallback if RN version doesn't support this permission string yet
+                  hasLocalNet = true; 
+               }
+            }
 
             logPermissionDebug(
               "NetworkPermissions",
               "Existing Android permission check",
-              { runId, apiLevel, hasNearby, hasLocation },
+              { runId, apiLevel, hasNearby, hasLocation, hasLocalNet },
             );
 
-            if (!hasNearby || !hasLocation) {
+            const permissionsToRequest: string[] = [];
+            if (!hasNearby) permissionsToRequest.push(NEARBY_PERM);
+            if (!hasLocation) permissionsToRequest.push(LOCATION_PERM);
+            if (apiLevel >= 37 && !hasLocalNet) permissionsToRequest.push(LOCAL_NET_PERM);
+
+            if (permissionsToRequest.length > 0) {
               const results = await runSharedAndroidPermissionRequest(
                 { runId },
                 () =>
-                  PermissionsAndroid.requestMultiple([
-                    NEARBY_PERM as any,
-                    LOCATION_PERM,
-                  ]),
+                  PermissionsAndroid.requestMultiple(
+                    permissionsToRequest as any,
+                  ),
               );
 
-              const isNearbyGranted =
+              const isNearbyGranted = hasNearby ||
                 results[NEARBY_PERM] === PermissionsAndroid.RESULTS.GRANTED;
-              const isLocationGranted =
+              const isLocationGranted = hasLocation ||
                 results[LOCATION_PERM] === PermissionsAndroid.RESULTS.GRANTED;
+              const isLocalNetGranted = hasLocalNet ||
+                results[LOCAL_NET_PERM] === PermissionsAndroid.RESULTS.GRANTED ||
+                results[LOCAL_NET_PERM] === undefined; // If RN didn't process it
 
-              if (!isNearbyGranted || !isLocationGranted) {
+              if (!isNearbyGranted || !isLocationGranted || !isLocalNetGranted) {
                 if (!isActiveRun()) return;
 
                 const isPermanent =
                   results[NEARBY_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
-                  results[LOCATION_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
+                  results[LOCATION_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
+                  results[LOCAL_NET_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
 
                 console.log(
                   `[NetworkPermissions] ❌ STATUS → denied ` +
-                  `(nearby=${isNearbyGranted}, location=${isLocationGranted}, permanent=${isPermanent})`,
+                  `(nearby=${isNearbyGranted}, location=${isLocationGranted}, localNet=${isLocalNetGranted}, permanent=${isPermanent})`,
                 );
-                logLanDebug(`Permission result: denied (nearby=${isNearbyGranted}, location=${isLocationGranted})`);
+                logLanDebug(`Permission result: denied (nearby=${isNearbyGranted}, location=${isLocationGranted}, localNet=${isLocalNetGranted})`);
                 setStatus("denied");
-
                 setErrorMessage(
                   isPermanent
                     ? "Permissions permanently denied. Open Settings to enable Location & Nearby WiFi."

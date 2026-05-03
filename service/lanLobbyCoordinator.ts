@@ -18,7 +18,10 @@ import {
   replaceFirstBotWithPlayer,
   replacePlayerWithBot,
 } from "@/utils/lobbyPlayers";
-import { decodeRoomCodeWithLocalContext, encodeRoomCode } from "@/utils/roomCode";
+import { LanRoomCodeService } from "./network/LanRoomCodeService";
+import { LanDiscoveryService } from "./network/LanDiscoveryService";
+import { LanCandidateIpService } from "./network/LanCandidateIpService";
+import { DiscoveryResult } from "./network/LanDiscoveryStrategy";
 
 import {
   broadcastPacket,
@@ -53,6 +56,13 @@ const announcedPlayerIds = new Set<string>();
 
 // Tracks staggered bot announcement timers so they can be cancelled on stop
 const botAnnouncementTimers: ReturnType<typeof setTimeout>[] = [];
+
+const LAN_CANDIDATE_IPS = [
+  "192.168.43.1",
+  "192.168.49.1",
+  "192.168.1.1",
+  "172.20.10.1",
+];
 
 const clearJoinAttempts = () => {
   if (joinRetryInterval) {
@@ -106,9 +116,10 @@ const buildJoinPacketFromState = () => {
 
   return {
     type: NETWORK.PLAYER_JOIN,
+    roomCode: state.roomCode,
     player: {
       id: state.localPlayerId,
-      name: state.localPlayerName.trim() || loadUsername(),
+      name: state.localPlayerName.trim() || "User",
       avatarId: state.localAvatarId || 1,
       isBot: false,
       coins: store.getState().wallet.coins,
@@ -173,6 +184,18 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       return;
     }
 
+    // ✅ ROOM CODE VALIDATION: Host verifies the room code matches
+    if (packet.roomCode && state.roomCode && packet.roomCode !== state.roomCode) {
+      console.warn(`[Lobby] Rejecting join: room code mismatch (${packet.roomCode} vs ${state.roomCode})`);
+      if (sourceIp) {
+        sendPacketToPeer(sourceIp, {
+          type: NETWORK.PLAYER_JOIN_REJECT,
+          reason: "invalid_room_code",
+        });
+      }
+      return;
+    }
+
     const humansCount = state.players.filter((p) => !p.isBot).length;
     const joiningPlayer = sanitizePlayer(
       packet.player,
@@ -223,7 +246,7 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       if (wasConnecting) {
         logLanDebug("client connected");
         updateDebugMetric("lanClientConnection", "connected");
-        toast.success("Congrats! You connected with the host.");
+        toast.success("All set! 🎉", "You've successfully joined the room.");
       }
     }
     return;
@@ -279,7 +302,7 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
       packet.reason !== "user_exit"
     ) {
       store.dispatch(setConnectionStatus("ERROR"));
-      store.dispatch(setSessionError("You were disconnected from the host."));
+      store.dispatch(setSessionError("Lost connection to the room."));
     }
     return;
   }
@@ -287,7 +310,12 @@ const handleLobbyPacket = (packet: any, sourceIp?: string) => {
   if (packet.type === NETWORK.PLAYER_JOIN_REJECT) {
     clearJoinAttempts();
     store.dispatch(setConnectionStatus("ERROR"));
-    store.dispatch(setSessionError("This room already has 4 real players."));
+    const errorMsg = packet.reason === "room_full" 
+      ? "This room already has 4 real players." 
+      : packet.reason === "invalid_room_code"
+      ? "Invalid Room Code. Make sure you entered it correctly."
+      : "Could not join the room.";
+    store.dispatch(setSessionError(errorMsg));
   }
 };
 
@@ -323,6 +351,8 @@ const stopCoordinator = async () => {
   }
   HeartbeatService.stop();
   await GameSessionTransport.stop();
+  await LanDiscoveryService.stopBroadcasting();
+  LanDiscoveryService.stopListening();
 };
 /**
  * 🚀 Step 1: Initialize the local lobby state (Offline/Local mode).
@@ -411,6 +441,9 @@ export const hostLanLobby = async ({
   pendingHostLobbyPromise = (async () => {
     console.log(`[LobbyCoordinator] 📡 Activating LAN server for player=${localPlayerId}`);
     
+    // 0️⃣ GENERATE STABLE ROOM CODE
+    const stableRoomCode = LanRoomCodeService.generateRandom();
+
     // Ensure we have packet listeners
     ensurePacketSubscription();
 
@@ -447,7 +480,7 @@ export const hostLanLobby = async ({
     void (async () => {
       let lastSyncedIp: string | null = "INITIAL_UNSET";
       let attempts = 0;
-      const maxFastAttempts = 10; // First 5 seconds (500ms * 10)
+      const maxFastAttempts = 8; // First 4 seconds (500ms * 8)
       const startTime = Date.now();
 
       console.log("[LobbyCoordinator] 🔍 Starting automatic IP detection loop...");
@@ -460,31 +493,62 @@ export const hostLanLobby = async ({
         attempts++;
         const elapsed = Date.now() - startTime;
         
-        // After 5 seconds of scanning with no luck, we allow fallback IPs
-        const useFallback = elapsed > 5000;
+        // After 4 seconds of scanning with no luck, we allow auto-fallback IPs
+        const allowAutoFallback = elapsed > 4000;
         
-        const currentIp = await getLocalIpAddress({ useFallback });
+        const { ip: currentIp, isFallback: currentIsFallback } = await getLocalIpAddress({ 
+          useFallback: allowAutoFallback 
+        });
         
-        if (currentIp !== lastSyncedIp) {
-           lastSyncedIp = currentIp;
-           const code = currentIp ? encodeRoomCode(currentIp, actualPort) : null;
-           
-           logLanDebug(`selected IP: ${currentIp || "NULL"} (fallback=${useFallback})`);
-           updateDebugMetric("hostIp", currentIp || "N/A");
-           updateDebugMetric("lanIsFallback", useFallback);
-           updateDebugMetric("lanQrPayload", code || "");
+        const session = store.getState().session;
+        const isHardwareFoundOverFallback = currentIp && !currentIsFallback && session.isFallback;
+        const isIpChanged = currentIp !== lastSyncedIp;
 
-           console.log(
-             `[LobbyCoordinator] 🔄 IP Detected: ${currentIp || "NULL"} (after ${elapsed}ms). ` +
-             `Fallback used: ${useFallback ? "YES" : "NO"}. Updating session.`
-           );
-           
-           store.dispatch(setSessionNetworkInfo({ 
-             hostIp: currentIp, 
-             roomCode: code 
-           }));
-           store.dispatch(setLocalSessionIdentity({ localIp: currentIp }));
-        }
+        if (currentIp && (isIpChanged || isHardwareFoundOverFallback)) {
+            lastSyncedIp = currentIp;
+            const roomCode = stableRoomCode;
+            
+            // Build ENRICHED QR Payload
+            const qrPayloadObj = {
+              ip: currentIp,
+              port: actualPort,
+              roomCode: roomCode,
+              candidateIps: LanCandidateIpService.getCandidateIps(
+                parseInt(currentIp.split(".")[3], 10),
+                { localIp: currentIp, gatewayIp: null }
+              ),
+            };
+            const qrPayload = JSON.stringify(qrPayloadObj);
+ 
+            logLanDebug(`selected IP: ${currentIp} (fallback=${currentIsFallback})`);
+            updateDebugMetric("hostIp", currentIp);
+            updateDebugMetric("lanIsFallback", currentIsFallback);
+            updateDebugMetric("lanQrPayload", qrPayload);
+ 
+            console.log(
+              `[LobbyCoordinator] 🔄 IP Detected: ${currentIp} (after ${elapsed}ms). ` +
+              `Fallback: ${currentIsFallback ? "YES" : "NO"}. Updating session.`
+            );
+            
+            store.dispatch(setSessionNetworkInfo({ 
+              hostIp: currentIp, 
+              roomCode: roomCode,
+              isFallback: currentIsFallback
+            }));
+            store.dispatch(setLocalSessionIdentity({ localIp: currentIp }));
+
+            // 🚀 Start UDP Broadcasting
+            if (roomCode) {
+              LanDiscoveryService.startBroadcasting({
+                roomCode,
+                tcpPort: actualPort,
+                hostName: name,
+                lobbyId: localPlayerId,
+                hostIp: currentIp,          // ← subnet broadcast now works
+                version: "1.0.0"
+              });
+            }
+         }
 
         const delay = attempts <= maxFastAttempts ? 500 : 2000;
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -511,6 +575,8 @@ export const hostLanLobby = async ({
 export const joinLanLobby = async ({
   hostIp,
   hostPort,
+  candidateIps = [],
+  roomCode,
   localPlayerId,
   name,
   avatarId,
@@ -519,6 +585,8 @@ export const joinLanLobby = async ({
 }: {
   hostIp: string;
   hostPort?: number;
+  candidateIps?: string[];
+  roomCode?: string | null;
   localPlayerId: string;
   name: string;
   avatarId: number;
@@ -528,23 +596,48 @@ export const joinLanLobby = async ({
   await stopCoordinator();
   ensurePacketSubscription();
 
-  if (__DEV__) {
-    console.log(`[LobbyCoordinator] Joining host at ${hostIp}:${hostPort ?? "default"}`);
+  const actualPort = hostPort || NETWORK.TCP_SERVER_PORT;
+  
+  // For manual join via code, we don't have a reliable last octet anymore (stable code).
+  // So we try common gateways + provided hostIp + any specific candidates.
+  const allCandidates = Array.from(new Set([
+    ...(hostIp ? [hostIp] : []),
+    ...candidateIps,
+    ...LanCandidateIpService.getCommonGateways()
+  ]));
+
+  console.log(`[LobbyCoordinator] 🔗 Starting Smart Join. Candidates: ${allCandidates.join(", ")}`);
+  logLanDebug(`Starting Smart Join with ${allCandidates.length} candidates`);
+  updateDebugMetric("lanClientConnection", "searching");
+
+  let connectedIp: string | null = null;
+
+  // 1️⃣ TRY ALL CANDIDATES SEQUENTIALLY
+  for (const ip of allCandidates) {
+    try {
+      console.log(`[LobbyCoordinator] 📡 Trying candidate: ${ip}...`);
+      await GameSessionTransport.connectAsync(ip, actualPort);
+      connectedIp = ip;
+      console.log(`[LobbyCoordinator] ✅ Connected successfully to: ${ip}`);
+      break;
+    } catch (e) {
+      console.log(`[LobbyCoordinator] ❌ Failed ${ip}: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
-   console.log(
-    `[LobbyCoordinator] 🔗 Join attempt: hostIp=${hostIp}, port=${hostPort ?? "default"}, ` +
-    `player=${localPlayerId}, game=${gameType}`,
-  );
-  logLanDebug(`client connection attempt to ${hostIp}:${hostPort ?? "default"}`);
-  updateDebugMetric("lanClientConnection", "connecting");
 
-  await GameSessionTransport.start({
-    isHost: false,
-    localPlayerId,
-    hostPort,
-    onPacket: (packet, sourceIp) => handleIncomingPacket(packet, sourceIp),
-  });
+  if (!connectedIp) {
+    console.log(`[LobbyCoordinator] 🛑 All candidates failed.`);
+    store.dispatch(setConnectionStatus("ERROR"));
+    store.dispatch(
+      setSessionError(
+        "Make sure all players are connected to the same hotspot or same WiFi router."
+      ),
+    );
+    updateDebugMetric("lanClientConnection", "failed");
+    return;
+  }
 
+  // 2️⃣ SUCCESS: Configure State
   store.dispatch(
     configureSessionState({
       isHost: false,
@@ -561,8 +654,8 @@ export const joinLanLobby = async ({
   );
   store.dispatch(
     setSessionNetworkInfo({
-      hostIp,
-      roomCode: encodeRoomCode(hostIp, hostPort),
+      hostIp: connectedIp,
+      roomCode: roomCode || encodeRoomCode(connectedIp, actualPort),
     }),
   );
   store.dispatch(setLobbyPlayers([]));
@@ -570,14 +663,15 @@ export const joinLanLobby = async ({
   store.dispatch(setSessionError(null));
   store.dispatch(setLobbyStage("room"));
 
-  console.log(`[LobbyCoordinator] Target Host: ${hostIp}:${hostPort || "default"}`);
-  setSessionHostIp(hostIp, hostPort);
+  setSessionHostIp(connectedIp, actualPort);
+  logLanDebug(`client connected to ${connectedIp}`);
+  updateDebugMetric("lanClientConnection", "connected");
 
   clearJoinAttempts();
 
   const sendJoinPacket = () => {
     const latestState = store.getState().session;
-    if (latestState.connectionStatus !== "CONNECTING") {
+    if (latestState.connectionStatus !== "CONNECTING" && latestState.connectionStatus !== "CONNECTED") {
       clearJoinAttempts();
       return;
     }
@@ -590,31 +684,27 @@ export const joinLanLobby = async ({
 
   setTimeout(() => {
     sendJoinPacket();
-  }, 350);
+  }, 100);
 
   // 🚀 Start heartbeat on client side to monitor host
   startHeartbeat(false);
 
   joinRetryInterval = setInterval(() => {
     sendJoinPacket();
-  }, 1200);
+  }, 1500);
 
   joinTimeout = setTimeout(() => {
     const latestState = store.getState().session;
     if (latestState.connectionStatus === "CONNECTING") {
       clearJoinAttempts();
-      console.log(
-        `[LobbyCoordinator] ❌ Join timeout after 8s. hostIp=${hostIp}, ` +
-        `port=${hostPort ?? "default"}, status=${latestState.connectionStatus}`,
-      );
       store.dispatch(setConnectionStatus("ERROR"));
       store.dispatch(
         setSessionError(
-          "Could not reach the host. Make sure you're on the same WiFi or Hotspot.",
+          "Make sure all players are connected to the same hotspot or same WiFi router."
         ),
       );
     }
-  }, 8000);
+  }, 10000);
 };
 
 export const syncLocalLobbyProfile = ({
@@ -666,9 +756,23 @@ export const leaveLanLobby = async () => {
   store.dispatch(clearSession());
 };
 
-export const decodeLanRoomCode = async (roomCode: string) => {
-  const localIp = await getLocalIpAddress();
-  const gatewayIp = await getGatewayIpAddress();
-  // Returns { ip, port } or null
-  return decodeRoomCodeWithLocalContext(roomCode, localIp, gatewayIp);
+export const getCandidateIpsForRoomCode = (
+  roomCode: string, 
+  localIp: string | null, 
+  gatewayIp: string | null
+): string[] => {
+  const parsed = LanRoomCodeService.parse(roomCode);
+  if (!parsed) return [];
+  
+  // Note: with stable room codes, we can't reliably guess the octet from the code anymore.
+  // So we return the common gateways.
+  return LanCandidateIpService.getCommonGateways();
+};
+
+export const startLanDiscovery = (onDiscovery: (result: DiscoveryResult) => void) => {
+  LanDiscoveryService.startListening(onDiscovery);
+};
+
+export const stopLanDiscovery = () => {
+  LanDiscoveryService.stopListening();
 };

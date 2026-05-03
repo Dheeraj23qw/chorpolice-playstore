@@ -13,6 +13,9 @@ interface DebugState {
   discoveredHostCount: number;
   // LAN DEBUG FIELDS
   lanStatus: "idle" | "starting" | "listening" | "failed";
+  lanUdpBroadcaster: "idle" | "running" | "failed";
+  lanUdpListener: "idle" | "listening" | "failed";
+  lanLastUdpPacket: string;
   lanBindAddress: string;
   lanPort: number;
   lanCandidates: string[];
@@ -20,6 +23,7 @@ interface DebugState {
   lanQrPayload: string;
   lanLastError: string;
   lanClientConnection: string;
+  lanLogs: string[];
 }
 
 const debugState: DebugState = {
@@ -34,6 +38,9 @@ const debugState: DebugState = {
   hostIp: "N/A",
   discoveredHostCount: 0,
   lanStatus: "idle",
+  lanUdpBroadcaster: "idle",
+  lanUdpListener: "idle",
+  lanLastUdpPacket: "none",
   lanBindAddress: "0.0.0.0",
   lanPort: 0,
   lanCandidates: [],
@@ -41,14 +48,20 @@ const debugState: DebugState = {
   lanQrPayload: "",
   lanLastError: "",
   lanClientConnection: "none",
+  lanLogs: [],
 };
 
 /**
- * Logcat utility with the required tag
+ * Logcat utility with the required tag + in-app history
  */
 export const logLanDebug = (message: string, data?: any) => {
+  const timestamp = new Date().toLocaleTimeString();
   const dataStr = data ? ` | Data: ${JSON.stringify(data)}` : "";
-  console.log(`[LAN_DEBUG] ${message}${dataStr}`);
+  const logLine = `[${timestamp}] ${message}${dataStr}`;
+  
+  console.log(`[LAN_DEBUG] ${logLine}`);
+  
+  debugState.lanLogs = [logLine, ...debugState.lanLogs].slice(0, 50);
 };
 
 export const useDebugData = () => {

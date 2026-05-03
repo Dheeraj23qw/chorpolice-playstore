@@ -45,6 +45,7 @@ interface SessionState {
   isHost: boolean;
   hostIp: string | null;
   localIp: string | null;
+  isFallback: boolean;
   connectionStatus: ConnectionStatus;
   players: SessionPlayer[];
   localPlayerId: string | null;
@@ -91,6 +92,7 @@ const initialState: SessionState = {
   isHost: false,
   hostIp: null,
   localIp: null,
+  isFallback: false,
   connectionStatus: "IDLE",
   players: [],
   localPlayerId: DEFAULT_LOCAL_PLAYER_ID,
@@ -157,6 +159,7 @@ export const sessionSlice = createSlice({
       action: PayloadAction<{
         hostIp?: string | null;
         roomCode?: string | null;
+        isFallback?: boolean;
       }>,
     ) => {
       if (action.payload.hostIp !== undefined) {
@@ -164,6 +167,9 @@ export const sessionSlice = createSlice({
       }
       if (action.payload.roomCode !== undefined) {
         state.roomCode = action.payload.roomCode;
+      }
+      if (action.payload.isFallback !== undefined) {
+        state.isFallback = action.payload.isFallback;
       }
     },
 

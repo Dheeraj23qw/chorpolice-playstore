@@ -47,7 +47,7 @@ export const LanTroubleshootingCard: React.FC = () => {
           Still not working?
         </Text>
         <Text style={{ fontSize: rf(1.35) }} className="mt-1 font-main-md text-white/60">
-          👉 Connect all devices to the same WiFi router and try again.
+          👉 Make sure all players are on the same WiFi router or Hotspot.
         </Text>
       </View>
     </MotiView>

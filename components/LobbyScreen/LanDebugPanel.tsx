@@ -16,21 +16,6 @@ export const LanDebugPanel: React.FC = () => {
   const debug = useDebugData();
   const dispatch = useDispatch();
 
-  const handleForceHotspotIp = () => {
-    const forcedIp = "192.168.43.1";
-    const port = GameSessionTransport.getListeningPort() || 8081;
-    const code = encodeRoomCode(forcedIp, port);
-    
-    logLanDebug(`DEBUG: Forcing hotspot IP to ${forcedIp}`);
-    
-    dispatch(setSessionNetworkInfo({ 
-      hostIp: forcedIp, 
-      roomCode: code 
-    }));
-    dispatch(setLocalSessionIdentity({ localIp: forcedIp }));
-    toast.success("Forced IP", forcedIp);
-  };
-
   const handleCopyDebug = async () => {
     const report = JSON.stringify(debug, null, 2);
     await Clipboard.setStringAsync(report);
@@ -62,8 +47,11 @@ export const LanDebugPanel: React.FC = () => {
         />
       </View>
 
-      <ScrollView className="max-h-[200px] mb-4">
+      <ScrollView className="max-h-[150px] mb-4">
         <DebugRow label="Status" value={debug.lanStatus} valueColor={getStatusColor(debug.lanStatus)} />
+        <DebugRow label="UDP BC" value={debug.lanUdpBroadcaster} valueColor={getStatusColor(debug.lanUdpBroadcaster)} />
+        <DebugRow label="UDP List" value={debug.lanUdpListener} valueColor={getStatusColor(debug.lanUdpListener)} />
+        <DebugRow label="Last UDP" value={debug.lanLastUdpPacket} />
         <DebugRow label="Bind" value={debug.lanBindAddress} />
         <DebugRow label="Port" value={debug.lanPort.toString()} />
         <DebugRow label="Candidates" value={debug.lanCandidates.join(", ") || "none"} />
@@ -80,25 +68,32 @@ export const LanDebugPanel: React.FC = () => {
         </View>
       </ScrollView>
 
-      <View className="flex-row gap-3">
-        <Pressable 
-          onPress={handleForceHotspotIp}
-          className="flex-1 rounded-xl bg-blue-500/10 border border-blue-500/20 py-3 items-center"
-        >
-          <Text className="text-[10px] font-main-bold uppercase tracking-wider text-blue-400">
-            Force Hotspot IP
-          </Text>
-        </Pressable>
-        
-        <Pressable 
-          onPress={handleCopyDebug}
-          className="flex-1 rounded-xl bg-white/5 border border-white/10 py-3 items-center"
-        >
-          <Text className="text-[10px] font-main-bold uppercase tracking-wider text-white/60">
-            Copy Debug
-          </Text>
-        </Pressable>
+      {/* 📜 LOGS VIEW */}
+      <View className="mb-4 rounded-xl bg-black/40 p-3 border border-white/5">
+        <Text className="text-[9px] uppercase tracking-wider text-white/20 mb-2 font-main-bold">
+          Recent Events (Last 50)
+        </Text>
+        <ScrollView className="h-[120px]" nestedScrollEnabled>
+          {debug.lanLogs.length === 0 ? (
+            <Text className="text-[10px] text-white/20 italic">No events yet...</Text>
+          ) : (
+            debug.lanLogs.map((log, i) => (
+              <Text key={i} className="text-[9px] font-main-md text-white/40 mb-1 leading-3">
+                {log}
+              </Text>
+            ))
+          )}
+        </ScrollView>
       </View>
+
+      <Pressable 
+        onPress={handleCopyDebug}
+        className="w-full rounded-xl bg-white/5 border border-white/10 py-3 items-center"
+      >
+        <Text className="text-[10px] font-main-bold uppercase tracking-wider text-white/60">
+          Copy Full Debug Info
+        </Text>
+      </Pressable>
     </MotiView>
   );
 };

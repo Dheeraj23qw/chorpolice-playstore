@@ -46,7 +46,9 @@ export default function AppController() {
           new Promise((resolve) => setTimeout(resolve, 2500)),
           isSoundLoaded
             ? Promise.resolve()
-            : dispatch(loadSounds()).unwrap().catch(() => undefined),
+            : dispatch(loadSounds())
+                .unwrap()
+                .catch(() => undefined),
           assetLoader.preloadIntroAssets(),
         ]);
       } finally {
@@ -87,22 +89,12 @@ export default function AppController() {
     }
   }, [dispatch, firstLaunch, phase]);
 
-  // LOW COIN MODAL REMOVED: Users now use referral system to earn coins manually.
-  /*
   useEffect(() => {
     if (
       phase === "HOME" &&
-      !firstLaunch &&
-      coins < 1000 &&
-      canShowLowCoinModal()
+      unlockedAwardsCount > 0 &&
+      !rewardQueuedRef.current
     ) {
-      dispatch(enqueueModal("LOW_COIN_MODAL"));
-    }
-  }, [coins, dispatch, firstLaunch, phase]);
-  */
-
-  useEffect(() => {
-    if (phase === "HOME" && unlockedAwardsCount > 0 && !rewardQueuedRef.current) {
       rewardQueuedRef.current = true; // PROD-8: only enqueue once
       dispatch(enqueueModal("REWARD_MODAL"));
     }
@@ -144,16 +136,24 @@ export default function AppController() {
 
   switch (phase) {
     case "ONBOARDING":
-      return wrapPhase("onboarding", <OnboardingScreen onComplete={handleOnboardingComplete} />);
+      return wrapPhase(
+        "onboarding",
+        <OnboardingScreen onComplete={handleOnboardingComplete} />,
+      );
     case "VIDEO":
-      return wrapPhase("video", <VideoScreen onComplete={handleVideoComplete} />);
+      return wrapPhase(
+        "video",
+        <VideoScreen onComplete={handleVideoComplete} />,
+      );
     case "HOME":
       return wrapPhase("home", <HomeScreen />);
     case "SPLASH":
     default:
       return wrapPhase(
         "splash",
-        <PremiumSplashCard source={require("@/assets/modalImages/intro.webp")} />,
+        <PremiumSplashCard
+          source={require("@/assets/modalImages/intro.webp")}
+        />,
       );
   }
 }

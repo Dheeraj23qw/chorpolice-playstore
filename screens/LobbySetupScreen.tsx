@@ -31,6 +31,8 @@ import { UpdateAppModal } from "@/modal/UpdateAppModal";
 import { getDismissedUpdateVersion, setDismissedUpdateVersion } from "@/storage/appStorage";
 import { rf } from "@/utils/responsive";
 import { NetworkStatusBanner } from "@/components/LobbyScreen/NetworkStatusBanner";
+import { FloatingDebugToggle } from "@/components/LobbyScreen/FloatingDebugToggle";
+import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
 
 type UIState = "normal" | "betting" | "share" | "apIsolation" | "help" | "permissions";
 
@@ -85,6 +87,7 @@ const LobbySetupScreen = ({
   const [uiState, setUiState] = useState<UIState>("normal");
   const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
+  const [showDebug, setShowDebug] = useState(false);
   
 
 
@@ -120,11 +123,11 @@ const LobbySetupScreen = ({
       if (prev === "no_wifi" || prev === "denied" || prev === "error") {
         toast.success(
           networkContext === "hotspot_host"
-            ? "Hotspot Ready 📡"
-            : "Network Connected ✓",
+            ? "Room is active 📡"
+            : "Ready to play! ✓",
           networkContext === "hotspot_host"
-            ? "Your hotspot is active. Share the code with friends!"
-            : "Network detected. You can now invite players."
+            ? "Your room is open. Ask friends to join!"
+            : "Everything is set. You can now invite friends."
         );
       }
     } else if (status === "no_wifi" && networkContext === "none") {
@@ -246,7 +249,7 @@ const LobbySetupScreen = ({
     // 4️⃣ No QR yet — hotspot may still be initializing. Poll for IP.
     console.log(`[LobbySetup] ⏳ No QR payload yet → starting 8s poll + retrying host bootstrap`);
     setIsInviteLoading(true);
-    toast.info("Detecting Network...", "Looking for your hotspot or WiFi address.");
+    toast.info("Setting up...", "Preparing your room for friends.");
 
     // Re-trigger hosting in case it failed silently
     lobby.handleRetryHosting();
@@ -283,10 +286,10 @@ const LobbySetupScreen = ({
       const ctx = networkContextRef.current;
       console.log(`[LobbySetup] ❌ No QR after 8s. networkCtx=${ctx}`);
       toast.error(
-        "Network Not Ready",
+        "Couldn't create room",
         ctx === "none"
-          ? "Enable your Mobile Hotspot (no internet needed) and try again."
-          : "Room code could not be generated. Check your hotspot/WiFi and retry.",
+          ? "Please turn on your Hotspot or connect to WiFi and try again."
+          : "Something went wrong while setting up the room. Please retry.",
         5000,
       );
     }
@@ -336,9 +339,20 @@ const LobbySetupScreen = ({
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingTop: 10, paddingBottom: 20 }}
               >
-                <AnimatePresence>
-                  {!isPlayersListOpen && (
-                    <MotiView
+                {/* 🚀 NETWORK BANNER — shown only when LAN is active */}
+                {isLanModeRequested && (
+                  <View className="mb-4">
+                    <NetworkStatusBanner 
+                      status={status} 
+                      networkContext={networkContext}
+                      errorMessage={errorMessage}
+                      onRetry={() => retry(true)}
+                    />
+                  </View>
+                )}
+                  <AnimatePresence>
+                    {!isPlayersListOpen && (
+                      <MotiView
                       from={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
@@ -495,6 +509,29 @@ const LobbySetupScreen = ({
           </MotiView>
         )}
       </AnimatePresence>
+      
+      {/* 🛠 DEBUG OVERLAY (Dev Only) */}
+      {__DEV__ && (
+        <>
+          <FloatingDebugToggle 
+            isOpen={showDebug} 
+            onToggle={() => setShowDebug(!showDebug)} 
+          />
+          
+          <AnimatePresence>
+            {showDebug && (
+              <MotiView
+                from={{ opacity: 0, translateY: 100 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                exit={{ opacity: 0, translateY: 100 }}
+                className="absolute bottom-20 left-6 right-6 z-[998]"
+              >
+                <LanDebugPanel />
+              </MotiView>
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </View>
   );
 };

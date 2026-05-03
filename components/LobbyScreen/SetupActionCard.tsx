@@ -10,6 +10,7 @@ import { rf } from "@/utils/responsive";
 import { LobbyState } from "./types";
 import { PrimaryButton } from "./PrimaryButton";
 import { LanDebugPanel } from "./LanDebugPanel";
+import { HotspotTroubleshootingCard } from "./HotspotTroubleshootingCard";
 
 interface SetupActionCardProps {
   lobby: LobbyState;
@@ -28,6 +29,17 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   networkContext,
   networkErrorMessage,
 }) => {
+  const [showHotspotFix, setShowHotspotFix] = React.useState(false);
+  const [showDebug, setShowDebug] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isInviteLoading || (lobby.connectionStatus === "HOSTING" && !lobby.hostIp)) {
+      const timer = setTimeout(() => setShowHotspotFix(true), 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowHotspotFix(false);
+    }
+  }, [isInviteLoading, lobby.connectionStatus, lobby.hostIp]);
   const playerNames = lobby.players.map((p) => p.name.trim().toLowerCase());
   const hasDuplicateNames = new Set(playerNames).size !== playerNames.length;
   const playerAvatars = lobby.players.map((p) => p.avatarId);
@@ -80,10 +92,8 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                 {({ pressed }) => {
                   // Show spinner when: parent is polling for IP, OR hotspot interface not yet ready
                   const showSpinner = isInviteLoading || isHotspotInitializing;
-                  const label = isInviteLoading
-                    ? "Detecting Network..."
-                    : isHotspotInitializing
-                    ? "Initializing Hotspot..."
+                  const label = isInviteLoading || isHotspotInitializing
+                    ? "Preparing local room..."
                     : "Invite Players";
                   return (
                     <MotiView
@@ -122,9 +132,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                   <Text style={{ fontSize: rf(1.3) }} className="font-main-md text-white/70 flex-1">
                     {networkStatus === "denied" 
                       ? "Permission required for LAN play." 
-                      : (networkContext === "none" || !lobby.hostIp)
-                      ? "Waiting for Hotspot IP... Please turn ON your hotspot."
-                      : "Finalizing room setup..."}
+                      : "Searching for network... Please make sure your hotspot or WiFi is ON."}
                   </Text>
                 </View>
               </MotiView>
@@ -141,7 +149,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
               }}
             />
 
-            {(isInviteLoading || isHotspotInitializing) && <LanDebugPanel />}
+
           </View>
         )}
       </LinearGradient>

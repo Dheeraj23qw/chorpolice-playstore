@@ -712,9 +712,9 @@ export const useLobbyLogic = (
       const payload = JSON.stringify({
         ip: hostIp,
         port: GameSessionTransport.getListeningPort(),
-        code: roomCode,
+        roomCode,
+        candidateIps: [hostIp, "192.168.43.1", "192.168.49.1", "172.20.10.1", "192.168.1.1"]
       });
-      console.log(`[Lobby] 📱 Final QR Payload: ${payload}`);
       return payload;
     }, [hostIp, roomCode]),
     showAvatarGrid,

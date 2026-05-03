@@ -2,7 +2,7 @@ export const NETWORK = {
   // ───────── CORE PORTS ─────────
   DISCOVERY_PORT: 41234,
   TCP_SERVER_PORT: 41235,
-  BROADCAST_ADDRESS: "255.255.255.255",
+  MULTICAST_GROUP: "224.0.0.251",  // mDNS-style local multicast — used by UDP discovery
   ANDROID_HOTSPOT_IP: "192.168.43.1",
 
   // ───────── VERSIONING ─────────

@@ -539,6 +539,68 @@ export const GameSessionTransport = {
     // Client connects lazily when setHostIp is called
   },
 
+  /**
+   * Attempts a single connection to a host.
+   * Returns a promise that resolves on success or rejects on timeout/error.
+   */
+  connectAsync: (hostIp: string, hostPort: number): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const port = hostPort || state.listeningPort || PRIMARY_PORT;
+      
+      // Clean up previous attempts
+      if (clientSocket) {
+        try { clientSocket.destroy(); } catch { /* ignore */ }
+        clientSocket = null;
+      }
+      state.hostBuffer = Buffer.alloc(0);
+      devLog("Client", `Async connecting to host ${hostIp}:${port}...`);
+
+      let finished = false;
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+
+      const finish = (err?: Error) => {
+        if (finished) return;
+        finished = true;
+        if (timeout) clearTimeout(timeout);
+        if (err) {
+          if (clientSocket) clientSocket.destroy();
+          clientSocket = null;
+          reject(err);
+        } else {
+          resolve();
+        }
+      };
+
+      try {
+        clientSocket = TcpSocket.createConnection({ port, host: hostIp }, () => {
+          devLog("Client", `Async connection success: ${hostIp}:${port}`);
+          state.clientSockets.set(hostIp, clientSocket);
+          finish();
+        });
+
+        timeout = setTimeout(() => {
+          finish(new Error(`Connection to ${hostIp}:${port} timed out`));
+        }, 1200); // 1.2s timeout per candidate for fast failover
+
+        clientSocket.on("error", (err: any) => finish(err));
+        clientSocket.on("close", () => finish(new Error("Socket closed before connection")));
+        
+        // Data handling (same as connectToHost)
+        clientSocket.on("data", (data: any) => {
+          const rawBuffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+          state.hostBuffer = Buffer.concat([state.hostBuffer, rawBuffer]);
+          const [packets, remaining] = extractFrames(state.hostBuffer);
+          state.hostBuffer = remaining;
+          for (const envelope of packets) {
+            packetHandler?.(envelope.packet, hostIp);
+          }
+        });
+      } catch (e: any) {
+        finish(e);
+      }
+    });
+  },
+
   stop: async (): Promise<boolean> => {
     if (pendingServerStopPromise) {
       return pendingServerStopPromise;

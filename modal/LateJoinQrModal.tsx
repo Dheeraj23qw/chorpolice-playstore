@@ -5,6 +5,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { Text } from "@/components/Text";
 import { LanTroubleshootingCard } from "@/components/LobbyScreen/LanTroubleshootingCard";
 import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
+import { HotspotTroubleshootingCard } from "@/components/LobbyScreen/HotspotTroubleshootingCard";
 
 interface LateJoinQrModalProps {
   visible: boolean;
@@ -27,19 +28,25 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
+  const [showHotspotFix, setShowHotspotFix] = React.useState(false);
+  const [showDebug, setShowDebug] = React.useState(false);
 
   useEffect(() => {
     if (visible && !isHost && !permission?.granted) {
       requestPermission();
     }
     
-    let timer: ReturnType<typeof setTimeout>;
     if (visible) {
-      timer = setTimeout(() => setShowTroubleshooting(true), 5000);
+      const t1 = setTimeout(() => setShowTroubleshooting(true), 5000);
+      const t2 = setTimeout(() => setShowHotspotFix(true), 5000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     } else {
       setShowTroubleshooting(false);
+      setShowHotspotFix(false);
     }
-    return () => clearTimeout(timer);
   }, [visible, isHost]);
 
   return (
@@ -59,7 +66,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
               /* ─── HOST: SHOW QR ─── */
               <View className="items-center w-full">
                 <Text className="mb-4 text-xs font-main-bold uppercase tracking-[2px] text-indigo-400">
-                  Step 1: Turn on Hotspot
+                  {qrPayload ? "Room ready" : "Preparing local room..."}
                 </Text>
                 
                 <View className="rounded-[40px] bg-white p-6 shadow-2xl shadow-black/70">
@@ -79,12 +86,12 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                    </View>
                    
                    <Text className="mt-6 text-center text-xs text-white/50 px-8">
-                     Connect all players to the same network, then scan this QR or enter the Room Code.
+                     Ask friends to connect to your hotspot and scan the QR code.
                    </Text>
                 </View>
 
                 {showTroubleshooting && <LanTroubleshootingCard />}
-                {isHost && <LanDebugPanel />}
+                
               </View>
             ) : (
               /* ─── CLIENT: SCANNER ─── */

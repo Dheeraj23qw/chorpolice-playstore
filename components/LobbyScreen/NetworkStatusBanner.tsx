@@ -49,9 +49,8 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
           icon: "sync-outline",
           iconColor: "#3b82f6",
           gradientColors: ["rgba(59,130,246,0.15)", "rgba(59,130,246,0.05)"],
-          borderColor: "rgba(59,130,246,0.3)",
-          title: "Starting Local Server...",
-          subtitle: "Setting up your game lobby. Please wait.",
+          title: "Setting up your room...",
+          subtitle: "Getting things ready for your friends. Please wait.",
         };
       }
       if (status === "no_wifi" && networkContext === "none") {
@@ -60,8 +59,8 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
           iconColor: "#f97316",
           gradientColors: ["rgba(249,115,22,0.15)", "rgba(249,115,22,0.05)"],
           borderColor: "rgba(249,115,22,0.3)",
-          title: "Checking Hotspot...",
-          subtitle: "Please turn ON your Mobile Hotspot. No internet required.",
+          title: "Checking your connection...",
+          subtitle: "Please turn ON your Hotspot so friends can find you.",
           action: { label: "Check Again", onPress: onRetry },
         };
       }
@@ -74,10 +73,10 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
         iconColor: "#f97316",
         gradientColors: ["rgba(249,115,22,0.15)", "rgba(249,115,22,0.05)"],
         borderColor: "rgba(249,115,22,0.3)",
-        title: "No Network Detected",
+        title: "No Connection Found",
         subtitle: isHost 
-          ? "Still checking... Keep your hotspot ON."
-          : "Connect to the host's Mobile Hotspot or WiFi. Tip: Turn OFF Mobile Data if you can't see the host.",
+          ? "Looking for your room... Make sure your hotspot is ON."
+          : "Connect to the same hotspot or WiFi as your friends.",
         action: { label: "Check Again", onPress: onRetry },
       };
     }
@@ -95,7 +94,7 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
         title: "Permission Required",
         subtitle:
           errorMessage ||
-          "Location permission is needed to detect nearby players on the local network.",
+          "We need this permission to find your friends nearby.",
         action: isPermanent
           ? { label: "Open Settings", onPress: onOpenSettings }
           : { label: "Grant Permission", onPress: onRetry },
