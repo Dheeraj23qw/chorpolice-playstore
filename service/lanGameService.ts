@@ -112,7 +112,12 @@ export const stopSession = async () => {
   await GameSessionTransport.stop();
 };
 
-export const handleIncomingPacket = (packet: any, sourceIp?: string) => {
+// Re-export from leaf module to avoid breaking existing consumers
+import { normalizePeerIp } from "./network/normalizePeerIp";
+export { normalizePeerIp };
+
+export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
+  const sourceIp = normalizePeerIp(rawSourceIp);
   if (!packet || typeof packet !== "object" || !packet.type) {
     if (__DEV__) {
       console.warn("⚠️ [Network] Received malformed or empty packet. Ignoring.", packet);
@@ -122,6 +127,16 @@ export const handleIncomingPacket = (packet: any, sourceIp?: string) => {
 
   debugLogger("RECEIVER", packet, sourceIp || "LOCAL");
   updateDebugMetric("lastPacketType", packet.type);
+
+  if (sourceIp) {
+    // FIX-3: Reset heartbeat on EVERY valid app-protocol packet
+    if (__DEV__ && (packet.type === NETWORK.PING || packet.type === NETWORK.PONG)) {
+      // Only log PING/PONG at debug level to avoid log spam
+    } else if (__DEV__) {
+      console.log(`[Heartbeat] Reset tracker for peerIp=${sourceIp} (packet: ${packet.type})`);
+    }
+    HeartbeatService.resetTracker(sourceIp);
+  }
 
   if (packet.type === NETWORK.PING) {
     notifyListeners(packet, sourceIp);
@@ -138,9 +153,6 @@ export const handleIncomingPacket = (packet: any, sourceIp?: string) => {
     notifyListeners(packet, sourceIp);
     const now = Date.now();
     updateDebugMetric("latency", now - (packet.timestamp || now));
-    if (sourceIp) {
-      HeartbeatService.resetTracker(sourceIp);
-    }
     return;
   }
 
@@ -207,6 +219,8 @@ export const startHeartbeat = (isHost: boolean) => {
       }
       apIsolationCallback?.();
     },
+    // FIX: Inject socket-liveness check to avoid circular import
+    isConnectedTo: (ip) => GameSessionTransport.isConnectedTo(ip),
   });
 
   // If we are a client, immediately add the host IP to the monitor list

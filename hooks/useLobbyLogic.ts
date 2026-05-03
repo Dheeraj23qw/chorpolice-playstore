@@ -168,6 +168,16 @@ export const useLobbyLogic = (
 
   useEffect(() => {
     setApIsolationHandler(() => {
+      const currentSession = store.getState().session;
+      const humanCount = currentSession.players.filter((p) => !p.isBot).length;
+      
+      // If we already have a successfully established session with peers, ignore the warning
+      if (humanCount >= 2) {
+        if (__DEV__) {
+          console.log("[Lobby] Ignored AP Isolation warning because session is active (players >= 2)");
+        }
+        return;
+      }
       setShowApIsolation(true);
     });
 

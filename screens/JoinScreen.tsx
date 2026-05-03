@@ -217,8 +217,10 @@ const JoinScreen = () => {
 
   /* ── Auto-nav on connected ── */
   useEffect(() => {
-    if (session.connectionStatus === "CONNECTED") {
-      toast.success("Connected! 🎉", "You joined the lobby.");
+    if (session.connectionStatus === "CONNECTED" || session.connectionStatus === "CONNECTING") {
+      if (session.connectionStatus === "CONNECTED") {
+        toast.success("Connected! 🎉", "You joined the lobby.");
+      }
       router.replace({ pathname: "/lobby", params: { gameType } } as any);
     }
   }, [session.connectionStatus]);

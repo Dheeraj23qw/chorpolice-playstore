@@ -145,6 +145,17 @@ const LobbySetupScreen = ({
     }
   }, [status, networkContext]);
 
+  // ── Toast message when joiner fully connects ──────────────────
+  const prevConnectionStatusRef = React.useRef(lobby.connectionStatus);
+  useEffect(() => {
+    const prev = prevConnectionStatusRef.current;
+    prevConnectionStatusRef.current = lobby.connectionStatus;
+    
+    if (prev === "CONNECTING" && lobby.connectionStatus === "CONNECTED" && !lobby.isHost) {
+      toast.success("Connected! 🎉", "You have fully joined the lobby.");
+    }
+  }, [lobby.connectionStatus, lobby.isHost]);
+
   useEffect(() => {
     if (lobby.isHost && status === "denied" && !lobby.isLocalOnlyLobby) {
       lobby.handleContinueWithReadySeats();

@@ -1,14 +1,18 @@
 import { NETWORK } from "../../constants/Networking";
 import { updateDebugMetric } from "../observability/DebugService";
+import { normalizePeerIp } from "./normalizePeerIp";
 
 type HeartbeatCallbacks = {
   onPing: (packet: any) => void;
   onStale: (ip: string) => void;
   onApIsolation?: () => void;
+  /** Injected socket-liveness check to avoid circular import */
+  isConnectedTo?: (ip: string) => boolean;
 };
 
 type ReconnectTracker = {
   missed: number;
+  lastSeenAt: number;
 };
 
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
@@ -31,23 +35,30 @@ export const HeartbeatService = {
 
       Array.from(pongTrackers.entries()).forEach(([ip, tracker]) => {
         tracker.missed += 1;
-
-        // NET-5 FIX: removed confused reconnectToHost() call from host's heartbeat loop.
-        // The host can't reconnect TO clients — it's a server. Clients auto-reconnect
-        // via the TCP close handler. The host only needs to detect staleness and evict.
+        const now = Date.now();
+        const timeSinceLastSeen = now - tracker.lastSeenAt;
 
         // ── AP ISOLATION DETECTION ──
-        // After RECONNECT_ATTEMPTS worth of missed pings with no pong,
-        // the client is likely behind AP isolation (same Wi-Fi, no peer traffic)
-        if (tracker.missed === NETWORK.RECONNECT_ATTEMPTS + 1) {
-          if (__DEV__) console.warn(`[Heartbeat] Possible AP Isolation for ${ip}`);
+        // Only warn if we've missed several pings AND haven't seen any data for 10+ seconds.
+        if (tracker.missed === NETWORK.RECONNECT_ATTEMPTS + 1 && timeSinceLastSeen > 10000) {
+          if (__DEV__) {
+            console.warn(`[Heartbeat] ⚠️ Possible AP Isolation for ${ip} (missed: ${tracker.missed}, no data for: ${Math.floor(timeSinceLastSeen/1000)}s)`);
+          }
           callbacks?.onApIsolation?.();
         }
 
         // ── STALE PEER DETECTION ──
-        // After HEARTBEAT_MISS_THRESHOLD missed pings, the peer is declared gone.
-        if (tracker.missed >= NETWORK.HEARTBEAT_MISS_THRESHOLD + NETWORK.RECONNECT_ATTEMPTS) {
-          if (__DEV__) console.log(`[Heartbeat] Peer ${ip} declared stale after ${tracker.missed} missed pings`);
+        // Rely on absolute time rather than just tick counts to prevent
+        // false positives during temporary lag spikes.
+        if (timeSinceLastSeen > 15000) {
+          // FIX-4: Before declaring stale, check if TCP socket is actually still alive.
+          if (callbacks?.isConnectedTo?.(ip)) {
+            if (__DEV__) console.log(`[Heartbeat] Stale check SKIPPED for ${ip}: TCP socket still alive (lastSeen ${Math.floor(timeSinceLastSeen/1000)}s ago). Resetting tracker.`);
+            tracker.missed = 0;
+            tracker.lastSeenAt = Date.now();
+            return;
+          }
+          if (__DEV__) console.log(`[Heartbeat] Peer ${ip} declared stale (last seen ${Math.floor(timeSinceLastSeen/1000)}s ago, socket dead)`);
           callbacks?.onStale(ip);
           pongTrackers.delete(ip); // prevent repeated triggers
         }
@@ -55,23 +66,34 @@ export const HeartbeatService = {
     }, HEARTBEAT_INTERVAL);
   },
 
-  addClient: (ip: string) => {
-    if (!ip) return;
+  addClient: (rawIp: string) => {
+    if (!rawIp) return;
+    const ip = normalizePeerIp(rawIp) || rawIp;
     if (!pongTrackers.has(ip)) {
-      pongTrackers.set(ip, { missed: 0 });
+      if (__DEV__) console.log(`[Heartbeat] Adding tracker for ${ip}`);
+      pongTrackers.set(ip, { missed: 0, lastSeenAt: Date.now() });
     }
   },
 
-  removeClient: (ip: string) => {
-    if (!ip) return;
-
+  removeClient: (rawIp: string) => {
+    if (!rawIp) return;
+    const ip = normalizePeerIp(rawIp) || rawIp;
+    if (__DEV__ && pongTrackers.has(ip)) console.log(`[Heartbeat] Removing tracker for ${ip}`);
     pongTrackers.delete(ip);
   },
 
-  resetTracker: (ip: string) => {
-    if (!ip) return;
+  resetTracker: (rawIp: string) => {
+    if (!rawIp) return;
+    const ip = normalizePeerIp(rawIp) || rawIp;
     const tracker = pongTrackers.get(ip);
-    if (tracker) tracker.missed = 0;
+    if (tracker) {
+      if (tracker.missed > 0 && __DEV__) {
+        // devLog-style but using console for visibility in heartbeat
+        console.log(`[Heartbeat] reset tracker for ${ip} (was missed: ${tracker.missed})`);
+      }
+      tracker.missed = 0;
+      tracker.lastSeenAt = Date.now();
+    }
   },
 
   stop: () => {
