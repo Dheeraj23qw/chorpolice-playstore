@@ -171,8 +171,9 @@ export class LanDiscoveryService {
       this.broadcastInterval = null;
     }
     if (this.broadcastSocket) {
-      try { this.broadcastSocket.close(); } catch (e) {}
+      const socketToClose = this.broadcastSocket;
       this.broadcastSocket = null;
+      try { socketToClose.close(); } catch (e) {}
     }
     
     try {
@@ -331,13 +332,20 @@ export class LanDiscoveryService {
   static stopListening() {
     logLanDebug("[UDP] Stopping listener");
     updateDebugMetric("lanUdpListener", "idle");
+    
     if (this.listenSocket) {
+      const socketToClose = this.listenSocket;
+      this.listenSocket = null; // Nullify immediately to prevent concurrent calls
+      
       try {
-        // Leave multicast group cleanly
-        this.listenSocket.dropMembership(this.MULTICAST_GROUP);
+        // Only drop if we attempted to add it, though catching errors is good,
+        // preventing the native call entirely if unneeded is safer.
+        socketToClose.dropMembership(this.MULTICAST_GROUP);
       } catch (e) {}
-      try { this.listenSocket.close(); } catch (e) {}
-      this.listenSocket = null;
+      
+      try { 
+        socketToClose.close(); 
+      } catch (e) {}
     }
 
     try {
