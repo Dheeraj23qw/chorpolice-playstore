@@ -78,9 +78,9 @@ export const GameModeCard = ({ item, index, onPress, scrollX }: Props) => {
         onPressOut={() => (scale.value = withSpring(1))}
         onPress={onPress}
         className="w-full overflow-hidden rounded-[40px] border border-white/10"
-        style={{ height: hp(38) }}
+        style={{ height: hp(32) }}
       >
-        <BlurView intensity={25} tint="dark" className="flex-1 p-6">
+        <BlurView intensity={25} tint="dark" className="flex-1 p-5">
             <LinearGradient
                 colors={["rgba(99, 102, 241, 0.08)", "transparent"]}
                 className="absolute inset-0"
@@ -93,8 +93,8 @@ export const GameModeCard = ({ item, index, onPress, scrollX }: Props) => {
                     style={[
                         animatedImageStyle,
                         {
-                            width: wp(65),
-                            height: hp(22),
+                            width: wp(60),
+                            height: hp(18),
                         }
                     ]}
                     resizeMode="contain"

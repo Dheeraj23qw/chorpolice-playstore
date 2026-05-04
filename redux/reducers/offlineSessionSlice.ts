@@ -13,10 +13,10 @@ interface OfflineSessionState {
 
 const initialState: OfflineSessionState = {
   players: [
-    { id: "p1", name: "Player 1", avatarId: 1 },
-    { id: "p2", name: "Player 2", avatarId: 2 },
-    { id: "p3", name: "Player 3", avatarId: 3 },
-    { id: "p4", name: "Player 4", avatarId: 4 },
+    { id: "p1", name: "", avatarId: 1 },
+    { id: "p2", name: "", avatarId: 2 },
+    { id: "p3", name: "", avatarId: 3 },
+    { id: "p4", name: "", avatarId: 4 },
   ],
   totalRounds: 3,
 };

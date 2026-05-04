@@ -6,6 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "@/components/Text";
 import { playerImages } from "@/constants/playerData";
 import { rf } from "@/utils/responsive";
+import { getBotName } from "@/utils/nameGenerator";
 
 interface OfflinePlayerCardProps {
   player: { name: string; avatarId: number };
@@ -41,7 +42,7 @@ const OfflinePlayerCardComponent: React.FC<OfflinePlayerCardProps> = ({
             <TextInput
               value={player.name}
               onChangeText={onNameChange}
-              placeholder={`Player ${index + 1}`}
+              placeholder={getBotName(index)}
               placeholderTextColor="rgba(255,255,255,0.2)"
               style={{ fontSize: rf(1.8) }}
               className="mt-1 font-main-bold text-white"

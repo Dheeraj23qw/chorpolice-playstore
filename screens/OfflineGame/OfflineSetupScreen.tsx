@@ -16,6 +16,7 @@ import { ImageGrid } from "@/components/playerNameScreen/ImageGrid";
 import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
 import { rf, wp, hp } from "@/utils/responsive";
+import { getBotName } from "@/utils/nameGenerator";
 
 const OfflineSetupScreen = () => {
   const router = useRouter();
@@ -24,6 +25,7 @@ const OfflineSetupScreen = () => {
   const players = useSelector((state: RootState) => state.offlineSession.players);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showAvatarGrid, setShowAvatarGrid] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const closeAvatarModal = useCallback(() => {
     setShowAvatarGrid(false);
@@ -67,12 +69,12 @@ const OfflineSetupScreen = () => {
     closeAvatarModal();
   }, [editingIndex, players, dispatch, closeAvatarModal]);
 
-  const handleStartGame = useCallback(() => {
+  const confirmStart = useCallback(() => {
     AudioEngine.play("select", "ui");
     const usedNames = new Set<string>();
 
     for (let index = 0; index < players.length; index++) {
-      const fallbackName = `Player ${index + 1}`;
+      const fallbackName = getBotName(index);
       const name = players[index].name || "";
       const cleanName = name.trim() || fallbackName;
       const normalizedName = cleanName.toLowerCase();
@@ -83,13 +85,20 @@ const OfflineSetupScreen = () => {
 
       if (usedNames.has(normalizedName)) {
         toast.error("Duplicate Name", "Please keep every player name different.");
+        setShowConfirmModal(false);
         return;
       }
       usedNames.add(normalizedName);
     }
 
+    setShowConfirmModal(false);
     router.push("/offline-game");
   }, [players, dispatch, router]);
+
+  const handleStartGame = useCallback(() => {
+    AudioEngine.play("select", "ui");
+    setShowConfirmModal(true);
+  }, []);
 
   const handleBack = useCallback(() => router.back(), [router]);
 
@@ -196,7 +205,9 @@ const OfflineSetupScreen = () => {
           >
             <View className="mb-6 flex-row items-center justify-between">
               <View>
-                <Text style={{ fontSize: rf(1.8) }} className="font-main-bold text-white">Choose Avatar</Text>
+                <Text style={{ fontSize: rf(1.8) }} className="font-main-bold text-white">
+                  {editingIndex !== null ? (players[editingIndex].name || getBotName(editingIndex)) : "Choose Avatar"}
+                </Text>
                 <Text style={{ fontSize: rf(1.0) }} className="mt-1 text-white/45">Selecting a used avatar will swap it automatically.</Text>
               </View>
               <TouchableOpacity activeOpacity={0.8} onPress={closeAvatarModal}>
@@ -211,6 +222,40 @@ const OfflineSetupScreen = () => {
               isTaken={isAvatarTaken}
             />
           </MotiView>
+        </View>
+      </Modal>
+
+      <Modal visible={showConfirmModal} transparent animationType="fade">
+        <View className="flex-1 items-center justify-center bg-black/60 px-6">
+            <MotiView 
+                from={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-full rounded-[32px] border border-white/20 bg-[#0A0A0C] p-8 shadow-2xl"
+            >
+                <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-indigo-500/20 mx-auto">
+                    <Ionicons name="person-add-outline" size={32} color="#6366F1" />
+                </View>
+                <Text style={{ fontSize: rf(2.2) }} className="text-center font-main-bold text-white mb-2">Ready to Play?</Text>
+                <Text style={{ fontSize: rf(1.1) }} className="text-center text-white/50 mb-8">Did you want to change any names or avatars before starting the game?</Text>
+                
+                <View className="gap-y-3">
+                    <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onPress={() => setShowConfirmModal(false)}
+                        className="h-14 w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5"
+                    >
+                        <Text className="font-main-bold text-white">Yes, I want to change</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onPress={confirmStart}
+                        className="h-16 w-full items-center justify-center rounded-2xl bg-indigo-500"
+                    >
+                        <Text className="font-main-bold text-white text-lg">No, Start Game</Text>
+                    </TouchableOpacity>
+                </View>
+            </MotiView>
         </View>
       </Modal>
     </View>

@@ -52,10 +52,14 @@ const GameModeList: React.FC<GameModeListProps> = ({ scrollX }) => {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           onScroll={onScroll}
-          scrollEventThrottle={1}
+          scrollEventThrottle={16} // Standard 60fps throttle
           snapToAlignment="center"
           decelerationRate="fast"
+          disableIntervalMomentum={true}
           removeClippedSubviews={true}
+          windowSize={3}
+          initialNumToRender={2}
+          maxToRenderPerBatch={2}
           contentContainerStyle={{ alignItems: 'center' }}
           renderItem={({ item, index }) => (
             <View style={{ width }} className="items-center justify-center px-6">

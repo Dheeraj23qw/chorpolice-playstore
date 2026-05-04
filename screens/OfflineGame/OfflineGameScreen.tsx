@@ -40,15 +40,29 @@ const OfflineGameScreen = () => {
       setShowOverlayPopup(false);
       setIsSpinning(true);
       
+      AudioEngine.play("spin", "gameplay");
+
       timer = setTimeout(() => {
         setIsSpinning(false);
+        
+        // 1. Flip King First
         setFlippedIndices(prev => {
           const next = new Set(prev);
           if (g.kingIndex !== null && g.kingIndex !== undefined) next.add(g.kingIndex);
-          if (g.policeIndex !== null && g.policeIndex !== undefined) next.add(g.policeIndex);
           return next;
         });
         AudioEngine.play("level", "gameplay");
+
+        // 2. Flip Police after short delay
+        setTimeout(() => {
+          setFlippedIndices(prev => {
+            const next = new Set(prev);
+            if (g.policeIndex !== null && g.policeIndex !== undefined) next.add(g.policeIndex);
+            return next;
+          });
+          AudioEngine.play("level", "gameplay");
+        }, 800);
+
       }, 2500); 
     } else if (g.phase === "result") {
       setShowResultCinematic(true);
@@ -224,6 +238,7 @@ const OfflineGameScreen = () => {
         roles={g.roles}
         currentRound={g.currentRound}
         totalRounds={g.totalRounds}
+        totalScores={g.scores}
         onNextRound={handleNextRound}
       />
 

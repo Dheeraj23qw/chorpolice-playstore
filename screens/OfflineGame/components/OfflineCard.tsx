@@ -75,10 +75,12 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
         crazyStyles = { translateX: index % 2 === 0 ? -offX : offX, translateY: index < 2 ? offY : -offY, rotate: "-180deg", scale: 0.95 };
         break;
       case 2:
-        crazyStyles = { translateX: index % 2 === 0 ? offX/1.5 : -offX/1.5, translateY: index < 2 ? offY/1.5 : -offY/1.5, scale: 1.2, rotate: "0deg" };
+        // Style 2: "The Orbit" - 1.5 Turns with scale up
+        crazyStyles = { translateX: index % 2 === 0 ? offX * 1.2 : -offX * 1.2, translateY: index < 2 ? offY * 1.2 : -offY * 1.2, rotate: "540deg", scale: 1.1 };
         break;
       case 3:
-        crazyStyles = { translateX: 0, translateY: index < 2 ? offY : -offY, scale: 1.1, rotate: "0deg" };
+        // Style 3: "The Vortex" - 2 Full Reverse Turns with scale down
+        crazyStyles = { translateX: index % 2 === 0 ? -offX * 0.8 : offX * 0.8, translateY: index < 2 ? offY * 0.8 : -offY * 0.8, rotate: "-720deg", scale: 0.85 };
         break;
     }
   }
