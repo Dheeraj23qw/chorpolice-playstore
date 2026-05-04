@@ -28,7 +28,10 @@ import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 import { PermissionGuardian } from "@/components/PermissionGuardian";
 import { checkAppUpdate } from "@/utils/versionCheck";
 import { UpdateAppModal } from "@/modal/UpdateAppModal";
-import { getDismissedUpdateVersion, setDismissedUpdateVersion } from "@/storage/appStorage";
+import {
+  getUpdateDismissCount,
+  incrementUpdateDismissCount,
+} from "@/storage/appStorage";
 import { rf } from "@/utils/responsive";
 import { NetworkStatusBanner } from "@/components/LobbyScreen/NetworkStatusBanner";
 import { FloatingDebugToggle } from "@/components/LobbyScreen/FloatingDebugToggle";
@@ -234,9 +237,9 @@ const LobbySetupScreen = ({
     // 1️⃣ Check for app update first
     if (lobby.isHost) {
       const update = await checkAppUpdate();
-      const dismissedVersion = getDismissedUpdateVersion();
-      if (update.isAvailable && update.latestVersion !== dismissedVersion) {
-        console.log(`[LobbySetup] 📦 Update available: ${update.latestVersion}`);
+      const dismissCount = getUpdateDismissCount(update.latestVersion);
+      if (update.isAvailable && dismissCount < 2) {
+        console.log(`[LobbySetup] 📦 Update available (${dismissCount}/2 dismissed): ${update.latestVersion}`);
         setUpdateInfo({ url: update.updateUrl, version: update.latestVersion });
         setShowUpdateModal(true);
         return;
@@ -476,7 +479,7 @@ const LobbySetupScreen = ({
         isVisible={showUpdateModal}
         onClose={() => {
           // If the user manually closes/skips, respect it for this version
-          setDismissedUpdateVersion(updateInfo.version);
+          incrementUpdateDismissCount(updateInfo.version);
           setShowUpdateModal(false);
         }}
         updateUrl={updateInfo.url}

@@ -13,7 +13,12 @@ import VideoScreen from "@/screens/appFlow/VideoScreen";
 import { PremiumSplashCard } from "@/components/PremiumSplashCard";
 import { assetLoader } from "@/service/assetLoader";
 import { syncLocalLobbyProfile } from "@/service/lanLobbyCoordinator";
-import { getOnboardingDone, setOnboardingDone } from "@/storage/appStorage";
+import {
+  getOnboardingDone,
+  setOnboardingDone,
+  getUpdateDismissCount,
+  incrementUpdateDismissCount,
+} from "@/storage/appStorage";
 import { canShowLowCoinModal } from "@/storage/lowCoinStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
 
@@ -144,7 +149,17 @@ export default function AppController() {
   // This prevents interrupting a user who is already about to play.
   const isInitialFlow = phase === "SPLASH" || phase === "VIDEO" || phase === "ONBOARDING";
 
-  if (nativeUpdate?.isAvailable && !skippedUpdate && isInitialFlow) {
+  const dismissCount = nativeUpdate
+    ? getUpdateDismissCount(nativeUpdate.latestVersion)
+    : 0;
+  const isDismissedTooManyTimes = dismissCount >= 2;
+
+  if (
+    nativeUpdate?.isAvailable &&
+    !skippedUpdate &&
+    isInitialFlow &&
+    !isDismissedTooManyTimes
+  ) {
     return wrapPhase(
       "nativeUpdate",
       <View
@@ -193,7 +208,10 @@ export default function AppController() {
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setSkippedUpdate(true)}
+            onPress={() => {
+              if (nativeUpdate) incrementUpdateDismissCount(nativeUpdate.latestVersion);
+              setSkippedUpdate(true);
+            }}
             className="mt-4 h-12 w-64 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
           >
             <Text className="font-main-bold text-sm text-white/60">LATER</Text>

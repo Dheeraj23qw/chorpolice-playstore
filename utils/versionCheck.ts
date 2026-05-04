@@ -19,8 +19,8 @@ export const checkAppUpdate = async (): Promise<{
 
     const data = await response.json();
 
-    // Get the current version from your app.json config
-    const currentVersion = Constants.nativeApplicationVersion || "5.0.0";
+    // Get the current version (prioritize expoConfig which reflects OTA updates)
+    const currentVersion = Constants.expoConfig?.version || "5.6.0";
     const latestVersion = data.latestVersion;
     const updateUrl = data.updateUrl;
 

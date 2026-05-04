@@ -17,11 +17,12 @@ export const setPermissionReminderSuppressed = (value: boolean) => {
   storage.set(PERMISSION_REMINDER_SUPPRESSED, value);
 };
 
-const DISMISSED_UPDATE_VERSION = "dismissed_update_version";
+const UPDATE_DISMISS_COUNT_PREFIX = "update_dismiss_count_";
 
-export const getDismissedUpdateVersion = () =>
-  storage.getString(DISMISSED_UPDATE_VERSION);
+export const getUpdateDismissCount = (version: string) =>
+  storage.getNumber(`${UPDATE_DISMISS_COUNT_PREFIX}${version}`) ?? 0;
 
-export const setDismissedUpdateVersion = (version: string) => {
-  storage.set(DISMISSED_UPDATE_VERSION, version);
+export const incrementUpdateDismissCount = (version: string) => {
+  const currentCount = getUpdateDismissCount(version);
+  storage.set(`${UPDATE_DISMISS_COUNT_PREFIX}${version}`, currentCount + 1);
 };
