@@ -81,6 +81,7 @@ const BoardWithPopups = ({ g }: any) => {
           })()}
           getCardStyle={g.getCardStyle}
           showTableButton={g.showTableButton}
+          isHighlight={g.gamePhase === "police_turn" && g.canInteract}
         />
       </View>
     </>

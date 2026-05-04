@@ -19,6 +19,7 @@ interface GamePlaySectionProps {
   message: string | null;
   getCardStyle: (index: number) => any;
   showTableButton: boolean;
+  isHighlight?: boolean;
 }
 
 export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
@@ -35,6 +36,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   getCardStyle,
   showTableButton,
   toggleModal,
+  isHighlight,
 }) => {
   return (
     <SafeAreaView className="flex-1 bg-transparent">
@@ -97,6 +99,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                   onClick={handleCardClick}
                   onBounceEffect={() => handleCardClickWithBounce(index)}
                   animatedStyle={getCardStyle(index)}
+                  isHighlight={isHighlight && !flippedStates[index] && !clickedCards[index]}
                 />
               </View>
             ))}
@@ -116,6 +119,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                   onClick={handleCardClick}
                   onBounceEffect={() => handleCardClickWithBounce(index + 2)}
                   animatedStyle={getCardStyle(index + 2)}
+                  isHighlight={isHighlight && !flippedStates[index + 2] && !clickedCards[index + 2]}
                 />
               </View>
             ))}

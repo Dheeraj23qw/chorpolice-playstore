@@ -6,6 +6,7 @@ import {
   ImageBackground,
   View,
 } from "react-native";
+import { MotiView } from "moti";
 import { useSelector } from "react-redux";
 import { selectSelectedImages } from "@/redux/selectors/playerDataSelector";
 import { RootState } from "@/redux/store";
@@ -23,6 +24,7 @@ interface PlayerCardProps {
   onClick: (index: number) => void;
   animatedStyle: any;
   onBounceEffect: (index: number) => void;
+  isHighlight?: boolean;
 }
 
 const roleImages: Record<string, any> = {
@@ -46,6 +48,7 @@ const PlayerCard = memo(function PlayerCard({
   onClick,
   animatedStyle,
   onBounceEffect,
+  isHighlight = false,
 }: PlayerCardProps) {
   const selectedImages = useSelector(selectSelectedImages);
   const playerImages = useSelector(
@@ -122,6 +125,25 @@ const PlayerCard = memo(function PlayerCard({
         className="flex-1 overflow-hidden"
       >
         <View className="flex-1 justify-end bg-black/35 p-3">
+          {isHighlight && (
+            <MotiView
+              from={{ opacity: 0.6 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                type: "timing",
+                duration: 800,
+                loop: true,
+              }}
+              style={{
+                backgroundColor: 'rgba(99, 102, 241, 0.15)', 
+              }}
+              className="absolute inset-0 z-10 border-[4px] border-indigo-500 rounded-[26px] items-center justify-center"
+            >
+              <View className="rounded-full bg-indigo-500 px-4 py-1.5 shadow-lg shadow-indigo-500/50">
+                <Text className="font-main-bold text-[10px] text-white uppercase tracking-widest">Click Me</Text>
+              </View>
+            </MotiView>
+          )}
           <View className="items-center rounded-2xl border border-indigo-400/30 bg-indigo-950/90 px-3 py-2 shadow-xl">
             <Text
               numberOfLines={1}
