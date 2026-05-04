@@ -34,7 +34,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     userInterfaceStyle: "dark",
     allowBackup: false,
     softwareKeyboardLayoutMode: "pan",
-    versionCode: 105,
+    versionCode: 106,
     googleServicesFile:
       process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
     permissions: [
