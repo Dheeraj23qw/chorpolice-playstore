@@ -79,7 +79,7 @@ const GameModeScreen: React.FC = () => {
       <View
         pointerEvents={isModalOpen ? "none" : "auto"}
         className="flex-1"
-        style={{ paddingTop: insets.top }}
+        style={{ paddingTop: insets.top, opacity: isModalOpen ? 0 : 1 }}
       >
         {/* Header Section */}
         <HeaderSection />

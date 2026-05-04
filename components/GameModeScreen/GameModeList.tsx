@@ -14,6 +14,8 @@ import { optionsGameMode } from "@/constants/gamemode";
 import { GameModeCard } from "./GameModeCard";
 import GameModeModal from "../../modal/GameModeModal";
 import { Text } from "../Text";
+import { useAppDispatch } from "@/hooks/useAppRedux";
+import { closeModalUI, openModalUI } from "@/redux/reducers/uiStateSlice";
 
 const { width } = Dimensions.get("window");
 
@@ -22,6 +24,7 @@ interface GameModeListProps {
 }
 
 const GameModeList: React.FC<GameModeListProps> = ({ scrollX }) => {
+  const dispatch = useAppDispatch();
   const [selectedGame, setSelectedGame] = useState<any | null>(null);
 
   const onScroll = useAnimatedScrollHandler({
@@ -52,10 +55,9 @@ const GameModeList: React.FC<GameModeListProps> = ({ scrollX }) => {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           onScroll={onScroll}
-          scrollEventThrottle={16} // Standard 60fps throttle
+          scrollEventThrottle={1}
           snapToAlignment="center"
-          decelerationRate="fast"
-          disableIntervalMomentum={true}
+          decelerationRate={0.991} // Less friction for "butter" feel
           removeClippedSubviews={true}
           windowSize={3}
           initialNumToRender={2}

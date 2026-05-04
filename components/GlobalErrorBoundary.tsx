@@ -1,9 +1,9 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { BlurView } from "expo-blur";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView, AnimatePresence } from "moti";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { Text } from "@/components/Text";
 import { router } from "expo-router";
 
@@ -36,8 +36,14 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     router.replace("/");
   };
 
+  private handleCopyError = async () => {
+    const errorMessage = `Error: ${this.state.error?.message}\nStack: ${this.state.error?.stack}`;
+    await Clipboard.setStringAsync(errorMessage);
+    Alert.alert("Error Copied", "The technical details have been copied to your clipboard. Please paste them in your bug report.");
+  };
+
   private handleReport = () => {
-    // In a real app, you'd send logs to a server
+    // Navigate to bug report or open mail
     router.push("/report-bug");
     this.setState({ hasError: false, error: null });
   };
@@ -88,32 +94,26 @@ export class GlobalErrorBoundary extends Component<Props, State> {
                   </LinearGradient>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={this.handleReport}
-                  className="mt-4 bg-white/5 border border-white/10 py-5 rounded-2xl items-center active:bg-white/10"
-                >
-                  <Text className="font-main-bold text-white/60 uppercase tracking-[2px] text-sm">
-                    Report Technical Issue
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                <View className="flex-row gap-x-3">
+                    <TouchableOpacity
+                    onPress={this.handleCopyError}
+                    className="flex-1 bg-white/5 border border-white/10 py-5 rounded-2xl items-center active:bg-white/10"
+                    >
+                    <Text className="font-main-bold text-white/60 uppercase tracking-[1px] text-[11px]">
+                        Copy Error Code
+                    </Text>
+                    </TouchableOpacity>
 
-              {__DEV__ && (
-                <MotiView 
-                  from={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 500 }}
-                  className="mt-12 w-full"
-                >
-                  <BlurView intensity={20} tint="dark" className="p-4 rounded-xl border border-white/5 overflow-hidden">
-                    <ScrollView style={{ maxHeight: 150 }}>
-                      <Text className="text-red-400/80 font-mono text-[10px] leading-4">
-                        {this.state.error?.stack || this.state.error?.toString()}
-                      </Text>
-                    </ScrollView>
-                  </BlurView>
-                </MotiView>
-              )}
+                    <TouchableOpacity
+                    onPress={this.handleReport}
+                    className="flex-1 bg-red-500/10 border border-red-500/20 py-5 rounded-2xl items-center active:bg-red-500/20"
+                    >
+                    <Text className="font-main-bold text-red-400 uppercase tracking-[1px] text-[11px]">
+                        Report Bug
+                    </Text>
+                    </TouchableOpacity>
+                </View>
+              </View>
             </MotiView>
           </AnimatePresence>
         </View>

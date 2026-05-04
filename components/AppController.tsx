@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { View } from "react-native";
+import { Linking, View, TouchableOpacity } from "react-native";
 
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
@@ -17,12 +17,14 @@ import { getOnboardingDone, setOnboardingDone } from "@/storage/appStorage";
 import { canShowLowCoinModal } from "@/storage/lowCoinStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
 
+
 import { useOTAUpdate } from "@/hooks/useOTAUpdate";
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function AppController() {
-  const { isUpdating } = useOTAUpdate();
+  const { isUpdating, nativeUpdate } = useOTAUpdate();
   const dispatch = useAppDispatch();
   const phase = useAppSelector((state) => state.appFlow.phase);
   const activeModal = useAppSelector((state) => state.modalQueue.activeModal);
@@ -139,6 +141,34 @@ export default function AppController() {
       {child}
     </Animated.View>
   );
+
+  if (nativeUpdate?.isAvailable) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#050508", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <PremiumSplashCard source={require("@/assets/modalImages/intro.webp")} />
+        <View className="absolute inset-0 bg-black/60" />
+        
+        <View className="items-center">
+          <View className="mb-6 h-20 w-20 items-center justify-center rounded-3xl bg-indigo-500 shadow-xl shadow-indigo-500/40">
+            <Text className="text-4xl">🚀</Text>
+          </View>
+          <Text style={{ fontSize: rf(2.4) }} className="text-center font-main-bold text-white mb-2">New Version Available!</Text>
+          <Text style={{ fontSize: rf(1.1) }} className="text-center text-white/50 mb-8 leading-5">
+            A critical update (v{nativeUpdate.latestVersion}) is required to continue playing Chor Police with the latest features and stability.
+          </Text>
+
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => Linking.openURL(nativeUpdate.updateUrl)}
+            className="h-16 w-64 items-center justify-center overflow-hidden rounded-2xl"
+          >
+            <LinearGradient colors={["#6366F1", "#4F46E5"]} className="absolute h-full w-full" />
+            <Text className="font-main-bold text-lg text-white">UPDATE NOW</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   if (isUpdating) {
     return (
