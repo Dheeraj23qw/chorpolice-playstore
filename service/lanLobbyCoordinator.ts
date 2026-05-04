@@ -107,7 +107,11 @@ export const initHostLobby = ({ localPlayerId, name, avatarId, coins, gameType }
       : botNames.join(" and ");
     
     botAnnouncementTimers.push(setTimeout(() => {
-      toast.info(`${list} joined the room!`);
+      const stage = store.getState().session.lobbyStage;
+      // Only show the toast if we are still in the lobby (room/setup)
+      if (stage === "room" || stage === "setup") {
+        toast.info(`${list} joined the room!`);
+      }
     }, 1500));
   }
 };

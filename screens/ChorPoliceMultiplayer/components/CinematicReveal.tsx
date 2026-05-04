@@ -36,7 +36,7 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete?.();
-    }, 2000); // 🚀 Reduced to 2s
+    }, 4000); // Increased to 4s for better dramatic effect
     return () => clearTimeout(timer);
   }, [onComplete]);
 

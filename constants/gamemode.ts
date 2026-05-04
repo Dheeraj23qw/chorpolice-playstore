@@ -5,14 +5,26 @@ export interface GameModeType {
   title: string;
   subtitle: string;
   difficulty: string;
-  route: Href; // ✅ FIXED
+  route: Href; 
   image: any;
   accentColor: string;
   icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
   buttonText: string;
-  gameType?: string; // Canonical game type used by lobby logic ("QUIZ", "CHOR_POLICE", etc.)
+  gameType?: string; 
 }
+
 export const optionsGameMode: GameModeType[] = [
+  {
+    id: "chor_offline",
+    title: "Pass & Play",
+    subtitle: "No extra phones? No worry — just pass and play with friends.",
+    difficulty: "LOCAL",
+    route: "/offline-setup" as any,
+    image: require("@/assets/images/bg/gamemode/2.webp"),
+    accentColor: "#F59E0B",
+    icon: "phone-portrait-outline",
+    buttonText: "PLAY LOCAL",
+  },
   {
     id: "chor_online",
     title: "CHOR POLICE",
@@ -31,7 +43,7 @@ export const optionsGameMode: GameModeType[] = [
     subtitle: "Compete with friends locally",
     difficulty: "SMART",
     route: "/lobby" as any,
-    image: require("@/assets/images/bg/gamemode/2.webp"),
+    image: require("@/assets/images/chorsipahi/thief.webp"),
     accentColor: "#6366F1",
     icon: "people",
     buttonText: "PLAY QUIZ",

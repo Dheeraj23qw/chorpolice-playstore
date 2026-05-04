@@ -39,6 +39,9 @@ import {
   stopSession,
   subscribeToPackets,
 } from "@/service/lanGameService";
+import {
+  leaveLanLobby,
+} from "@/service/lanLobbyCoordinator";
 import { MODES, NETWORK } from "@/constants/Networking";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
@@ -737,7 +740,7 @@ export const useChorPoliceMultiplayer = () => {
         });
 
         if (_isHost && quizPlayer.isBot) {
-          const botDelay = 1500 + Math.floor(Math.random() * 2000);
+          const botDelay = 2500 + Math.floor(Math.random() * 1000);
           const expectedPlayerId = packet.playerId;
           const options = Array.isArray(packet.options) ? packet.options : [];
           const correctScore =
@@ -1243,8 +1246,7 @@ export const useChorPoliceMultiplayer = () => {
       timerRefs.current.forEach(clearTimeout);
       timerRefs.current = [];
 
-      await stopSession();
-      dispatch(clearSession());
+      await leaveLanLobby();
       dispatch(resetGameState());
       dispatch(resetDifficulty());
 
@@ -1328,8 +1330,7 @@ export const useChorPoliceMultiplayer = () => {
       ChorPoliceEngine.reset();
       timerRefs.current.forEach(clearTimeout);
       timerRefs.current = [];
-      await stopSession();
-      dispatch(clearSession());
+      await leaveLanLobby();
       dispatch(resetDifficulty());
       // PROD-6 FIX: dispatch resetGameState AFTER navigation so UI never reads
       // from an empty Redux store during the transition frame.

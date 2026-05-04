@@ -326,9 +326,9 @@ export const ChorPoliceEngine = {
     // Host is authoritative and broadcasts the result, so Math.random() is correct.
     let shuffled: Role[] = [...ROLES];
     
-    // Custom logic: 70% chance for human to be Police if 1 human, 3 bots
+    // Custom logic: 50% chance for human to be Police if 1 human, 3 bots
     const humanIndices = players.reduce<number[]>((acc, p, i) => (!p.isBot ? [...acc, i] : acc), []);
-    if (humanIndices.length === 1 && Math.random() < 0.70) {
+    if (humanIndices.length === 1 && Math.random() < 0.50) {
       const humanIndex = humanIndices[0];
       shuffled = ["King", "Thief", "Advisor"];
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -336,7 +336,7 @@ export const ChorPoliceEngine = {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       shuffled.splice(humanIndex, 0, "Police");
-      console.log(`🎭 [CPEngine] 🎲 Custom rule applied: Human granted Police role (70% chance hit)`);
+      console.log(`🎭 [CPEngine] 🎲 Custom rule applied: Human granted Police role (50% chance hit)`);
     } else {
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

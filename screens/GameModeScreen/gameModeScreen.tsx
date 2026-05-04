@@ -4,7 +4,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { MotiView, MotiImage } from "moti";
+import Animated, { 
+    useSharedValue, 
+    useAnimatedStyle, 
+    interpolate, 
+    Extrapolate 
+} from "react-native-reanimated";
 
 import { AppDispatch } from "@/redux/store";
 import { AudioEngine } from "@/audio/audioEngine";
@@ -19,12 +24,15 @@ import {
 
 import UnlockedAwardModal from "@/modal/AwardModal";
 import { BotEngine } from "@/service/QuizBotEngine";
+import { hp, wp } from "@/utils/responsive";
 
 const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
-
   const isModalOpen = useSelector(selectIsModalOpenUI);
+  
+  // 🚀 Buttery Smooth Background Parallax
+  const scrollX = useSharedValue(0);
 
   useEffect(() => {
     BotEngine.prepareEngine(10);
@@ -34,88 +42,58 @@ const GameModeScreen: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const animatedBgStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+        scrollX.value,
+        [-100, 0, 100],
+        [1.05, 1, 1.05],
+        Extrapolate.CLAMP
+    );
+    return { transform: [{ scale }] };
+  });
+
   return (
     <View className="flex-1 bg-black">
-      {/* 1. BACKGROUND */}
-      <MotiImage
+      {/* 1. BACKGROUND WITH BUTTERY PARALLAX */}
+      <Animated.Image
         source={require("@/assets/images/bg/image.webp")}
+        style={[animatedBgStyle]}
         className="absolute h-full w-full"
         resizeMode="cover"
-        from={{ scale: 1.1 }}
-        animate={{ scale: 1 }}
-        transition={{
-          type: "timing",
-          duration: 1200,
-        }}
       />
 
-      {/* 2. GRADIENTS (UNCHANGED) */}
       <BlurView intensity={25} tint="dark" className="absolute h-full w-full" />
 
       <LinearGradient
         colors={[
           "rgba(15, 23, 42, 0.4)",
           "transparent",
-          "rgba(99, 102, 241, 0.2)",
+          "rgba(99, 102, 241, 0.15)",
           "rgba(0, 0, 0, 0.95)",
         ]}
         locations={[0, 0.25, 0.65, 1]}
         className="absolute h-full w-full"
       />
 
-      <LinearGradient
-        colors={[
-          "rgba(99, 102, 241, 0.22)",
-          "rgba(59, 130, 246, 0.12)",
-          "transparent",
-        ]}
-        className="absolute h-[800px] w-[800px] self-center rounded-full opacity-90 blur-3xl"
-      />
-
       {/* 3. CONTENT */}
-      <MotiView
-        pointerEvents={isModalOpen ? "none" : "auto"} // 🔥 prevent clicks behind modal
+      <View
+        pointerEvents={isModalOpen ? "none" : "auto"}
         className="flex-1"
         style={{ paddingTop: insets.top }}
-        animate={{
-          opacity: isModalOpen ? 0 : 1,
-          scale: isModalOpen ? 0.96 : 1,
-        }}
-        transition={{
-          type: "timing",
-          duration: 300,
-        }}
       >
-        {/* Header */}
-        <MotiView
-          from={{ opacity: 0, translateY: -20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 100, duration: 500 }}
-        >
-          <HeaderSection />
-        </MotiView>
+        {/* Header Section */}
+        <HeaderSection />
 
-        {/* Profile */}
-        <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 200, duration: 500 }}
-        >
-          <UserProfilecard />
-        </MotiView>
-
-        {/* Game List */}
-        <View className="flex-1">
-          <MotiView
-            from={{ opacity: 0, translateY: 30 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 300, duration: 500 }}
-            className="flex-1"
-          >
-            <GameModeList />
-          </MotiView>
+        {/* Profile Card */}
+        <View className="px-5 mb-4">
+            <UserProfilecard />
         </View>
-      </MotiView>
+
+        {/* Game List (Pushed to Bottom) */}
+        <View className="flex-1 justify-end pb-4">
+            <GameModeList scrollX={scrollX} />
+        </View>
+      </View>
 
       <UnlockedAwardModal />
     </View>
