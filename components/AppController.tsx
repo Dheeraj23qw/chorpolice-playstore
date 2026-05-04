@@ -24,7 +24,16 @@ import { rf } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function AppController() {
-  const { isUpdating, nativeUpdate } = useOTAUpdate();
+  const {
+    isUpdating,
+    nativeUpdate,
+    otaAvailable,
+    applyUpdate,
+    setOtaAvailable,
+  } = useOTAUpdate();
+
+  const [skippedUpdate, setSkippedUpdate] = React.useState(false);
+
   const dispatch = useAppDispatch();
   const phase = useAppSelector((state) => state.appFlow.phase);
   const activeModal = useAppSelector((state) => state.modalQueue.activeModal);
@@ -39,8 +48,6 @@ export default function AppController() {
   );
   const loadingTaskRef = useRef<Promise<void> | null>(null);
   const bootstrappedRef = useRef(false);
-  // PROD-8 FIX: only enqueue reward once per session; re-queuing on every
-  // activeModal change causes an infinite loop while awards.unlocked stays > 0
   const rewardQueuedRef = useRef(false);
 
   const prepareIntroFlow = useCallback(() => {
@@ -48,8 +55,6 @@ export default function AppController() {
 
     const task = (async () => {
       try {
-        // Perform preloading and the animation delay in parallel.
-        // We ensure the splash shows for at least 2500ms for the zoom effect.
         await Promise.all([
           new Promise((resolve) => setTimeout(resolve, 2500)),
           isSoundLoaded
@@ -74,8 +79,6 @@ export default function AppController() {
     if (bootstrappedRef.current) return;
     bootstrappedRef.current = true;
 
-    // If the phase is already HOME (e.g. returning to the root route from a meta screen),
-    // do not restart the intro flow. The user has already seen it this session.
     if (phase === "HOME") return;
 
     runAfterUI(() => {
@@ -103,10 +106,9 @@ export default function AppController() {
       unlockedAwardsCount > 0 &&
       !rewardQueuedRef.current
     ) {
-      rewardQueuedRef.current = true; // PROD-8: only enqueue once
+      rewardQueuedRef.current = true;
       dispatch(enqueueModal("REWARD_MODAL"));
     }
-    // Reset flag when awards count drops back to 0 (claimed)
     if (unlockedAwardsCount === 0) {
       rewardQueuedRef.current = false;
     }
@@ -114,7 +116,6 @@ export default function AppController() {
 
   useEffect(() => {
     if (connectionStatus !== "IDLE") {
-      console.log("[AppController] Syncing coins to lobby:", coins);
       syncLocalLobbyProfile({ coins });
     }
   }, [coins, connectionStatus]);
@@ -128,61 +129,175 @@ export default function AppController() {
     dispatch(setAppPhase("HOME"));
   }, [dispatch]);
 
-  // UI-4: each phase gets a fast fade-in so hard-cuts are replaced with
-  // smooth 200ms entrances — wrapping with a stable key forces re-mount
-  // (and re-animation) only when the phase actually changes.
-  const wrapPhase = (key: string, child: React.ReactNode) => (
+  const wrapPhase = (key: string | undefined, child: React.ReactNode) => (
     <Animated.View
       key={key}
-      entering={FadeIn.duration(600)}
-      exiting={FadeOut.duration(400)}
+      entering={FadeIn.duration(800)}
+      exiting={FadeOut.duration(500)}
       style={{ flex: 1 }}
     >
       {child}
     </Animated.View>
   );
 
-  if (nativeUpdate?.isAvailable) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#050508", alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <PremiumSplashCard source={require("@/assets/modalImages/intro.webp")} />
+  // Only show full-screen update prompts if we haven't reached the HOME phase yet.
+  // This prevents interrupting a user who is already about to play.
+  const isInitialFlow = phase === "SPLASH" || phase === "VIDEO" || phase === "ONBOARDING";
+
+  if (nativeUpdate?.isAvailable && !skippedUpdate && isInitialFlow) {
+    return wrapPhase(
+      "nativeUpdate",
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#050508",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <PremiumSplashCard
+          source={require("@/assets/modalImages/intro.webp")}
+        />
         <View className="absolute inset-0 bg-black/60" />
-        
+
         <View className="items-center">
           <View className="mb-6 h-20 w-20 items-center justify-center rounded-3xl bg-indigo-500 shadow-xl shadow-indigo-500/40">
             <Text className="text-4xl">🚀</Text>
           </View>
-          <Text style={{ fontSize: rf(2.4) }} className="text-center font-main-bold text-white mb-2">New Version Available!</Text>
-          <Text style={{ fontSize: rf(1.1) }} className="text-center text-white/50 mb-8 leading-5">
-            A critical update (v{nativeUpdate.latestVersion}) is required to continue playing Chor Police with the latest features and stability.
+          <Text
+            style={{ fontSize: rf(2.4) }}
+            className="mb-2 text-center font-main-bold text-white"
+          >
+            New Version Available!
+          </Text>
+          <Text
+            style={{ fontSize: rf(1.1) }}
+            className="mb-8 text-center leading-5 text-white/50"
+          >
+            A new version (v{nativeUpdate.latestVersion}) is available with
+            latest features and stability improvements.
           </Text>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => Linking.openURL(nativeUpdate.updateUrl)}
             className="h-16 w-64 items-center justify-center overflow-hidden rounded-2xl"
           >
-            <LinearGradient colors={["#6366F1", "#4F46E5"]} className="absolute h-full w-full" />
+            <LinearGradient
+              colors={["#6366F1", "#4F46E5"]}
+              className="absolute h-full w-full"
+            />
             <Text className="font-main-bold text-lg text-white">UPDATE NOW</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setSkippedUpdate(true)}
+            className="mt-4 h-12 w-64 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
+          >
+            <Text className="font-main-bold text-sm text-white/60">LATER</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </View>,
+    );
+  }
+
+  if (otaAvailable && !skippedUpdate && isInitialFlow) {
+    return wrapPhase(
+      "otaUpdate",
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#050508",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <PremiumSplashCard
+          source={require("@/assets/modalImages/intro.webp")}
+        />
+        <View className="absolute inset-0 bg-black/60" />
+
+        <View className="items-center">
+          <View className="mb-6 h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500 shadow-xl shadow-emerald-500/40">
+            <Text className="text-4xl">✨</Text>
+          </View>
+          <Text
+            style={{ fontSize: rf(2.4) }}
+            className="mb-2 text-center font-main-bold text-white"
+          >
+            Quick Update Ready!
+          </Text>
+          <Text
+            style={{ fontSize: rf(1.1) }}
+            className="mb-8 text-center leading-5 text-white/50"
+          >
+            We've prepared some improvements for you. A quick restart is
+            required to apply them.
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => applyUpdate()}
+            className="h-16 w-64 items-center justify-center overflow-hidden rounded-2xl"
+          >
+            <LinearGradient
+              colors={["#10B981", "#059669"]}
+              className="absolute h-full w-full"
+            />
+            <Text className="font-main-bold text-lg text-white">
+              RESTART NOW
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setSkippedUpdate(true)}
+            className="mt-4 h-12 w-64 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
+          >
+            <Text className="font-main-bold text-sm text-white/60">
+              NOT NOW
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>,
     );
   }
 
   if (isUpdating) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#050508", alignItems: "center", justifyContent: "center" }}>
-        <PremiumSplashCard source={require("@/assets/modalImages/intro.webp")} />
+    return wrapPhase(
+      "applyingUpdate",
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#050508",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <PremiumSplashCard
+          source={require("@/assets/modalImages/intro.webp")}
+        />
         <View style={{ position: "absolute", bottom: 100, alignItems: "center" }}>
-          <Text style={{ fontSize: rf(2), color: "#fff" }} className="font-main-bold uppercase tracking-widest">
-            Downloading Update...
+          <Text
+            style={{ fontSize: rf(2), color: "#fff" }}
+            className="font-main-bold uppercase tracking-widest"
+          >
+            Applying Update...
           </Text>
-          <Text style={{ fontSize: rf(1.4), color: "rgba(255,255,255,0.5)", marginTop: 8 }}>
-            The app will reload automatically.
+          <Text
+            style={{
+              fontSize: rf(1.4),
+              color: "rgba(255,255,255,0.5)",
+              marginTop: 8,
+            }}
+          >
+            The app will reload in a moment.
           </Text>
         </View>
-      </View>
+      </View>,
     );
   }
 
