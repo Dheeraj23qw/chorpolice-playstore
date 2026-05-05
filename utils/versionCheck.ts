@@ -20,7 +20,7 @@ export const checkAppUpdate = async (): Promise<{
     const data = await response.json();
 
     // Get the current version (prioritize expoConfig which reflects OTA updates)
-    const currentVersion = Constants.expoConfig?.version || "5.6.0";
+    const currentVersion = Constants.expoConfig?.version || "5.5.0";
     const latestVersion = data.latestVersion;
     const updateUrl = data.updateUrl;
 
