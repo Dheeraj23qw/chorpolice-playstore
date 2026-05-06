@@ -43,14 +43,13 @@ export const EarnContent = ({
               if (!isLocked) toggleSpinModal();
             }}
           />
-          <ReferralStatsCard />
-
           <MilestonesSection
             tiers={REWARD_TIERS}
             coins={coins}
             cardWidth={cardWidth}
             onClaim={handleClaim}
           />
+          <ReferralStatsCard />
         </ScrollView>
       )}
 

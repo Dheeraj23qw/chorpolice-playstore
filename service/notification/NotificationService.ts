@@ -401,6 +401,8 @@ class NotificationService {
           triggerDate.setDate(triggerDate.getDate() + 1);
         }
 
+        const secondsFromNow = Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000));
+
         // Anti-repeat logic (rotate within pool but avoid recent ones for first few days)
         let messageIndex = i % pool.length;
         if (i < 3) {
@@ -426,8 +428,17 @@ class NotificationService {
             sound: "default",
             color: "#6366f1",
             categoryIdentifier: "NIGHT_RETENTION",
+            // 🛡️ Android Safety: Ensure channel is specified
+            ...(Platform.OS === "android" && {
+              channelId: "chor_police_general",
+            }),
           },
-          trigger: triggerDate as any,
+          // 🛡️ SDK Safety: Use TIME_INTERVAL for maximum compatibility across versions
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: secondsFromNow,
+            repeats: false,
+          },
         });
 
         // Store first notification ID for anti-repeat tracking in next session
