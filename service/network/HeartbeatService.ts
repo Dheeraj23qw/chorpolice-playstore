@@ -18,6 +18,8 @@ type ReconnectTracker = {
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 const pongTrackers: Map<string, ReconnectTracker> = new Map();
 let callbacks: HeartbeatCallbacks | null = null;
+/** Prevents race where stop() runs but interval callback is mid-flight */
+let isStopped = true;
 
 const HEARTBEAT_INTERVAL = NETWORK.HEARTBEAT_INTERVAL || 3000;
 
@@ -25,15 +27,35 @@ export const HeartbeatService = {
   start: (nextCallbacks: HeartbeatCallbacks) => {
     callbacks = nextCallbacks;
 
-    if (heartbeatInterval) return;
+    // Idempotent: if already running, just update callbacks
+    if (heartbeatInterval) {
+      console.log("[TCP_DEBUG] HEARTBEAT_START skipped=already_running");
+      return;
+    }
 
+    isStopped = false;
+    console.log("[TCP_DEBUG] HEARTBEAT_START");
     updateDebugMetric("isHeartbeatActive", true);
 
     heartbeatInterval = setInterval(() => {
+      // Guard: if stop() was called between ticks
+      if (isStopped || !callbacks) {
+        if (__DEV__) console.log("[TCP_DEBUG] HEARTBEAT_TICK_SKIPPED reason=stopped");
+        return;
+      }
+
       const packet = { type: NETWORK.PING, timestamp: Date.now() };
-      callbacks?.onPing(packet);
+
+      try {
+        callbacks.onPing(packet);
+      } catch (e) {
+        console.warn("[TCP_DEBUG] HEARTBEAT_PING_ERROR", e);
+      }
 
       Array.from(pongTrackers.entries()).forEach(([ip, tracker]) => {
+        // Re-check in case stop() was called during iteration
+        if (isStopped || !callbacks) return;
+
         tracker.missed += 1;
         const now = Date.now();
         const timeSinceLastSeen = now - tracker.lastSeenAt;
@@ -44,7 +66,7 @@ export const HeartbeatService = {
           if (__DEV__) {
             console.warn(`[Heartbeat] ⚠️ Possible AP Isolation for ${ip} (missed: ${tracker.missed}, no data for: ${Math.floor(timeSinceLastSeen/1000)}s)`);
           }
-          callbacks?.onApIsolation?.();
+          try { callbacks?.onApIsolation?.(); } catch {}
         }
 
         // ── STALE PEER DETECTION ──
@@ -59,7 +81,9 @@ export const HeartbeatService = {
             return;
           }
           if (__DEV__) console.log(`[Heartbeat] Peer ${ip} declared stale (last seen ${Math.floor(timeSinceLastSeen/1000)}s ago, socket dead)`);
-          callbacks?.onStale(ip);
+          try { callbacks?.onStale(ip); } catch (e) {
+            console.warn("[TCP_DEBUG] HEARTBEAT_STALE_CALLBACK_ERROR", e);
+          }
           pongTrackers.delete(ip); // prevent repeated triggers
         }
       });
@@ -97,6 +121,10 @@ export const HeartbeatService = {
   },
 
   stop: () => {
+    // Idempotent: safe to call multiple times
+    console.log("[TCP_DEBUG] HEARTBEAT_STOP");
+    isStopped = true;
+
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval);
       heartbeatInterval = null;
@@ -106,5 +134,10 @@ export const HeartbeatService = {
     callbacks = null;
 
     updateDebugMetric("isHeartbeatActive", false);
+  },
+
+  /** Returns true if heartbeat loop is actively running */
+  get isRunning(): boolean {
+    return heartbeatInterval !== null && !isStopped;
   },
 };

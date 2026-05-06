@@ -227,7 +227,7 @@ export const useNetworkPermissions = (
       if (!enabled) {
         if (!isActiveRun()) return;
         setStep("idle");
-        setStatus("idle");
+        setStatus("pending");
         setErrorMessage(null);
         setNetworkContext("unknown");
         return;
@@ -262,9 +262,9 @@ export const useNetworkPermissions = (
           // If we've been trying for more than 5 seconds, allow fallback IPs
           const useFallback = elapsed > 5000;
           
-          const manualIp = await getLocalIpAddress({ useFallback });
-          if (manualIp && manualIp !== "0.0.0.0") {
-            console.log(`[NetworkPermissions] 📡 NetInfo says 'none' but found IP: ${manualIp}. Promoting to hotspot_host (after ${elapsed}ms).`);
+          const ipResult = await getLocalIpAddress({ useFallback });
+          if (ipResult.ip && ipResult.ip !== "0.0.0.0") {
+            console.log(`[NetworkPermissions] 📡 NetInfo says 'none' but found IP: ${ipResult.ip}. Promoting to hotspot_host (after ${elapsed}ms).`);
             ctx = "hotspot_host";
           }
         }
@@ -358,8 +358,8 @@ export const useNetworkPermissions = (
               const isLocationGranted = hasLocation ||
                 results[LOCATION_PERM] === PermissionsAndroid.RESULTS.GRANTED;
               const isLocalNetGranted = hasLocalNet ||
-                results[LOCAL_NET_PERM] === PermissionsAndroid.RESULTS.GRANTED ||
-                results[LOCAL_NET_PERM] === undefined; // If RN didn't process it
+                (results as any)[LOCAL_NET_PERM] === PermissionsAndroid.RESULTS.GRANTED ||
+                (results as any)[LOCAL_NET_PERM] === undefined; // If RN didn't process it
 
               if (!isNearbyGranted || !isLocationGranted || !isLocalNetGranted) {
                 if (!isActiveRun()) return;
@@ -367,7 +367,7 @@ export const useNetworkPermissions = (
                 const isPermanent =
                   results[NEARBY_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
                   results[LOCATION_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ||
-                  results[LOCAL_NET_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
+                  (results as any)[LOCAL_NET_PERM] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
 
                 console.log(
                   `[NetworkPermissions] ❌ STATUS → denied ` +

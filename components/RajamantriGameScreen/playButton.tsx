@@ -8,12 +8,14 @@ interface PlayButtonProps {
   disabled: boolean;
   onPress: () => void;
   buttonText: string;
+  subText?: string | null;
 }
 
 const PlayButton: React.FC<PlayButtonProps> = ({
   disabled,
   onPress,
   buttonText,
+  subText,
 }) => {
   return (
     <Pressable
@@ -60,10 +62,19 @@ const PlayButton: React.FC<PlayButtonProps> = ({
             {buttonText}
           </Text>
 
-          {!disabled && (
-            <Text className="mt-1 text-[9px] uppercase tracking-[3px] text-indigo-200/60">
-              Tap to Start
+          {subText ? (
+            <Text 
+              className="mt-1 text-center font-main-bold text-[9px] uppercase tracking-widest text-indigo-400"
+              style={{ textShadowColor: 'rgba(99, 102, 241, 0.5)', textShadowRadius: 4 }}
+            >
+              {subText}
             </Text>
+          ) : (
+            !disabled && (
+              <Text className="mt-1 text-[9px] uppercase tracking-[3px] text-indigo-200/60">
+                Tap to Start
+              </Text>
+            )
           )}
         </View>
       </LinearGradient>

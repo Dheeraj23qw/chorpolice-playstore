@@ -261,6 +261,203 @@ class NotificationService {
   }
 
   /**
+   * Schedules a rolling 30-day window of night retention notifications.
+   * Fires every night at 8:30 PM local time.
+   */
+  async scheduleNightRetentionNotifications(params?: {
+    coins?: number;
+    streak?: number;
+    totalQuizzes?: number;
+    cpGamesPlayed?: number;
+    lastActiveAt?: number;
+  }) {
+    if (Platform.OS === "web") return;
+
+    const VERSION = 2; // Incremented for smart selection + cooldown
+    const LAST_VERSION_KEY = "NIGHT_NOTIF_SCHED_VERSION";
+    const LAST_ACTIVE_KEY = "NIGHT_LAST_ACTIVE_AT";
+    const RECENT_IDS_KEY = "NIGHT_RECENT_NOTIF_IDS";
+    
+    const now = new Date();
+    const currentVersion = storage.getNumber(LAST_VERSION_KEY) || 0;
+
+    // 1. NIGHT ACTIVITY COOLDOWN
+    // If active after 7 PM today, skip tonight's notification
+    if (params?.lastActiveAt) {
+      storage.set(LAST_ACTIVE_KEY, params.lastActiveAt);
+    }
+    
+    const lastActiveAt = storage.getNumber(LAST_ACTIVE_KEY) || 0;
+    const lastActiveDate = new Date(lastActiveAt);
+    const playedAfter7PMToday = 
+      lastActiveDate.toDateString() === now.toDateString() && 
+      lastActiveDate.getHours() >= 19;
+
+    try {
+      const hasPermission = await this.checkPermission();
+      if (!hasPermission) return;
+
+      const pending = await Notifications.getAllScheduledNotificationsAsync();
+      const hasActiveNightNotifs = pending.some(n => n.identifier.startsWith("night_retention_"));
+
+      // If played after 7 PM today, cancel tonight's (day 0) if it exists
+      if (playedAfter7PMToday) {
+        if (__DEV__) console.log("[NIGHT_RETENTION] skipped_recently_active");
+        await Notifications.cancelScheduledNotificationAsync("night_retention_0");
+      }
+
+      // Only skip full re-schedule if version matches AND we have pending ones
+      if (currentVersion === VERSION && hasActiveNightNotifs) {
+        return;
+      }
+
+      // 1. Cancel old ones
+      await this.cancelNightRetentionNotifications();
+
+      // 2. Define Smart Pools
+      const pools: Record<string, { title: string; body: string }[]> = {
+        quiz: [
+          { title: "🧠 Think you’re smart?", body: "Prove it in tonight’s quiz battle." },
+          { title: "🔥 Quiz battle starts now.", body: "Don’t be the weak player." },
+          { title: "⚡ Fast brain or fast fingers?", body: "Test both tonight." },
+          { title: "😏 Embarrass your friends?", body: "Quiz mode is waiting." },
+          { title: "🧠 Your brain needs XP.", body: "Play a quick quiz." },
+        ],
+        chor_police: [
+          { title: "👑 Raja or Chor tonight?", body: "One match. One winner." },
+          { title: "🕵️ Will the Thief be caught?", body: "Play now and find out." },
+          { title: "⚔️ One room. Four suspects.", body: "Who’s the Thief?" },
+          { title: "🕵️ Trust nobody.", body: "Play Chor Police now." },
+          { title: "🚨 Squad missing one player…", body: "Join the game now." },
+        ],
+        comeback: [
+          { title: "👀 Someone stole your crown…", body: "Take it back tonight." },
+          { title: "👀 Rival got stronger…", body: "Catch up now." },
+          { title: "😈 Someone is waiting.", body: "Don’t let them win." },
+          { title: "🔥 Night challenge unlocked.", body: "Tap to play." },
+          { title: "🔥 Tonight’s challenge is LIVE.", body: "Enter now." },
+        ],
+        streak: [
+          { title: "🔥 Streak is alive.", body: "Don’t break it tonight." },
+          { title: "🏆 Leaderboard won’t climb itself.", body: "Play now." },
+          { title: "🎯 One quick match?", body: "Before sleep, let’s go." },
+          { title: "⚡ Last match before bed?", body: "Quick one?" },
+          { title: "🚀 No internet. No excuses.", body: "Game starts now." },
+        ],
+        challenge: [
+          { title: "🔥 Bro ready for revenge?", body: "Your friends are waiting in Chor Police 👀" },
+          { title: "⚔️ Brother vs Brother?", body: "Start the challenge now." },
+          { title: "😏 Your friend can’t beat you.", body: "Or can he?" },
+          { title: "😈 Friend says he’s smarter.", body: "Accept challenge?" },
+          { title: "😏 Parents vs You?", body: "Let’s see who wins tonight." },
+        ],
+        coins: [
+          { title: "🏆 Win coins. Win respect.", body: "Start a match." },
+          { title: "💰 Your coins won’t earn themselves.", body: "Play now." },
+          { title: "💰 Low on coins?", body: "Beat a friend and steal theirs." },
+          { title: "💎 Big stakes tonight.", body: "Win big or go home." },
+          { title: "💰 Your wallet is hungry.", body: "Feed it with some wins." },
+        ],
+        family: [
+          { title: "👑 Tonight’s Raja is waiting.", body: "Will it be you?" },
+          { title: "😎 Don’t just scroll.", body: "Beat someone instead." },
+          { title: "🧠 Memory test tonight?", body: "Think & Count is ready." },
+        ]
+      };
+
+      // 3. CONTEXTUAL MESSAGE SELECTION
+      let category = "family";
+      const inactiveDays = params?.lastActiveAt ? (now.getTime() - params.lastActiveAt) / (1000 * 60 * 60 * 24) : 0;
+
+      if (inactiveDays >= 3) {
+        category = "comeback";
+      } else if (params?.streak && params.streak >= 3) {
+        category = "streak";
+      } else if (params?.coins !== undefined && params.coins < 5000) {
+        category = "coins";
+      } else if ((params?.totalQuizzes || 0) > (params?.cpGamesPlayed || 0) * 1.5) {
+        category = "quiz";
+      } else if ((params?.cpGamesPlayed || 0) > (params?.totalQuizzes || 0) * 1.5) {
+        category = "chor_police";
+      } else {
+        category = Math.random() > 0.5 ? "challenge" : "family";
+      }
+
+      if (__DEV__) console.log(`[NIGHT_RETENTION] selected_category=${category}`);
+
+      const pool = pools[category];
+      const recentIds = storage.getString(RECENT_IDS_KEY)?.split(",") || [];
+
+      // 4. Schedule next 30 days
+      for (let i = 0; i < 30; i++) {
+        // Skip today if already active after 7 PM
+        if (i === 0 && playedAfter7PMToday) continue;
+
+        const triggerDate = new Date(now);
+        triggerDate.setDate(now.getDate() + i);
+        triggerDate.setHours(20, 30, 0, 0);
+
+        if (triggerDate <= now) {
+          triggerDate.setDate(triggerDate.getDate() + 1);
+        }
+
+        // Anti-repeat logic (rotate within pool but avoid recent ones for first few days)
+        let messageIndex = i % pool.length;
+        if (i < 3) {
+          // For the immediate future, try to pick one not used in the last 3 days
+          for (let j = 0; j < pool.length; j++) {
+            const candidateId = `${category}_${j}`;
+            if (!recentIds.includes(candidateId)) {
+              messageIndex = j;
+              break;
+            }
+          }
+        }
+
+        const selectedMessage = pool[messageIndex];
+        const uniqueId = `night_retention_${i}`;
+
+        await Notifications.scheduleNotificationAsync({
+          identifier: uniqueId,
+          content: {
+            title: selectedMessage.title,
+            body: selectedMessage.body,
+            data: { screen: "/mode-select" },
+            sound: "default",
+            color: "#6366f1",
+            categoryIdentifier: "NIGHT_RETENTION",
+          },
+          trigger: triggerDate as any,
+        });
+
+        // Store first notification ID for anti-repeat tracking in next session
+        if (i === 0) {
+          const newRecent = [`${category}_${messageIndex}`, ...recentIds.slice(0, 4)];
+          storage.set(RECENT_IDS_KEY, newRecent.join(","));
+        }
+        
+        if (__DEV__ && i < 3) console.log(`[NIGHT_RETENTION] scheduled_day=${i} index=${messageIndex}`);
+      }
+
+      storage.set(LAST_VERSION_KEY, VERSION);
+    } catch (error) {
+      console.error("[Notifications] scheduleNightRetentionNotifications failed:", error);
+    }
+  }
+
+  async cancelNightRetentionNotifications() {
+    if (Platform.OS === "web") return;
+    try {
+      const pending = await Notifications.getAllScheduledNotificationsAsync();
+      for (const n of pending) {
+        if (n.identifier.startsWith("night_retention_")) {
+          await Notifications.cancelScheduledNotificationAsync(n.identifier);
+        }
+      }
+    } catch {}
+  }
+
+  /**
    * Nudges the player when they are close to a milestone reward.
    * Called from Redux middleware when wallet coins change.
    */

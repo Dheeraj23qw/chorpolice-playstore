@@ -107,7 +107,7 @@ export const LowCoinModal = ({
 
               <TouchableOpacity onPress={onDisable}>
                 <Text className="text-[10px] font-main-bold uppercase tracking-widest text-indigo-400/40">
-                  Don't show again
+                  Don&apos;t show again
                 </Text>
               </TouchableOpacity>
             </View>

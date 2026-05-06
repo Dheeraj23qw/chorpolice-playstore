@@ -126,6 +126,8 @@ export const RoleRevealView: React.FC<Props> = React.memo(({ role, round }) => {
   );
 });
 
+RoleRevealView.displayName = "RoleRevealView";
+
 // Production-grade styles: Separated to reduce render cycles
 const styles = StyleSheet.create({
   container: {

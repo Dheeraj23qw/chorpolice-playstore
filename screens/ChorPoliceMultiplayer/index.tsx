@@ -18,6 +18,7 @@ import ResultView from "./views/ResultView";
 import RoundVideoView from "./views/RoundVideoView";
 import ScoreQuizView from "./views/ScoreQuizView";
 import FinalResultView from "./views/FinalResultView";
+import PrivateRevealView from "./views/PrivateRevealView";
 import VideoPlayerComponent from "@/components/IntroVideo";
 
 const ChorPoliceMultiplayerScreen = () => {
@@ -55,6 +56,9 @@ const ChorPoliceMultiplayerScreen = () => {
 
       case "police_turn":
         return <PoliceTurnView g={g} />;
+
+      case "private_reveal":
+        return <PrivateRevealView role={g.myRole} />;
 
       case "result":
         return <ResultView g={g} />;

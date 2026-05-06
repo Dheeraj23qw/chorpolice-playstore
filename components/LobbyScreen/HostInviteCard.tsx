@@ -16,7 +16,7 @@ interface HostInviteCardProps {
 
 const QR_SIZE = 112;
 
-const HostInviteCard: React.FC<HostInviteCardProps> = ({
+export const HostInviteCard: React.FC<HostInviteCardProps> = ({
   lobby,
   onCopyRoomCode,
 }) => {

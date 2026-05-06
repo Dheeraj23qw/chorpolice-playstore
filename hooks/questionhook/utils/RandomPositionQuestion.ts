@@ -14,34 +14,34 @@ export const generateRandomPositionQuestion = (
   ];
 
   const rank = Math.floor(Math.random() * 4) + 1; // Random rank (1 to 4)
-
   const rankWord = ["first", "second", "third", "fourth"][rank - 1];
 
-  // Get total scores for each player up to the selected round
-  const playerScores = players.map((player) => ({
+  let currentRound = roundIndex;
+  let finalPlayerScores = players.map((player) => ({
     player,
-    totalScore: getTotalScoreUpToRound(roundIndex, player),
+    totalScore: getTotalScoreUpToRound(currentRound, player),
   }));
 
-  // Tie-breaking rule: King > Advisor > Police > Thief
-  const rolePriority: Record<"Police" | "Thief" | "King" | "Advisor", number> =
-    {
-      King: 1,
-      Advisor: 2,
-      Police: 3,
-      Thief: 4,
-    };
-
-  // Sort players by score (descending), then by role priority (ascending)
-  playerScores.sort((a, b) => {
-    if (b.totalScore === a.totalScore) {
-      return rolePriority[a.player] - rolePriority[b.player];
+  // LOOP until we find a round with unique scores to make it "EASY"
+  let attempts = 0;
+  while (attempts < 10) {
+    const uniqueScores = new Set(finalPlayerScores.map(s => s.totalScore));
+    if (uniqueScores.size === players.length) {
+      break;
     }
-    return b.totalScore - a.totalScore;
-  });
+    currentRound = Math.floor(Math.random() * (roundIndex + 1));
+    finalPlayerScores = players.map((player) => ({
+      player,
+      totalScore: getTotalScoreUpToRound(currentRound, player),
+    }));
+    attempts++;
+  }
+
+  // Sort players by score (descending)
+  finalPlayerScores.sort((a, b) => b.totalScore - a.totalScore);
 
   // Get the player at the specified rank
-  const playerAtRank = playerScores[rank - 1];
+  const playerAtRank = finalPlayerScores[rank - 1];
 
   // If no player is found (edge case), return an empty question
   if (!playerAtRank) {
@@ -54,12 +54,12 @@ export const generateRandomPositionQuestion = (
   }
 
   // Randomize the order of players for the answer options
-  const shuffledPlayers = playerScores
-    .map((entry) => entry.player)
+  const shuffledPlayers = finalPlayerScores
+    .map((entry: any) => entry.player)
     .sort(() => Math.random() - 0.5);
 
   // Generate the hint with player scores and rankings
-  const hint = playerScores
+  const hint = finalPlayerScores
     .map(
       (entry, index) =>
         `${index + 1}. ${entry.player}: ${entry.totalScore} points`,
@@ -68,10 +68,10 @@ export const generateRandomPositionQuestion = (
 
   // Return the question, options, correct answer, and hint
   return {
-    question: `Who was at ${rankWord} position at the end of round ${roundIndex + 1}?(In case of a tie, King > Advisor > Police > Thief)`,
+    question: `Who was at ${rankWord} position at the end of round ${currentRound + 1}?`,
     options: shuffledPlayers,
     correctAnswer: playerAtRank.player,
-    hint: `Scores and Rankings at the end of Round ${roundIndex + 1}:\n${hint}`,
+    hint: `Scores and Rankings at the end of Round ${currentRound + 1}:\n${hint}`,
     boolean: false,
   };
 };

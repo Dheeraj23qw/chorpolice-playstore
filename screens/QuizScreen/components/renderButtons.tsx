@@ -42,6 +42,8 @@ export const ActionButtons: React.FC<ActionButtonsProps> = memo(({
   );
 });
 
+ActionButtons.displayName = "ActionButtons";
+
 interface CustomButtonProps {
   onPress: () => void;
   label: string;

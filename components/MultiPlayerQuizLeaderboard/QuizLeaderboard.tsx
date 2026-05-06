@@ -7,6 +7,8 @@ import { PlayerList } from "./PlayerList";
 import { WaitingState } from "./WaitingState";
 import { LeaderboardFooter } from "./LeaderboardFooter";
 import { useLeaderboard } from "./useLeaderboard";
+import { MatchReview } from "../thinkAndCountScreen/MatchReview";
+import { translateToHindi } from "@/utils/QuestionTranslator";
 
 interface Props {
   round: number;

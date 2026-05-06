@@ -52,12 +52,12 @@ const store = configureStore({
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(listenerMiddleware.middleware),
+    getDefaultMiddleware().concat(listenerMiddleware.middleware as any),
   preloadedState: {
     wallet: preloadedWallet,
     quizStats: preloadedQuizStats,
     gameStreak: preloadedGameStreak,
-    ...(preloadedLocks ? { lock: preloadedLocks } : {}),
+    lock: preloadedLocks as any,
   },
 });
 

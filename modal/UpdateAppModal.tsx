@@ -92,7 +92,7 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
                 </View>
 
                 <Text style={styles.description}>
-                  Update app for best gaming experience. We've added new features and improved stability for your multiplayer matches.
+                  Update app for best gaming experience. We&apos;ve added new features and improved stability for your multiplayer matches.
                 </Text>
 
                 <TouchableOpacity

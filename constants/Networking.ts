@@ -29,6 +29,7 @@ export const NETWORK = {
   RECONNECT_ATTEMPTS: 2, // decreased for faster disconnect detection
   RECONNECT_INTERVAL_MS: 1000, // base delay
   RECONNECT_BACKOFF_MULTIPLIER: 1.5, // exponential growth
+  RECONNECT_TIMEOUT_MS: 20000, // 20s window
 
   // ───────── MESSAGE TYPES ─────────
   DISCOVERY_MSG: "PLATFORM_DISCOVERY",
@@ -46,6 +47,11 @@ export const NETWORK = {
   JOIN_REQUEST: "JOIN_REQUEST",
   JOIN_ACCEPT: "JOIN_ACCEPT",
   JOIN_DENY: "JOIN_DENY",
+
+  RECONNECT_REQUEST: "RECONNECT_REQUEST",
+  RECONNECT_SUCCESS: "RECONNECT_SUCCESS",
+  RECONNECT_FAIL: "RECONNECT_FAIL",
+  SYNC_STATE: "SYNC_STATE",
 };
 
 export const MODES = {

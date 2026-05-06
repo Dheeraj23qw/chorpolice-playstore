@@ -9,7 +9,7 @@ import {
   claimDailyBonus,
   markRated,
   resetLocks,
-  useSpin,
+  recordSpin,
 } from "@/features/locks/lockSlice";
 import {
   claimFirstLaunchBonus,
@@ -81,13 +81,13 @@ listenerMiddleware.startListening({
 });
 
 listenerMiddleware.startListening({
-  matcher: isAnyOf(useSpin, claimDailyBonus, markRated, resetLocks),
+  matcher: isAnyOf(recordSpin, claimDailyBonus, markRated, resetLocks),
   effect: (action, api) => {
     const state = api.getState() as RootState;
     saveLocks(state.lock);
 
     // Schedule Notifications for rewards
-    if (action.type === useSpin.type) {
+    if (action.type === recordSpin.type) {
       void notificationService.scheduleSpinReminder();
     } else if (action.type === claimDailyBonus.type) {
       void notificationService.scheduleDailyBonusReminder();

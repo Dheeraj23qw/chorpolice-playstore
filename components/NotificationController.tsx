@@ -48,6 +48,9 @@ export default function NotificationController() {
   const lastActiveDate = useAppSelector(
     (state) => state.gameStreak.lastActiveDate,
   );
+  const coins = useAppSelector((state) => state.wallet.coins);
+  const totalQuizzes = useAppSelector((state) => state.quizStats.totalQuizzes);
+  const cpGamesPlayed = useAppSelector((state) => state.quizStats.cpGamesPlayed);
 
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [welcomeScheduled, setWelcomeScheduled] = useState(
@@ -96,8 +99,17 @@ export default function NotificationController() {
       // 4. Inactivity reminders — cancel stale ones first
       await notificationService.cancelRetentionNudges();
       await notificationService.scheduleRetentionNudges();
+      
+      // 5. Night retention notifications (rolling 30-day pool)
+      await notificationService.scheduleNightRetentionNotifications({
+        coins,
+        streak: currentStreak,
+        totalQuizzes,
+        cpGamesPlayed,
+        lastActiveAt: Date.now(), // Update current activity
+      });
 
-      // 5. Sync initial permission state
+      // 6. Sync initial permission state
       const granted = await notificationService.checkPermission();
       setPermissionGranted(granted);
     };

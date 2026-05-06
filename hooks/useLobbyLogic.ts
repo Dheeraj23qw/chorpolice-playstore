@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { MODES, NETWORK } from "@/constants/Networking";
+import store from "@/redux/store";
 import { NUM_QUESTIONS } from "@/constants/quizConstants";
 import { DifficultyOption } from "@/constants/difficultyConfig";
 import { toast } from "@/components/feedback/toast";
@@ -123,8 +124,8 @@ export const useLobbyLogic = (
   useEffect(() => {
     if (lanReady) {
       void (async () => {
-        const ip = await getLocalIpAddress();
-        dispatch(setLocalSessionIdentity({ localIp: ip || null }));
+        const result = await getLocalIpAddress();
+        dispatch(setLocalSessionIdentity({ localIp: result.ip || null }));
       })();
     }
   }, [dispatch, lanReady]);
@@ -197,6 +198,12 @@ export const useLobbyLogic = (
         setIsTransitioning(false);
         setIsStarting(false);
 
+        // 🛡️ UNMOUNT GUARD: Do not navigate if component or transport is closing
+        if (!mountedRef.current || GameSessionTransport.isClosing) {
+          console.log("[Lobby] Navigation aborted: component unmounted or transport closing");
+          return;
+        }
+
         if (targetGameType === "QUIZ") {
           router.push("/think-count-quiz" as any);
           return;
@@ -235,8 +242,11 @@ export const useLobbyLogic = (
     }
   }, [isHost, localPlayerId, session.connectionStatus, session.players.length]); // Removed dynamic profile deps to prevent resets during typing
 
+  const mountedRef = useRef(true);
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (startNavigationTimerRef.current) {
         clearTimeout(startNavigationTimerRef.current);
         startNavigationTimerRef.current = null;
@@ -330,24 +340,24 @@ export const useLobbyLogic = (
       const useFallback = elapsed > 5000;
       
       console.log(`[Lobby] 🔄 Background IP poll #${pollCount} (elapsed: ${elapsed}ms)...`);
-      const ip = await getLocalIpAddress({ useFallback });
+      const result = await getLocalIpAddress({ useFallback });
       
-      if (ip) {
+      if (result.ip) {
         const port = GameSessionTransport.getListeningPort();
-        const code = encodeRoomCode(ip, port);
+        const code = encodeRoomCode(result.ip, port);
         
-        if (ip !== hostIp) {
+        if (result.ip !== hostIp) {
           console.log(
-            `[Lobby] ✅ IP resolved after ${pollCount} polls: IP=${ip}, ` +
+            `[Lobby] ✅ IP resolved after ${pollCount} polls: IP=${result.ip}, ` +
             `port=${port}, roomCode=${code}, fallback=${useFallback}`,
           );
           
           dispatch(setSessionNetworkInfo({
-            hostIp: ip,
+            hostIp: result.ip,
             roomCode: code,
           }));
           
-          dispatch(setLocalSessionIdentity({ localIp: ip }));
+          dispatch(setLocalSessionIdentity({ localIp: result.ip }));
         }
         
         // Stop polling if we have a real (non-fallback) IP, or after many attempts

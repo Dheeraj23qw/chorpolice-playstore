@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-interface LockState {
+export interface LockState {
   spin: {
     lastUsedTimestamp: number | null;
     countToday: number;
@@ -26,7 +26,7 @@ const lockSlice = createSlice({
   initialState,
 
   reducers: {
-    useSpin: (state) => {
+    recordSpin: (state) => {
       state.spin.lastUsedTimestamp = Date.now();
       state.spin.countToday += 1;
     },
@@ -44,7 +44,7 @@ const lockSlice = createSlice({
   },
 });
 
-export const { useSpin, claimDailyBonus, markRated, resetLocks } =
+export const { recordSpin, claimDailyBonus, markRated, resetLocks } =
   lockSlice.actions;
 
 export default lockSlice.reducer;

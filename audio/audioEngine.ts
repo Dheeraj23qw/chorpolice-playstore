@@ -83,8 +83,17 @@ const hardStop = (p?: AudioPlayer) => {
 
 const createIfMissing = (name: SoundName) => {
   if (!players[name]) {
-    players[name] = createAudioPlayer(soundPaths[name]);
-    log("Created:", name);
+    const path = soundPaths[name];
+    if (!path) {
+      log("Error: No sound path found for", name);
+      return;
+    }
+    try {
+      players[name] = createAudioPlayer(path);
+      log("Created:", name);
+    } catch (e) {
+      log("Failed to create player for", name, e);
+    }
   }
 };
 
@@ -237,5 +246,18 @@ export const AudioEngine = {
         this.ensureQuizGlobal();
       }
     });
+  },
+
+  /** 🧹 MEMORY SAFETY: Unload all players and clear maps */
+  unloadAll() {
+    this.forceStopAll();
+    Object.keys(players).forEach((key) => {
+      delete players[key as SoundName];
+    });
+    if (appStateSubscription) {
+      appStateSubscription.remove();
+      appStateSubscription = null;
+    }
+    log("Unloaded all sounds and subscriptions");
   },
 };

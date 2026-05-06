@@ -40,7 +40,7 @@ export const HotspotTroubleshootingCard: React.FC = () => {
       animate={{ opacity: 1, translateY: 0 }}
       className="mt-4 w-full rounded-2xl border border-blue-500/10 bg-blue-500/5 p-4"
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence exitBeforeEnter>
         {!isFixed ? (
           <MotiView 
             key="trouble"

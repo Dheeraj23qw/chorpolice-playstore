@@ -13,6 +13,7 @@ import VideoScreen from "@/screens/appFlow/VideoScreen";
 import { PremiumSplashCard } from "@/components/PremiumSplashCard";
 import { assetLoader } from "@/service/assetLoader";
 import { syncLocalLobbyProfile } from "@/service/lanLobbyCoordinator";
+import { AudioEngine } from "@/audio/audioEngine";
 import {
   getOnboardingDone,
   setOnboardingDone,
@@ -27,6 +28,7 @@ import { useOTAUpdate } from "@/hooks/useOTAUpdate";
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
+import { ReconnectOverlay } from "./ReconnectOverlay";
 
 export default function AppController() {
   const {
@@ -98,6 +100,11 @@ export default function AppController() {
       void prepareIntroFlow();
     });
   }, [dispatch, prepareIntroFlow, phase]);
+
+  useEffect(() => {
+    // Enable global audio lifecycle protection
+    AudioEngine.enableBackgroundProtection();
+  }, []);
 
   useEffect(() => {
     if (phase === "HOME" && firstLaunch) {
@@ -252,7 +259,7 @@ export default function AppController() {
             style={{ fontSize: rf(1.1) }}
             className="mb-8 text-center leading-5 text-white/50"
           >
-            We've prepared some improvements for you. A quick restart is
+            We&apos;ve prepared some improvements for you. A quick restart is
             required to apply them.
           </Text>
 
@@ -331,14 +338,22 @@ export default function AppController() {
         <VideoScreen onComplete={handleVideoComplete} />,
       );
     case "HOME":
-      return wrapPhase("home", <HomeScreen />);
+      return wrapPhase("home", 
+        <>
+          <HomeScreen />
+          <ReconnectOverlay />
+        </>
+      );
     case "SPLASH":
     default:
       return wrapPhase(
         "splash",
-        <PremiumSplashCard
-          source={require("@/assets/modalImages/intro.webp")}
-        />,
+        <>
+          <PremiumSplashCard
+            source={require("@/assets/modalImages/intro.webp")}
+          />
+          <ReconnectOverlay />
+        </>,
       );
   }
 }

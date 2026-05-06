@@ -176,6 +176,7 @@ const JoinScreen = () => {
       candidateIps: string[] = [],
       targetRoomCode: string | null = null,
     ) => {
+      if (isSmartJoining) return;
       if (!isLanModeRequested) setIsLanModeRequested(true);
 
       if (status === "no_wifi" && networkContext === "none") {
@@ -285,7 +286,7 @@ const JoinScreen = () => {
             style={{ fontSize: rf(1.55), color: "rgba(255,255,255,0.4)", marginTop: 4 }}
             className="font-main-md"
           >
-            Find a nearby game or scan the host's QR
+            Find a nearby game or scan the host&apos;s QR
           </Text>
         </View>
 
@@ -317,7 +318,7 @@ const JoinScreen = () => {
                   </Text>
                 </View>
                 <Pressable
-                  onPress={status === "denied" ? openSettings : retry}
+                  onPress={() => status === "denied" ? openSettings() : retry()}
                   style={{
                     backgroundColor: "rgba(239,68,68,0.15)",
                     borderRadius: 10,
@@ -350,7 +351,7 @@ const JoinScreen = () => {
         </View>
 
         {/* ── Content Panel ── */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence exitBeforeEnter>
           {joinMethod === "scan" ? (
             <MotiView
               key="scan"

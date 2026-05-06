@@ -29,7 +29,7 @@ export function createModalRegistry({
     {
       key: "REWARD_MODAL",
       render: (isActive) => (
-        <UnlockedAwardModal visible={isActive} onClaimed={onCloseReward} />
+        <UnlockedAwardModal />
       ),
     },
   ];

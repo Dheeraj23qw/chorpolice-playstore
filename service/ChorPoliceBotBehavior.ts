@@ -34,67 +34,85 @@ export const ChorPoliceBotBehavior = {
 
     if (bots.length === 0) return;
 
-    const botIds = new Set(bots.map((b) => b.id));
-
     const unsub = subscribeToPackets((packet) => {
-      const CP = MODES.CHOR_POLICE;
-
-      if (packet.type === CP.PUBLIC_REVEAL) {
-        // Unique key per round/police to prevent duplicate triggers
-        const revealKey = `round_${packet.round ?? 0}_pol_${packet.policeId ?? "na"}`;
-        if (ChorPoliceBotBehavior._lastRevealKey === revealKey) return;
-        ChorPoliceBotBehavior._lastRevealKey = revealKey;
-
-        // Clear any stale timers
-        ChorPoliceBotBehavior._guessTimers.forEach(clearTimeout);
-        ChorPoliceBotBehavior._guessTimers = [];
-
-        const { policeId, kingIndex, policeIndex } = packet;
-
-        // CHECK: Is the assigned Police one of our bots?
-        if (botIds.has(policeId)) {
-          const botPlayer = bots.find((b) => b.id === policeId);
-
-          // Identify the two indices that are NOT the King or Police (Thief and Advisor)
-          const hiddenIndices = [0, 1, 2, 3].filter(
-            (i) => i !== kingIndex && i !== policeIndex,
-          );
-
-          /**
-           * TIMING STRATEGY:
-           * 1. ANIMATION_WAIT: Time for the cards to deal/flip (no popups anymore).
-           * 2. THINKING_TIME: Random delay to simulate a human looking at the screen.
-           */
-          const ANIMATION_WAIT = 4500;
-          const THINKING_TIME = 3000 + Math.floor(Math.random() * 1000);
-          const totalDelay = ANIMATION_WAIT + THINKING_TIME;
-
-          const timer = setTimeout(() => {
-            // Safety: Ensure bot is still in the session
-            if (!ChorPoliceBotBehavior._bots.some((b) => b.id === policeId))
-              return;
-
-            // Randomly guess one of the two hidden cards
-            const pick =
-              hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
-
-            handleIncomingPacket({
-              type: CP.POLICE_GUESS,
-              targetIndex: pick,
-              playerId: policeId,
-            });
-
-            console.log(
-              `🤖 [CPBot] ${botPlayer?.name} guessed index ${pick} after ${totalDelay}ms`,
-            );
-          }, totalDelay);
-
-          ChorPoliceBotBehavior._guessTimers.push(timer);
-        }
+      if (packet.type === MODES.CHOR_POLICE.PUBLIC_REVEAL) {
+        ChorPoliceBotBehavior.triggerBotLogic(packet);
       }
     });
 
     ChorPoliceBotBehavior._listeners.push(unsub);
+  },
+
+  /**
+   * @function addBot
+   * @description Adds a bot mid-game (e.g. after human disconnects).
+   */
+  addBot: (bot: BotPlayer): void => {
+    if (ChorPoliceBotBehavior._bots.some(b => b.id === bot.id)) return;
+    
+    console.log(`🤖 [CPBot] Mid-game activation for bot: ${bot.name}`);
+    ChorPoliceBotBehavior._bots.push(bot);
+
+    // If a round is already active (public reveal happened), trigger logic immediately
+    // Note: In a real game, we'd need the current reveal data to trigger a guess.
+  },
+
+  triggerBotLogic: (packet: any): void => {
+    const CP = MODES.CHOR_POLICE;
+    const bots = ChorPoliceBotBehavior._bots;
+    const botIds = new Set(bots.map((b) => b.id));
+
+    // Unique key per round/police to prevent duplicate triggers
+    const revealKey = `round_${packet.round ?? 0}_pol_${packet.policeId ?? "na"}`;
+    if (ChorPoliceBotBehavior._lastRevealKey === revealKey) return;
+    ChorPoliceBotBehavior._lastRevealKey = revealKey;
+
+    // Clear any stale timers
+    ChorPoliceBotBehavior._guessTimers.forEach(clearTimeout);
+    ChorPoliceBotBehavior._guessTimers = [];
+
+    const { policeId, kingIndex, policeIndex } = packet;
+
+    // CHECK: Is the assigned Police one of our bots?
+    if (botIds.has(policeId)) {
+      const botPlayer = bots.find((b) => b.id === policeId);
+
+      // Identify the two indices that are NOT the King or Police (Thief and Advisor)
+      const hiddenIndices = [0, 1, 2, 3].filter(
+        (i) => i !== kingIndex && i !== policeIndex,
+      );
+
+      /**
+       * TIMING STRATEGY:
+       * 1. ANIMATION_WAIT: Time for Public Spin (4s) + Hold (1s) + Private Reveal (2s) = 7s.
+       * 2. THINKING_TIME: Standardized 3s delay after cards appear.
+       */
+      const ANIMATION_WAIT = 7000;
+      const THINKING_TIME = 3000 + Math.floor(Math.random() * 500);
+      const totalDelay = ANIMATION_WAIT + THINKING_TIME;
+
+      const timer = setTimeout(() => {
+        // Safety: Ensure bot is still in the session
+        if (!ChorPoliceBotBehavior._bots.some((b) => b.id === policeId))
+          return;
+
+        // Randomly guess one of the two hidden cards
+        const pick =
+          hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
+
+        handleIncomingPacket({
+          type: CP.POLICE_GUESS,
+          targetIndex: pick,
+          playerId: policeId,
+        });
+
+        console.log(
+          `🤖 [CPBot] ${botPlayer?.name} guessed index ${pick} after ${totalDelay}ms`,
+        );
+      }, totalDelay);
+
+      ChorPoliceBotBehavior._guessTimers.push(timer);
+    }
   },
 
   /**

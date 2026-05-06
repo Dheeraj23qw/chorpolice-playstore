@@ -16,6 +16,11 @@ export const selectLocalPlayerId = createSelector(
   (session) => session.localPlayerId,
 );
 
+export const selectLocalPlayerName = createSelector(
+  [selectSession],
+  (session) => session.localPlayerName,
+);
+
 // ── Game State ──
 
 export const selectGamePhase = createSelector(
@@ -56,4 +61,9 @@ export const selectKingIndex = createSelector(
 export const selectStake = createSelector(
   [selectSession],
   (session) => session.stake,
+);
+
+export const selectEconomy = createSelector(
+  [selectSession],
+  (session) => session.economy,
 );

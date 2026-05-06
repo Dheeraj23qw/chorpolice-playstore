@@ -28,6 +28,7 @@ import {
   sanitizeJoiningPlayer,
   checkLobbyDataChanged,
 } from "./LobbyDataHelpers";
+import { BotEngine as QuizBotEngine } from "../QuizBotEngine";
 import { logLanDebug, updateDebugMetric } from "../observability/DebugService";
 
 type SyncFn = (players: SessionPlayer[]) => void;
@@ -92,16 +93,31 @@ export const handleLobbyPacket = (
         nextPlayers = [...state.players];
         nextPlayers[existingIndex] = { ...existing, ...joiningPlayer, isBot: false };
         isDataChanged = true;
-      } else {
-        console.log(`[Lobby] Duplicate PLAYER_JOIN merged for ${joiningPlayer.id} (no data change)`);
       }
     } else {
-      const replaced = replaceFirstBotWithPlayer(state.players, { ...joiningPlayer, isBot: false });
+      const sessionToken = Math.random().toString(36).substring(2, 15);
+      const replaced = replaceFirstBotWithPlayer(state.players, { 
+        ...joiningPlayer, 
+        isBot: false,
+        sessionToken,
+        deviceId: packet.deviceId,
+        connectionStatus: "CONNECTED"
+      });
       if (!replaced) {
         if (sourceIp) sendPacketToPeer(sourceIp, { type: NETWORK.PLAYER_JOIN_REJECT, reason: "room_full" });
         return;
       }
       nextPlayers = replaced;
+
+      // 🔥 THINK AND COUNT SPECIAL RULE: If 2 humans, remove all bots
+      const newHumansCount = nextPlayers.filter(p => !p.isBot).length;
+      if (state.gameType === "THINK_AND_COUNT" && newHumansCount >= 2) {
+        console.log(`[Lobby] Think and Count: ${newHumansCount} humans detected. Removing all bots.`);
+        nextPlayers = nextPlayers.filter(p => !p.isBot);
+        // Explicitly notify bot engine to clear timers
+        QuizBotEngine.updateActiveBots(nextPlayers);
+      }
+
       isDataChanged = true;
       isNewJoin = true;
     }
@@ -119,6 +135,10 @@ export const handleLobbyPacket = (
     if (isDataChanged) {
       deps.syncPlayerListLocally(nextPlayers);
       deps.broadcastPlayerList(nextPlayers);
+      // Sync bot engine state
+      if (state.gameType === "THINK_AND_COUNT") {
+        QuizBotEngine.updateActiveBots(nextPlayers);
+      }
     } else if (sourceIp) {
       // Re-send current state to confirm the duplicate join without broadcasting
       sendPacketToPeer(sourceIp, {

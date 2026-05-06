@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Updates from "expo-updates";
+import store from "@/redux/store";
 import { checkAppUpdate } from "@/utils/versionCheck";
 
 export const useOTAUpdate = () => {
@@ -55,6 +56,13 @@ export const useOTAUpdate = () => {
   }, []);
 
   const applyUpdate = async () => {
+    // 🛡️ CRITICAL GUARD: Never reload during an active match
+    const currentPhase = store.getState().session.gamePhase;
+    if (currentPhase !== "idle") {
+      console.warn("[OTA] Update reload deferred: game is active (phase: " + currentPhase + ")");
+      return;
+    }
+
     try {
       setIsUpdating(true);
       console.log("[OTA] Reloading app to apply update...");

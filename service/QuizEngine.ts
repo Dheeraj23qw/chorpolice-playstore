@@ -1,9 +1,17 @@
-import { MODES } from "../constants/Networking";
+import { MODES, NETWORK } from "../constants/Networking";
 import { PacketRouter } from "./PacketRouter";
 import { updateDebugMetric } from "./observability/DebugService";
 import { IGameEngine } from "./interfaces/IGameEngine";
 import { GameSessionTransport } from "./network/GameSessionTransport";
 import store from "@/redux/store";
+import { 
+  initMatchEconomy, 
+  setSettlementStatus 
+} from "@/redux/reducers/sessionSlice";
+import { 
+  setRoundActive,
+  setStake as setReduxStake,
+} from "@/redux/reducers/sessionSlice";
 
 type QuizPlayerScore = {
   id: string;
@@ -20,6 +28,7 @@ type AnswerPacket = {
   round?: number;
   questionId?: string;
   isCorrect?: boolean;
+  optionIndex?: number;
   timeTaken?: number;
   timestamp?: number;
   submissionTime?: string;
@@ -48,6 +57,7 @@ export const QuizEngine = {
     roundDeadlineAt: null as number | null,
     stake: 0,
     totalPot: 0,
+    matchId: null as string | null,
   },
 
   _safetyTimer: null as ReturnType<typeof setTimeout> | null,
@@ -58,7 +68,8 @@ export const QuizEngine = {
       type.startsWith(MODES.THINK_AND_COUNT.ANSWER_PREFIX) ||
       type === MODES.THINK_AND_COUNT.ANSWER_SUBMITTED ||
       type === MODES.THINK_AND_COUNT.QUESTION_SYNC ||
-      type === "TC_ROUND_SUMMARY"
+      type === "TC_ROUND_SUMMARY" ||
+      type === NETWORK.SYNC_STATE
     );
   },
 
@@ -81,6 +92,7 @@ export const QuizEngine = {
     QuizEngine.state.roundDeadlineAt = null;
     QuizEngine.state.stake = 0;
     QuizEngine.state.totalPot = 0;
+    QuizEngine.state.matchId = null;
   },
 
   init: (
@@ -96,6 +108,15 @@ export const QuizEngine = {
     QuizEngine.state.totalRounds = totalRounds;
     QuizEngine.state.stake = stake;
     QuizEngine.state.totalPot = stake * players.length;
+
+    const isHost = GameSessionTransport.getSnapshot().isHost || store.getState().session.isHost;
+    if (isHost) {
+      QuizEngine.state.matchId = `TC_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      store.dispatch(initMatchEconomy({
+        matchId: QuizEngine.state.matchId,
+        stakeAmount: stake,
+      }));
+    }
 
     if (__DEV__) {
       console.log(
@@ -120,13 +141,22 @@ export const QuizEngine = {
   processMultiplayer: (packet: any) => {
     switch (packet.type) {
       case MODES.THINK_AND_COUNT.GAME_START:
-        QuizEngine.init(
-          packet.players || [],
-          packet.difficulty,
-          packet.betAmount || 0,
-          packet.totalRounds || DEFAULT_TOTAL_ROUNDS,
-        );
-        updateDebugMetric("quizDifficulty", packet.difficulty);
+        {
+          const players = packet.players || [];
+          const diff = packet.difficulty || "easy";
+          const stake = packet.stake || 0;
+          const totalRounds = packet.totalRounds || DEFAULT_TOTAL_ROUNDS;
+
+          QuizEngine.init(players, diff, stake, totalRounds);
+
+          if (packet.matchId) {
+            QuizEngine.state.matchId = packet.matchId;
+            store.dispatch(initMatchEconomy({
+              matchId: packet.matchId,
+              stakeAmount: stake,
+            }));
+          }
+        }
         break;
 
       case MODES.THINK_AND_COUNT.ANSWER_SUBMITTED:
@@ -147,6 +177,35 @@ export const QuizEngine = {
           QuizEngine.removePlayer(packet.playerId);
         }
         break;
+
+      case NETWORK.SYNC_STATE:
+        if (packet.quizState) {
+          QuizEngine.handleSyncState(packet.quizState);
+        }
+        break;
+    }
+  },
+
+  handleSyncState: (packet: any) => {
+    const s = packet.engineState || packet.quizState || packet;
+    if (!s) return;
+    console.log("[QuizEngine] 🔄 Syncing quiz state from host.");
+    QuizEngine.state.difficulty = s.difficulty || QuizEngine.state.difficulty;
+    QuizEngine.state.currentRound = s.currentRound || QuizEngine.state.currentRound;
+    QuizEngine.state.totalRounds = s.totalRounds || QuizEngine.state.totalRounds;
+    QuizEngine.state.playerScores = s.playerScores || QuizEngine.state.playerScores;
+    QuizEngine.state.currentQuestion = s.currentQuestion || QuizEngine.state.currentQuestion;
+    QuizEngine.state.currentQuestionId = s.currentQuestionId || QuizEngine.state.currentQuestionId;
+    QuizEngine.state.roundDeadlineAt = s.roundDeadlineAt || QuizEngine.state.roundDeadlineAt;
+    QuizEngine.state.stake = s.stake ?? QuizEngine.state.stake;
+    QuizEngine.state.totalPot = s.totalPot ?? QuizEngine.state.totalPot;
+    QuizEngine.state.matchId = s.matchId || QuizEngine.state.matchId;
+
+    if (QuizEngine.state.matchId) {
+      store.dispatch(initMatchEconomy({
+        matchId: QuizEngine.state.matchId,
+        stakeAmount: QuizEngine.state.stake,
+      }));
     }
   },
 
@@ -241,48 +300,65 @@ export const QuizEngine = {
       return;
     }
 
-    if (
-      packet.questionId &&
-      QuizEngine.state.currentQuestionId &&
-      packet.questionId !== QuizEngine.state.currentQuestionId
-    ) {
-      if (__DEV__) {
-        console.log(
-          `[QuizEngine] Ignoring stale question answer: ${packet.questionId}`,
-        );
-      }
+    // ── ANSWER_SUBMITTED SECURITY & VALIDATION ──
+    const state = QuizEngine.state;
+
+    // 1. Reject if player is not in current match
+    if (!state.playerScores[playerId]) {
+      if (__DEV__) console.log(`[QuizEngine] Reject: Unknown player ${playerId}`);
       return;
     }
 
-    if (!QuizEngine.state.playerScores[playerId]) {
-      if (__DEV__) {
-        console.log(
-          `[QuizEngine] Ignoring answer from unknown player: ${playerId}`,
-        );
-      }
+    // 2. Reject if stale questionId
+    if (packet.questionId && state.currentQuestionId && packet.questionId !== state.currentQuestionId) {
+      if (__DEV__) console.log(`[QuizEngine] Reject: Stale questionId ${packet.questionId}`);
       return;
     }
 
-    // Authoritative check: Host must stamp all incoming answers
+    // 3. Reject duplicate answer
+    if (state.roundAnsweredIds[playerId]) {
+      if (__DEV__) console.log(`[QuizEngine] Reject: Duplicate answer from ${playerId}`);
+      return;
+    }
+
+    // 4. Host-Authoritative validation
     if (!packet.authoritative) {
-      if (!isHost) {
+      if (!isHost) return;
+
+      const roundStartedAt = state.roundStartedAt ?? Date.now();
+      const roundDeadlineAt = state.roundDeadlineAt ?? roundStartedAt;
+      const now = Date.now();
+
+      // 5. Reject if timer expired (500ms grace period for network jitter)
+      if (now > roundDeadlineAt + 500) {
+        if (__DEV__) console.log(`[QuizEngine] Reject: Timer expired for ${playerId}`);
         return;
       }
 
-      const roundStartedAt = QuizEngine.state.roundStartedAt ?? Date.now();
-      const roundDeadlineAt =
-        QuizEngine.state.roundDeadlineAt ?? roundStartedAt;
-      const now = Date.now();
+      // 6. Calculate correctness internally
+      let calculatedCorrect = false;
+      if (typeof packet.optionIndex === "number" && state.currentQuestion) {
+        const q = state.currentQuestion;
+        // 7. Validate optionIndex bounds
+        if (packet.optionIndex >= 0 && packet.optionIndex < q.options.length) {
+          calculatedCorrect = q.options[packet.optionIndex] === q.correctAnswer;
+        } else {
+          if (__DEV__) console.log(`[QuizEngine] Reject: Invalid optionIndex ${packet.optionIndex}`);
+          return;
+        }
+      } else {
+        // "DO NOT trust incoming isCorrect from client/bot packets."
+        if (__DEV__) console.log(`[QuizEngine] Reject: Missing optionIndex or question context`);
+        return;
+      }
+
       const maxDuration = Math.max(0, roundDeadlineAt - roundStartedAt);
-      const authoritativeTimeTaken = Math.max(
-        0,
-        Math.min(maxDuration, now - roundStartedAt),
-      );
+      const authoritativeTimeTaken = Math.max(0, Math.min(maxDuration, now - roundStartedAt));
 
       const authoritativePacket: AnswerPacket = {
         ...packet,
         authoritative: true,
-        isCorrect: now <= roundDeadlineAt ? !!packet.isCorrect : false,
+        isCorrect: calculatedCorrect,
         timeTaken: authoritativeTimeTaken,
         timestamp: now,
         submissionTime: new Date(now).toLocaleTimeString([], {
@@ -400,6 +476,11 @@ export const QuizEngine = {
     if (isHost) {
       PacketRouter.broadcast(summaryPacket);
     }
+  },
+
+  handleReconnectStatus: (playerId: string, isReconnecting: boolean) => {
+    console.log(`[QuizEngine] Player ${playerId} reconnecting status: ${isReconnecting}`);
+    // No specific bot logic needed for T&C here yet
   },
 };
 

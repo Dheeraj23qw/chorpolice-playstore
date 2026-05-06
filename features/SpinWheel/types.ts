@@ -40,7 +40,7 @@ interface SpinHeaderProps {
   result: SpinSegment | null;
 }
 
-interface SpinResultProps {
+export interface SpinResultProps {
   status: SpinStatus;
   result: SpinSegment | null;
   pulseAnim: SharedValue<number>;

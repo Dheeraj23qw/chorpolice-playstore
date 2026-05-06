@@ -102,7 +102,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
 
             <Text className="text-center font-main-bold text-2xl text-white">Redeem Code</Text>
             <Text className="mt-2 text-center text-xs text-white/40">
-              Enter a friend's referral code to get 10,000 coins instantly!
+              Enter a friend&apos;s referral code to get 10,000 coins instantly!
             </Text>
 
             <View className="mt-8 w-full">

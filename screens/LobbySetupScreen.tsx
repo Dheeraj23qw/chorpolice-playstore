@@ -360,7 +360,9 @@ const LobbySetupScreen = ({
                       status={status} 
                       networkContext={networkContext}
                       errorMessage={errorMessage}
+                      isHost={lobby.isHost}
                       onRetry={() => retry(true)}
+                      onOpenSettings={openSettings}
                     />
                   </View>
                 )}
@@ -449,7 +451,7 @@ const LobbySetupScreen = ({
           setUiState("normal");
         }}
         playerCount={lobby.players.length}
-        minPlayerCoins={lobby.minPlayerCoins}
+        minPlayerCoins={(lobby as any).minPlayerCoins ?? 0}
       />
 
       <LateJoinQrModal

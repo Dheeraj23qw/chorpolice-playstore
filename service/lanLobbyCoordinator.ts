@@ -29,6 +29,7 @@ import { DiscoveryResult } from "./network/LanDiscoveryStrategy";
 import {
   broadcastPacket, clearAllListeners, handleIncomingPacket,
   sendPacketToHost, setSessionHostIp, startHeartbeat, subscribeToPackets,
+  cleanupAllReconnectionTimers,
 } from "./lanGameService";
 import { HeartbeatService } from "./network/HeartbeatService";
 import { GameSessionTransport } from "./network/GameSessionTransport";
@@ -40,6 +41,8 @@ import { startIpDetectionLoop } from "./HostIpDetector";
 // ── Module state ──
 let unsubscribeNetInfo: (() => void) | null = null;
 let unsubscribePackets: (() => void) | null = null;
+/** Prevents duplicate stopCoordinator invocations during rapid leave/join */
+let isStopping = false;
 let joinRetryInterval: ReturnType<typeof setInterval> | null = null;
 let joinTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingHostLobbyPromise: Promise<any> | null = null;
@@ -76,16 +79,31 @@ const ensurePacketSubscription = () => {
 };
 
 const stopCoordinator = async () => {
+  if (isStopping) {
+    console.log("[TCP_DEBUG] STOP_COORDINATOR skipped=already_stopping");
+    return;
+  }
+  isStopping = true;
+  console.log("[TCP_DEBUG] STOP_COORDINATOR_START");
+
   clearJoinAttempts();
   botAnnouncementTimers.forEach(t => clearTimeout(t));
   botAnnouncementTimers.length = 0;
   announcedPlayerIds.clear();
   if (unsubscribePackets) { unsubscribePackets(); unsubscribePackets = null; }
   if (unsubscribeNetInfo) { unsubscribeNetInfo(); unsubscribeNetInfo = null; }
+  
+  // ── RECONNECT CLEANUP ──
+  cleanupAllReconnectionTimers();
+
+  // CRITICAL: Stop heartbeat BEFORE transport to prevent write-after-destroy
   HeartbeatService.stop();
   await GameSessionTransport.stop();
   await LanDiscoveryService.stopBroadcasting();
   LanDiscoveryService.stopListening();
+
+  isStopping = false;
+  console.log("[TCP_DEBUG] STOP_COORDINATOR_DONE");
 };
 
 // ── Public API ──
@@ -172,8 +190,16 @@ export const joinLanLobby = async ({ hostIp, hostPort, candidateIps = [], roomCo
   let connectedIp: string | null = null;
   let finalPort = NETWORK.TCP_SERVER_PORT;
 
+  const startSessionId = GameSessionTransport.getCurrentSessionId();
+
   for (const ip of allCandidates) {
     for (const port of portsToTry) {
+      // PROD-SAFE GUARD: Abort if a new session started or coordinator stopped
+      if (GameSessionTransport.getCurrentSessionId() !== startSessionId || isStopping) {
+        console.log("[LobbyCoordinator] Aborting join loop: session changed or stopping");
+        return;
+      }
+
       try {
         await GameSessionTransport.connectAsync(ip, port);
         connectedIp = ip;
@@ -301,7 +327,14 @@ export const syncLocalLobbyProfile = ({ name, avatarId, coins }: { name?: string
 export const leaveLanLobby = async () => {
   clearJoinAttempts();
   const s = store.getState().session;
-  if (!s.isHost && s.localPlayerId) sendPacketToHost({ type: NETWORK.PLAYER_LEAVE, playerId: s.localPlayerId, reason: "player_quit" });
+  // Only send leave packet if transport is still open
+  if (!s.isHost && s.localPlayerId && !GameSessionTransport.isClosing) {
+    try {
+      sendPacketToHost({ type: NETWORK.PLAYER_LEAVE, playerId: s.localPlayerId, reason: "player_quit" });
+    } catch (e) {
+      console.warn("[TCP_DEBUG] LEAVE_PACKET_FAILED", e);
+    }
+  }
   await stopCoordinator();
   store.dispatch(clearSession());
 };

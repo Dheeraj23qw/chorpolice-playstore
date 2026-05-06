@@ -19,7 +19,7 @@ import {
   cancelAnimation,
 } from "react-native-reanimated";
 import { updateCoins } from "../wallet/walletSlice";
-import { useSpin } from "../locks/lockSlice";
+import { recordSpin } from "../locks/lockSlice";
 
 export const useSpinWheel = () => {
   const [status, setStatus] = useState<SpinStatus>("IDLE");
@@ -103,7 +103,7 @@ export const useSpinWheel = () => {
 
       if (selected.value) {
         dispatch(updateCoins(selected.value)); // 💰 add coins
-        dispatch(useSpin());
+        dispatch(recordSpin());
         setShowVictory(true);
         Vibration.vibrate(Platform.OS === "ios" ? [0, 10] : 100);
       }

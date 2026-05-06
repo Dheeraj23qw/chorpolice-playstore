@@ -20,6 +20,9 @@ interface GamePlaySectionProps {
   getCardStyle: (index: number) => any;
   showTableButton: boolean;
   isHighlight?: boolean;
+  invisibleIndices?: number[];
+  localPlayerName?: string;
+  myRole?: string | null;
 }
 
 export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
@@ -37,6 +40,9 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   showTableButton,
   toggleModal,
   isHighlight,
+  invisibleIndices = [],
+  localPlayerName = "Player",
+  myRole = null,
 }) => {
   return (
     <SafeAreaView className="flex-1 bg-transparent">
@@ -80,6 +86,18 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                   : `Round ${round}`
                 : `Press me to play!`
             }
+            subText={
+              isPlayButtonDisabled && (myRole === "Police" || myRole === "Advisor" || myRole === "King" || myRole === "Thief")
+                ? (() => {
+                    const name = localPlayerName;
+                    if (myRole === "Police") return `${name}, you are Police. Catch the Thief! 🔍`;
+                    if (myRole === "Advisor") return `${name}, you are Advisor. Keep hidden! 🎩`;
+                    if (myRole === "King") return `${name}, you are King. Justice awaits! 👑`;
+                    if (myRole === "Thief") return `${name}, you are Thief. Don't get caught! 😈`;
+                    return null;
+                  })()
+                : null
+            }
           />
         </View>
 
@@ -88,7 +106,12 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           {/* Row 1 */}
           <View className="flex-row justify-between">
             {roles.slice(0, 2).map((_, index) => (
-              <View key={index} className="aspect-[3/4.2] w-[47%]">
+              <View 
+                key={index} 
+                className="aspect-[3/4.2] w-[47%]"
+                style={{ opacity: invisibleIndices.includes(index) ? 0 : 1 }}
+                pointerEvents={invisibleIndices.includes(index) ? "none" : "auto"}
+              >
                 <PlayerCard
                   index={index}
                   role={roles[index]}
@@ -108,7 +131,12 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           {/* Row 2 */}
           <View className="flex-row justify-between">
             {roles.slice(2).map((_, index) => (
-              <View key={index + 2} className="aspect-[3/4.2] w-[47%]">
+              <View 
+                key={index + 2} 
+                className="aspect-[3/4.2] w-[47%]"
+                style={{ opacity: invisibleIndices.includes(index + 2) ? 0 : 1 }}
+                pointerEvents={invisibleIndices.includes(index + 2) ? "none" : "auto"}
+              >
                 <PlayerCard
                   index={index + 2}
                   role={roles[index + 2]}

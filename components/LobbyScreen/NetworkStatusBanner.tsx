@@ -43,12 +43,13 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
 
   const getBannerConfig = (): BannerConfig => {
     // ── Progress States (for Host) ──────────────────────────────────
-    if (isHost && status !== "granted") {
+    if (isHost) {
       if (status === "pending") {
         return {
           icon: "sync-outline",
           iconColor: "#3b82f6",
           gradientColors: ["rgba(59,130,246,0.15)", "rgba(59,130,246,0.05)"],
+          borderColor: "rgba(59,130,246,0.3)",
           title: "Setting up your room...",
           subtitle: "Setting up your room. Please wait.",
         };

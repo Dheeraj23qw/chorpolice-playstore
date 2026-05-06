@@ -1,6 +1,12 @@
 import { loadOrCreateClientPlayerId, loadUsername, loadAvatarId } from "@/storage/userStorage";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+export type PlayerConnectionStatus =
+  | "CONNECTED"
+  | "RECONNECTING"
+  | "DISCONNECTED"
+  | "BOT_REPLACED";
+
 export interface SessionPlayer {
   id: string;
   name: string;
@@ -8,6 +14,9 @@ export interface SessionPlayer {
   isBot: boolean;
   type?: "HOST" | "CLIENT";
   coins: number;
+  connectionStatus?: PlayerConnectionStatus;
+  sessionToken?: string;
+  deviceId?: string;
 }
 
 type ConnectionStatus =
@@ -29,6 +38,7 @@ export type GamePhase =
   | "finished"
   | "round_video"
   | "score_quiz"
+  | "private_reveal"
   | "final_result";
 
 interface RoundRoleState {
@@ -37,6 +47,17 @@ interface RoundRoleState {
   kingIndex: number | null;
   thiefIndex: number | null;
   advisorIndex: number | null;
+}
+
+export type SettlementStatus = "IDLE" | "PENDING" | "SETTLED" | "REFUNDED" | "CANCELLED";
+
+interface EconomyState {
+  matchId: string | null;
+  stakeAmount: number;
+  stakeDebited: boolean;
+  settlementStatus: SettlementStatus;
+  debitTransactionId?: string;
+  refundTransactionId?: string;
 }
 
 interface SessionState {
@@ -54,6 +75,10 @@ interface SessionState {
   gameType: string | null;
   errorMessage: string | null;
   lobbyStage: LobbyStage;
+  isReconnecting: boolean;
+  reconnectTimeoutRemaining: number;
+  sessionToken: string | null;
+  deviceId: string | null;
 
   // ── Game State (Chor Police) ──
   gamePhase: GamePhase;
@@ -67,6 +92,9 @@ interface SessionState {
   myRole: string | null;
   isRoundActive: boolean;
   stake: number;
+
+  // ── Economy / Coins ──
+  economy: EconomyState;
 }
 
 const DEFAULT_LOCAL_PLAYER_ID = loadOrCreateClientPlayerId();
@@ -85,6 +113,12 @@ const INITIAL_GAME_STATE = {
   myRole: null as string | null,
   isRoundActive: false,
   stake: 0,
+  economy: {
+    matchId: null as string | null,
+    stakeAmount: 0,
+    stakeDebited: false,
+    settlementStatus: "IDLE" as SettlementStatus,
+  },
 };
 
 const initialState: SessionState = {
@@ -101,6 +135,10 @@ const initialState: SessionState = {
   gameType: null,
   errorMessage: null,
   lobbyStage: "room",
+  isReconnecting: false,
+  reconnectTimeoutRemaining: 0,
+  sessionToken: null,
+  deviceId: null,
   ...INITIAL_GAME_STATE,
 };
 
@@ -116,11 +154,15 @@ export const sessionSlice = createSlice({
         isHost: boolean;
         localPlayerId: string;
         gameType: string;
+        sessionToken?: string;
+        deviceId?: string;
       }>,
     ) => {
       state.isHost = action.payload.isHost;
       state.localPlayerId = action.payload.localPlayerId;
       state.gameType = action.payload.gameType;
+      if (action.payload.sessionToken) state.sessionToken = action.payload.sessionToken;
+      if (action.payload.deviceId) state.deviceId = action.payload.deviceId;
       state.errorMessage = null;
     },
 
@@ -160,6 +202,7 @@ export const sessionSlice = createSlice({
         hostIp?: string | null;
         roomCode?: string | null;
         isFallback?: boolean;
+        sessionToken?: string | null;
       }>,
     ) => {
       if (action.payload.hostIp !== undefined) {
@@ -170,6 +213,9 @@ export const sessionSlice = createSlice({
       }
       if (action.payload.isFallback !== undefined) {
         state.isFallback = action.payload.isFallback;
+      }
+      if (action.payload.sessionToken !== undefined) {
+        state.sessionToken = action.payload.sessionToken;
       }
     },
 
@@ -249,6 +295,50 @@ export const sessionSlice = createSlice({
       state.stake = action.payload;
     },
 
+    setPlayerConnectionStatus: (
+      state,
+      action: PayloadAction<{ playerId: string; status: PlayerConnectionStatus }>,
+    ) => {
+      const player = state.players.find((p) => p.id === action.payload.playerId);
+      if (player) {
+        player.connectionStatus = action.payload.status;
+      }
+    },
+
+    setLocalReconnecting: (
+      state,
+      action: PayloadAction<{ isReconnecting: boolean; timeout?: number }>,
+    ) => {
+      state.isReconnecting = action.payload.isReconnecting;
+      if (action.payload.timeout !== undefined) {
+        state.reconnectTimeoutRemaining = action.payload.timeout;
+      }
+    },
+
+    tickReconnectTimeout: (state) => {
+      if (state.reconnectTimeoutRemaining > 0) {
+        state.reconnectTimeoutRemaining -= 1;
+      }
+    },
+
+    // ── Economy Reducers ──
+
+    initMatchEconomy: (state, action: PayloadAction<{ matchId: string; stakeAmount: number }>) => {
+      state.economy.matchId = action.payload.matchId;
+      state.economy.stakeAmount = action.payload.stakeAmount;
+      state.economy.stakeDebited = false;
+      state.economy.settlementStatus = "PENDING";
+    },
+
+    markStakeDebited: (state) => {
+      state.economy.stakeDebited = true;
+    },
+
+    setSettlementStatus: (state, action: PayloadAction<SettlementStatus>) => {
+      state.economy.settlementStatus = action.payload;
+    },
+
+
     // ── Reset ──
 
     clearSession: (state) => ({
@@ -279,6 +369,12 @@ export const {
   setMyRole,
   setRoundActive,
   setStake,
+  setPlayerConnectionStatus,
+  setLocalReconnecting,
+  tickReconnectTimeout,
+  initMatchEconomy,
+  markStakeDebited,
+  setSettlementStatus,
   resetGameState,
 } = sessionSlice.actions;
 

@@ -7,5 +7,7 @@ export interface OverlayPopUpProps {
     displayDuration?: number;
     contentType?: "default" | "textOnly";
     customMessage?: string | null;
+    revealedRole?: string | null;
+    isCorrect?: boolean | null;
   }
   

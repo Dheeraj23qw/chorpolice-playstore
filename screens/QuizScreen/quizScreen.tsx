@@ -21,6 +21,9 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { QuizLeaderboard } from "@/components/MultiPlayerQuizLeaderboard/QuizLeaderboard";
 import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
+import { translateToHindi, translateOptionsToHindi } from "@/utils/QuestionTranslator";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import { PersonalSummary } from "../../components/thinkAndCountScreen/PersonalSummary";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -55,6 +58,10 @@ const QuizScreen = () => {
     handleConfirmExit,
     handleCancelExit,
     isHost,
+    isHindi,
+    toggleHindi,
+    matchHistory,
+    isPersonalSummaryVisible,
   } = useQuizGameLogic();
 
   useEffect(() => {
@@ -145,9 +152,11 @@ const QuizScreen = () => {
                 style={{ fontSize: rf(1.4) }}
                 className="font-main-bold uppercase tracking-[3px] text-indigo-400"
               >
-                {isLeaderboardVisible
-                  ? `Round ${questionIndex + 1} Results`
-                  : `Question ${questionIndex + 1}`}
+                {isPersonalSummaryVisible
+                  ? "Match Summary"
+                  : isLeaderboardVisible
+                    ? `Round ${questionIndex + 1} Results`
+                    : `Question ${questionIndex + 1}`}
               </Text>
             </View>
 
@@ -164,7 +173,15 @@ const QuizScreen = () => {
                 flexGrow: 1,
               }}
             >
-              {isLeaderboardVisible ? (
+              {isPersonalSummaryVisible ? (
+                <PersonalSummary 
+                  matchHistory={matchHistory}
+                  isHindi={isHindi}
+                  translateFn={translateToHindi}
+                  onViewTable={() => setIsTableOpen(true)}
+                  onFinish={handleQuit}
+                />
+              ) : isLeaderboardVisible ? (
                 <QuizLeaderboard
                   round={questionIndex + 1}
                   data={leaderboardData}
@@ -179,7 +196,34 @@ const QuizScreen = () => {
               ) : !isContentBlocked ? (
                 /* Only render question content when NOT blocked */
                 <View>
-                  <QuestionSection question={question?.question} />
+                  {/* 🌍 HINDI TOGGLE BUTTON */}
+                  <TouchableOpacity
+                    onPress={toggleHindi}
+                    activeOpacity={0.7}
+                    className={`absolute right-0 top-0 z-[100] flex-row items-center rounded-xl border px-3 py-2 shadow-lg backdrop-blur-xl ${
+                      isHindi
+                        ? "border-orange-500/50 bg-orange-500/10"
+                        : "border-white/10 bg-white/5"
+                    }`}
+                  >
+                    <Ionicons
+                      name="language-outline"
+                      size={18}
+                      color={isHindi ? "#f97316" : "#6366f1"}
+                    />
+                    <Text
+                      style={{ fontSize: rf(1.2) }}
+                      className={`ml-2 font-main-bold uppercase tracking-widest ${
+                        isHindi ? "text-orange-400" : "text-indigo-400"
+                      }`}
+                    >
+                      {isHindi ? "English" : "Hindi"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <QuestionSection
+                    question={isHindi ? translateToHindi(question?.question) : question?.question}
+                  />
 
                   <View
                     style={{ marginTop: hp(1), marginBottom: hp(1) }}
@@ -197,9 +241,15 @@ const QuizScreen = () => {
                   <View style={{ marginTop: hp(4) }}>
                     <OptionsSection
                       options={
-                        isFiftyFiftyActive
-                          ? remainingOptions
-                          : question?.options
+                        isHindi
+                          ? translateOptionsToHindi(
+                              isFiftyFiftyActive
+                                ? (remainingOptions || [])
+                                : (question?.options || [])
+                            )
+                          : isFiftyFiftyActive
+                            ? remainingOptions
+                            : question?.options
                       }
                       handleAnswerSelection={onOptionPress}
                     />

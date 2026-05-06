@@ -73,7 +73,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               </Text>
               
               <Text className="font-main-md text-slate-400 text-center mb-10 leading-6 text-base">
-                Something unexpected happened. We've captured the logs and are ready to get you back in the game.
+                Something unexpected happened. We&apos;ve captured the logs and are ready to get you back in the game.
               </Text>
 
               <View className="w-full space-y-4">

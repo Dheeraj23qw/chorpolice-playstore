@@ -13,8 +13,8 @@ interface DebugState {
   discoveredHostCount: number;
   // LAN DEBUG FIELDS
   lanStatus: "idle" | "starting" | "listening" | "failed";
-  lanUdpBroadcaster: "idle" | "running" | "failed";
-  lanUdpListener: "idle" | "listening" | "failed";
+  lanUdpBroadcaster: "idle" | "starting" | "running" | "failed" | "error";
+  lanUdpListener: "idle" | "listening" | "failed" | "error";
   lanLastUdpPacket: string;
   lanBindAddress: string;
   lanPort: number;

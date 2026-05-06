@@ -164,3 +164,5 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
     );
   },
 );
+
+ResultInfo.displayName = "ResultInfo";

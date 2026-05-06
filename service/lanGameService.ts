@@ -3,6 +3,31 @@ import { PacketRouter } from "./PacketRouter";
 import { updateDebugMetric } from "./observability/DebugService";
 import { HeartbeatService } from "./network/HeartbeatService";
 import { GameSessionTransport } from "./network/GameSessionTransport";
+import store from "@/redux/store";
+import { 
+  setPlayerConnectionStatus, 
+  setLocalReconnecting, 
+  tickReconnectTimeout 
+} from "@/redux/reducers/sessionSlice";
+import { ChorPoliceEngine } from "./ChorPoliceEngine";
+import { QuizEngine } from "./QuizEngine";
+import { toast } from "@/components/feedback/toast";
+
+const reconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+const reconnectIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
+
+/**
+ * Force clear all pending reconnection timers and intervals.
+ * Critical for preventing stale timeouts after match end or host leave.
+ */
+export const cleanupAllReconnectionTimers = () => {
+  console.log(`🧹 [LAN] Cleaning up ${reconnectTimers.size} reconnection timers.`);
+  reconnectTimers.forEach(clearTimeout);
+  reconnectTimers.clear();
+  reconnectIntervals.forEach(clearInterval);
+  reconnectIntervals.clear();
+};
+
 
 type PacketListener = (packet: any, sourceIp?: string) => void;
 
@@ -21,13 +46,19 @@ const debugLogger = (role: string, packet: any, metadata: string = "N/A") => {
 };
 
 const notifyListeners = (packet: any, sourceIp?: string) => {
-  listeners.forEach((listener) => listener(packet, sourceIp));
+  listeners.forEach((listener) => {
+    try {
+      listener(packet, sourceIp);
+    } catch (e) {
+      console.warn("[LAN] Listener error:", e);
+    }
+  });
 };
 
 PacketRouter.setBroadcastHandler((packet) => {
   handleIncomingPacket(packet);
 
-  if (GameSessionTransport.getSnapshot().isHost) {
+  if (GameSessionTransport.getSnapshot().isHost && !GameSessionTransport.isClosing) {
     GameSessionTransport.sendToClients(packet);
   }
 });
@@ -85,10 +116,12 @@ export const unregisterRemotePeer = (playerId: string) => {
 };
 
 export const sendPacketToHost = (packet: any) => {
+  if (GameSessionTransport.isClosing) return;
   GameSessionTransport.sendToHost(packet);
 };
 
 export const sendPacketToPeer = (ip: string, packet: any) => {
+  if (GameSessionTransport.isClosing) return;
   GameSessionTransport.sendToPeer(ip, packet);
 };
 
@@ -102,14 +135,58 @@ export const broadcastPacket = (
     handleIncomingPacket(packet);
   }
 
-  if (GameSessionTransport.getSnapshot().isHost) {
+  if (GameSessionTransport.getSnapshot().isHost && !GameSessionTransport.isClosing) {
     GameSessionTransport.sendToClients(packet);
   }
 };
 
+/**
+ * Client-side: Attempt to reconnect to the host.
+ */
+export const reconnectToHost = async (hostIp: string, playerId: string) => {
+  if (GameSessionTransport.isClosing) return;
+  
+  console.log(`📡 [LAN] Attempting reconnection to ${hostIp} for ${playerId}...`);
+  
+  try {
+    // 1. Re-initialize transport as client
+    await GameSessionTransport.start({
+      isHost: false,
+      localPlayerId: playerId,
+      hostIp,
+      onPacket: (packet, sourceIp) => handleIncomingPacket(packet, sourceIp),
+    });
+
+    // 2. Send RECONNECT_REQUEST with hardened identity
+    const state = store.getState().session;
+    GameSessionTransport.sendToHost({
+      type: NETWORK.RECONNECT_REQUEST,
+      playerId,
+      sessionToken: state.sessionToken,
+      roomCode: state.roomCode,
+      deviceId: state.deviceId,
+      sessionId: GameSessionTransport.getCurrentSessionId(),
+    });
+
+    // 3. Restart heartbeat
+    startHeartbeat(false);
+  } catch (e) {
+    console.warn("📡 [LAN] Reconnection attempt failed:", e);
+  }
+};
+
+
+
+/**
+ * CRITICAL: Stop heartbeat FIRST, then stop transport.
+ * This ordering prevents heartbeat from attempting to write to destroyed sockets.
+ */
 export const stopSession = async () => {
+  console.log("[TCP_DEBUG] STOP_SESSION_START");
+  cleanupAllReconnectionTimers();
   HeartbeatService.stop();
   await GameSessionTransport.stop();
+  console.log("[TCP_DEBUG] STOP_SESSION_DONE");
 };
 
 // Re-export from leaf module to avoid breaking existing consumers
@@ -117,6 +194,9 @@ import { normalizePeerIp } from "./network/normalizePeerIp";
 export { normalizePeerIp };
 
 export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
+  // Guard: drop packets if transport is shutting down
+  if (GameSessionTransport.isClosing) return;
+
   const sourceIp = normalizePeerIp(rawSourceIp);
   if (!packet || typeof packet !== "object" || !packet.type) {
     if (__DEV__) {
@@ -140,7 +220,7 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
 
   if (packet.type === NETWORK.PING) {
     notifyListeners(packet, sourceIp);
-    if (sourceIp) {
+    if (sourceIp && !GameSessionTransport.isClosing) {
       GameSessionTransport.sendToPeer(sourceIp, {
         type: NETWORK.PONG,
         timestamp: packet.timestamp,
@@ -164,6 +244,136 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
     unregisterRemotePeer(packet.playerId);
   }
 
+  // ── RECONNECT HANDLING ──
+
+  if (packet.type === NETWORK.RECONNECT_REQUEST) {
+    const isHost = GameSessionTransport.getSnapshot().isHost;
+    if (isHost && sourceIp) {
+      const { playerId, sessionToken, roomCode, deviceId } = packet;
+      const state = store.getState().session;
+
+      console.log(`📡 [LAN] Validation check for ${playerId} from ${sourceIp}`);
+
+      // 1. Validation Logic
+      const player = state.players.find(p => p.id === playerId);
+      
+      const isRoomValid = roomCode === state.roomCode;
+      const playerExists = !!player;
+      const tokenMatches = player?.sessionToken === sessionToken;
+      const deviceMatches = !player?.deviceId || player.deviceId === deviceId;
+      const statusAllows = player?.connectionStatus === "RECONNECTING" || player?.connectionStatus === "DISCONNECTED";
+
+      if (!isRoomValid || !playerExists || !tokenMatches || !deviceMatches || !statusAllows) {
+        console.warn(`📡 [LAN] Rejecting reconnect: room=${isRoomValid}, exists=${playerExists}, token=${tokenMatches}, status=${player?.connectionStatus}`);
+        
+        GameSessionTransport.sendToPeer(sourceIp, {
+          type: NETWORK.RECONNECT_FAIL,
+          reason: !isRoomValid ? "wrong_room" : !tokenMatches ? "invalid_token" : "not_reconnecting"
+        });
+        return;
+      }
+
+      console.log(`✅ [LAN] Reconnect validated for ${playerId}`);
+      
+      // Clear any pending bot replacement timers
+      if (reconnectTimers.has(playerId)) {
+        clearTimeout(reconnectTimers.get(playerId));
+        reconnectTimers.delete(playerId);
+      }
+      if (reconnectIntervals.has(playerId)) {
+        clearInterval(reconnectIntervals.get(playerId));
+        reconnectIntervals.delete(playerId);
+      }
+
+      // Register the new IP for this playerId
+      GameSessionTransport.registerPeer(playerId, sourceIp);
+      HeartbeatService.addClient(sourceIp);
+
+      // Store the session token locally in Redux for this player
+      store.dispatch(setPlayerConnectionStatus({ playerId, status: "CONNECTED" }));
+
+      // Broadcast success
+      broadcastPacket({
+        type: "RECONNECT_STATUS",
+        playerId,
+        status: "CONNECTED"
+      });
+
+      broadcastPacket({
+        type: NETWORK.RECONNECT_SUCCESS,
+        playerId,
+      });
+
+      // Send FULL state sync
+      const syncPacket = {
+        type: NETWORK.SYNC_STATE,
+        roomCode: state.roomCode,
+        players: state.players,
+        currentRound: state.currentRound,
+        totalRounds: state.totalRounds,
+        roles: state.roles,
+        policeIndex: state.policeIndex,
+        kingIndex: state.kingIndex,
+        thiefIndex: state.thiefIndex,
+        advisorIndex: state.advisorIndex,
+        isRoundActive: state.isRoundActive,
+        stake: state.stake,
+        scores: ChorPoliceEngine.state.scores,
+        gamePhase: state.gamePhase,
+        quizState: QuizEngine.state,
+      };
+      
+      GameSessionTransport.sendToPeer(sourceIp, syncPacket);
+      toast.info("Player reconnected", `${player?.name} joined back.`);
+    }
+    return;
+  }
+
+  if (packet.type === NETWORK.RECONNECT_SUCCESS) {
+    const localId = store.getState().session.localPlayerId;
+    if (packet.playerId === localId) {
+      console.log("✅ [LAN] Successfully reconnected to host!");
+      store.dispatch(setLocalReconnecting({ isReconnecting: false }));
+      toast.success("Reconnected", "Connection restored.");
+    }
+    return;
+  }
+
+  if (packet.type === NETWORK.RECONNECT_FAIL) {
+    const localId = store.getState().session.localPlayerId;
+    console.warn(`📡 [LAN] Reconnection FAILED: ${packet.reason}`);
+    store.dispatch(setLocalReconnecting({ isReconnecting: false }));
+    toast.error("Reconnection Rejected", packet.reason || "Validation failed.");
+    return;
+  }
+
+  if (packet.type === NETWORK.SYNC_STATE) {
+    const state = store.getState().session;
+    const isHost = GameSessionTransport.getSnapshot().isHost;
+    
+    // Only clients should accept SYNC_STATE
+    if (isHost) return;
+
+    // Verify source IP matches known hostIp
+    if (sourceIp !== state.hostIp) {
+      console.warn(`📡 [LAN] Ignoring SYNC_STATE from non-host IP: ${sourceIp}`);
+      return;
+    }
+
+    // Verify room code
+    if (packet.roomCode && state.roomCode && packet.roomCode !== state.roomCode) {
+      console.warn(`📡 [LAN] Ignoring SYNC_STATE for wrong room: ${packet.roomCode}`);
+      return;
+    }
+    
+    console.log("🔄 [LAN] Authoritative state sync accepted from host.");
+  }
+
+  if (packet.type === "RECONNECT_STATUS") {
+    store.dispatch(setPlayerConnectionStatus({ playerId: packet.playerId, status: packet.status }));
+    return;
+  }
+
   notifyListeners(packet, sourceIp);
   PacketRouter.route(packet, sourceIp);
 };
@@ -176,9 +386,13 @@ export const setApIsolationHandler = (handler: (() => void) | null) => {
 
 export const startHeartbeat = (isHost: boolean) => {
   const context = GameSessionTransport.getSnapshot();
+  console.log(`[TCP_DEBUG] HEARTBEAT_INIT isHost=${isHost}`);
   
   HeartbeatService.start({
     onPing: (packet) => {
+      // Guard: don't send pings if transport is closing
+      if (GameSessionTransport.isClosing) return;
+
       if (isHost) {
         GameSessionTransport.sendToClients(packet);
       } else if (context.hostIp) {
@@ -186,6 +400,9 @@ export const startHeartbeat = (isHost: boolean) => {
       }
     },
     onStale: (ip) => {
+      // Guard: don't process stale events if transport is closing
+      if (GameSessionTransport.isClosing) return;
+
       if (isHost) {
         const playerId = GameSessionTransport.getPlayerIdByIp(ip);
         if (!playerId) {
@@ -193,24 +410,83 @@ export const startHeartbeat = (isHost: boolean) => {
           return;
         }
 
-        const leavePacket = {
-          type: NETWORK.PLAYER_LEAVE,
-          playerId,
-          reason: "heartbeat_timeout",
-        };
+        const phase = store.getState().session.gamePhase;
+        if (phase === "idle" || phase === "finished" || phase === "final_result") {
+          // Normal disconnect logic for lobby/results
+          const leavePacket = {
+            type: NETWORK.PLAYER_LEAVE,
+            playerId,
+            reason: "heartbeat_timeout",
+          };
+          unregisterRemotePeer(playerId);
+          GameSessionTransport.sendToClients(leavePacket);
+          handleIncomingPacket(leavePacket, ip);
+        } else {
+          // Mid-game: Trigger reconnection window
+          console.log(`📡 [LAN] Peer ${playerId} lost connection. Starting 20s recovery window.`);
+          
+          store.dispatch(setPlayerConnectionStatus({ playerId, status: "RECONNECTING" }));
+          broadcastPacket({
+            type: "RECONNECT_STATUS",
+            playerId,
+            status: "RECONNECTING"
+          });
 
-        unregisterRemotePeer(playerId);
-        GameSessionTransport.sendToClients(leavePacket);
-        handleIncomingPacket(leavePacket, ip);
+          // Start timer for bot replacement
+          const timer = setTimeout(() => {
+            console.log(`📡 [LAN] Recovery window expired for ${playerId}. Replacing with BOT.`);
+            ChorPoliceEngine.replacePlayerWithBot(playerId);
+            reconnectTimers.delete(playerId);
+            clearInterval(reconnectIntervals.get(playerId));
+            reconnectIntervals.delete(playerId);
+            
+            toast.warning("Player lost", "Reconnection failed. Bot joined.");
+          }, NETWORK.RECONNECT_TIMEOUT_MS);
+
+          reconnectTimers.set(playerId, timer);
+        }
       } else {
         // Client side: Host is stale
-        console.log(`[LAN] Host at ${ip} is stale. Terminating session.`);
-        const leavePacket = {
-          type: NETWORK.PLAYER_LEAVE,
-          playerId: "host_id",
-          reason: "host_disconnected",
-        };
-        handleIncomingPacket(leavePacket, ip);
+        console.log(`📡 [LAN] Host at ${ip} is stale. Starting reconnection overlay.`);
+        
+        const phase = store.getState().session.gamePhase;
+        if (phase === "idle" || phase === "finished" || phase === "final_result") {
+          // Normal disconnect for non-game phases
+          const leavePacket = {
+            type: NETWORK.PLAYER_LEAVE,
+            playerId: "host_id",
+            reason: "host_disconnected",
+          };
+          handleIncomingPacket(leavePacket, ip);
+        } else {
+          // Trigger local reconnect overlay
+          store.dispatch(setLocalReconnecting({ 
+            isReconnecting: true, 
+            timeout: Math.floor(NETWORK.RECONNECT_TIMEOUT_MS / 1000) 
+          }));
+
+          const interval = setInterval(() => {
+            store.dispatch(tickReconnectTimeout());
+          }, 1000);
+          reconnectIntervals.set("host", interval);
+
+          const timer = setTimeout(() => {
+            console.log("📡 [LAN] Host reconnection timeout.");
+            clearInterval(reconnectIntervals.get("host"));
+            reconnectIntervals.delete("host");
+            
+            toast.error("Match ended", "Host disconnected. Coins refunded.");
+            
+            const leavePacket = {
+              type: NETWORK.PLAYER_LEAVE,
+              playerId: "host_id",
+              reason: "host_disconnected",
+            };
+            handleIncomingPacket(leavePacket, ip);
+          }, NETWORK.RECONNECT_TIMEOUT_MS);
+
+          reconnectTimers.set("host", timer);
+        }
       }
     },
     onApIsolation: () => {

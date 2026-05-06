@@ -72,7 +72,7 @@ export const PermissionReminderModal: React.FC<Props> = ({
                 className="h-10 items-center justify-center"
               >
                 <Text className="font-main-md text-white/30 text-xs uppercase tracking-widest">
-                  Don't ask again
+                  Don&apos;t ask again
                 </Text>
               </TouchableOpacity>
             </MotiView>

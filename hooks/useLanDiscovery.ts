@@ -95,6 +95,21 @@ export const useLanDiscovery = (enabled: boolean = false) => {
     };
   }, [enabled]); // ← only re-run when enabled flips, not on every render
 
+  // 🧹 STALE DATA CLEANUP: Remove rooms not seen in > 7 seconds
+  useEffect(() => {
+    if (!enabled) return;
+    
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setDiscoveredRooms((prev) => {
+        const next = prev.filter((r) => now - (r.lastSeenAt || 0) < 7000);
+        return next.length !== prev.length ? next : prev;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [enabled]);
+
   return {
     discoveredRooms,
     isSearching,

@@ -73,6 +73,6 @@ export const updateStreak = (): number => {
  * Resets the streak manually (e.g. for testing or specific game rules).
  */
 export const resetStreak = () => {
-  storage.delete(STREAK_KEY);
-  storage.delete(LAST_DATE_KEY);
+  (storage as any).delete(STREAK_KEY);
+  (storage as any).delete(LAST_DATE_KEY);
 };

@@ -12,6 +12,7 @@ export const buildJoinPacket = (state: any, walletCoins: number) => {
       avatarId: state.localAvatarId || 1,
       isBot: false,
       coins: walletCoins,
+      deviceId: state.deviceId,
     },
   };
 };

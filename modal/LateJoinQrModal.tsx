@@ -30,6 +30,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
   const [showHotspotFix, setShowHotspotFix] = React.useState(false);
   const [showDebug, setShowDebug] = React.useState(false);
+  const [scanned, setScanned] = React.useState(false);
 
   useEffect(() => {
     if (visible && !isHost && !permission?.granted) {
@@ -37,6 +38,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
     }
     
     if (visible) {
+      setScanned(false);
       const t1 = setTimeout(() => setShowTroubleshooting(true), 5000);
       const t2 = setTimeout(() => setShowHotspotFix(true), 5000);
       return () => {
@@ -101,7 +103,8 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                     <CameraView
                       style={StyleSheet.absoluteFill}
                       onBarcodeScanned={({ data }) => {
-                        if (data) {
+                        if (data && !scanned) {
+                          setScanned(true);
                           onScanSuccess?.(data);
                           onClose();
                         }
@@ -121,7 +124,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                 </View>
 
                 <Text className="mt-6 text-center text-sm text-white/70">
-                  Scan the host's QR code
+                  Scan the host&apos;s QR code
                 </Text>
 
                 {showTroubleshooting && <LanTroubleshootingCard />}

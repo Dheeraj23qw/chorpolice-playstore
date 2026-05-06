@@ -12,7 +12,7 @@ interface Props {
   description?: string;
 }
 
-const PERMISSION_INFO: Record<string, { icon: string; desc: string }> = {
+const PERMISSION_INFO: Record<string, { icon: string; desc: string; optional?: boolean }> = {
   Location: {
     icon: "map-marker-radius",
     desc: "Needed to find nearby players.",
@@ -126,7 +126,7 @@ export const PermissionGuardian: React.FC<Props> = ({
         </ScrollView>
 
         <TouchableOpacity
-          onPress={state === "blocked" ? openSettings : checkAllPermissions}
+          onPress={() => (state === "blocked" ? openSettings : checkAllPermissions)()}
           className="bg-indigo-600 h-16 rounded-2xl items-center justify-center active:scale-95 shadow-lg shadow-indigo-500/20"
         >
           <Text className="font-main-bold text-white text-lg uppercase tracking-widest">
@@ -142,7 +142,7 @@ export const PermissionGuardian: React.FC<Props> = ({
 
         {servicesDisabled && state !== "blocked" && (
           <Text className="text-orange-400 text-[10px] font-main-md text-center mt-4">
-            Location Services (GPS) are disabled. Please turn them on in your phone's status bar.
+            Location Services (GPS) are disabled. Please turn them on in your phone&apos;s status bar.
           </Text>
         )}
         

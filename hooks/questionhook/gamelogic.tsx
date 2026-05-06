@@ -11,6 +11,12 @@ import {
   setCorrectAnswers,
   setWinner,
 } from "@/redux/reducers/quiz";
+import { 
+  markStakeDebited, 
+  setSettlementStatus 
+} from "@/redux/reducers/sessionSlice";
+import { selectEconomy } from "@/redux/selectors/sessionSelectors";
+import store from "@/redux/store";
 import { toast } from "@/components/feedback/toast";
 
 import {
@@ -52,6 +58,7 @@ export const useQuizGameLogic = () => {
   // BOT-1 FIX: was getSessionContext() from transport layer — not reactive, can be stale
   // Using Redux state for stable, reactive identity
   const sessionState = useSelector((state: RootState) => state.session);
+  const economy = useSelector(selectEconomy);
   const localPlayerId = sessionState.localPlayerId || "host_id";
   const isHost = sessionState.isHost || localPlayerId === "host_id";
   const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
@@ -102,6 +109,9 @@ export const useQuizGameLogic = () => {
   const [leaderboardData, setLeaderboardData] = useState<any>(null);
   const [isWaitingForOthers, setIsWaitingForOthers] = useState(false);
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
+  const [isHindi, setIsHindi] = useState(false);
+  const [matchHistory, setMatchHistory] = useState<any[]>([]);
+  const [isPersonalSummaryVisible, setIsPersonalSummaryVisible] = useState(false);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(
     isMultiplayer ? null : buildLocalQuestionId(1),
   );
@@ -279,10 +289,14 @@ export const useQuizGameLogic = () => {
       roundDeadlineAtRef.current =
         packet.deadlineAt ||
         (roundStartedAtRef.current + (packet.durationMs || getTimeLimitMs()));
-      currentQuestionIdRef.current = incomingQuestionId;
-
+      currentQuestionIdRef.current = packet.questionId;
       setQuestion(packet.question);
-      setQuestionIndex(incomingRound - 1);
+      setMatchHistory((prev) => {
+        // Prevent duplicates for same questionId
+        if (prev.some(q => q.questionId === packet.questionId)) return prev;
+        return [...prev, { ...packet.question, questionId: packet.questionId }];
+      });
+      setQuestionIndex(packet.round - 1);
       setSelectedAnswer(null);
       setIsCorrect(null);
       setIsDynamicPopUp(false);
@@ -319,7 +333,7 @@ export const useQuizGameLogic = () => {
   );
 
   const submitMultiplayerAnswer = useCallback(
-    (wasCorrect: boolean) => {
+    (wasCorrect: boolean, optionIndex?: number) => {
       if (!isMultiplayer || !currentQuestionIdRef.current) return;
 
       const packet = {
@@ -328,6 +342,7 @@ export const useQuizGameLogic = () => {
         round: questionIndex + 1,
         questionId: currentQuestionIdRef.current,
         isCorrect: wasCorrect,
+        optionIndex,
         timestamp: Date.now(),
       };
 
@@ -468,6 +483,7 @@ export const useQuizGameLogic = () => {
     const packet = {
       type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
       question,
+      optionsLength: question?.options?.length || 0,
       round: QuizEngine.state.currentRound,
       questionId: `tc-round-${QuizEngine.state.currentRound}-${startAt}`,
       roundStartedAt: startAt,
@@ -488,16 +504,15 @@ export const useQuizGameLogic = () => {
   }, [applyQuestionSync, getTimeLimitMs, isHost, isMultiplayer, question]);
 
   useEffect(() => {
-    // BOT-5 FIX: use ref guard to prevent double-deduct
-    if (!isMultiplayer || stakeDeductedRef.current) return;
-    
-    const stake = QuizEngine.state.stake;
-    if (stake > 0) {
-      stakeDeductedRef.current = true;
-      dispatch(updateCoins(-stake));
-      toast.info("Coins Deducted", `You paid ${stake} coins to join the game.`);
+    if (!isMultiplayer || !economy.matchId || economy.stakeDebited || economy.stakeAmount <= 0) {
+      return;
     }
-  }, [isMultiplayer, dispatch]);
+
+    console.log(`[ECONOMY] Debiting stake for T&C match: ${economy.matchId}`);
+    dispatch(markStakeDebited());
+    dispatch(updateCoins(-economy.stakeAmount));
+    toast.info("Match Started", `Stake of ${economy.stakeAmount} coins debited.`);
+  }, [isMultiplayer, economy.matchId, economy.stakeDebited, economy.stakeAmount, dispatch]);
 
   const handleAnswerSelection = useCallback(
     (answer: string) => {
@@ -512,6 +527,7 @@ export const useQuizGameLogic = () => {
       setIsDynamicPopUp(true);
 
       const wasCorrect = answer === question.correctAnswer;
+      const optionIndex = (question.options as string[])?.indexOf(answer);
 
       setIsCorrect(wasCorrect);
 
@@ -529,7 +545,7 @@ export const useQuizGameLogic = () => {
 
       if (isMultiplayer) {
         markPlayerFinished(localPlayerId);
-        submitMultiplayerAnswer(wasCorrect);
+        submitMultiplayerAnswer(wasCorrect, optionIndex);
       }
 
       queuePostAnswerTransition();
@@ -564,12 +580,12 @@ export const useQuizGameLogic = () => {
     }
 
     const incorrect = question.options.filter(
-      (option) => option !== question.correctAnswer,
+      (option: string) => option !== question.correctAnswer,
     );
 
     const shuffled = [...incorrect].sort(() => 0.5 - Math.random());
     const filtered = question.options.filter(
-      (option) => !shuffled.slice(0, 2).includes(option),
+      (option: string) => !shuffled.slice(0, 2).includes(option),
     );
 
     setRemainingOptions(filtered);
@@ -594,32 +610,13 @@ export const useQuizGameLogic = () => {
     clearPostAnswerTimeout();
 
     if (questionIndex + 1 >= NUM_QUESTIONS) {
-      void (async () => {
-        syncLocalQuizStats(leaderboardData);
-        AudioEngine.stop("timer");
-        clearTimer();
-
-        if (isMultiplayer && isHost) {
-          broadcastPacket(
-            {
-              type: MODES.THINK_AND_COUNT.GAME_END,
-              reason: "completed",
-            },
-            { processLocally: false },
-          );
-
-          await new Promise<void>((resolve) => {
-            setTimeout(() => resolve(), 150);
-          });
-        }
-
-        if (isMultiplayer) {
-          BotEngine.reset();
-          stopSession();
-        }
-
-        router.push({ pathname: "/quiz-result" } as any);
-      })();
+      if (isMultiplayer) {
+        setIsPersonalSummaryVisible(true);
+        setIsLeaderboardVisible(false);
+        setIsWaitingForOthers(false);
+      } else {
+        handleQuit();
+      }
       return;
     }
 
@@ -634,6 +631,7 @@ export const useQuizGameLogic = () => {
       broadcastPacket({
         type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
         question: nextQuestion,
+        optionsLength: nextQuestion?.options?.length || 0,
         round: nextRound,
         questionId: `tc-round-${nextRound}-${startAt}`,
         roundStartedAt: startAt,
@@ -732,24 +730,29 @@ export const useQuizGameLogic = () => {
           syncLocalQuizStats(packet.leaderboard);
         }
 
-        // 🔥 WINNER REWARD LOGIC (Multi-winner support)
+        // 🔥 SETTLEMENT: Only credit if not already settled/refunded
         if (packet.isLastRound) {
-          const leaderboard = packet.leaderboard ?? [];
-          if (leaderboard.length > 0) {
-            const maxScore = leaderboard[0].correctCount;
-            const winners = leaderboard.filter((p: any) => p.correctCount === maxScore);
-            const isLocalWinner = winners.some((p: any) => p.id === localPlayerId);
+          const s = store.getState().session;
+          if (s.economy.settlementStatus === "PENDING") {
+            dispatch(setSettlementStatus("SETTLED"));
+            
+            const leaderboard = packet.leaderboard ?? [];
+            if (leaderboard.length > 0) {
+              const maxScore = leaderboard[0].correctCount;
+              const winners = leaderboard.filter((p: any) => p.correctCount === maxScore);
+              const isLocalWinner = winners.some((p: any) => p.id === localPlayerId);
 
-            if (isLocalWinner) {
-              const totalPot = QuizEngine.state.totalPot;
-              const splitPot = Math.floor(totalPot / winners.length);
+              if (isLocalWinner) {
+                const totalPot = QuizEngine.state.totalPot;
+                const splitPot = Math.floor(totalPot / winners.length);
 
-              if (splitPot > 0) {
-                dispatch(updateCoins(splitPot));
-                const winMsg = winners.length > 1
-                  ? `You tied for 1st! Shared pot: ${splitPot} coins.`
-                  : `You won the full pot of ${splitPot} coins!`;
-                toast.success("CHAMPION! 🏆", winMsg);
+                if (splitPot > 0) {
+                  dispatch(updateCoins(splitPot));
+                  const winMsg = winners.length > 1
+                    ? `You tied for 1st! Shared pot: ${splitPot} coins.`
+                    : `You won the full pot of ${splitPot} coins!`;
+                  toast.success("CHAMPION! 🏆", winMsg);
+                }
               }
             }
           }
@@ -780,33 +783,31 @@ export const useQuizGameLogic = () => {
           return;
         }
 
-        const refund = packet.stake || 0;
+        const s = store.getState().session;
         const leaverId = packet.leaverId as string | undefined;
-        const shouldRefund =
-          packet.reason === "host_quit"
-            ? !isHost
-            : packet.reason === "player_left"
-              ? localPlayerId !== leaverId
-              : false;
+        const isLeaver = localPlayerId === leaverId;
+        const refund = !isLeaver && s.economy.stakeDebited && s.economy.settlementStatus === "PENDING"
+          ? s.economy.stakeAmount
+          : 0;
 
-        if (shouldRefund && refund > 0) {
+        if (refund > 0) {
+          dispatch(setSettlementStatus("REFUNDED"));
           dispatch(updateCoins(refund));
           toast.success(
             "Refunded (Fairness)",
             packet.reason === "host_quit"
-              ? `To ensure no injustice, your ${refund} coins were returned because the host left.`
-              : `To ensure no injustice, your ${refund} coins were returned because a player left.`,
+              ? `Host left. Your ${refund} coins were returned.`
+              : `A player left. Your ${refund} coins were returned.`,
             5000,
           );
-        } else if (packet.reason === "player_left" && leaverId !== localPlayerId) {
-          toast.error("Match Ended", "A player left, so the match was closed for fairness.", 4000);
+        } else if (!isLeaver) {
+          const msg = packet.reason === "host_quit" ? "Host left the game." : "Match ended for fairness.";
+          toast.error("Match Ended", msg, 4000);
         }
 
         clearTimer();
         clearPostAnswerTimeout();
         AudioEngine.stop("timer");
-        // SWEEP-1 FIX: was require("@/service/BotEngine") — wrong path, runtime crash.
-        // BotEngine is already imported at the top of this file.
         if (isMultiplayer) {
           BotEngine.reset();
         }
@@ -829,6 +830,32 @@ export const useQuizGameLogic = () => {
               leaverId: packet.playerId,
               stake: QuizEngine.state.stake,
             });
+          } else if (packet.playerId === "host_id" || packet.reason === "host_disconnected") {
+            // Host disconnected — trigger refund and exit
+            const s = store.getState().session;
+            const refund = s.economy.stakeDebited && s.economy.settlementStatus === "PENDING"
+              ? s.economy.stakeAmount
+              : 0;
+
+            void (async () => {
+              if (refund > 0) {
+                dispatch(setSettlementStatus("REFUNDED"));
+                dispatch(updateCoins(refund));
+                toast.success("Refunded (Host Lost)", `The host disconnected. Your ${refund} coins were returned.`, 5000);
+              } else {
+                toast.error("Match Ended", "The host disconnected.", 4000);
+              }
+              
+              clearTimer();
+              clearPostAnswerTimeout();
+              AudioEngine.stop("timer");
+              if (isMultiplayer) BotEngine.reset();
+              await stopSession();
+              QuizEngine.reset();
+              dispatch(resetDifficulty());
+              router.dismissAll();
+              router.replace("/mode-select" as any);
+            })();
           }
           return;
         }
@@ -845,6 +872,25 @@ export const useQuizGameLogic = () => {
             router.dismissAll();
             router.replace("/mode-select" as any);
           });
+        }
+      }
+
+      if (packet.type === NETWORK.SYNC_STATE) {
+        console.log("[QuizHook] Handling SYNC_STATE packet");
+        // State restoration logic handled by engines, hook just needs to update its local derived refs/states
+        // Most reactive state comes from QuizEngine.state which applyQuestionSync reads.
+        if (packet.engineState) {
+          // Force a sync of the current question if available
+          applyQuestionSync({
+            type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
+            question: packet.engineState.currentQuestion,
+            questionId: packet.engineState.currentQuestionId,
+            round: packet.engineState.currentRound,
+            roundStartedAt: packet.engineState.roundStartedAt,
+            deadlineAt: packet.engineState.roundDeadlineAt,
+            durationMs: getTimeLimitMs(),
+            serverNow: Date.now(),
+          }, { force: true });
         }
       }
     });
@@ -1130,5 +1176,9 @@ export const useQuizGameLogic = () => {
     handleConfirmExit,
     handleCancelExit,
     isHost,
+    isHindi,
+    toggleHindi: () => setIsHindi((prev) => !prev),
+    matchHistory,
+    isPersonalSummaryVisible,
   };
 };
