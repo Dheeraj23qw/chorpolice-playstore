@@ -55,6 +55,7 @@ const ChorPoliceMultiplayerScreen = () => {
         return <DealingView g={g} />;
 
       case "police_turn":
+      case "investigation_shuffle":
         return <PoliceTurnView g={g} />;
 
       case "private_reveal":

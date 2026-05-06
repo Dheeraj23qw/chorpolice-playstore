@@ -1,5 +1,6 @@
 import React from "react";
 import { ScrollView, View } from "react-native";
+import { MotiView, AnimatePresence } from "moti";
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
 import { Text } from "@/components/Text";
@@ -12,7 +13,7 @@ interface GamePlaySectionProps {
   playerNames: string[];
   flippedStates: boolean[];
   clickedCards: boolean[];
-  handleCardClick: (index: number) => void;
+  handleCardClick: (index: number, targetId?: string) => void;
   handleCardClickWithBounce: (index: number) => void;
   toggleModal: () => void;
   round: number;
@@ -23,6 +24,8 @@ interface GamePlaySectionProps {
   invisibleIndices?: number[];
   localPlayerName?: string;
   myRole?: string | null;
+  gamePhase?: string;
+  investigationTargets?: any[];
 }
 
 export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
@@ -43,7 +46,10 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   invisibleIndices = [],
   localPlayerName = "Player",
   myRole = null,
+  gamePhase = "waiting",
+  investigationTargets = [],
 }) => {
+  const isInvestigation = (gamePhase === "police_turn" || gamePhase === "investigation_shuffle") && investigationTargets.length > 0;
   return (
     <SafeAreaView className="flex-1 bg-transparent">
       <ScrollView
@@ -103,55 +109,160 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
         {/* 🎴 Card Arena */}
         <View className="flex-col gap-y-8">
-          {/* Row 1 */}
-          <View className="flex-row justify-between">
-            {roles.slice(0, 2).map((_, index) => (
-              <View 
-                key={index} 
-                className="aspect-[3/4.2] w-[47%]"
-                style={{ opacity: invisibleIndices.includes(index) ? 0 : 1 }}
-                pointerEvents={invisibleIndices.includes(index) ? "none" : "auto"}
-              >
-                <PlayerCard
-                  index={index}
-                  role={roles[index]}
-                  playerName={playerNames[index]}
-                  flipped={flippedStates[index]}
-                  clicked={clickedCards[index]}
-                  isCorrect={roles[index] === "Thief"}
-                  onClick={handleCardClick}
-                  onBounceEffect={() => handleCardClickWithBounce(index)}
-                  animatedStyle={getCardStyle(index)}
-                  isHighlight={isHighlight && !flippedStates[index] && !clickedCards[index]}
-                />
+          {!isInvestigation ? (
+            <>
+              {/* Row 1: Players 0 & 1 */}
+              <View className="flex-row justify-between">
+                {playerNames.slice(0, 2).map((name, index) => (
+                  <View 
+                    key={index} 
+                    className="aspect-[3/4.2] w-[47%]"
+                    style={{ opacity: invisibleIndices.includes(index) ? 0 : 1 }}
+                    pointerEvents={invisibleIndices.includes(index) ? "none" : "auto"}
+                  >
+                    <PlayerCard
+                      index={index}
+                      role={roles[index]}
+                      playerName={name}
+                      flipped={flippedStates[index]}
+                      clicked={clickedCards[index]}
+                      isCorrect={roles[index] === "Thief"}
+                      onClick={handleCardClick}
+                      onBounceEffect={() => handleCardClickWithBounce(index)}
+                      animatedStyle={getCardStyle(index)}
+                      isHighlight={isHighlight && !flippedStates[index] && !clickedCards[index]}
+                    />
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
 
-          {/* Row 2 */}
-          <View className="flex-row justify-between">
-            {roles.slice(2).map((_, index) => (
-              <View 
-                key={index + 2} 
-                className="aspect-[3/4.2] w-[47%]"
-                style={{ opacity: invisibleIndices.includes(index + 2) ? 0 : 1 }}
-                pointerEvents={invisibleIndices.includes(index + 2) ? "none" : "auto"}
-              >
-                <PlayerCard
-                  index={index + 2}
-                  role={roles[index + 2]}
-                  playerName={playerNames[index + 2]}
-                  flipped={flippedStates[index + 2]}
-                  clicked={clickedCards[index + 2]}
-                  isCorrect={roles[index + 2] === "Thief"}
-                  onClick={handleCardClick}
-                  onBounceEffect={() => handleCardClickWithBounce(index + 2)}
-                  animatedStyle={getCardStyle(index + 2)}
-                  isHighlight={isHighlight && !flippedStates[index + 2] && !clickedCards[index + 2]}
-                />
+              {/* Row 2: Players 2 & 3 */}
+              <View className="flex-row justify-between">
+                {playerNames.slice(2, 4).map((name, index) => {
+                  const actualIndex = index + 2;
+                  return (
+                    <View 
+                      key={actualIndex} 
+                      className="aspect-[3/4.2] w-[47%]"
+                      style={{ opacity: invisibleIndices.includes(actualIndex) ? 0 : 1 }}
+                      pointerEvents={invisibleIndices.includes(actualIndex) ? "none" : "auto"}
+                    >
+                      <PlayerCard
+                        index={actualIndex}
+                        role={roles[actualIndex]}
+                        playerName={name}
+                        flipped={flippedStates[actualIndex]}
+                        clicked={clickedCards[actualIndex]}
+                        isCorrect={roles[actualIndex] === "Thief"}
+                        onClick={handleCardClick}
+                        onBounceEffect={() => handleCardClickWithBounce(actualIndex)}
+                        animatedStyle={getCardStyle(actualIndex)}
+                        isHighlight={isHighlight && !flippedStates[actualIndex] && !clickedCards[actualIndex]}
+                      />
+                    </View>
+                  );
+                })}
               </View>
-            ))}
-          </View>
+            </>
+          ) : (
+            /* 🃏 Investigation Mode: 3 Mystery Cards centered */
+            <View className="flex-col gap-y-6 items-center">
+               <View className="flex-row justify-between w-full">
+                  {investigationTargets.slice(0, 2).map((target, idx) => {
+                    const isFlipped = target.playerIndex !== null ? flippedStates[target.playerIndex] : (clickedCards[10 + idx]);
+                    const isClicked = target.playerIndex !== null ? clickedCards[target.playerIndex] : (clickedCards[10 + idx]);
+
+                    return (
+                      <MotiView 
+                        key={`${round}-${target.id}`} 
+                        className="aspect-[3/4.2] w-[47%]"
+                        from={{
+                          opacity: 0,
+                          scale: 0.75,
+                          translateY: -30,
+                          rotateZ: idx === 0 ? "-10deg" : "10deg",
+                        }}
+                        animate={{
+                          opacity: 1,
+                          scale: isClicked && !isFlipped ? 1.05 : 1,
+                          translateY: 0,
+                          rotateZ: "0deg",
+                          rotateY: isFlipped ? '180deg' : '0deg',
+                        }}
+                        transition={{
+                          type: "timing",
+                          duration: 650,
+                          delay: idx * 140,
+                        }}
+                      >
+                        <PlayerCard
+                          index={target.playerIndex ?? (10 + idx)}
+                          role={target.role}
+                          playerName="Mystery"
+                          flipped={isFlipped || false}
+                          clicked={isClicked || false}
+                          isCorrect={target.role === "Thief"}
+                          onClick={() => {
+                             if (gamePhase === "investigation_shuffle") return;
+                             handleCardClick(target.playerIndex ?? (10 + idx), target.id);
+                           }}
+                          onBounceEffect={() => {}}
+                          animatedStyle={{}} // Avoid getCardStyle crash
+                          isHighlight={!isFlipped && gamePhase === "police_turn"}
+                        />
+                      </MotiView>
+                    );
+                  })}
+               </View>
+               {/* 3rd Card Centered Below */}
+               {investigationTargets[2] && (() => {
+                 const target = investigationTargets[2];
+                 const isFlipped = target.playerIndex !== null ? flippedStates[target.playerIndex] : (clickedCards[12]);
+                 const isClicked = target.playerIndex !== null ? clickedCards[target.playerIndex] : (clickedCards[12]);
+
+                 return (
+                  <MotiView 
+                    key={`${round}-${target.id}`} 
+                    className="aspect-[3/4.2] w-[47%]"
+                    from={{
+                      opacity: 0,
+                      scale: 0.75,
+                      translateY: 40,
+                      rotateZ: "0deg",
+                    }}
+                    animate={{
+                      opacity: 1,
+                      scale: isClicked && !isFlipped ? 1.05 : 1,
+                      translateY: 0,
+                      rotateZ: "0deg",
+                      rotateY: isFlipped ? '180deg' : '0deg',
+                    }}
+                    transition={{
+                      type: "timing",
+                      duration: 650,
+                      delay: 2 * 140,
+                    }}
+                  >
+                     <PlayerCard
+                       index={target.playerIndex ?? 12}
+                       role={target.role}
+                       playerName="Mystery"
+                       flipped={isFlipped || false}
+                       clicked={isClicked || false}
+                       isCorrect={target.role === "Thief"}
+                       onClick={() => {
+                          if (gamePhase === "investigation_shuffle") return;
+                          handleCardClick(target.playerIndex ?? 12, target.id);
+                        }}
+                       onBounceEffect={() => {}}
+                       animatedStyle={{}} // Avoid getCardStyle crash
+                       isHighlight={!isFlipped && gamePhase === "police_turn"}
+                     />
+                  </MotiView>
+                 );
+               })()}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

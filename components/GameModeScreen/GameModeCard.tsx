@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   interpolate,
-  Extrapolate,
+  Extrapolation,
   SharedValue,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,21 +34,21 @@ export const GameModeCard = ({ item, index, onPress, scrollX }: Props) => {
       scrollX.value,
       input,
       [0.6, 1, 0.6],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     const cardScale = interpolate(
       scrollX.value,
       input,
       [0.92, 1, 0.92],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     const rotate = interpolate(
       scrollX.value,
       input,
       [4, 0, -4],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     return {
@@ -66,7 +66,7 @@ export const GameModeCard = ({ item, index, onPress, scrollX }: Props) => {
         scrollX.value,
         input,
         [40, 0, 40],
-        Extrapolate.CLAMP
+        Extrapolation.CLAMP
     );
     return { transform: [{ translateY }] };
   });

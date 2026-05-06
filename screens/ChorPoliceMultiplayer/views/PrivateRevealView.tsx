@@ -9,6 +9,7 @@ const { width } = Dimensions.get("window");
 
 interface PrivateRevealViewProps {
   role: string | null;
+  playerName?: string;
 }
 
 const roleData: Record<string, { title: string; color: string; icon: any; subtitle: string }> = {
@@ -38,8 +39,14 @@ const roleData: Record<string, { title: string; color: string; icon: any; subtit
   },
 };
 
-const PrivateRevealView = ({ role }: PrivateRevealViewProps) => {
+const PrivateRevealView = ({ role, playerName }: PrivateRevealViewProps) => {
   const data = role ? roleData[role] : null;
+
+  useEffect(() => {
+    if (data) {
+      console.log("[PRIVATE_REVEAL] overlay visible");
+    }
+  }, [data, role]);
 
   if (!data) return null;
 
@@ -67,6 +74,17 @@ const PrivateRevealView = ({ role }: PrivateRevealViewProps) => {
             style={{ backgroundColor: data.color }}
             className="absolute -top-20 h-40 w-40 rounded-full blur-[60px] opacity-20" 
         />
+
+        {playerName && (
+          <MotiText 
+            from={{ opacity: 0, translateY: -10 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ delay: 300 }}
+            className="mb-2 font-main-bold text-xs uppercase tracking-[4px] text-white/60"
+          >
+            {playerName}
+          </MotiText>
+        )}
 
         <MotiView
           from={{ rotateY: "90deg", opacity: 0 }}

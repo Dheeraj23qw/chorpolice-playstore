@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { View, Dimensions } from "react-native";
 import { router } from "expo-router";
-import Animated, { 
+import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   interpolate,
-  Extrapolate,
-  SharedValue
+  Extrapolation,
+  SharedValue,
 } from "react-native-reanimated";
 
 import { hp, wp } from "@/utils/responsive";
@@ -62,9 +62,12 @@ const GameModeList: React.FC<GameModeListProps> = ({ scrollX }) => {
           windowSize={3}
           initialNumToRender={2}
           maxToRenderPerBatch={2}
-          contentContainerStyle={{ alignItems: 'center' }}
+          contentContainerStyle={{ alignItems: "center" }}
           renderItem={({ item, index }) => (
-            <View style={{ width }} className="items-center justify-center px-6">
+            <View
+              style={{ width }}
+              className="items-center justify-center px-6"
+            >
               <GameModeCard
                 item={item}
                 index={index}
@@ -78,11 +81,13 @@ const GameModeList: React.FC<GameModeListProps> = ({ scrollX }) => {
 
       <View className="items-center pb-8 pt-4">
         <View className="mb-4 flex-row justify-center space-x-2">
-            {optionsGameMode.map((_, i) => (
+          {optionsGameMode.map((_, i) => (
             <PaginationDot key={i} index={i} scrollX={scrollX} />
-            ))}
+          ))}
         </View>
-        <Text className="font-main-bold uppercase tracking-[3px] text-white/30 text-[10px]">Swipe for more modes</Text>
+        <Text className="font-main-bold text-[10px] uppercase tracking-[3px] text-white/30">
+          Swipe for more games
+        </Text>
       </View>
 
       <GameModeModal
@@ -94,32 +99,38 @@ const GameModeList: React.FC<GameModeListProps> = ({ scrollX }) => {
   );
 };
 
-const PaginationDot = ({ index, scrollX }: { index: number; scrollX: SharedValue<number> }) => {
-    const style = useAnimatedStyle(() => {
-      const input = [(index - 1) * width, index * width, (index + 1) * width];
-  
-      const dotWidth = interpolate(
-        scrollX.value,
-        input,
-        [8, 24, 8],
-        Extrapolate.CLAMP,
-      );
-  
-      const opacity = interpolate(
-        scrollX.value,
-        input,
-        [0.3, 1, 0.3],
-        Extrapolate.CLAMP,
-      );
-  
-      return {
-        width: dotWidth,
-        opacity,
-        backgroundColor: '#6366F1'
-      };
-    });
-  
-    return <Animated.View style={style} className="h-2 rounded-full" />;
+const PaginationDot = ({
+  index,
+  scrollX,
+}: {
+  index: number;
+  scrollX: SharedValue<number>;
+}) => {
+  const style = useAnimatedStyle(() => {
+    const input = [(index - 1) * width, index * width, (index + 1) * width];
+
+    const dotWidth = interpolate(
+      scrollX.value,
+      input,
+      [8, 24, 8],
+      Extrapolation.CLAMP,
+    );
+
+    const opacity = interpolate(
+      scrollX.value,
+      input,
+      [0.3, 1, 0.3],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      width: dotWidth,
+      opacity,
+      backgroundColor: "#6366F1",
+    };
+  });
+
+  return <Animated.View style={style} className="h-2 rounded-full" />;
 };
 
 export default React.memo(GameModeList);

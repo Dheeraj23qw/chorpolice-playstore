@@ -1,9 +1,15 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { OfflinePlayer } from "@/redux/reducers/offlineSessionSlice";
 
-export type OfflineGamePhase = "idle" | "dealing" | "police_turn" | "result";
+export type OfflineGamePhase = "idle" | "dealing" | "public_reveal" | "investigation_shuffle" | "police_turn" | "result";
+
+export interface InvestigationTarget {
+  id: string;
+  role: string;
+  playerIndex: number | null; // null for fake Joker
+}
 
 export interface RoundResult {
   winner: "police" | "thief";
@@ -15,21 +21,25 @@ export interface OfflineGameContext {
   phase: OfflineGamePhase;
   roles: string[];
   clickedIndex: number | null;
+  clickedTargetId: string | null;
   policeIndex: number | null;
   kingIndex: number | null;
   thiefIndex: number | null;
   advisorIndex: number | null;
+  investigationTargets: InvestigationTarget[];
   scores: number[];
   result: RoundResult | null;
   currentRound: number;
   totalRounds: number;
   handlePlay: () => void;
-  handlePoliceGuess: (targetIndex: number) => void;
+  setPhase: (phase: OfflineGamePhase) => void;
+  handlePoliceGuess: (targetId: string, playerIndex: number | null) => void;
   resetGame: () => void;
   nextRound: () => void;
 }
 
 export const useOfflineChorPolice = (): OfflineGameContext => {
+  const REVEAL_RESULT_DELAY_MS = 700;
   const players = useSelector((state: RootState) => state.offlineSession.players);
   const totalRounds = useSelector((state: RootState) => state.offlineSession.totalRounds);
   
@@ -37,24 +47,56 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
   const [currentRound, setCurrentRound] = useState(1);
   const [roles, setRoles] = useState<string[]>([]);
   const [clickedIndex, setClickedIndex] = useState<number | null>(null);
+  const [clickedTargetId, setClickedTargetId] = useState<string | null>(null);
   const [scores, setScores] = useState<number[]>([0, 0, 0, 0]);
   const [policeIndex, setPoliceIndex] = useState<number | null>(null);
   const [kingIndex, setKingIndex] = useState<number | null>(null);
   const [thiefIndex, setThiefIndex] = useState<number | null>(null);
   const [advisorIndex, setAdvisorIndex] = useState<number | null>(null);
+  const [investigationTargets, setInvestigationTargets] = useState<InvestigationTarget[]>([]);
   const [result, setResult] = useState<RoundResult | null>(null);
+  const revealTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (revealTimeoutRef.current) {
+        clearTimeout(revealTimeoutRef.current);
+        revealTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const initRoles = useCallback(() => {
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+
     const baseRoles = ["King", "Advisor", "Thief", "Police"];
     const shuffled = [...baseRoles].sort(() => Math.random() - 0.5);
     
+    const pIdx = shuffled.indexOf("Police");
+    const kIdx = shuffled.indexOf("King");
+    const tIdx = shuffled.indexOf("Thief");
+    const aIdx = shuffled.indexOf("Advisor");
+
     setRoles(shuffled);
-    setPoliceIndex(shuffled.indexOf("Police"));
-    setKingIndex(shuffled.indexOf("King"));
-    setThiefIndex(shuffled.indexOf("Thief"));
-    setAdvisorIndex(shuffled.indexOf("Advisor"));
+    setPoliceIndex(pIdx);
+    setKingIndex(kIdx);
+    setThiefIndex(tIdx);
+    setAdvisorIndex(aIdx);
     
+    // Setup investigation targets: Thief, Advisor, and a fake Joker
+    const targets: InvestigationTarget[] = [
+      { id: "target_thief", role: "Thief", playerIndex: tIdx },
+      { id: "target_advisor", role: "Advisor", playerIndex: aIdx },
+      { id: "target_joker", role: "Joker", playerIndex: null }, // Joker has no player
+    ];
+    // Shuffle the targets so they are in random positions
+    setInvestigationTargets([...targets].sort(() => Math.random() - 0.5));
+
     setClickedIndex(null);
+    setClickedTargetId(null);
     setResult(null);
   }, []);
 
@@ -65,22 +107,23 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
   const handlePlay = useCallback(() => {
     if (phase !== "idle") return;
     setPhase("dealing");
-    
-    // Auto move from dealing to police_turn after animation duration
-    const timer = setTimeout(() => {
-      setPhase("police_turn");
-    }, 4000); 
-
-    return () => clearTimeout(timer);
   }, [phase]);
 
-  const handlePoliceGuess = useCallback((targetIndex: number) => {
+  const handlePoliceGuess = useCallback((targetId: string, playerIndex: number | null) => {
     if (phase !== "police_turn") return;
-    const targetRole = roles[targetIndex];
-    if (targetRole === "Police" || targetRole === "King") return;
+    
+    const target = investigationTargets.find(t => t.id === targetId);
+    if (!target) return;
 
-    setClickedIndex(targetIndex);
-    const isCorrect = targetRole === "Thief";
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+
+    setClickedTargetId(targetId);
+    setClickedIndex(playerIndex);
+    
+    const isCorrect = target.role === "Thief";
     const winner = isCorrect ? "police" : "thief";
     
     // Points logic
@@ -88,7 +131,7 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
     if (isCorrect) {
       if (kingIndex !== null) roundPoints[kingIndex] = 1000;
       if (advisorIndex !== null) roundPoints[advisorIndex] = 800;
-      if (policeIndex !== null) roundPoints[policeIndex] = 700;
+      if (policeIndex !== null) roundPoints[policeIndex] = 500;
       if (thiefIndex !== null) roundPoints[thiefIndex] = 0;
     } else {
       if (kingIndex !== null) roundPoints[kingIndex] = 1000;
@@ -97,22 +140,33 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
       if (thiefIndex !== null) roundPoints[thiefIndex] = 500;
     }
 
-    setResult({ winner, points: roundPoints });
-    setScores(prev => prev.map((s, i) => s + roundPoints[i]));
-    setPhase("result");
-  }, [phase, roles, kingIndex, advisorIndex, policeIndex, thiefIndex]);
+    revealTimeoutRef.current = setTimeout(() => {
+      setResult({ winner, points: roundPoints });
+      setScores(prev => prev.map((s, i) => s + roundPoints[i]));
+      setPhase("result");
+      revealTimeoutRef.current = null;
+    }, REVEAL_RESULT_DELAY_MS);
+  }, [phase, investigationTargets, kingIndex, advisorIndex, policeIndex, thiefIndex]);
 
   const nextRound = useCallback(() => {
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+
     if (currentRound < totalRounds) {
       setCurrentRound(prev => prev + 1);
       initRoles();
       setPhase("idle");
-    } else {
-      // Game over logic could be added here
     }
   }, [currentRound, totalRounds, initRoles]);
 
   const resetGame = useCallback(() => {
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+
     initRoles();
     setPhase("idle");
     setCurrentRound(1);
@@ -124,21 +178,24 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
     phase,
     roles,
     clickedIndex,
+    clickedTargetId,
     policeIndex,
     kingIndex,
     thiefIndex,
     advisorIndex,
+    investigationTargets,
     scores,
     result,
     currentRound,
     totalRounds,
     handlePlay,
+    setPhase,
     handlePoliceGuess,
     resetGame,
     nextRound,
   }), [
-    players, phase, roles, clickedIndex, policeIndex, kingIndex, 
-    thiefIndex, advisorIndex, scores, result, currentRound, 
+    players, phase, roles, clickedIndex, clickedTargetId, policeIndex, kingIndex, 
+    thiefIndex, advisorIndex, investigationTargets, scores, result, currentRound, 
     totalRounds, handlePlay, handlePoliceGuess, resetGame, nextRound
   ]);
 };

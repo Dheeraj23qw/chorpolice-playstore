@@ -38,12 +38,23 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
     return updated;
   });
 
-  const pickedRole = packet.correct ? "Thief" : "Advisor";
-  const targetIdx = packet.guessedIndex ?? (packet.correct ? reduxRoles.indexOf("Thief") : reduxRoles.indexOf("Advisor"));
+  const pickedRole = packet.guessedRole || (packet.correct ? "Thief" : "Advisor");
+  // The UI should reveal the card at the mystery target index (0-2)
+  const mysteryIndex = typeof packet.guessedTargetIndex === 'number' ? packet.guessedTargetIndex : 0;
   
+  // For the result popup reveal
   setPopupIndex(5);
-  setRevealData({ role: pickedRole, isCorrect: packet.correct, index: targetIdx });
+  setRevealData({ role: pickedRole, isCorrect: packet.correct, index: mysteryIndex });
   AudioEngine.play(packet.correct ? "win" : "lose", "gameplay");
+
+  // Flip the targeted mystery card
+  const targetPhysIndex = packet.guessedPlayerIndex !== null ? packet.guessedPlayerIndex : (10 + mysteryIndex);
+  
+  setFlippedStates(prev => {
+    const next = [...prev];
+    next[targetPhysIndex] = true;
+    return next;
+  });
 
   const tReveal = setTimeout(() => {
     const currentFlipped = refs.flippedStatesRef.current;
@@ -84,9 +95,10 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
       logic.resolveScoreQuizPlayers();
       logic.playTransition("score_quiz");
     } else {
-      setFlipAnims(Array(4).fill(null).map(() => new Animated.Value(0)));
-      setFlippedStates([false, false, false, false]);
-      setClickedCards([false, false, false, false]);
+      // 🛡️ RE-INITIALIZE SAFELY: Keep arrays at 20 items to prevent crashes in next round
+      setFlipAnims(Array(20).fill(null).map(() => new Animated.Value(0)));
+      setFlippedStates(Array(20).fill(false));
+      setClickedCards(Array(20).fill(false));
       setAreCardsClickable(false);
       setFirstCardClicked(false);
       setPopupIndex(null);

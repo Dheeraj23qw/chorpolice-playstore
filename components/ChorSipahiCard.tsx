@@ -10,7 +10,10 @@ const roleImages: Record<string, any> = {
   Advisor: require("@/assets/images/chorsipahi/advisor.webp"),
   Thief: require("@/assets/images/chorsipahi/thief.webp"),
   Police: require("@/assets/images/chorsipahi/police.webp"),
+  Joker: require("@/assets/images/chorsipahi/joker.webp"),
 };
+
+const cardBackImage = require("@/assets/images/chorsipahi/card.webp");
 
 interface ChorSipahiCardProps {
   index: number;
@@ -24,6 +27,7 @@ interface ChorSipahiCardProps {
   style?: ViewStyle | any;
   showStatusOverlay?: boolean;
   isHighlight?: boolean;
+  isMystery?: boolean;
 }
 
 const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
@@ -38,6 +42,7 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
   style,
   showStatusOverlay = true,
   isHighlight = false,
+  isMystery = false,
 }) => {
   const handlePress = () => {
     AudioEngine.play("select", "ui");
@@ -84,21 +89,31 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
                 className="absolute inset-0 z-10 border-[4px] border-indigo-500 rounded-[26px] items-center justify-center"
               >
                 <View className="rounded-full bg-indigo-500 px-4 py-1.5 shadow-lg shadow-indigo-500/50">
-                  <Text className="font-main-bold text-[10px] text-white uppercase tracking-widest">Click Me</Text>
+                  <Text className="font-main-bold text-[10px] text-white uppercase tracking-widest">Mystery</Text>
                 </View>
               </MotiView>
             )}
-            <Image
-              source={playerImages[player.avatarId]?.src || playerImages[1].src}
-              className="h-full w-full opacity-60"
-              resizeMode="cover"
-            />
-            <View className="absolute inset-0 bg-black/40" />
-            <View className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/10 bg-black/60 p-2 items-center">
-              <Text numberOfLines={1} className="font-main-bold text-[10px] text-white uppercase tracking-wider">
-                {player.name || `Player ${index + 1}`}
-              </Text>
-            </View>
+            {(isMystery || phase === "police_turn") ? (
+              <Image
+                source={cardBackImage}
+                className="h-full w-full opacity-80"
+                resizeMode="cover"
+              />
+            ) : (
+              <>
+                <Image
+                  source={playerImages[player.avatarId]?.src || playerImages[1].src}
+                  className="h-full w-full opacity-60"
+                  resizeMode="cover"
+                />
+                <View className="absolute inset-0 bg-black/40" />
+                <View className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/10 bg-black/60 p-2 items-center">
+                  <Text numberOfLines={1} className="font-main-bold text-[10px] text-white uppercase tracking-wider">
+                    {player.name || `Player ${index + 1}`}
+                  </Text>
+                </View>
+              </>
+            )}
 
             {showStatusOverlay && isClicked && !isFlipped && (
               <View className="absolute inset-0 z-20 items-center justify-center rounded-[26px] border-4 border-yellow-500/60 bg-yellow-500/20">
@@ -128,11 +143,13 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
                 : ""
             }`}
           >
-            <View className="absolute top-3 rounded-full border border-white/10 bg-indigo-950/80 px-3 py-1">
-              <Text numberOfLines={1} className="font-main-bold text-[8px] uppercase text-indigo-200">
-                {player.name || `Player ${index + 1}`}
-              </Text>
-            </View>
+            {!isMystery && (
+              <View className="absolute top-3 rounded-full border border-white/10 bg-indigo-950/80 px-3 py-1">
+                <Text numberOfLines={1} className="font-main-bold text-[8px] uppercase text-indigo-200">
+                  {player.name || `Player ${index + 1}`}
+                </Text>
+              </View>
+            )}
             {role && <Image source={roleImages[role] || roleImages.Thief} className="h-3/4 w-3/4" resizeMode="contain" />}
             <View className="absolute bottom-3 rounded-full border border-indigo-400/40 bg-indigo-950/90 px-4 py-1.5">
               <Text className="font-main-bold text-[11px] uppercase tracking-widest text-indigo-100">{role || "Unknown"}</Text>

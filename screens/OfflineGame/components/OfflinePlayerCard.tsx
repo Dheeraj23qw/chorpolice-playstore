@@ -21,7 +21,8 @@ const OfflinePlayerCardComponent: React.FC<OfflinePlayerCardProps> = ({
   onAvatarPress,
   index,
 }) => {
-  const avatarSource = playerImages[player.avatarId]?.src || playerImages[1].src;
+  const avatarSource =
+    playerImages[player.avatarId]?.src || playerImages[1].src;
 
   return (
     <MotiView
@@ -36,7 +37,10 @@ const OfflinePlayerCardComponent: React.FC<OfflinePlayerCardProps> = ({
       >
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
-            <Text style={{ fontSize: rf(0.9) }} className="uppercase tracking-[2px] text-indigo-300">
+            <Text
+              style={{ fontSize: rf(0.9) }}
+              className="uppercase tracking-[2px] text-indigo-300"
+            >
               Player {index + 1}
             </Text>
             <TextInput
@@ -51,7 +55,10 @@ const OfflinePlayerCardComponent: React.FC<OfflinePlayerCardProps> = ({
 
           <Pressable onPress={onAvatarPress}>
             <View className="h-16 w-16 rounded-full border border-white/20 p-[1px]">
-              <Image source={avatarSource} className="h-full w-full rounded-full" />
+              <Image
+                source={avatarSource}
+                className="h-full w-full rounded-full"
+              />
               <View className="absolute -bottom-1 -right-1 h-6 w-6 items-center justify-center rounded-full bg-indigo-500 shadow-lg">
                 <Ionicons name="camera" size={12} color="white" />
               </View>

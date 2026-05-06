@@ -29,6 +29,7 @@ import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
 import { FloatingDebugToggle } from "@/components/LobbyScreen/FloatingDebugToggle";
+import { getJoinHelpShown, setJoinHelpShown } from "@/storage/appStorage";
 
 /* ─────────────────── HELPERS ─────────────────── */
 const isValidIpv4 = (value: string) => {
@@ -137,6 +138,14 @@ const JoinScreen = () => {
   const [isSmartJoining, setIsSmartJoining] = useState(false);
   const [joiningRoomIp, setJoiningRoomIp] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
+
+  // ✨ FIRST TIME HELP: Auto-show help if not shown before
+  useEffect(() => {
+    if (!getJoinHelpShown()) {
+      setShowHelp(true);
+      setJoinHelpShown(true);
+    }
+  }, []);
 
   /* ── Avatar init ── */
   useEffect(() => {

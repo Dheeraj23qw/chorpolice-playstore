@@ -8,26 +8,26 @@ import { Text } from "@/components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf } from "@/utils/responsive";
 import {
-  MULTIPLAYER_HELP_CONTENT,
-  HelpLanguage,
-  MultiplayerHelpItem,
-} from "@/constants/multiplayerHelpContent";
+  OFFLINE_RULES_CONTENT,
+  OfflineRulesLanguage,
+  OfflineRulesItem,
+} from "@/constants/offlineRulesContent";
 
-interface MultiplayerHelpModalProps {
+interface OfflineRulesModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
+export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
   visible,
   onClose,
 }) => {
   const insets = useSafeAreaInsets();
-  const [language, setLanguage] = useState<HelpLanguage>("EN");
+  const [language, setLanguage] = useState<OfflineRulesLanguage>("EN");
 
-  const content = MULTIPLAYER_HELP_CONTENT[language];
+  const content = OFFLINE_RULES_CONTENT[language];
 
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "EN" ? "HI" : "EN"));
@@ -57,11 +57,7 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
                   maxHeight: SCREEN_HEIGHT - (insets.top + insets.bottom + 40),
                 }}
               >
-                <BlurView
-                  intensity={70}
-                  tint="dark"
-                  className="overflow-hidden"
-                >
+                <BlurView intensity={70} tint="dark" className="overflow-hidden">
                   <LinearGradient
                     colors={[
                       "rgba(99,102,241,0.24)",
@@ -76,12 +72,11 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
                   <View className="absolute inset-0 rounded-[36px] border border-white/10" />
 
                   <View className="p-6">
-                    {/* Header */}
                     <View className="mb-6 flex-row items-center justify-between">
                       <View className="flex-1 flex-row items-center pr-3">
                         <View className="mr-3 h-12 w-12 items-center justify-center rounded-2xl border border-indigo-300/20 bg-indigo-500/15">
                           <Ionicons
-                            name="game-controller"
+                            name="book-outline"
                             size={25}
                             color="#C7D2FE"
                           />
@@ -127,18 +122,16 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
                       </View>
                     </View>
 
-                    {/* Content */}
                     <ScrollView
                       showsVerticalScrollIndicator={false}
                       className="shrink"
                       contentContainerStyle={{ paddingBottom: 4 }}
                     >
                       {content.items.map((item, index) => (
-                        <HelpItem key={item.title} {...item} index={index} />
+                        <RuleItem key={item.title} {...item} index={index} />
                       ))}
                     </ScrollView>
 
-                    {/* Button */}
                     <Pressable
                       onPress={onClose}
                       className="mt-6 overflow-hidden rounded-[22px]"
@@ -171,13 +164,13 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
   );
 };
 
-const HelpItem = ({
+const RuleItem = ({
   title,
   desc,
   icon,
   color,
   index,
-}: MultiplayerHelpItem & { index: number }) => {
+}: OfflineRulesItem & { index: number }) => {
   return (
     <MotiView
       from={{ opacity: 0, translateX: -14 }}
@@ -190,7 +183,7 @@ const HelpItem = ({
       className="mb-3 flex-row items-center rounded-3xl border border-white/10 bg-white/5 p-4"
     >
       <View
-        className="h-13 w-13 mr-4 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
+        className="mr-4 h-13 w-13 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
         style={{
           shadowColor: color,
           shadowOffset: { width: 0, height: 8 },

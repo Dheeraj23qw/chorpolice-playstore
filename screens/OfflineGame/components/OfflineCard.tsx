@@ -16,6 +16,7 @@ interface OfflineCardProps {
   disabled: boolean;
   phase: string;
   isHighlight?: boolean;
+  isMystery?: boolean;
 }
 
 const OfflineCardComponent: React.FC<OfflineCardProps> = ({
@@ -31,6 +32,7 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
   disabled,
   phase,
   isHighlight = false,
+  isMystery = false,
 }) => {
   const offX = wp(18);
   const offY = hp(12);
@@ -47,7 +49,7 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
         }}
         transition={{ type: "timing", duration: 2500 }}
         style={{ zIndex: 100 }}
-        className="w-[47%]"
+        className="w-full"
       >
          <ChorSipahiCard
             index={index}
@@ -58,6 +60,7 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
             onPress={() => {}}
             disabled={true}
             phase={phase}
+            isMystery={isMystery}
         />
       </MotiView>
     );
@@ -90,7 +93,7 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
       animate={crazyStyles}
       transition={{ type: "spring", damping: 12, stiffness: 100, delay: isDealing ? index * 80 : 0 }}
       style={{ zIndex: isDealing ? 100 : 1 }}
-      className="w-[47%]"
+      className="w-full"
     >
       <ChorSipahiCard
         index={index}
@@ -102,6 +105,7 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
         disabled={disabled}
         phase={phase}
         isHighlight={isHighlight}
+        isMystery={isMystery}
       />
     </MotiView>
   );

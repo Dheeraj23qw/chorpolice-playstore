@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect } from "react";
-import { View, ScrollView, Image, BackHandler } from "react-native";
+import { View, ScrollView, Image, BackHandler, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, wp, rf } from "@/utils/responsive";
 
@@ -22,7 +22,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { QuizLeaderboard } from "@/components/MultiPlayerQuizLeaderboard/QuizLeaderboard";
 import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
 import { translateToHindi, translateOptionsToHindi } from "@/utils/QuestionTranslator";
-import { TouchableOpacity } from "react-native-gesture-handler";
 import { PersonalSummary } from "../../components/thinkAndCountScreen/PersonalSummary";
 
 const QuizScreen = () => {

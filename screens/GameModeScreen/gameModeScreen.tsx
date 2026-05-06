@@ -8,7 +8,7 @@ import Animated, {
     useSharedValue, 
     useAnimatedStyle, 
     interpolate, 
-    Extrapolate 
+    Extrapolation 
 } from "react-native-reanimated";
 
 import { AppDispatch } from "@/redux/store";
@@ -47,7 +47,7 @@ const GameModeScreen: React.FC = () => {
         scrollX.value,
         [-100, 0, 100],
         [1.05, 1, 1.05],
-        Extrapolate.CLAMP
+        Extrapolation.CLAMP
     );
     return { transform: [{ scale }] };
   });

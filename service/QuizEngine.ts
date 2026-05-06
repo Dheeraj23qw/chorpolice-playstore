@@ -43,6 +43,7 @@ const DEFAULT_TOTAL_ROUNDS = 5;
  * Implements IGameEngine for standardized packet routing.
  */
 export const QuizEngine = {
+  engineName: "QuizEngine",
   state: {
     difficulty: "easy" as any,
     currentRound: 1,

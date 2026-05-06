@@ -7,11 +7,11 @@ import { broadcastPacket, handleIncomingPacket } from "@/service/lanGameService"
 import { MODES } from "@/constants/Networking";
 
 interface ScoreQuizDeps {
-  isHostRef: React.MutableRefObject<boolean>;
-  timerRefs: React.MutableRefObject<ReturnType<typeof setTimeout>[]>;
-  currentQuizPlayerIdRef: React.MutableRefObject<string | null>;
-  scoreQuizStartedRef: React.MutableRefObject<boolean>;
-  quizOptionDisabledRef: React.MutableRefObject<boolean>;
+  isHostRef: React.RefObject<boolean>;
+  timerRefs: React.RefObject<ReturnType<typeof setTimeout>[]>;
+  currentQuizPlayerIdRef: React.RefObject<string | null>;
+  scoreQuizStartedRef: React.RefObject<boolean>;
+  quizOptionDisabledRef: React.RefObject<boolean>;
   setQuizDone: React.Dispatch<React.SetStateAction<boolean>>;
   setQuizOptionDisabled: React.Dispatch<React.SetStateAction<boolean>>;
   setQuizPlayerIndex: React.Dispatch<React.SetStateAction<number>>;

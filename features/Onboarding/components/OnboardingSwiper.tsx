@@ -12,7 +12,7 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   interpolate,
-  Extrapolate,
+  Extrapolation,
   type SharedValue,
 } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
@@ -46,7 +46,7 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
       scrollX.value,
       input,
       [1, 0],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     return { opacity };
@@ -155,7 +155,7 @@ const GlowDisk = ({ index, scrollX, color }: any) => {
       scrollX.value,
       [(index - 1) * width, index * width, (index + 1) * width],
       [0, 0.4, 0],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
     return { opacity };
   });
@@ -188,14 +188,14 @@ const PaginationDot = ({ index, scrollX }: any) => {
       scrollX.value,
       input,
       [8, 24, 8],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     const opacity = interpolate(
       scrollX.value,
       input,
       [0.3, 1, 0.3],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     return {
@@ -227,21 +227,21 @@ const AnimatedCTA = ({
       scrollX.value,
       input,
       [0, 1],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     const translateY = interpolate(
       scrollX.value,
       input,
       [60, 0],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     const scale = interpolate(
       scrollX.value,
       input,
       [0.85, 1],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     return {

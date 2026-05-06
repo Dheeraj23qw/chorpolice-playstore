@@ -52,7 +52,10 @@ const store = configureStore({
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(listenerMiddleware.middleware as any),
+    getDefaultMiddleware({
+      immutableCheck: { warnAfter: 128, ignoredPaths: ["session"] },
+      serializableCheck: { warnAfter: 128, ignoredPaths: ["session"] },
+    }).concat(listenerMiddleware.middleware as any),
   preloadedState: {
     wallet: preloadedWallet,
     quizStats: preloadedQuizStats,
@@ -61,7 +64,12 @@ const store = configureStore({
   },
 });
 
+import { registerBotStateGetter } from "@/service/ChorPoliceBotBehavior";
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+// Inject store getter into bot behavior service to avoid circular deps
+registerBotStateGetter(() => store.getState());
 
 export default store;

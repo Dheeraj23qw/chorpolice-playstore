@@ -32,6 +32,7 @@ const roleImages: Record<string, any> = {
   Advisor: require("../../assets/images/chorsipahi/advisor.webp"),
   Thief: require("../../assets/images/chorsipahi/thief.webp"),
   Police: require("../../assets/images/chorsipahi/police.webp"),
+  Joker: require("../../assets/images/chorsipahi/joker.webp"),
 };
 
 const getImageSource = (imageData: { type: string; src: any }) => {
@@ -117,15 +118,16 @@ const PlayerCard = memo(function PlayerCard({
 
     const imageIndex = selectedImages[index] ?? index + 1;
     const playerImage = getImageSource(playerImages[imageIndex]);
+    const cardBackImage = require("../../assets/images/chorsipahi/card.webp");
 
     return (
       <ImageBackground
-        source={playerImage}
-        imageStyle={{ borderRadius: 26 }}
+        source={isHighlight ? cardBackImage : playerImage}
+        imageStyle={{ borderRadius: 26, opacity: isHighlight ? 0.9 : 1 }}
         className="flex-1 overflow-hidden"
       >
         <View className="flex-1 justify-end bg-black/35 p-3">
-          {isHighlight && (
+          {isHighlight ? (
             <MotiView
               from={{ opacity: 0.6 }}
               animate={{ opacity: 1 }}
@@ -140,20 +142,21 @@ const PlayerCard = memo(function PlayerCard({
               className="absolute inset-0 z-10 border-[4px] border-indigo-500 rounded-[26px] items-center justify-center"
             >
               <View className="rounded-full bg-indigo-500 px-4 py-1.5 shadow-lg shadow-indigo-500/50">
-                <Text className="font-main-bold text-[10px] text-white uppercase tracking-widest">Click Me</Text>
+                <Text className="font-main-bold text-[10px] text-white uppercase tracking-widest">Mystery</Text>
               </View>
             </MotiView>
+          ) : (
+            <View className="items-center rounded-2xl border border-indigo-400/30 bg-indigo-950/90 px-3 py-2 shadow-xl">
+              <Text
+                numberOfLines={1}
+                style={{ fontSize: rf(1.25) }}
+                className="font-main-bold uppercase tracking-wider text-indigo-100"
+              >
+                {playerName}
+              </Text>
+              <View className="absolute left-2 right-2 top-0 h-[1px] rounded-full bg-white/30" />
+            </View>
           )}
-          <View className="items-center rounded-2xl border border-indigo-400/30 bg-indigo-950/90 px-3 py-2 shadow-xl">
-            <Text
-              numberOfLines={1}
-              style={{ fontSize: rf(1.25) }}
-              className="font-main-bold uppercase tracking-wider text-indigo-100"
-            >
-              {playerName}
-            </Text>
-            <View className="absolute left-2 right-2 top-0 h-[1px] rounded-full bg-white/30" />
-          </View>
         </View>
       </ImageBackground>
     );
@@ -164,7 +167,7 @@ const PlayerCard = memo(function PlayerCard({
       onPress={() => handleClick(index)}
       disabled={flipped || clicked}
       activeOpacity={0.92}
-      className="aspect-[3/4] flex-1"
+      className="flex-1"
     >
       <Animated.View
         style={[

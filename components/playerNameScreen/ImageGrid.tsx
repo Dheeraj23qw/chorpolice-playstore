@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedScrollHandler,
   interpolate,
-  Extrapolate,
+  Extrapolation,
   withRepeat,
   withSequence,
   withTiming,
@@ -64,7 +64,7 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
 
   const arrowStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: arrowTranslateX.value }],
-    opacity: interpolate(scrollX.value, [0, 40], [1, 0], Extrapolate.CLAMP),
+    opacity: interpolate(scrollX.value, [0, 40], [1, 0], Extrapolation.CLAMP),
   }));
 
   return (
@@ -133,14 +133,14 @@ const AvatarCard = ({
       scrollX.value,
       inputRange,
       [0.85, 1, 0.85],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     const rotateY = interpolate(
       scrollX.value,
       inputRange,
       [12, 0, -12],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     return {
@@ -157,7 +157,7 @@ const AvatarCard = ({
         (index + 1) * (CARD_WIDTH + 20),
       ],
       [0, 0.6, 0],
-      Extrapolate.CLAMP,
+      Extrapolation.CLAMP,
     );
 
     return { opacity };

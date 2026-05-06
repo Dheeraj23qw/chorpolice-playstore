@@ -65,15 +65,15 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
     
     if (isValid || inputCode === "ADMIN100") {
       // Award Coins
-      dispatch(updateCoins(10000));
+      dispatch(updateCoins(25000));
       
       // Update Stats
-      incrementShares(10000);
+      incrementShares(25000);
       
       // Persist immediately
       storage.set(HAS_REDEEMED_KEY, true);
       
-      toast.success("Bonus Received! 🎉", "10,000 coins have been added to your bag.");
+      toast.success("Bonus Received! 🎉", "25,000 coins have been added to your bag.");
       onClose();
     } else {
       setFailedAttempts(prev => prev + 1);
@@ -102,7 +102,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
 
             <Text className="text-center font-main-bold text-2xl text-white">Redeem Code</Text>
             <Text className="mt-2 text-center text-xs text-white/40">
-              Enter a friend&apos;s referral code to get 10,000 coins instantly!
+              Enter a friend&apos;s referral code to get 25,000 coins instantly!
             </Text>
 
             <View className="mt-8 w-full">

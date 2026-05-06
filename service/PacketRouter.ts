@@ -1,4 +1,4 @@
-import { IGameEngine } from "./interfaces/IGameEngine";
+import { IGameEngine } from "@/service/interfaces/IGameEngine";
 
 let broadcastCallback: ((packet: any) => void) | null = null;
 const engines: Set<IGameEngine> = new Set();
@@ -16,7 +16,9 @@ export const PacketRouter = {
    */
   registerEngine: (engine: IGameEngine) => {
     if (engines.has(engine)) return;
-    console.log("🧩 [Router] Registering Engine:", engine.constructor.name || "Anonymous Engine");
+    if (__DEV__) {
+      console.log(`🧩 [Router] Registering Engine: ${(engine as any).engineName || "Anonymous"}`);
+    }
     engines.add(engine);
   },
 

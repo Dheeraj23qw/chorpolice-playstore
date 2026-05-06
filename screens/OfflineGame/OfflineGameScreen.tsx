@@ -1,88 +1,139 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Image, TouchableOpacity, ScrollView, Modal, Pressable } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Image, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { MotiView } from "moti";
 
 import { Text } from "@/components/Text";
-import { rf, wp, hp } from "@/utils/responsive";
-import { useOfflineChorPolice } from "@/hooks/useOfflineChorPolice";
-import { playerImages } from "@/constants/playerData";
-import PlayButton from "@/components/RajamantriGameScreen/playButton";
-import CinematicReveal from "../ChorPoliceMultiplayer/components/CinematicReveal";
-import OverlayPopUp from "@/modal/overlaypop";
 import { AudioEngine } from "@/audio/audioEngine";
-
-// Modular Components
-import { OfflineCard } from "./components/OfflineCard";
+import PlayButton from "@/components/RajamantriGameScreen/playButton";
+import { useOfflineChorPolice } from "@/hooks/useOfflineChorPolice";
+import OverlayPopUp from "@/modal/overlaypop";
+import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
+import CinematicReveal from "../ChorPoliceMultiplayer/components/CinematicReveal";
+import { hp, rf, wp } from "@/utils/responsive";
+import { OfflineGameBoard } from "./components/OfflineGameBoard";
+import { OfflineGameHeader } from "./components/OfflineGameHeader";
+import { OfflineInvestigationBanner } from "./components/OfflineInvestigationBanner";
+import { OfflineLeaderboardModal } from "./components/OfflineLeaderboardModal";
 import { OfflineResultOverlay } from "./components/OfflineResultOverlay";
+
+const COUNTDOWN_STEP_MS = 1400;
+const PUBLIC_REVEAL_SETTLE_MS = 1400;
+const INVESTIGATION_ENTRY_MS = 1200;
+const DEALING_SPIN_MS = 2500;
 
 const OfflineGameScreen = () => {
   const router = useRouter();
   const g = useOfflineChorPolice();
-  
+
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
   const [showScores, setShowScores] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [showResultCinematic, setShowResultCinematic] = useState(false);
   const [showOverlayPopup, setShowOverlayPopup] = useState(false);
   const [showFinalSummary, setShowFinalSummary] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const animStyle = useMemo(() => (g.currentRound - 1) % 4, [g.currentRound]);
+  const timerRefs = useRef<NodeJS.Timeout[]>([]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    return () => {
+      timerRefs.current.forEach(clearTimeout);
+      timerRefs.current = [];
+    };
+  }, []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    timerRefs.current.forEach(clearTimeout);
+    timerRefs.current = [];
+
     if (g.phase === "dealing") {
-      setFlippedIndices(prev => prev.size > 0 ? new Set() : prev);
+      setFlippedIndices(new Set());
       setShowFinalSummary(false);
       setShowResultCinematic(false);
       setShowOverlayPopup(false);
       setIsSpinning(true);
-      
+      setCountdown(null);
+
       AudioEngine.play("spin", "gameplay");
 
       timer = setTimeout(() => {
         setIsSpinning(false);
-        
-        // 1. Flip King First
-        setFlippedIndices(prev => {
-          const next = new Set(prev);
-          if (g.kingIndex !== null && g.kingIndex !== undefined) next.add(g.kingIndex);
-          return next;
-        });
-        AudioEngine.play("level", "gameplay");
+        g.setPhase("public_reveal");
+      }, DEALING_SPIN_MS);
+    } else if (g.phase === "public_reveal") {
+      setFlippedIndices((prev) => {
+        const next = new Set(prev);
+        if (g.kingIndex !== null) next.add(g.kingIndex);
+        if (g.policeIndex !== null) next.add(g.policeIndex);
+        return next;
+      });
+      AudioEngine.play("level", "gameplay");
 
-        // 2. Flip Police after short delay
-        setTimeout(() => {
-          setFlippedIndices(prev => {
-            const next = new Set(prev);
-            if (g.policeIndex !== null && g.policeIndex !== undefined) next.add(g.policeIndex);
-            return next;
-          });
-          AudioEngine.play("level", "gameplay");
-        }, 800);
+      const countdownStart = setTimeout(() => {
+        setCountdown(3);
+        AudioEngine.play("select", "ui");
 
-      }, 2500); 
+        const countdownTwo = setTimeout(() => {
+          setCountdown(2);
+          AudioEngine.play("select", "ui");
+
+          const countdownOne = setTimeout(() => {
+            setCountdown(1);
+            AudioEngine.play("select", "ui");
+
+            const shuffleEntry = setTimeout(() => {
+              setCountdown(null);
+              g.setPhase("investigation_shuffle");
+            }, COUNTDOWN_STEP_MS);
+
+            timerRefs.current.push(shuffleEntry);
+          }, COUNTDOWN_STEP_MS);
+
+          timerRefs.current.push(countdownOne);
+        }, COUNTDOWN_STEP_MS);
+
+        timerRefs.current.push(countdownTwo);
+      }, PUBLIC_REVEAL_SETTLE_MS);
+
+      timerRefs.current.push(countdownStart);
+    } else if (g.phase === "investigation_shuffle") {
+      const policeTurnTimer = setTimeout(() => {
+        g.setPhase("police_turn");
+      }, INVESTIGATION_ENTRY_MS);
+
+      timerRefs.current.push(policeTurnTimer);
     } else if (g.phase === "result") {
       setShowResultCinematic(true);
       setFlippedIndices(new Set([0, 1, 2, 3]));
-      AudioEngine.play(g.result?.winner === "police" ? "win" : "lose", "gameplay");
+      AudioEngine.play(
+        g.result?.winner === "police" ? "win" : "lose",
+        "gameplay",
+      );
     } else if (g.phase === "idle") {
       setFlippedIndices(new Set());
       setShowFinalSummary(false);
       setShowResultCinematic(false);
       setShowOverlayPopup(false);
+      setCountdown(null);
     }
-    return () => { if (timer) clearTimeout(timer); };
-  }, [g.phase, g.kingIndex, g.policeIndex, g.result?.winner]);
 
-  const handleCardClick = useCallback((index: number) => {
-    if (g.phase === "police_turn") {
-      if (index === g.policeIndex || index === g.kingIndex) return;
-      g.handlePoliceGuess(index);
-    }
-  }, [g.phase, g.policeIndex, g.kingIndex, g.handlePoliceGuess]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [g.phase, g.kingIndex, g.policeIndex, g.result?.winner, g.setPhase]);
+
+  const handleInvestigationClick = useCallback(
+    (targetId: string, playerIndex: number | null) => {
+      if (g.phase === "police_turn") {
+        g.handlePoliceGuess(targetId, playerIndex);
+      }
+    },
+    [g.handlePoliceGuess, g.phase],
+  );
 
   const handleNextRound = useCallback(() => {
     AudioEngine.play("select", "ui");
@@ -92,7 +143,12 @@ const OfflineGameScreen = () => {
       router.dismissAll();
       router.replace("/");
     }
-  }, [g.currentRound, g.totalRounds, g.nextRound, router]);
+  }, [g.currentRound, g.nextRound, g.totalRounds, router]);
+
+  const handlePlayAgain = useCallback(() => {
+    AudioEngine.play("select", "ui");
+    g.resetGame();
+  }, [g.resetGame]);
 
   const handleBack = useCallback(() => {
     AudioEngine.play("select", "ui");
@@ -102,6 +158,11 @@ const OfflineGameScreen = () => {
   const toggleLeaderboard = useCallback((visible: boolean) => {
     AudioEngine.play("select", "ui");
     setShowScores(visible);
+  }, []);
+
+  const toggleRules = useCallback((visible: boolean) => {
+    AudioEngine.play("select", "ui");
+    setShowRules(visible);
   }, []);
 
   const onOverlayStateChange = useCallback((visible: boolean) => {
@@ -116,109 +177,120 @@ const OfflineGameScreen = () => {
     setShowOverlayPopup(true);
   }, []);
 
+  const handleStartRound = useCallback(() => {
+    AudioEngine.play("select", "ui");
+    g.handlePlay();
+  }, [g.handlePlay]);
+
   const buttonText = useMemo(() => {
     if (g.phase === "idle") return "Press me to play!";
     if (g.phase === "dealing") return "Dealing roles...";
+    if (g.phase === "public_reveal") return "King & Police Revealed!";
+    if (g.phase === "investigation_shuffle") return "Shuffling targets...";
     if (g.phase === "police_turn") {
-        const policeName = g.players[g.policeIndex ?? 0]?.name || "Police";
-        return `${policeName}, find the Thief! 🔍`;
+      const policeName = g.players[g.policeIndex ?? 0]?.name || "Police";
+      return `${policeName}, find the Thief!`;
     }
     return "Round Complete!";
   }, [g.phase, g.players, g.policeIndex]);
 
-  // Safety card renderer
-  const renderCard = (idx: number) => {
-    const player = g.players[idx] || { name: `Player ${idx + 1}`, avatarId: idx + 1 };
-    const role = g.roles[idx] || "Unknown";
-    const isFlipped = flippedIndices.has(idx);
-    
-    // 💡 Highlight cards that can be clicked during the Police's turn
-    const isHighlight = g.phase === "police_turn" && !isFlipped;
-
-    return (
-      <OfflineCard
-        key={idx}
-        index={idx}
-        player={player}
-        role={role}
-        isFlipped={isFlipped}
-        isClicked={g.clickedIndex === idx}
-        isDealing={g.phase === "dealing" && !isSpinning}
-        isSpinning={isSpinning}
-        animStyle={animStyle}
-        onPress={handleCardClick}
-        disabled={isFlipped || g.phase !== "police_turn"}
-        phase={g.phase}
-        isHighlight={isHighlight}
-      />
-    );
-  };
+  const hasRoundStarted = g.phase !== "idle";
+  const policeName = g.players[g.policeIndex ?? 0]?.name || "Police";
+  const investigationMessage =
+    g.phase === "police_turn" || g.phase === "investigation_shuffle"
+      ? `${policeName}, catch the Thief and stay away from Joker`
+      : null;
 
   return (
     <View className="flex-1 bg-black">
-      <Image source={require("@/assets/images/bg/image.webp")} className="absolute h-full w-full" resizeMode="cover" />
+      <Image
+        source={require("@/assets/images/bg/image.webp")}
+        className="absolute h-full w-full"
+        resizeMode="cover"
+      />
       <View className="absolute h-full w-full bg-black/80" />
 
-      <SafeAreaView className="flex-1" edges={['top']}>
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-6 py-4">
-          <TouchableOpacity onPress={handleBack} className="h-10 w-10 items-center justify-center rounded-full bg-white/10">
-            <Ionicons name="close" size={24} color="white" />
-          </TouchableOpacity>
-          <View className="items-center">
-            <Text className="font-main-bold uppercase tracking-[2px] text-indigo-300">Offline Mode</Text>
-            <Text className="text-[10px] text-white/40">Round {g.currentRound} / {g.totalRounds}</Text>
-          </View>
-          <TouchableOpacity onPress={() => toggleLeaderboard(true)} className="h-10 w-10 items-center justify-center rounded-full bg-white/10">
-            <Ionicons name="podium-outline" size={22} color="white" />
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView className="flex-1" edges={["top"]}>
+        <OfflineGameHeader
+          onBack={handleBack}
+          onShowScores={() => toggleLeaderboard(true)}
+          onShowRules={() => toggleRules(true)}
+        />
 
-        {/* Board */}
         {!showResultCinematic && !showOverlayPopup && !showFinalSummary && (
-          <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }} className="px-6" showsVerticalScrollIndicator={false}>
+          <View className="flex-1 px-6">
             <View className="mb-8 mt-4 items-center">
               <View className="relative overflow-hidden rounded-full border border-white/20 bg-white/10 px-6 py-2">
                 <View className="absolute inset-x-2 top-0 h-[1px] rounded-full bg-white/30" />
-                <Text style={{ fontSize: rf(1.4), letterSpacing: wp(1) }} className="font-main-bold uppercase text-indigo-300">ROUND — {g.currentRound}</Text>
+                <Text
+                  style={{ fontSize: rf(1.4), letterSpacing: wp(1) }}
+                  className="font-main-bold uppercase text-indigo-300"
+                >
+                  Round {g.currentRound}
+                </Text>
               </View>
             </View>
 
-            <View className="mb-9">
-              <PlayButton
-                disabled={g.phase !== "idle"}
-                onPress={() => { AudioEngine.play("select", "ui"); g.handlePlay(); }}
-                buttonText={buttonText}
+            {!hasRoundStarted && (
+              <View className="mb-9">
+                <PlayButton
+                  disabled={false}
+                  onPress={handleStartRound}
+                  buttonText={buttonText}
+                />
+              </View>
+            )}
+
+            {investigationMessage && (
+              <OfflineInvestigationBanner message={investigationMessage} />
+            )}
+
+            <View
+              className="flex-1"
+              style={{
+                justifyContent: hasRoundStarted ? "flex-start" : "center",
+                paddingTop: hasRoundStarted ? hp(2) : 0,
+              }}
+            >
+              <OfflineGameBoard
+                players={g.players}
+                roles={g.roles}
+                phase={g.phase}
+                flippedIndices={flippedIndices}
+                isSpinning={isSpinning}
+                animStyle={animStyle}
+                kingIndex={g.kingIndex}
+                policeIndex={g.policeIndex}
+                investigationTargets={g.investigationTargets}
+                clickedTargetId={g.clickedTargetId}
+                countdown={countdown}
+                onInvestigationClick={handleInvestigationClick}
               />
             </View>
-
-            <View className="gap-y-8 pb-10">
-                <View className="flex-row justify-between">
-                  {renderCard(0)}
-                  {renderCard(1)}
-                </View>
-                <View className="flex-row justify-between">
-                  {renderCard(2)}
-                  {renderCard(3)}
-                </View>
-            </View>
-          </ScrollView>
+          </View>
         )}
       </SafeAreaView>
 
-      {/* Cinematic Reveal Sequence */}
       {showResultCinematic && g.result && (
         <CinematicReveal
-          index={g.clickedIndex!}
-          role={g.roles[g.clickedIndex!]}
+          index={g.clickedIndex !== null ? g.clickedIndex : -1}
+          role={
+            g.clickedTargetId
+              ? g.investigationTargets.find((target) => target.id === g.clickedTargetId)?.role ||
+                "Joker"
+              : "Joker"
+          }
           isCorrect={g.result.winner === "police"}
           policeName={g.players[g.policeIndex ?? 0]?.name}
-          advisorName={g.roles[g.clickedIndex!] === "Advisor" ? g.players[g.clickedIndex!].name : undefined}
+          advisorName={
+            g.clickedIndex !== null && g.roles[g.clickedIndex] === "Advisor"
+              ? g.players[g.clickedIndex].name
+              : undefined
+          }
           onComplete={onCinematicComplete}
         />
       )}
 
-      {/* Win/Loss Popup */}
       {showOverlayPopup && g.result && (
         <OverlayPopUp
           index={g.result.winner === "police" ? 4 : 3}
@@ -230,7 +302,6 @@ const OfflineGameScreen = () => {
         />
       )}
 
-      {/* Final Score Summary */}
       <OfflineResultOverlay
         visible={showFinalSummary}
         result={g.result}
@@ -240,34 +311,20 @@ const OfflineGameScreen = () => {
         totalRounds={g.totalRounds}
         totalScores={g.scores}
         onNextRound={handleNextRound}
+        onPlayAgain={handlePlayAgain}
       />
 
-      {/* Leaderboard Modal */}
-      <Modal visible={showScores} transparent animationType="slide">
-        <View className="flex-1 bg-black/80">
-          <Pressable className="flex-1" onPress={() => toggleLeaderboard(false)} />
-          <MotiView from={{ translateY: 600 }} animate={{ translateY: 0 }} className="mt-auto rounded-t-[40px] border-t border-white/10 bg-[#0a0a0c] p-8 pb-12">
-            <View className="mb-8 flex-row items-center justify-between">
-              <Text className="font-main-bold text-2xl text-white">Leaderboard</Text>
-              <TouchableOpacity onPress={() => toggleLeaderboard(false)}><Ionicons name="close" size={28} color="white" /></TouchableOpacity>
-            </View>
-            <View className="gap-y-4">
-              {g.players.map((p, i) => (
-                <View key={i} className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-5">
-                  <View className="flex-row items-center">
-                    <Image source={playerImages[p.avatarId]?.src || playerImages[1].src} className="mr-4 h-12 w-12 rounded-full" />
-                    <Text className="font-main-bold text-lg text-white">{p.name || `Player ${i + 1}`}</Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="font-main-bold text-xl text-indigo-400">{g.scores[i] || 0}</Text>
-                    <Text className="text-[10px] uppercase tracking-widest text-white/30">Total Points</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </MotiView>
-        </View>
-      </Modal>
+      <OfflineRulesModal
+        visible={showRules}
+        onClose={() => toggleRules(false)}
+      />
+
+      <OfflineLeaderboardModal
+        visible={showScores}
+        players={g.players}
+        scores={g.scores}
+        onClose={() => toggleLeaderboard(false)}
+      />
     </View>
   );
 };

@@ -1,9 +1,11 @@
 import React from "react";
 import { View, TouchableOpacity, ScrollView } from "react-native";
-import { MotiView, AnimatePresence } from "moti";
+import { MotiView } from "moti";
 import { Text } from "@/components/Text";
 import { usePermissionGuard } from "@/hooks/usePermissionGuard";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 
 interface Props {
   onAllGranted: () => void;
@@ -12,29 +14,57 @@ interface Props {
   description?: string;
 }
 
-const PERMISSION_INFO: Record<string, { icon: string; desc: string; optional?: boolean }> = {
+const PERMISSION_DETAILS: Record<
+  string,
+  {
+    icon: string;
+    title: string;
+    desc: string;
+    optional?: boolean;
+    color: string;
+  }
+> = {
   Location: {
     icon: "map-marker-radius",
-    desc: "Needed to find nearby players.",
+    title: "Find Friends",
+    desc: "Helps your phone find nearby players.",
+    color: "#818cf8",
+  },
+  "Location Services": {
+    icon: "crosshairs-gps",
+    title: "Turn On Location",
+    desc: "Needed to discover rooms near you.",
+    color: "#fb923c",
   },
   Camera: {
     icon: "camera-outline",
-    desc: "Needed to scan QR codes.",
+    title: "Scan QR Code",
+    desc: "Use camera to join a room quickly.",
+    color: "#38bdf8",
   },
   Notifications: {
     icon: "bell-outline",
-    desc: "Keeps you updated on game results.",
+    title: "Game Alerts",
+    desc: "Get game reminders and rewards.",
     optional: true,
+    color: "#facc15",
   },
 };
 
-export const PermissionGuardian: React.FC<Props> = ({ 
+export const PermissionGuardian: React.FC<Props> = ({
   onAllGranted,
   onSkip,
-  title = "Permissions Required",
-  description = "Chor Police needs these permissions to start multiplayer."
+  title = "Ready to Play?",
+  description = "Allow these so multiplayer works smoothly.",
 }) => {
-  const { state, missingPermissions, servicesDisabled, attemptCount, checkAllPermissions, openSettings } = usePermissionGuard();
+  const {
+    state,
+    missingPermissions,
+    servicesDisabled,
+    attemptCount,
+    checkAllPermissions,
+    openSettings,
+  } = usePermissionGuard();
 
   React.useEffect(() => {
     if (state === "granted") {
@@ -46,117 +76,195 @@ export const PermissionGuardian: React.FC<Props> = ({
     return null;
   }
 
-  // Generate the list of items to show. If services are disabled, we add a special entry.
   const displayItems = [...missingPermissions];
+
   if (servicesDisabled && !displayItems.includes("Location")) {
     displayItems.push("Location Services");
   }
 
-  const PERMISSION_DETAILS: Record<string, { icon: string; title: string; desc: string; optional?: boolean }> = {
-    Location: {
-      icon: "map-marker-radius",
-      title: "Location Permission",
-      desc: "Find nearby players and host lobbies.",
-    },
-    "Location Services": {
-      icon: "crosshairs-gps",
-      title: "GPS / Location Services",
-      desc: "Turn on GPS to discover players.",
-    },
-    Camera: {
-      icon: "camera-outline",
-      title: "Camera Access",
-      desc: "Scan QR codes to join rooms.",
-    },
-    Notifications: {
-      icon: "bell-outline",
-      title: "Notifications",
-      desc: "Updates on results and invites.",
-      optional: true,
-    },
+  const handleMainPress = () => {
+    if (state === "blocked") {
+      openSettings();
+      return;
+    }
+
+    checkAllPermissions();
+  };
+
+  const handleSkip = () => {
+    if (onSkip) {
+      onSkip();
+      return;
+    }
+
+    onAllGranted();
   };
 
   return (
-    <View className="flex-1 bg-[#050508] p-6 justify-center">
-      <MotiView
-        from={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-[#0b0b18] rounded-[32px] p-8 border border-white/10 shadow-2xl"
-      >
-        <View className="items-center mb-6">
-          <View className="bg-indigo-500/20 p-4 rounded-full mb-4">
-            <MaterialCommunityIcons name="shield-check-outline" size={40} color="#818cf8" />
-          </View>
-          <Text className="font-main-bold text-2xl text-white text-center">
-            {title}
-          </Text>
-          <Text className="font-main-md text-sm text-white/50 text-center mt-2 px-4">
-            {description}
-          </Text>
-        </View>
+    <View className="flex-1 bg-[#050508]">
+      <LinearGradient
+        colors={["#111827", "#050508", "#020617"]}
+        locations={[0, 0.48, 1]}
+        className="absolute inset-0"
+      />
 
-        <ScrollView className="max-h-[300px] mb-8" showsVerticalScrollIndicator={false}>
-          {displayItems.map((item) => {
-            const info = PERMISSION_DETAILS[item] || { icon: "help-circle-outline", title: item, desc: "Required for game features." };
-            return (
-              <View key={item} className="flex-row items-center bg-white/5 p-4 rounded-2xl mb-3 border border-white/5">
-                <View className="bg-white/10 p-2 rounded-xl mr-4">
-                  <MaterialCommunityIcons 
-                    name={info.icon as any} 
-                    size={24} 
-                    color={item === "Location Services" ? "#f87171" : "white"} 
-                  />
-                </View>
-                <View className="flex-1">
-                  <View className="flex-row items-center">
-                    <Text className="font-main-bold text-white text-base">{info.title}</Text>
-                    {info.optional && (
-                      <View className="ml-2 bg-white/10 px-2 py-0.5 rounded-md">
-                        <Text className="text-[8px] text-white/40 uppercase font-main-bold tracking-tighter">Recommended</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text className="font-main-md text-white/40 text-xs mt-0.5">
-                    {info.desc}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-        </ScrollView>
+      <View className="absolute -right-24 top-12 h-72 w-72 rounded-full bg-indigo-500/20" />
+      <View className="absolute -left-24 bottom-20 h-72 w-72 rounded-full bg-violet-500/10" />
 
-        <TouchableOpacity
-          onPress={() => (state === "blocked" ? openSettings : checkAllPermissions)()}
-          className="bg-indigo-600 h-16 rounded-2xl items-center justify-center active:scale-95 shadow-lg shadow-indigo-500/20"
+      <View className="flex-1 justify-center px-6 py-8">
+        <MotiView
+          from={{ opacity: 0, scale: 0.94, translateY: 18 }}
+          animate={{ opacity: 1, scale: 1, translateY: 0 }}
+          transition={{ type: "spring", damping: 17 }}
+          className="overflow-hidden rounded-[36px] border border-white/10 bg-white/5 shadow-2xl"
         >
-          <Text className="font-main-bold text-white text-lg uppercase tracking-widest">
-            {state === "blocked" ? "Open System Settings" : "Grant Access"}
-          </Text>
-        </TouchableOpacity>
+          <BlurView intensity={28} tint="dark" className="p-7">
+            <View className="items-center">
+              <View className="mb-5 h-20 w-20 items-center justify-center overflow-hidden rounded-[28px] border border-indigo-300/20 bg-indigo-500/15">
+                <LinearGradient
+                  colors={["rgba(129,140,248,0.35)", "rgba(79,70,229,0.10)"]}
+                  className="absolute inset-0"
+                />
 
-        {state === "blocked" && (
-          <Text className="text-red-400 text-[10px] font-main-md text-center mt-4">
-            Permissions are permanently denied. Please enable them manually in Android settings.
-          </Text>
-        )}
+                <MaterialCommunityIcons
+                  name="shield-check-outline"
+                  size={42}
+                  color="#C7D2FE"
+                />
+              </View>
 
-        {servicesDisabled && state !== "blocked" && (
-          <Text className="text-orange-400 text-[10px] font-main-md text-center mt-4">
-            Location Services (GPS) are disabled. Please turn them on in your phone&apos;s status bar.
-          </Text>
-        )}
-        
-        {attemptCount >= 2 && (
-          <TouchableOpacity
-            onPress={onSkip || onAllGranted}
-            className="mt-6 self-center"
-          >
-            <Text className="font-main-bold text-indigo-400 text-xs uppercase tracking-[3px] border-b border-indigo-400/30 pb-1">
-              Skip for Now
-            </Text>
-          </TouchableOpacity>
-        )}
-      </MotiView>
+              <Text className="text-center font-main-bold text-3xl text-white">
+                {title}
+              </Text>
+
+              <Text className="mt-2 px-3 text-center font-main-md text-sm leading-5 text-white/50">
+                {description}
+              </Text>
+            </View>
+
+            <ScrollView
+              className="my-7 max-h-[300px]"
+              showsVerticalScrollIndicator={false}
+            >
+              {displayItems.map((item) => {
+                const info = PERMISSION_DETAILS[item] || {
+                  icon: "help-circle-outline",
+                  title: item,
+                  desc: "Needed for this game feature.",
+                  color: "#CBD5E1",
+                };
+
+                return (
+                  <MotiView
+                    key={item}
+                    from={{ opacity: 0, translateY: 8 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: "timing", duration: 250 }}
+                    className="border-white/8 mb-3 flex-row items-center rounded-3xl border bg-white/5 p-4"
+                  >
+                    <View
+                      className="mr-4 h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
+                      style={{
+                        shadowColor: info.color,
+                        shadowOffset: { width: 0, height: 6 },
+                        shadowOpacity: 0.18,
+                        shadowRadius: 12,
+                        elevation: 6,
+                      }}
+                    >
+                      <MaterialCommunityIcons
+                        name={info.icon as any}
+                        size={25}
+                        color={info.color}
+                      />
+                    </View>
+
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <Text className="font-main-bold text-base text-white">
+                          {info.title}
+                        </Text>
+
+                        {info.optional && (
+                          <View className="ml-2 rounded-full bg-white/10 px-2 py-0.5">
+                            <Text className="font-main-bold text-[8px] uppercase tracking-[1px] text-white/45">
+                              Optional
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <Text className="text-white/42 mt-1 font-main-md text-xs leading-4">
+                        {info.desc}
+                      </Text>
+                    </View>
+                  </MotiView>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              onPress={handleMainPress}
+              activeOpacity={0.85}
+              className="h-16 overflow-hidden rounded-[24px]"
+              style={{
+                shadowColor: "#6366F1",
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.35,
+                shadowRadius: 18,
+                elevation: 12,
+              }}
+            >
+              <LinearGradient
+                colors={
+                  state === "blocked"
+                    ? ["#F97316", "#EF4444"]
+                    : ["#818CF8", "#6366F1", "#4F46E5"]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="h-full flex-row items-center justify-center"
+              >
+                <MaterialCommunityIcons
+                  name={
+                    state === "blocked" ? "cog-outline" : "check-circle-outline"
+                  }
+                  size={22}
+                  color="white"
+                />
+
+                <Text className="ml-2 font-main-bold text-base uppercase tracking-[2px] text-white">
+                  {state === "blocked" ? "Open Settings" : "Allow & Play"}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {state === "blocked" && (
+              <Text className="mt-4 text-center font-main-md text-[11px] leading-4 text-red-300/80">
+                Permission is blocked. Please turn it on from phone settings.
+              </Text>
+            )}
+
+            {servicesDisabled && state !== "blocked" && (
+              <Text className="mt-4 text-center font-main-md text-[11px] leading-4 text-orange-300/85">
+                Location is off. Turn it on so nearby rooms can appear.
+              </Text>
+            )}
+
+            {attemptCount >= 2 && (
+              <TouchableOpacity
+                onPress={handleSkip}
+                activeOpacity={0.8}
+                className="mt-6 self-center rounded-full border border-indigo-300/20 bg-indigo-500/10 px-5 py-2"
+              >
+                <Text className="font-main-bold text-xs uppercase tracking-[2px] text-indigo-200">
+                  Skip for Now
+                </Text>
+              </TouchableOpacity>
+            )}
+          </BlurView>
+        </MotiView>
+      </View>
     </View>
   );
 };

@@ -31,26 +31,27 @@ export interface CPMultiplayerContext {
   setMediaId: React.Dispatch<React.SetStateAction<number | null>>;
   setMediaType: React.Dispatch<React.SetStateAction<"image" | "video" | "gif" | null>>;
   setPlayerData: React.Dispatch<React.SetStateAction<any>>;
+  setInvestigationTargets: React.Dispatch<React.SetStateAction<any[]>>;
 
   // Refs (Anti-Stale)
   refs: {
-    isHostRef: React.MutableRefObject<boolean>;
-    localPlayerIdRef: React.MutableRefObject<string>;
-    gamePhaseRef: React.MutableRefObject<GamePhase>;
-    myRoleRef: React.MutableRefObject<string | null>;
-    policeIndexRef: React.MutableRefObject<number | null>;
-    playerNamesRef: React.MutableRefObject<string[]>;
-    playerImagesRef: React.MutableRefObject<any>;
-    flippedStatesRef: React.MutableRefObject<boolean[]>;
-    clickedCardsRef: React.MutableRefObject<boolean[]>;
-    flipAnimsRef: React.MutableRefObject<Animated.Value[]>;
-    timerRefs: React.MutableRefObject<ReturnType<typeof setTimeout>[]>;
-    currentQuizPlayerIdRef: React.MutableRefObject<string | null>;
-    scoreQuizStartedRef: React.MutableRefObject<boolean>;
-    roundStartPendingRef: React.MutableRefObject<boolean>;
-    quizOptionDisabledRef: React.MutableRefObject<boolean>;
-    hasGuessedRef: React.MutableRefObject<boolean>;
-    lastHostSignalAtRef: React.MutableRefObject<number>;
+    isHostRef: React.RefObject<boolean>;
+    localPlayerIdRef: React.RefObject<string>;
+    gamePhaseRef: React.RefObject<GamePhase>;
+    myRoleRef: React.RefObject<string | null>;
+    policeIndexRef: React.RefObject<number | null>;
+    playerNamesRef: React.RefObject<string[]>;
+    playerImagesRef: React.RefObject<any>;
+    flippedStatesRef: React.RefObject<boolean[]>;
+    clickedCardsRef: React.RefObject<boolean[]>;
+    flipAnimsRef: React.RefObject<Animated.Value[]>;
+    timerRefs: React.RefObject<ReturnType<typeof setTimeout>[]>;
+    currentQuizPlayerIdRef: React.RefObject<string | null>;
+    scoreQuizStartedRef: React.RefObject<boolean>;
+    roundStartPendingRef: React.RefObject<boolean>;
+    quizOptionDisabledRef: React.RefObject<boolean>;
+    hasGuessedRef: React.RefObject<boolean>;
+    lastHostSignalAtRef: React.RefObject<number>;
   };
 
   // Selectors/Computed (values that don't change within a packet cycle or are passed as snapshots)

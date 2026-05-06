@@ -31,6 +31,8 @@ import { UpdateAppModal } from "@/modal/UpdateAppModal";
 import {
   getUpdateDismissCount,
   incrementUpdateDismissCount,
+  getLobbyHelpShown,
+  setLobbyHelpShown,
 } from "@/storage/appStorage";
 import { rf } from "@/utils/responsive";
 import { NetworkStatusBanner } from "@/components/LobbyScreen/NetworkStatusBanner";
@@ -108,6 +110,14 @@ const LobbySetupScreen = ({
   useEffect(() => {
     if (lobby.showApIsolation) setUiState("apIsolation");
   }, [lobby.showApIsolation]);
+  
+  // ✨ FIRST TIME HELP: Auto-show help if not shown before
+  useEffect(() => {
+    if (!getLobbyHelpShown()) {
+      setUiState("help");
+      setLobbyHelpShown(true);
+    }
+  }, []);
 
   // ── Toast messages for every network state transition ──────────────────
   const prevStatusRef = React.useRef(status);

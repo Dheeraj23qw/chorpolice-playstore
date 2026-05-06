@@ -45,5 +45,11 @@ export const handlePublicReveal = (packet: any, context: CPMultiplayerContext) =
   }
 
   setIsPlayButtonDisabled(true);
-  logic.revealSequence.triggerRevealSequence(packet);
+  console.log(`🎭 [RevealHandler] Triggering reveal sequence for Round ${packet.round}`);
+  if (packet.investigationTargets) {
+    context.setInvestigationTargets(packet.investigationTargets);
+  }
+
+  // Trigger animations
+  context.logic.revealSequence.triggerRevealSequence(packet);
 };

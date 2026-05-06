@@ -42,12 +42,14 @@ export const ReferralStatsCard = () => {
 
       <View className="p-7">
         {/* Top Badge */}
-        <View className="mb-4 flex-row items-center">
-          <View className="mr-2 h-2 w-2 rounded-full bg-indigo-400" />
+        <View className="mb-5 self-start rounded-full border border-indigo-400/20 bg-indigo-500/10 px-4 py-2">
+          <View className="flex-row items-center">
+            <View className="mr-2 h-2 w-2 rounded-full bg-indigo-400" />
 
-          <Text className="font-main-bold text-[10px] uppercase tracking-[3px] text-indigo-300">
-            Network Activity
-          </Text>
+            <Text className="font-main-bold text-[10px] tracking-[2px] text-indigo-200">
+              Earn up to 25K Coins
+            </Text>
+          </View>
         </View>
 
         {/* Main Content */}

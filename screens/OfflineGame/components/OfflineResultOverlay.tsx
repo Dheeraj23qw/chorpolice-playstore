@@ -14,6 +14,7 @@ interface OfflineResultOverlayProps {
   totalRounds: number;
   totalScores: number[];
   onNextRound: () => void;
+  onPlayAgain: () => void;
 }
 
 const OfflineResultOverlayComponent: React.FC<OfflineResultOverlayProps> = ({
@@ -25,6 +26,7 @@ const OfflineResultOverlayComponent: React.FC<OfflineResultOverlayProps> = ({
   totalRounds,
   totalScores,
   onNextRound,
+  onPlayAgain,
 }) => {
   const isFinalRound = useMemo(() => currentRound === totalRounds, [currentRound, totalRounds]);
 
@@ -89,15 +91,39 @@ const OfflineResultOverlayComponent: React.FC<OfflineResultOverlayProps> = ({
               ))}
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={onNextRound}
-              className="mt-10 h-16 w-full items-center justify-center rounded-2xl bg-indigo-500 shadow-lg shadow-indigo-500/40"
-            >
-              <Text className="font-main-bold text-lg text-white">
-                {currentRound < totalRounds ? "Next Round" : "Back to Home"}
-              </Text>
-            </TouchableOpacity>
+            {isFinalRound ? (
+              <View className="mt-10 flex-row">
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={onPlayAgain}
+                  className="mr-3 h-16 flex-1 items-center justify-center rounded-2xl border border-white/15 bg-white/10"
+                >
+                  <Text className="font-main-bold text-lg text-white">
+                    Play Again
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={onNextRound}
+                  className="h-16 flex-1 items-center justify-center rounded-2xl bg-indigo-500 shadow-lg shadow-indigo-500/40"
+                >
+                  <Text className="font-main-bold text-lg text-white">
+                    Back to Home
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={onNextRound}
+                className="mt-10 h-16 w-full items-center justify-center rounded-2xl bg-indigo-500 shadow-lg shadow-indigo-500/40"
+              >
+                <Text className="font-main-bold text-lg text-white">
+                  Next Round
+                </Text>
+              </TouchableOpacity>
+            )}
           </MotiView>
         </View>
       </MotiView>

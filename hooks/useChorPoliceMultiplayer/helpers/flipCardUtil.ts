@@ -25,6 +25,7 @@ export const flipCard = (
   _dispatch: AppDispatch,
   silent: boolean = false,
 ) => {
+  console.log(`🎴 [FlipCard] Flipped card index ${index} to ${toValue} over ${duration}ms`);
   if (!silent) {
     AudioEngine.play("spin", "gameplay");
   }

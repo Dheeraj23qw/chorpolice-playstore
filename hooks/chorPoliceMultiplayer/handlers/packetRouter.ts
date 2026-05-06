@@ -10,6 +10,10 @@ export const routePacket = (packet: any, sourceIp: string | undefined, context: 
   const CP = MODES.CHOR_POLICE;
   const _isHost = context.refs.isHostRef.current;
 
+  if (__DEV__) {
+    console.log(`📡 [PacketRouter] Incoming packet: ${packet.type} from ${sourceIp || "LOCAL"}`);
+  }
+
   if (!_isHost && sourceIp) {
     // @ts-ignore - reaching into refs for side effect
     context.refs.lastHostSignalAtRef = Date.now();
@@ -18,7 +22,8 @@ export const routePacket = (packet: any, sourceIp: string | undefined, context: 
   switch (packet.type) {
     case CP.ROLE_ASSIGN:
       if (packet.playerId === context.refs.localPlayerIdRef.current) {
-        console.log("🎭 [PacketRouter] ROLE_ASSIGN received");
+        console.log(`🎭 [PacketRouter] 👤 ROLE_ASSIGN received: ${packet.role}`);
+        context.dispatch({ type: "session/setMyRole", payload: packet.role });
       }
       break;
 

@@ -12,7 +12,7 @@ export const handleShare = async (referralCode?: string) => {
     let message = `Check out this awesome app, ${appName}! A Modern twist of classical childhood game Raja Mantri Chor Sipahi\nDownload it now: ${appStoreLink}\n`;
 
     if (referralCode) {
-      message += `\nUse my referral code: ${referralCode} to get 10,000 bonus coins! 🎁`;
+      message += `\nUse my referral code: ${referralCode} to get 25,000 bonus coins! 🎁`;
     }
 
     await Share.share({

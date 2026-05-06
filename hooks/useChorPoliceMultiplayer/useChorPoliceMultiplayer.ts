@@ -33,11 +33,12 @@ import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
 
 import {
-  handleIncomingPacket,
-  sendPacketToHost,
   subscribeToPackets,
   broadcastPacket,
+  handleIncomingPacket,
+  sendPacketToHost,
 } from "@/service/lanGameService";
+import { dispatchPacket } from "@/service/packetDispatcher";
 import { MODES, NETWORK } from "@/constants/Networking";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { flipCard } from "./helpers/flipCardUtil";
@@ -88,9 +89,9 @@ export const useChorPoliceMultiplayer = () => {
 
   // ── Local UI State ──
   const [nextPhase, setNextPhase] = useState<GamePhase>("score_quiz");
-  const [flipAnims, setFlipAnims] = useState<Animated.Value[]>(() => Array(4).fill(null).map(() => new Animated.Value(0)));
-  const [flippedStates, setFlippedStates] = useState<boolean[]>([false, false, false, false]);
-  const [clickedCards, setClickedCards] = useState<boolean[]>([false, false, false, false]);
+  const [flipAnims, setFlipAnims] = useState<Animated.Value[]>(() => Array(20).fill(null).map(() => new Animated.Value(0)));
+  const [flippedStates, setFlippedStates] = useState<boolean[]>(Array(20).fill(false));
+  const [clickedCards, setClickedCards] = useState<boolean[]>(Array(20).fill(false));
   const [playerNames, setPlayerNames] = useState<string[]>(["", "", "", ""]);
   const [scoreQuizPlayers, setScoreQuizPlayers] = useState<ScoreQuizParticipant[]>([]);
   const [isPlayButtonDisabled, setIsPlayButtonDisabled] = useState(false);
@@ -112,6 +113,7 @@ export const useChorPoliceMultiplayer = () => {
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
   const [invisibleIndices, setInvisibleIndices] = useState<number[]>([]);
   const [popupTable, setPopupTable] = useState(false);
+  const [investigationTargets, setInvestigationTargets] = useState<any[]>([]);
 
   // ── Refs (Anti-Stale Closure) ──
   const flipAnimsRef = useRef(flipAnims);
@@ -182,7 +184,19 @@ export const useChorPoliceMultiplayer = () => {
   // ── Logic Hooks ──
   const cleanup = useCPCleanup({ timerRefs, isQuittingRef, currentQuizPlayerIdRef, scoreQuizStartedRef, roundStartPendingRef });
   const economyLogic = useCPEconomy({ localPlayerId, reduxStake });
-  const revealSequence = useCPRevealSequence({ flipAnimsRef, setFlippedStates, setInvisibleIndices, setAreCardsClickable, setShowTableButton, setPopupIndex, timerRefs, myRoleRef, localPlayerId });
+  const revealSequence = useCPRevealSequence({ 
+    flipAnimsRef, 
+    setFlippedStates, 
+    setInvisibleIndices, 
+    setAreCardsClickable, 
+    setShowTableButton, 
+    setPopupIndex, 
+    timerRefs, 
+    myRoleRef, 
+    localPlayerId,
+    setInvestigationTargets,
+    setMessage 
+  });
   const scoreQuiz = useCPScoreQuiz({ isHostRef, timerRefs, currentQuizPlayerIdRef, scoreQuizStartedRef, quizOptionDisabledRef, setQuizDone, setQuizOptionDisabled, setQuizPlayerIndex, setQuizOptions, resolveScoreQuizPlayers });
 
   // ── Packet Router Context ──
@@ -210,6 +224,7 @@ export const useChorPoliceMultiplayer = () => {
     setMediaId,
     setMediaType,
     setPlayerData,
+    setInvestigationTargets,
     refs: {
       isHostRef,
       localPlayerIdRef,
@@ -241,6 +256,9 @@ export const useChorPoliceMultiplayer = () => {
     },
   };
 
+  const contextRef = useRef(context);
+  contextRef.current = context;
+
   // ── Side Effects ──
   useEffect(() => {
     if (reduxGamePhase === "score_quiz" && isHost && !scoreQuizStartedRef.current) {
@@ -265,7 +283,7 @@ export const useChorPoliceMultiplayer = () => {
   // ── Packet Listener ──
   useEffect(() => {
     const unsubscribe = subscribeToPackets((packet, sourceIp) => {
-      routePacket(packet, sourceIp, context);
+      routePacket(packet, sourceIp, contextRef.current);
     });
 
     return () => {
@@ -274,28 +292,52 @@ export const useChorPoliceMultiplayer = () => {
     };
   }, [cleanup]); // Only depend on cleanup since everything else is stable or in refs
 
-  const [bounceAnims] = useState(() => Array(4).fill(null).map(() => new Animated.Value(1)));
-  const canSeeBoard = reduxMyRole === "Police" || reduxMyRole === null;
+  const [bounceAnims] = useState(() => Array(20).fill(null).map(() => new Animated.Value(1)));
+  const canSeeBoard = reduxMyRole === "Police" || reduxMyRole === "King" || reduxGamePhase === "police_turn" || reduxGamePhase === "investigation_shuffle" || reduxMyRole === null;
   const canInteract = reduxMyRole === "Police";
 
   // Handlers
   const handlePlay = useCallback(() => {
+    console.log(`🎭 [CPHook] handlePlay() triggered. Phase: ${gamePhaseRef.current}, Pending: ${roundStartPendingRef.current}, Active: ${ChorPoliceEngine.state.isRoundActive}`);
     if (!isHost || gamePhaseRef.current !== "waiting" || roundStartPendingRef.current || ChorPoliceEngine.state.isRoundActive) return;
-    if (ChorPoliceEngine.state.players.length !== 4) { toast.warning("Need 4 players", "Start the round only when all 4 seats are ready."); return; }
+    if (ChorPoliceEngine.state.players.length !== 4) { 
+      console.warn(`🎭 [CPHook] handlePlay aborted: ${ChorPoliceEngine.state.players.length} players (need 4)`);
+      toast.warning("Need 4 players", "Start the round only when all 4 seats are ready."); 
+      return; 
+    }
     roundStartPendingRef.current = true;
     setIsPlayButtonDisabled(true);
     setMessage("Shuffling cards...");
-    const t = setTimeout(() => handleIncomingPacket({ type: MODES.CHOR_POLICE.ROUND_START, round: ChorPoliceEngine.state.currentRound }), 500);
-    timerRefs.current.push(t);
+    const roundStartPacket = { type: MODES.CHOR_POLICE.ROUND_START, round: ChorPoliceEngine.state.currentRound };
+    console.log(`🎭 [CPHook] Shuffling... sending ROUND_START:`, JSON.stringify(roundStartPacket));
+    
+    // 🚀 FIXED: use dispatchPacket to bridge to the network handler reliably without delay
+    dispatchPacket(roundStartPacket);
   }, [isHost]);
 
-  const handleCardClick = useCallback((index: number) => {
+  const handleCardClick = useCallback((index: number, explicitTargetId?: string) => {
     if (reduxMyRole !== "Police" || reduxGamePhase !== "police_turn" || !areCardsClickable || flippedStates[index] || firstCardClicked || hasGuessedRef.current) return;
+    
+    // Use explicit targetId if provided (from investigation mystery cards),
+    // otherwise try to find from investigation targets by playerIndex
+    let targetId = explicitTargetId;
+    if (!targetId) {
+      const target = investigationTargets.find(t => t.playerIndex === index);
+      targetId = target ? target.id : `legacy_${index}`;
+    }
+
     setFirstCardClicked(true);
     hasGuessedRef.current = true;
     setAreCardsClickable(false);
     AudioEngine.play("select", "ui");
-    const guessPacket = { type: MODES.CHOR_POLICE.POLICE_GUESS, targetIndex: index, playerId: localPlayerId };
+
+    const guessPacket = { 
+      type: MODES.CHOR_POLICE.POLICE_GUESS, 
+      targetId: targetId, // Use ID-based targeting
+      targetIndex: index, // Maintain index for legacy fallback
+      playerId: localPlayerId 
+    };
+
     if (isHost) {
       flipCard(index, 1, 1500, flipAnimsRef.current, setFlippedStates, flippedStates, reduxRoles, clickedCards, () => {}, () => {}, dispatch, true);
       setClickedCards(prev => { const n = [...prev]; n[index] = true; return n; });
@@ -304,7 +346,7 @@ export const useChorPoliceMultiplayer = () => {
     }
     setMessage("Sending your guess...");
     sendPacketToHost(guessPacket);
-  }, [isHost, localPlayerId, reduxMyRole, reduxGamePhase, reduxRoles, areCardsClickable, flippedStates, firstCardClicked, clickedCards, dispatch]);
+  }, [isHost, localPlayerId, reduxMyRole, reduxGamePhase, reduxRoles, areCardsClickable, flippedStates, firstCardClicked, clickedCards, dispatch, investigationTargets]);
 
   const handleCardClickWithBounce = useCallback((index: number) => {
     if (reduxMyRole !== "Police" || !areCardsClickable) return;
@@ -313,6 +355,19 @@ export const useChorPoliceMultiplayer = () => {
   }, [reduxMyRole, areCardsClickable, bounceAnims]);
 
   const getCardStyle = useCallback((index: number) => {
+    if (
+      typeof index !== "number" ||
+      index < 0 ||
+      index >= flipAnims.length ||
+      !flipAnims[index] ||
+      !bounceAnims[index]
+    ) {
+      if (__DEV__) {
+        console.warn("[CP_CARD_STYLE] Invalid card animation index", index);
+      }
+      return {};
+    }
+
     const { flipAndBounceStyle } = require("@/Animations/animation");
     return flipAndBounceStyle(flipAnims[index], bounceAnims[index]);
   }, [flipAnims, bounceAnims]);
@@ -370,5 +425,6 @@ export const useChorPoliceMultiplayer = () => {
     quizPlayerIndex, quizOptions, quizOptionDisabled, quizDone, handleQuizOption, handleFinalExit: cleanup.handleFinalExit, handleBackPress,
     isHost, localPlayerId, localPlayerName, nextPhase, playTransition, invisibleIndices,
     setGamePhase: (phase: GamePhase) => dispatch(setReduxGamePhase(phase)),
+    investigationTargets,
   };
 };

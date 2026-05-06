@@ -39,6 +39,7 @@ export type GamePhase =
   | "round_video"
   | "score_quiz"
   | "private_reveal"
+  | "investigation_shuffle"
   | "final_result";
 
 interface RoundRoleState {

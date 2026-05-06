@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
-import { View, Pressable } from "react-native";
-import { useSelector, useDispatch } from "react-redux";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -37,42 +37,47 @@ const OfflineRoundSelector: React.FC = () => {
   );
 
   return (
-    <View className="mt-7 w-full">
-      <View className="mb-4 flex-row items-center justify-between px-1">
-        <View className="flex-row items-center">
-          <View className="mr-3 h-5 w-1.5 rounded-full bg-indigo-500" />
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerAccent} />
 
           <View>
             <Text
-              style={{ fontSize: rf(1.1) }}
-              className="font-main-bold uppercase tracking-[3px] text-white/45"
+              style={styles.headerLabel}
+              className="font-main-bold"
             >
-              Game Rounds
+              Match Length
             </Text>
 
-            <Text style={{ fontSize: rf(1.25) }} className="mt-1 text-white/70">
-              Choose how long the fun should last
+            <Text
+              style={styles.headerHint}
+              className="font-main-bold"
+            >
+              Pick how long this table should run
             </Text>
           </View>
         </View>
 
-        <View className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5">
+        <View style={styles.totalBadge}>
           <Text
-            style={{ fontSize: rf(1.05) }}
-            className="font-main-bold text-indigo-200"
+            style={styles.totalBadgeText}
+            className="font-main-bold"
           >
             {totalRounds} Rounds
           </Text>
         </View>
       </View>
 
-      <View className="overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.04] p-3">
+      <View style={styles.cardShell}>
         <LinearGradient
-          colors={["rgba(99,102,241,0.16)", "rgba(255,255,255,0.02)"]}
-          className="absolute h-full w-full"
+          colors={["rgba(59,130,246,0.10)", "rgba(255,255,255,0.02)"]}
+          style={StyleSheet.absoluteFillObject}
         />
 
-        <View className="flex-row justify-between">
+        <View style={styles.innerBorder} />
+
+        <View style={styles.optionsRow}>
           {ROUND_OPTIONS.map((round) => {
             const isSelected = totalRounds === round;
 
@@ -80,40 +85,46 @@ const OfflineRoundSelector: React.FC = () => {
               <Pressable
                 key={`round-${round}`}
                 onPress={() => handleRoundSelect(round)}
-                style={{ width: "18%", aspectRatio: 0.92 }}
-                className={`items-center justify-center overflow-hidden rounded-2xl border ${
+                style={[
+                  styles.optionButton,
                   isSelected
-                    ? "border-indigo-300 bg-indigo-500"
-                    : "border-white/10 bg-white/[0.06]"
-                }`}
+                    ? styles.optionButtonSelected
+                    : styles.optionButtonIdle,
+                ]}
               >
                 {isSelected && (
                   <LinearGradient
                     colors={["#818CF8", "#4F46E5"]}
-                    className="absolute h-full w-full"
+                    style={StyleSheet.absoluteFillObject}
                   />
                 )}
 
                 <Text
-                  style={{ fontSize: rf(1.55) }}
-                  className={`font-main-bold ${
-                    isSelected ? "text-white" : "text-white/35"
-                  }`}
+                  style={[
+                    styles.optionNumber,
+                    isSelected
+                      ? styles.optionNumberSelected
+                      : styles.optionNumberIdle,
+                  ]}
+                  className="font-main-bold"
                 >
                   {round}
                 </Text>
 
                 <Text
-                  style={{ fontSize: rf(0.75) }}
-                  className={`mt-0.5 ${
-                    isSelected ? "text-white/75" : "text-white/20"
-                  }`}
+                  style={[
+                    styles.optionCaption,
+                    isSelected
+                      ? styles.optionCaptionSelected
+                      : styles.optionCaptionIdle,
+                  ]}
+                  className="font-main-bold"
                 >
                   rounds
                 </Text>
 
                 {isSelected && (
-                  <View className="absolute right-1.5 top-1.5 h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                  <View style={styles.checkBadge}>
                     <Ionicons name="checkmark" size={13} color="white" />
                   </View>
                 )}
@@ -125,5 +136,133 @@ const OfflineRoundSelector: React.FC = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: 28,
+    width: "100%",
+  },
+  headerRow: {
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+  headerAccent: {
+    marginRight: 12,
+    height: 20,
+    width: 6,
+    borderRadius: 999,
+    backgroundColor: "#6366F1",
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  headerLabel: {
+    fontSize: rf(1.1),
+    color: "rgba(165, 180, 252, 0.72)",
+    textTransform: "uppercase",
+    letterSpacing: 2.4,
+  },
+  headerHint: {
+    marginTop: 4,
+    fontSize: rf(1.2),
+    color: "rgba(255,255,255,0.52)",
+  },
+  totalBadge: {
+    borderWidth: 1,
+    borderColor: "rgba(99,102,241,0.24)",
+    backgroundColor: "rgba(99,102,241,0.10)",
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  totalBadgeText: {
+    fontSize: rf(1.05),
+    color: "#C7D2FE",
+  },
+  cardShell: {
+    overflow: "hidden",
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    padding: 12,
+  },
+  innerBorder: {
+    position: "absolute",
+    top: 1,
+    right: 1,
+    bottom: 1,
+    left: 1,
+    borderRadius: 29,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  optionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  optionButton: {
+    width: "18%",
+    aspectRatio: 0.92,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  optionButtonIdle: {
+    borderColor: "rgba(99,102,241,0.10)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  optionButtonSelected: {
+    borderColor: "#818CF8",
+    backgroundColor: "#6366F1",
+    shadowColor: "#6366F1",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.32,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  optionNumber: {
+    fontSize: rf(1.55),
+  },
+  optionNumberIdle: {
+    color: "rgba(255,255,255,0.42)",
+  },
+  optionNumberSelected: {
+    color: "#FFFFFF",
+  },
+  optionCaption: {
+    marginTop: 2,
+    fontSize: rf(0.75),
+  },
+  optionCaptionIdle: {
+    color: "rgba(255,255,255,0.26)",
+  },
+  optionCaptionSelected: {
+    color: "rgba(255,255,255,0.78)",
+  },
+  checkBadge: {
+    position: "absolute",
+    right: 6,
+    top: 6,
+    height: 20,
+    width: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.20)",
+  },
+});
 
 export default React.memo(OfflineRoundSelector);

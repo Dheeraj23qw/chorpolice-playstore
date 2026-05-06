@@ -11,6 +11,7 @@ const roleImages: Record<string, any> = {
   Advisor: require("../../../assets/images/chorsipahi/advisor.webp"),
   Thief: require("../../../assets/images/chorsipahi/thief.webp"),
   Police: require("../../../assets/images/chorsipahi/police.webp"),
+  Joker: require("../../../assets/images/chorsipahi/joker.webp"),
 };
 
 interface CinematicRevealProps {
@@ -30,8 +31,9 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
   advisorName,
   onComplete,
 }) => {
-  const startX = index % 2 === 0 ? -wp(60) : wp(60);
-  const startY = index < 2 ? -hp(25) : hp(25);
+  const safeIndex = typeof index === 'number' ? index : 4; 
+  const startX = safeIndex % 2 === 0 ? -wp(60) : wp(60);
+  const startY = safeIndex < 2 ? -hp(25) : hp(25);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -137,7 +139,11 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
                   }
                 ]}
               >
-                {isCorrect ? `POLICE ${policeName?.toUpperCase() || ""} CAUGHT THIEF` : `POLICE CAUGHT ADVISOR ${advisorName?.toUpperCase() || ""}`}
+                {isCorrect 
+                  ? `POLICE ${policeName?.toUpperCase() || ""} CAUGHT THIEF` 
+                  : role === "Joker" 
+                    ? "POLICE CAUGHT JOKER! (FAKE)" 
+                    : `POLICE CAUGHT ADVISOR ${advisorName?.toUpperCase() || ""}`}
               </Text>
             </MotiView>
           </View>

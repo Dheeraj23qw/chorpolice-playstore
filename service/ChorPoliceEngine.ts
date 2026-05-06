@@ -1,6 +1,5 @@
 import { MODES, NETWORK } from "../constants/Networking";
-import { ChorPoliceBotBehavior } from "./ChorPoliceBotBehavior";
-import { PacketRouter } from "./PacketRouter";
+import { PacketRouter } from "@/service/PacketRouter";
 import { IGameEngine } from "./interfaces/IGameEngine";
 import store from "@/redux/store";
 import {
@@ -65,6 +64,7 @@ const dispatch = (action: any) => {
 };
 
 export const ChorPoliceEngine = {
+  engineName: "ChorPoliceEngine",
   state: {
     players: [] as CPPlayer[],
     roles: [] as Role[],          // roles[i] = role of players[i]
@@ -79,6 +79,8 @@ export const ChorPoliceEngine = {
     advisorIndex: -1,
     isRoundActive: false,
     matchId: null as string | null,
+    investigationTargets: [] as Array<{ id: string; type: "THIEF" | "ADVISOR" | "JOKER"; role: string; playerIndex: number | null }>,
+    selectedTargetId: null as string | null,
   },
 
   /* ─── IGameEngine: canHandle ─── */
@@ -89,8 +91,6 @@ export const ChorPoliceEngine = {
   /* ─── IGameEngine: processMultiplayer ─── */
   processMultiplayer: (packet: any, _sourceIp?: string): void => {
     const CP = MODES.CHOR_POLICE;
-
-    console.log(`🎭 [CPEngine] ⬇️ Processing packet: ${packet.type}`, JSON.stringify(packet).substring(0, 120));
 
     switch (packet.type) {
       case CP.GAME_START:
@@ -106,8 +106,20 @@ export const ChorPoliceEngine = {
         break;
 
       case CP.POLICE_GUESS:
-        console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received — target index: ${packet.targetIndex}`);
-        ChorPoliceEngine.evaluateGuess(packet.targetIndex);
+        if (packet.targetId) {
+          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received — ID: ${packet.targetId}`);
+          ChorPoliceEngine.evaluateGuess(packet.targetId);
+        } else if (packet.targetIndex !== undefined) {
+          // Backward compatibility for index-based guesses
+          const targets = ChorPoliceEngine.state.investigationTargets;
+          const matchedTarget = targets.find(t => t.playerIndex === packet.targetIndex);
+          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received (Legacy Index: ${packet.targetIndex})`);
+          if (matchedTarget) {
+            ChorPoliceEngine.evaluateGuess(matchedTarget.id);
+          } else {
+            console.error(`🚨 [CPEngine] Guess failed: index ${packet.targetIndex} not found in current round targets.`);
+          }
+        }
         break;
 
       case CP.ROUND_START:
@@ -259,18 +271,26 @@ export const ChorPoliceEngine = {
         ChorPoliceEngine.handleSyncState(packet);
         break;
 
-      default:
+      default: {
         if (packet.type === "RECONNECT_STATUS") {
           console.log(`🎭 [CPEngine] 📡 Reconnect status update: ${packet.playerId} -> ${packet.status}`);
-          // Sync Redux player status
           dispatch({ 
             type: "session/setPlayerConnectionStatus", 
             payload: { playerId: packet.playerId, status: packet.status } 
           });
           break;
         }
+        // UI-only packets handled by hooks/UI — silently ignore
+        const UI_ONLY_PACKETS = [
+          CP.SCORE_QUIZ_TURN,
+          CP.SCORE_GUESS,
+          CP.SCORE_GUESS_RESULT,
+          CP.POLICE_TURN_READY,
+        ];
+        if (UI_ONLY_PACKETS.includes(packet.type)) break;
         console.log(`🎭 [CPEngine] ⚠️ Unhandled CP packet type: ${packet.type}`);
         break;
+      }
     }
   },
 
@@ -293,6 +313,14 @@ export const ChorPoliceEngine = {
     ChorPoliceEngine.state.isRoundActive = !!isRoundActive;
     ChorPoliceEngine.state.stake = stake ?? ChorPoliceEngine.state.stake;
     
+    // Restore investigation targets if provided
+    if (packet.investigationTargets) {
+      ChorPoliceEngine.state.investigationTargets = packet.investigationTargets;
+    }
+    if (packet.selectedTargetId !== undefined) {
+      ChorPoliceEngine.state.selectedTargetId = packet.selectedTargetId;
+    }
+
     if (scores) {
       ChorPoliceEngine.state.scores = scores;
     }
@@ -339,8 +367,12 @@ export const ChorPoliceEngine = {
       scoreEntry.name = player.name;
     }
 
-    // Notify bot behavior
-    ChorPoliceBotBehavior.addBot(player);
+    // Notify bot behavior via network/dispatcher (Decoupled)
+    PacketRouter.broadcast({
+      type: "NETWORK_BOT_REPLACED",
+      playerId,
+      player,
+    });
 
     // Sync Redux
     dispatch({ 
@@ -402,6 +434,9 @@ export const ChorPoliceEngine = {
 
   /* ─── Shuffle & assign roles for the current round ─── */
   startRound: (): void => {
+    if (__DEV__) {
+      console.log(`[CP_START] startRound called. Round: ${ChorPoliceEngine.state.currentRound}`);
+    }
     const { players, currentRound, totalRounds } = ChorPoliceEngine.state;
 
     if (currentRound > totalRounds) {
@@ -416,12 +451,15 @@ export const ChorPoliceEngine = {
     }
 
     console.log(`🎭 [CPEngine] ═══════════════════════════════════`);
-    console.log(`🎭 [CPEngine] Starting Round ${currentRound}/${totalRounds}`);
-    console.log(`🎭 [CPEngine] Players: [${players.map(p => `${p.name}(${p.id}${p.isBot ? ",bot" : ""})`).join(", ")}]`);
+    console.log(`🎭 [CPEngine] 🚀 startRound() EXECUTING for Round ${currentRound}/${totalRounds}`);
+    console.log(`🎭 [CPEngine]   Players in engine: ${players.length}`);
+    players.forEach((p, i) => console.log(`🎭 [CPEngine]     P${i}: ${p.name} (ID: ${p.id}, Bot: ${!!p.isBot})`));
 
     // FIX BUG-8: was a deterministic LCG — same seed = same roles every game.
     // Host is authoritative and broadcasts the result, so Math.random() is correct.
+    const ROLES: Role[] = ["King", "Police", "Thief", "Advisor"];
     let shuffled: Role[] = [...ROLES];
+    console.log(`🎭 [CPEngine]   Initial Roles: [${shuffled.join(", ")}]`);
     
     // Custom logic: 50% chance for human to be Police if 1 human, 3 bots
     const humanIndices = players.reduce<number[]>((acc, p, i) => (!p.isBot ? [...acc, i] : acc), []);
@@ -441,12 +479,35 @@ export const ChorPoliceEngine = {
       }
     }
 
-    ChorPoliceEngine.state.roles = shuffled;
-    ChorPoliceEngine.state.policeIndex = shuffled.indexOf("Police");
-    ChorPoliceEngine.state.kingIndex = shuffled.indexOf("King");
-    ChorPoliceEngine.state.thiefIndex = shuffled.indexOf("Thief");
-    ChorPoliceEngine.state.advisorIndex = shuffled.indexOf("Advisor");
-    ChorPoliceEngine.state.isRoundActive = true;
+    try {
+      console.log("[CP_START] startRound: before role shuffle");
+      ChorPoliceEngine.state.roles = shuffled;
+      ChorPoliceEngine.state.policeIndex = shuffled.indexOf("Police");
+      ChorPoliceEngine.state.kingIndex = shuffled.indexOf("King");
+      ChorPoliceEngine.state.thiefIndex = shuffled.indexOf("Thief");
+      ChorPoliceEngine.state.advisorIndex = shuffled.indexOf("Advisor");
+
+      console.log("[CP_START] startRound: roles created", shuffled);
+
+      // 🛡️ INDEX VALIDATION
+      if (ChorPoliceEngine.state.policeIndex === -1 || ChorPoliceEngine.state.kingIndex === -1) {
+        throw new Error(`Critical roles missing: King=${ChorPoliceEngine.state.kingIndex}, Police=${ChorPoliceEngine.state.policeIndex}`);
+      }
+
+      ChorPoliceEngine.state.isRoundActive = true;
+      ChorPoliceEngine.state.selectedTargetId = null;
+
+      console.log("[CP_START] startRound: before player loop (generating targets)");
+      // 🎭 Joker Integration: Generate the 3 investigation mystery cards
+      const targets = ChorPoliceEngine.generateInvestigationTargets();
+      ChorPoliceEngine.state.investigationTargets = targets;
+      console.log("[CP_START] startRound: after player loop");
+    } catch (error) {
+      console.error("[CP_START] startRound crashed during initialization", error);
+      return;
+    }
+
+
 
     // ── Redux sync ──
     dispatch(setRoundActive(true));
@@ -482,6 +543,7 @@ export const ChorPoliceEngine = {
     const policeIdx = ChorPoliceEngine.state.policeIndex;
     const kingIdx = ChorPoliceEngine.state.kingIndex;
 
+    console.log("[CP_START] startRound: before PUBLIC_REVEAL");
     PacketRouter.broadcast({
       type: CP.PUBLIC_REVEAL,
       kingId: players[kingIdx].id,
@@ -498,44 +560,57 @@ export const ChorPoliceEngine = {
         avatarId: p.avatarId,
         isPublic: i === kingIdx || i === policeIdx,
       })),
+      investigationTargets: ChorPoliceEngine.state.investigationTargets.map(t => ({
+        id: t.id,
+        type: t.type,
+        playerIndex: t.playerIndex,
+        role: t.role,
+      })),
     });
+    console.log("[CP_START] startRound: PUBLIC_REVEAL emitted");
   },
 
   /* ─── Evaluate the Police player's guess ─── */
-  evaluateGuess: (targetIndex: number): void => {
+  evaluateGuess: (targetId: string): void => {
     if (!ChorPoliceEngine.state.isRoundActive) {
       console.log("🛡️ [CPEngine] Ignoring duplicate guess — round not active.");
       return;
     }
 
-    // ✅ FIX: Reject guesses on already-revealed cards (King/Police)
-    // Bots should only click hidden cards (Thief/Advisor positions)
-    const { policeIndex, kingIndex } = ChorPoliceEngine.state;
-    if (targetIndex === policeIndex || targetIndex === kingIndex) {
-      console.log(`🛡️ [CPEngine] Ignoring guess on revealed card — index ${targetIndex} is ${targetIndex === policeIndex ? 'Police' : 'King'}`);
+    const { investigationTargets, roles, players, currentRound, scores, policeIndex, kingIndex } = ChorPoliceEngine.state;
+    
+    // Find target in investigationTargets (could be Thief, Advisor, or Joker)
+    const target = investigationTargets.find(t => t.id === targetId);
+
+    if (!target) {
+      console.error(`🚨 [CPEngine] Guess failed: targetId ${targetId} not found in current investigationTargets!`);
       return;
     }
-    if (targetIndex < 0 || targetIndex > 3) {
-      console.log(`🛡️ [CPEngine] Ignoring out-of-range guess — index ${targetIndex}`);
+
+    // 🛡️ REVEALED CARD GUARD: Although Joker targets are typically only mystery cards,
+    // we verify that the playerIndex (if any) isn't the King or Police.
+    if (target.playerIndex !== null && (target.playerIndex === policeIndex || target.playerIndex === kingIndex)) {
+      console.warn(`🛡️ [CPEngine] Ignoring guess on revealed role: ${target.role}`);
       return;
     }
 
     ChorPoliceEngine.state.isRoundActive = false;
+    ChorPoliceEngine.state.selectedTargetId = targetId;
     dispatch(setRoundActive(false));
 
-    const { roles, players, currentRound, scores } = ChorPoliceEngine.state;
-    const guessedRole = roles[targetIndex];
-    const correct = guessedRole === "Thief";
+    const correct = target.role === "Thief";
+    const guessedRole = target.role;
 
     console.log(`🎭 [CPEngine] ═══════════════════════════════════`);
-    console.log(`🎭 [CPEngine] POLICE GUESS EVALUATION`);
-    console.log(`🎭 [CPEngine]   Target index : ${targetIndex}`);
-    console.log(`🎭 [CPEngine]   Target role  : ${guessedRole}`);
+    console.log(`🎭 [CPEngine] POLICE GUESS EVALUATION (ID: ${targetId})`);
+    console.log(`🎭 [CPEngine]   Target Role  : ${guessedRole}`);
     console.log(`🎭 [CPEngine]   Correct      : ${correct ? "✅ YES (caught thief!)" : "❌ NO (thief escaped)"}`);
     console.log(`🎭 [CPEngine]   Round        : ${currentRound}`);
     console.log(`🎭 [CPEngine] ═══════════════════════════════════`);
 
-    // Scoring: per the existing offline logic
+    // Scoring logic:
+    // If Correct: King 1000, Advisor 800, Police 500, Thief 0
+    // If Wrong (Advisor or Joker): King 1000, Advisor 800, Police 0, Thief 500
     const pointMap: Record<Role, number> = correct
       ? { King: 1000, Advisor: 800, Police: 500, Thief: 0 }
       : { King: 1000, Advisor: 800, Police: 0, Thief: 500 };
@@ -543,7 +618,7 @@ export const ChorPoliceEngine = {
     // Apply scores
     players.forEach((player, index) => {
       const role = roles[index];
-      const points = pointMap[role];
+      const points = pointMap[role as Role] || 0;
       if (scores[player.id]) {
         scores[player.id].totalScore += points;
         scores[player.id].roundScores.push(points);
@@ -553,20 +628,22 @@ export const ChorPoliceEngine = {
 
     // Broadcast result to all players
     const CP = MODES.CHOR_POLICE;
-    const leaderboard = Object.values(scores)
-      .sort((a, b) => b.totalScore - a.totalScore);
+    const leaderboard = ChorPoliceEngine.getLeaderboard();
+    const targetIndex = investigationTargets.findIndex(t => t.id === targetId);
 
     PacketRouter.broadcast({
       type: CP.ROUND_RESULT,
       correct,
-      guessedIndex: targetIndex,
+      guessedTargetId: targetId,
+      guessedTargetIndex: targetIndex,
+      guessedPlayerIndex: target?.playerIndex ?? null,
       guessedRole,
       round: currentRound,
-      allRoles: roles.map((role, i) => ({
+      allRoles: players.map((p, i) => ({
         playerIndex: i,
-        playerId: players[i].id,
-        playerName: players[i].name,
-        role,
+        playerId: p.id,
+        playerName: p.name,
+        role: roles[i],
       })),
       leaderboard,
       isLastRound: currentRound >= ChorPoliceEngine.state.totalRounds,
@@ -617,6 +694,21 @@ export const ChorPoliceEngine = {
       (a, b) => b.totalScore - a.totalScore,
     ),
 
+  generateInvestigationTargets: () => {
+    const { thiefIndex, advisorIndex } = ChorPoliceEngine.state;
+    const targets: Array<{ id: string; type: "THIEF" | "ADVISOR" | "JOKER"; role: string; playerIndex: number | null }> = [
+      { id: "target_thief", role: "Thief", type: "THIEF", playerIndex: thiefIndex },
+      { id: "target_advisor", role: "Advisor", type: "ADVISOR", playerIndex: advisorIndex },
+      { id: "target_joker", role: "Joker", type: "JOKER", playerIndex: null },
+    ];
+    // Shuffle the 3 targets so Thief isn't always at the same relative spot
+    for (let i = targets.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [targets[i], targets[j]] = [targets[j], targets[i]];
+    }
+    return targets;
+  },
+
   reset: (): void => {
     console.log("🧹 [CPEngine] Full state reset.");
     ChorPoliceEngine.state.players = [];
@@ -631,6 +723,8 @@ export const ChorPoliceEngine = {
     ChorPoliceEngine.state.thiefIndex = -1;
     ChorPoliceEngine.state.advisorIndex = -1;
     ChorPoliceEngine.state.isRoundActive = false;
+    ChorPoliceEngine.state.investigationTargets = [];
+    ChorPoliceEngine.state.selectedTargetId = null;
   },
 };
 

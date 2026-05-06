@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { useRouter } from "expo-router";
 import { AppDispatch } from "@/redux/store";
@@ -13,11 +13,11 @@ import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
 
 interface CleanupDeps {
-  timerRefs: React.MutableRefObject<ReturnType<typeof setTimeout>[]>;
-  isQuittingRef: React.MutableRefObject<boolean>;
-  currentQuizPlayerIdRef: React.MutableRefObject<string | null>;
-  scoreQuizStartedRef: React.MutableRefObject<boolean>;
-  roundStartPendingRef: React.MutableRefObject<boolean>;
+  timerRefs: React.RefObject<ReturnType<typeof setTimeout>[]>;
+  isQuittingRef: React.RefObject<boolean>;
+  currentQuizPlayerIdRef: React.RefObject<string | null>;
+  scoreQuizStartedRef: React.RefObject<boolean>;
+  roundStartPendingRef: React.RefObject<boolean>;
 }
 
 export const useCPCleanup = ({
@@ -86,10 +86,10 @@ export const useCPCleanup = ({
     setTimeout(() => dispatch(resetGameState()), 100);
   }, [dispatch, router]);
 
-  return {
+  return useMemo(() => ({
     clearAllTimers,
     performFullCleanup,
     handleFinalExit,
     navigateToHome,
-  };
+  }), [clearAllTimers, performFullCleanup, handleFinalExit, navigateToHome]);
 };

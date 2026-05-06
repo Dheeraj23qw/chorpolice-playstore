@@ -47,7 +47,8 @@ export const EntryModal: React.FC<EntryModalProps> = ({
   const userCoins = useSelector((state: RootState) => state.wallet.coins);
   const othersCoins = minPlayerCoins ?? userCoins;
 
-  console.log("[EntryModal] userCoins:", userCoins, "minPlayerCoins (others):", minPlayerCoins, "limiting by (othersCoins):", othersCoins);
+
+
 
   const [selected, setSelected] = useState(10);
 

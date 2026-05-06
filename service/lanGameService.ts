@@ -1,5 +1,5 @@
 import { NETWORK } from "../constants/Networking";
-import { PacketRouter } from "./PacketRouter";
+import { PacketRouter } from "@/service/PacketRouter";
 import { updateDebugMetric } from "./observability/DebugService";
 import { HeartbeatService } from "./network/HeartbeatService";
 import { GameSessionTransport } from "./network/GameSessionTransport";
@@ -12,6 +12,7 @@ import {
 import { ChorPoliceEngine } from "./ChorPoliceEngine";
 import { QuizEngine } from "./QuizEngine";
 import { toast } from "@/components/feedback/toast";
+import { registerIncomingPacketHandler, notifyGenericListeners } from "@/service/packetDispatcher";
 
 const reconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 const reconnectIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
@@ -50,7 +51,7 @@ const notifyListeners = (packet: any, sourceIp?: string) => {
     try {
       listener(packet, sourceIp);
     } catch (e) {
-      console.warn("[LAN] Listener error:", e);
+      if (__DEV__) console.log("[LAN] Listener error:", e);
     }
   });
 };
@@ -194,8 +195,15 @@ import { normalizePeerIp } from "./network/normalizePeerIp";
 export { normalizePeerIp };
 
 export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
-  // Guard: drop packets if transport is shutting down
-  if (GameSessionTransport.isClosing) return;
+  if (__DEV__) {
+    console.log(`🌐 [LAN] handleIncomingPacket: type=${packet?.type} source=${rawSourceIp || "LOCAL"}`);
+  }
+  if (GameSessionTransport.isClosing) {
+    if (__DEV__) {
+      console.log(`🌐 [LAN] Packet dropped: Transport is closing. type=${packet?.type}`);
+    }
+    return;
+  }
 
   const sourceIp = normalizePeerIp(rawSourceIp);
   if (!packet || typeof packet !== "object" || !packet.type) {
@@ -204,6 +212,7 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
     }
     return;
   }
+
 
   debugLogger("RECEIVER", packet, sourceIp || "LOCAL");
   updateDebugMetric("lastPacketType", packet.type);
@@ -375,8 +384,17 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
   }
 
   notifyListeners(packet, sourceIp);
+  if (__DEV__) {
+    console.log(`🌐 [LAN] HANDOFF TO ROUTER: ${packet.type}`);
+  }
   PacketRouter.route(packet, sourceIp);
+  
+  // 🛡️ Dispatch to decoupled listeners (e.g. Bots)
+  notifyGenericListeners(packet, sourceIp);
 };
+
+// 🖇️ Register this handler to the dispatcher bridge
+registerIncomingPacketHandler(handleIncomingPacket);
 
 let apIsolationCallback: (() => void) | null = null;
 
@@ -471,7 +489,6 @@ export const startHeartbeat = (isHost: boolean) => {
           reconnectIntervals.set("host", interval);
 
           const timer = setTimeout(() => {
-            console.log("📡 [LAN] Host reconnection timeout.");
             clearInterval(reconnectIntervals.get("host"));
             reconnectIntervals.delete("host");
             
