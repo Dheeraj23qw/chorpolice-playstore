@@ -1,95 +1,183 @@
 /**
  * QuestionTranslator.ts
- * Lightweight translator for Think and Count questions.
- * Handles pattern-based regex translation for dynamic questions.
+ * Robust translator for Think and Count quiz content.
+ * Covers every generated question template and keeps option values stable.
  */
 
-const ROLE_MAP: Record<string, string> = {
-  King: "King (राजा)",
-  Advisor: "Advisor (मंत्री)",
-  Police: "Police (सिपाही)",
-  Thief: "Thief (चोर)",
+type NullableText = string | null | undefined;
+
+export interface LocalizedQuizOption {
+  label: string;
+  value: string;
+}
+
+const ROLE_LABEL_MAP: Record<string, string> = {
+  King: "Raja",
+  Advisor: "Mantri",
+  Police: "Police",
+  Thief: "Chor",
+};
+
+const ROLE_SENTENCE_MAP: Record<string, string> = {
+  King: "Raja",
+  Advisor: "Mantri",
+  Police: "Police",
+  Thief: "Chor",
 };
 
 const RANK_MAP: Record<string, string> = {
-  first: "1st (पहले)",
-  second: "2nd (दूसरे)",
-  third: "3rd (तीसरे)",
-  fourth: "4th (चौथे)",
+  first: "first",
+  second: "second",
+  third: "third",
+  fourth: "fourth",
 };
+
+const NUMBER_TYPE_MAP: Record<string, string> = {
+  even: "even",
+  odd: "odd",
+  prime: "prime",
+};
+
+const EXACT_TRANSLATIONS: Record<string, string> = {
+  True: "Sahi",
+  False: "Galat",
+  King: ROLE_LABEL_MAP.King,
+  Advisor: ROLE_LABEL_MAP.Advisor,
+  Police: ROLE_LABEL_MAP.Police,
+  Thief: ROLE_LABEL_MAP.Thief,
+};
+
+const translationCache = new Map<string, string>();
+const optionCache = new Map<string, LocalizedQuizOption[]>();
+
+const toSentenceRole = (value: string) => ROLE_SENTENCE_MAP[value] || value;
+const toOptionRole = (value: string) => ROLE_LABEL_MAP[value] || value;
+const toRankHindi = (value: string) => RANK_MAP[value.toLowerCase()] || value;
+const toNumberTypeHindi = (value: string) =>
+  NUMBER_TYPE_MAP[value.toLowerCase()] || value;
+
+const normalizeText = (text: string) =>
+  text
+    .replace(/[’‘]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+
+const applyFallbackTokenTranslations = (text: string) =>
+  text
+    .replace(/\b(True)\b/g, "Sahi")
+    .replace(/\b(False)\b/g, "Galat")
+    .replace(/\b(King|Advisor|Police|Thief)\b/g, (match) =>
+      toSentenceRole(match),
+    );
 
 const HINDI_TEMPLATES = [
   {
-    // ScoreQuestion: Which player has a score of 50 at the end of round 3?
     pattern: /Which player has a score of (\d+) at the end of round (\d+)\?/i,
-    translate: (match: string[]) => `Round ${match[2]} के अंत में किस Player का Score ${match[1]} है?`,
+    translate: ([, score, round]: RegExpMatchArray) =>
+      `Round ${round} ke end me kis player ka score ${score} hai?`,
   },
   {
-    // PlayerPositionBooleanQuestion: Is Police at second position after round 3?
-    pattern: /Is ([^ ]+) at ([^ ]+) position after round (\d+)\?/i,
-    translate: (match: string[]) => {
-      const role = ROLE_MAP[match[1]] || match[1];
-      const rank = RANK_MAP[match[2]] || match[2];
-      return `क्या ${role} Round ${match[3]} के बाद ${rank} Position पर है?`;
-    },
+    pattern: /What is the total score of the ([^?]+?) at the end of round (\d+)\?/i,
+    translate: ([, role, round]: RegExpMatchArray) =>
+      `Round ${round} ke end me ${toSentenceRole(role)} ka total score kitna hai?`,
   },
   {
-    // RandomPositionQuestion: Who was at first position at the end of round 3?
     pattern: /Who was at ([^ ]+) position at the end of round (\d+)\?/i,
-    translate: (match: string[]) => {
-      const rank = RANK_MAP[match[1]] || match[1];
-      return `Round ${match[2]} के अंत में ${rank} Position पर कौन था?`;
-    },
+    translate: ([, rank, round]: RegExpMatchArray) =>
+      `Round ${round} ke end me ${toRankHindi(rank)} position par kaun tha?`,
   },
   {
-    // DivisibilityQuestion: Is the score of Police in round 3 divisible by 2?
+    pattern: /Is ([^ ]+) at ([^ ]+) position after round (\d+)\?/i,
+    translate: ([, role, rank, round]: RegExpMatchArray) =>
+      `Kya Round ${round} ke baad ${toSentenceRole(role)} ${toRankHindi(rank)} position par hai?`,
+  },
+  {
     pattern: /Is the score of ([^ ]+) in round (\d+) divisible by (\d+)\?/i,
-    translate: (match: string[]) => {
-      const role = ROLE_MAP[match[1]] || match[1];
-      return `क्या Round ${match[2]} में ${role} का Score ${match[3]} से Divisible है?`;
-    },
+    translate: ([, role, round, divisor]: RegExpMatchArray) =>
+      `Kya Round ${round} me ${toSentenceRole(role)} ka score ${divisor} se divisible hai?`,
   },
   {
-    // RoundOffQuestion: Round off 45 to the nearest 10. What is the rounded-off score?
     pattern: /Round off (\d+) to the nearest (\d+)\. What is the rounded-off score\?/i,
-    translate: (match: string[]) => `${match[1]} को निकटतम ${match[2]} तक Round off करें। Rounded-off Score क्या है?`,
+    translate: ([, score, step]: RegExpMatchArray) =>
+      `${score} ko nearest ${step} tak round off karo. Rounded score kya hoga?`,
   },
   {
-    // TrueFalse Patterns (Even/Odd/Prime)
-    pattern: /Is ([^']+)'s total score at the end of round (\d+) an (even|odd|prime) number\?/i,
-    translate: (match: string[]) => {
-      const role = ROLE_MAP[match[1]] || match[1];
-      const typeMap: Record<string, string> = {
-        even: "Even (सम)",
-        odd: "Odd (विषम)",
-        prime: "Prime (अभाज्य)",
-      };
-      return `क्या Round ${match[2]} के अंत में ${role} का कुल Score एक ${typeMap[match[3]] || match[3]} संख्या है?`;
-    },
+    pattern: /Is ([^']+)'s total score at the end of round (\d+) a[n]? (even|odd|prime) number\?/i,
+    translate: ([, role, round, type]: RegExpMatchArray) =>
+      `Kya Round ${round} ke end me ${toSentenceRole(role)} ka total score ${toNumberTypeHindi(type)} number hai?`,
+  },
+  {
+    pattern: /What is the sum of ([^']+)'s and ([^']+)'s scores in round (\d+)\?/i,
+    translate: ([, firstRole, secondRole, round]: RegExpMatchArray) =>
+      `Round ${round} me ${toSentenceRole(firstRole)} aur ${toSentenceRole(secondRole)} ke score ka sum kya hai?`,
+  },
+  {
+    pattern: /What is the absolute difference between ([^']+)'s and ([^']+)'s scores in round (\d+)\?/i,
+    translate: ([, firstRole, secondRole, round]: RegExpMatchArray) =>
+      `Round ${round} me ${toSentenceRole(firstRole)} aur ${toSentenceRole(secondRole)} ke score ka difference kitna hai?`,
+  },
+  {
+    pattern: /What is the result of multiplying ([^']+)'s and ([^']+)'s scores in round (\d+)\?/i,
+    translate: ([, firstRole, secondRole, round]: RegExpMatchArray) =>
+      `Round ${round} me ${toSentenceRole(firstRole)} aur ${toSentenceRole(secondRole)} ke score multiply karne par result kya hoga?`,
+  },
+  {
+    pattern: /No player is ranked ([^ ]+) at the end of round (\d+)\./i,
+    translate: ([, rank, round]: RegExpMatchArray) =>
+      `Round ${round} ke end me ${toRankHindi(rank)} position par koi player nahi tha.`,
   },
 ];
 
-export const translateToHindi = (text: string): string => {
-  if (!text) return text;
+export const translateToHindi = (text: NullableText): string => {
+  if (!text) return "";
+
+  const normalized = normalizeText(text);
+  const cached = translationCache.get(normalized);
+  if (cached) {
+    return cached;
+  }
 
   for (const item of HINDI_TEMPLATES) {
-    const match = text.match(item.pattern);
+    const match = normalized.match(item.pattern);
     if (match) {
-      return item.translate(match);
+      const translated = item.translate(match);
+      translationCache.set(normalized, translated);
+      return translated;
     }
   }
 
-  // Fallback for True/False options
-  if (text === "True") return "सही";
-  if (text === "False") return "गलत";
+  const exactTranslation = EXACT_TRANSLATIONS[normalized];
+  if (exactTranslation) {
+    translationCache.set(normalized, exactTranslation);
+    return exactTranslation;
+  }
 
-  // Fallback for roles in options
-  if (ROLE_MAP[text]) return ROLE_MAP[text];
-
-  return text;
+  const fallback = applyFallbackTokenTranslations(normalized);
+  translationCache.set(normalized, fallback);
+  return fallback;
 };
 
-export const translateOptionsToHindi = (options: string[]): string[] => {
-  if (!options) return options;
-  return options.map(translateToHindi);
+export const translateOptionsToHindi = (options: string[] | null | undefined): string[] => {
+  if (!options) return [];
+  return options.map((option) => EXACT_TRANSLATIONS[option] || translateToHindi(option));
+};
+
+export const buildLocalizedQuizOptions = (
+  options: string[] | null | undefined,
+): LocalizedQuizOption[] => {
+  const normalizedOptions = options || [];
+  const cacheKey = normalizedOptions.join("||");
+  const cached = optionCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const localized = normalizedOptions.map((value) => ({
+    value,
+    label: EXACT_TRANSLATIONS[value] || translateToHindi(value),
+  }));
+
+  optionCache.set(cacheKey, localized);
+  return localized;
 };

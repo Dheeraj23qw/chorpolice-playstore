@@ -1,32 +1,30 @@
 import React, { memo, useCallback, useEffect } from "react";
-import { View, ScrollView, Image, BackHandler, TouchableOpacity } from "react-native";
+import { BackHandler, Image, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { hp, wp, rf } from "@/utils/responsive";
-
-// Components
-import GameTable from "../../components/thinkAndCountScreen/GameTable";
-import { QuizButton } from "../../components/thinkAndCountScreen/QuizButtons";
-import Timer from "../../components/thinkAndCountScreen/Timer";
-
-import QuestionSection from "../../components/thinkAndCountScreen/QuestionSection";
-import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection";
-import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
-import QuizExitModal from "@/modal/QuizExitModal";
-import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
 
 import { Text } from "@/components/Text";
-import { QuizEngine } from "@/service/QuizEngine";
-import { NUM_QUESTIONS } from "@/constants/quizConstants";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { QuizLeaderboard } from "@/components/MultiPlayerQuizLeaderboard/QuizLeaderboard";
-import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
-import { translateToHindi, translateOptionsToHindi } from "@/utils/QuestionTranslator";
+import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
+import QuizExitModal from "@/modal/QuizExitModal";
+import { NUM_QUESTIONS } from "@/constants/quizConstants";
+import { useQuizGameLogic } from "@/hooks/questionhook/gamelogic";
+import { QuizEngine } from "@/service/QuizEngine";
+import { hp, rf, wp } from "@/utils/responsive";
+import {
+  buildLocalizedQuizOptions,
+  translateToHindi,
+} from "@/utils/QuestionTranslator";
+import GameTable from "../../components/thinkAndCountScreen/GameTable";
+import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection";
 import { PersonalSummary } from "../../components/thinkAndCountScreen/PersonalSummary";
+import QuestionSection from "../../components/thinkAndCountScreen/QuestionSection";
+import { QuizButton } from "../../components/thinkAndCountScreen/QuizButtons";
+import { QuizLanguageToggle } from "../../components/thinkAndCountScreen/QuizLanguageToggle";
+import Timer from "../../components/thinkAndCountScreen/Timer";
+import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
 
   const {
     countdown,
@@ -44,9 +42,7 @@ const QuizScreen = () => {
     table,
     question,
     playerMessage,
-
     handleQuitInMiddle,
-    handleQuit,
     isLeaderboardVisible,
     leaderboardData,
     isMultiplayer,
@@ -61,6 +57,8 @@ const QuizScreen = () => {
     toggleHindi,
     matchHistory,
     isPersonalSummaryVisible,
+    handleOpenFinalLeaderboard,
+    correctAnswer,
   } = useQuizGameLogic();
 
   useEffect(() => {
@@ -84,12 +82,10 @@ const QuizScreen = () => {
     [handleAnswerSelection],
   );
 
-  /**
-   * BLOCKED STATE: When waiting for others OR leaderboard is visible,
-   * the question content must NOT be rendered at all.
-   * This prevents players from reading the next question early.
-   */
   const isContentBlocked = isWaitingForOthers || isLeaderboardVisible;
+  const visibleOptions = isFiftyFiftyActive
+    ? remainingOptions || []
+    : question?.options || [];
 
   return (
     <View className="flex-1 bg-black">
@@ -100,7 +96,6 @@ const QuizScreen = () => {
       />
       <View className="absolute h-full w-full bg-black/70" />
 
-      {/* ⏳ WAITING OVERLAY — Fully opaque, NO content visible behind */}
       {isWaitingForOthers && (
         <View className="absolute z-[70] h-full w-full items-center justify-center bg-black">
           <Image
@@ -130,146 +125,128 @@ const QuizScreen = () => {
             playerData={playerMessage}
           />
         </View>
+      ) : isPersonalSummaryVisible ? (
+        <View className="z-[60] flex-1">
+          <PersonalSummary
+            matchHistory={matchHistory}
+            correctAnswers={correctAnswer}
+            totalQuestions={matchHistory.length}
+            isHindi={isHindi}
+            translateFn={translateToHindi}
+            onViewTable={() => setIsTableOpen(true)}
+            onContinue={handleOpenFinalLeaderboard}
+          />
+        </View>
       ) : (
-        <>
+        <View
+          style={{
+            flex: 1,
+            paddingTop: insets.top > 0 ? insets.top : hp(2),
+            paddingBottom: insets.bottom,
+          }}
+        >
           <View
             style={{
-              flex: 1,
-              paddingTop: insets.top > 0 ? insets.top : hp(2),
-              paddingBottom: insets.bottom,
+              top: insets.top > 0 ? insets.top + hp(1) : hp(7),
+              paddingHorizontal: wp(5),
+              paddingVertical: hp(1),
+            }}
+            className="absolute z-50 self-center rounded-full border border-white/20 bg-white/10 shadow-2xl backdrop-blur-xl"
+          >
+            <Text
+              style={{ fontSize: rf(1.4) }}
+              className="font-main-bold uppercase tracking-[3px] text-indigo-400"
+            >
+              {isLeaderboardVisible
+                ? isHindi
+                  ? `Round ${questionIndex + 1} Result`
+                  : `Round ${questionIndex + 1} Results`
+                : isHindi
+                  ? `Question ${questionIndex + 1}`
+                  : `Question ${questionIndex + 1}`}
+            </Text>
+          </View>
+
+          <View style={{ marginTop: hp(8) }}>
+            {!isContentBlocked && <Timer countdown={countdown} />}
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: wp(6),
+              paddingTop: hp(2),
+              paddingBottom: hp(10),
+              flexGrow: 1,
             }}
           >
-            <View
-              style={{
-                top: insets.top > 0 ? insets.top + hp(1) : hp(7),
-                paddingHorizontal: wp(5),
-                paddingVertical: hp(1),
-              }}
-              className="absolute z-50 self-center rounded-full border border-white/20 bg-white/10 shadow-2xl backdrop-blur-xl"
-            >
-              <Text
-                style={{ fontSize: rf(1.4) }}
-                className="font-main-bold uppercase tracking-[3px] text-indigo-400"
-              >
-                {isPersonalSummaryVisible
-                  ? "Match Summary"
-                  : isLeaderboardVisible
-                    ? `Round ${questionIndex + 1} Results`
-                    : `Question ${questionIndex + 1}`}
-              </Text>
-            </View>
-
-            <View style={{ marginTop: hp(8) }}>
-              {!isContentBlocked && <Timer countdown={countdown} />}
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: wp(6),
-                paddingTop: hp(2),
-                paddingBottom: hp(10),
-                flexGrow: 1,
-              }}
-            >
-              {isPersonalSummaryVisible ? (
-                <PersonalSummary 
-                  matchHistory={matchHistory}
+            {isLeaderboardVisible ? (
+              <QuizLeaderboard
+                round={questionIndex + 1}
+                data={leaderboardData}
+                roundProgress={roundProgress}
+                timeLeft={countdown}
+                onNext={handleNextQuestion}
+                isHost={isHost}
+                isLastRound={questionIndex + 1 >= NUM_QUESTIONS}
+                totalPot={QuizEngine.state.totalPot}
+                localPlayerId={localPlayerId}
+              />
+            ) : !isContentBlocked ? (
+              <View>
+                <QuizLanguageToggle
                   isHindi={isHindi}
-                  translateFn={translateToHindi}
-                  onViewTable={() => setIsTableOpen(true)}
-                  onFinish={handleQuit}
+                  onToggle={toggleHindi}
                 />
-              ) : isLeaderboardVisible ? (
-                <QuizLeaderboard
-                  round={questionIndex + 1}
-                  data={leaderboardData}
-                  roundProgress={roundProgress}
-                  timeLeft={countdown}
-                  onNext={handleNextQuestion}
-                  isHost={isHost}
-                  isLastRound={questionIndex + 1 >= NUM_QUESTIONS}
-                  totalPot={QuizEngine.state.totalPot}
-                  localPlayerId={localPlayerId}
+
+                <QuestionSection
+                  question={
+                    isHindi
+                      ? translateToHindi(question?.question)
+                      : question?.question
+                  }
                 />
-              ) : !isContentBlocked ? (
-                /* Only render question content when NOT blocked */
-                <View>
-                  {/* 🌍 HINDI TOGGLE BUTTON */}
-                  <TouchableOpacity
-                    onPress={toggleHindi}
-                    activeOpacity={0.7}
-                    className={`absolute right-0 top-0 z-[100] flex-row items-center rounded-xl border px-3 py-2 shadow-lg backdrop-blur-xl ${
-                      isHindi
-                        ? "border-orange-500/50 bg-orange-500/10"
-                        : "border-white/10 bg-white/5"
-                    }`}
+
+                <View
+                  style={{ marginTop: hp(1), marginBottom: hp(1) }}
+                  className="items-center"
+                >
+                  <View className="mb-4 h-[1px] w-20 bg-white/10" />
+                  <Text
+                    style={{ fontSize: rf(1.4) }}
+                    className="text-center font-main-md uppercase tracking-widest text-white/40"
                   >
-                    <Ionicons
-                      name="language-outline"
-                      size={18}
-                      color={isHindi ? "#f97316" : "#6366f1"}
-                    />
-                    <Text
-                      style={{ fontSize: rf(1.2) }}
-                      className={`ml-2 font-main-bold uppercase tracking-widest ${
-                        isHindi ? "text-orange-400" : "text-indigo-400"
-                      }`}
-                    >
-                      {isHindi ? "English" : "Hindi"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <QuestionSection
-                    question={isHindi ? translateToHindi(question?.question) : question?.question}
-                  />
-
-                  <View
-                    style={{ marginTop: hp(1), marginBottom: hp(1) }}
-                    className="items-center"
-                  >
-                    <View className="mb-4 h-[1px] w-20 bg-white/10" />
-                    <Text
-                      style={{ fontSize: rf(1.4) }}
-                      className="text-center font-main-md uppercase tracking-widest text-white/40"
-                    >
-                      Consult the Quiz table to solve
-                    </Text>
-                  </View>
-
-                  <View style={{ marginTop: hp(4) }}>
-                    <OptionsSection
-                      options={
-                        isHindi
-                          ? translateOptionsToHindi(
-                              isFiftyFiftyActive
-                                ? (remainingOptions || [])
-                                : (question?.options || [])
-                            )
-                          : isFiftyFiftyActive
-                            ? remainingOptions
-                            : question?.options
-                      }
-                      handleAnswerSelection={onOptionPress}
-                    />
-                  </View>
-
-                  <View style={{ marginTop: hp(1) }}>
-                    <QuizButton
-                      showHint={false}
-                      setIsTableOpen={setIsTableOpen}
-                      handleNextQuestion={handleNextQuestion}
-                      handleFiftyFifty={handleFiftyFifty}
-                    />
-                  </View>
+                    {isHindi
+                      ? "Answer ke liye Quiz Table dekho"
+                      : "Consult the Quiz table to solve"}
+                  </Text>
                 </View>
-              ) : null}
-            </ScrollView>
-          </View>
-        </>
+
+                <View style={{ marginTop: hp(4) }}>
+                  <OptionsSection
+                    options={
+                      isHindi
+                        ? buildLocalizedQuizOptions(visibleOptions)
+                        : visibleOptions
+                    }
+                    handleAnswerSelection={onOptionPress}
+                  />
+                </View>
+
+                <View style={{ marginTop: hp(1) }}>
+                  <QuizButton
+                    showHint={false}
+                    setIsTableOpen={setIsTableOpen}
+                    handleNextQuestion={handleNextQuestion}
+                    handleFiftyFifty={handleFiftyFifty}
+                  />
+                </View>
+              </View>
+            ) : null}
+          </ScrollView>
+        </View>
       )}
 
-      {/* 🚪 EXIT MODAL */}
       <QuizExitModal
         visible={isExitModalVisible}
         onCancel={handleCancelExit}

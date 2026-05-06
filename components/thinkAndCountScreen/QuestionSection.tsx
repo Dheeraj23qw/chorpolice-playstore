@@ -38,7 +38,9 @@ const QuestionSection: React.FC<QuestionSectionProps> = ({ question }) => {
             }}
             // Swapped font-bold for font-main-bold
             className="text-center font-main-bold tracking-tight text-white"
-            numberOfLines={5}
+            numberOfLines={6}
+            adjustsFontSizeToFit
+            minimumFontScale={0.82}
           >
             {question || "Loading your next challenge..."}
           </Text>

@@ -3,6 +3,7 @@ import { PacketRouter } from "@/service/PacketRouter";
 import { updateDebugMetric } from "./observability/DebugService";
 import { HeartbeatService } from "./network/HeartbeatService";
 import { GameSessionTransport } from "./network/GameSessionTransport";
+import { isLobbyPresenceToastAllowed } from "./network/LobbyToastVisibility";
 import store from "@/redux/store";
 import { 
   setPlayerConnectionStatus, 
@@ -333,7 +334,9 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
       };
       
       GameSessionTransport.sendToPeer(sourceIp, syncPacket);
-      toast.info("Player reconnected", `${player?.name} joined back.`);
+      if (isLobbyPresenceToastAllowed(state)) {
+        toast.info("Player reconnected", `${player?.name} joined back.`);
+      }
     }
     return;
   }

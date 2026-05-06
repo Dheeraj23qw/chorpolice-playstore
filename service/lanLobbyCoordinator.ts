@@ -36,6 +36,7 @@ import { GameSessionTransport } from "./network/GameSessionTransport";
 import { logLanDebug, updateDebugMetric } from "./observability/DebugService";
 import { buildJoinPacket } from "./network/LobbyDataHelpers";
 import { handleLobbyPacket, LobbyPacketDeps } from "./network/LobbyPacketHandler";
+import { isLobbyPresenceToastAllowed } from "./network/LobbyToastVisibility";
 import { startIpDetectionLoop } from "./HostIpDetector";
 
 // ── Module state ──
@@ -125,9 +126,8 @@ export const initHostLobby = ({ localPlayerId, name, avatarId, coins, gameType }
       : botNames.join(" and ");
     
     botAnnouncementTimers.push(setTimeout(() => {
-      const stage = store.getState().session.lobbyStage;
-      // Only show the toast if we are still in the lobby (room/setup)
-      if (stage === "room" || stage === "setup") {
+      const session = store.getState().session;
+      if (isLobbyPresenceToastAllowed(session)) {
         toast.info(`${list} joined the room!`);
       }
     }, 1500));

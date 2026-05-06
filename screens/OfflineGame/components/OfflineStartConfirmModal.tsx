@@ -1,6 +1,5 @@
 import React from "react";
-import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
-import { BlurView } from "expo-blur";
+import { Modal, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,13 +19,15 @@ export const OfflineStartConfirmModal: React.FC<
   OfflineStartConfirmModalProps
 > = ({ visible, playerCount, totalRounds, onClose, onConfirm }) => {
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View className="flex-1 items-center justify-center bg-black/70 px-6">
-        <BlurView
-          intensity={18}
-          tint="dark"
-          style={StyleSheet.absoluteFillObject}
+    <Modal visible={visible} animationType="fade" statusBarTranslucent>
+      <View className="flex-1 items-center justify-center bg-[#04050B] px-6">
+        <LinearGradient
+          colors={["#05060D", "#0B1020", "#05060D"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="absolute inset-0"
         />
+        <View className="absolute inset-0 bg-black/65" />
 
         <MotiView
           from={{ scale: 0.92, opacity: 0, translateY: 16 }}

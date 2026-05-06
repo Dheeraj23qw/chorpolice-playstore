@@ -67,7 +67,7 @@ export const LeaderboardFooter = ({
     transform: [{ translateX: glow.value * 6 }],
   }));
 
-  if (!isHost) {
+  if (!isHost && !isLastRound) {
     return (
       <View className="items-center py-6">
         <View className="flex-row items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5">
@@ -111,14 +111,14 @@ export const LeaderboardFooter = ({
               allFinished ? "text-white" : "text-white/25"
             }`}
           >
-            {isLastRound ? "Back to Lobby" : "Next Round"}
+            {isLastRound ? "Match Summary" : "Next Round"}
           </Text>
 
           <Animated.View
             style={arrowAnimatedStyle}
           >
             <Ionicons
-              name={isLastRound ? "home" : "chevron-forward"}
+              name={isLastRound ? "document-text-outline" : "chevron-forward"}
               size={18}
               color="white"
             />

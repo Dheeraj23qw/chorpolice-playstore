@@ -25,7 +25,7 @@ export const MULTIPLAYER_HELP_CONTENT: Record<
     headerTitle: "Play Chor Police",
     headerSubtitle: "Allow permissions and follow these steps",
     buttonText: "Ready",
-    toggleText: "हिंदी",
+    toggleText: "Hinglish",
     items: [
       {
         title: "Allow Permissions",
@@ -59,40 +59,39 @@ export const MULTIPLAYER_HELP_CONTENT: Record<
       },
     ],
   },
-
   HI: {
     headerTitle: "Play Chor Police",
-    headerSubtitle: "बस ये steps follow करो",
-    buttonText: "समझ गया",
+    headerSubtitle: "Bas ye simple steps follow karo",
+    buttonText: "Samajh Gaya",
     toggleText: "English",
     items: [
       {
-        title: "Permissions Allow करें",
-        desc: "App पूछे तो सभी permissions allow करें.",
+        title: "Permissions Allow Karo",
+        desc: "App jab permission maange, sab allow kar do.",
         icon: "shield-checkmark",
         color: "#22c55e",
       },
       {
-        title: "Mobile Data Off रखें",
-        desc: "Game start करने से पहले mobile data off करें.",
+        title: "Mobile Data Off",
+        desc: "Game start karne se pehle mobile data off rakho.",
         icon: "phone-portrait-outline",
         color: "#fb7185",
       },
       {
-        title: "Host Hotspot On करे",
-        desc: "Host अपना hotspot on रखे.",
+        title: "Host Hotspot On",
+        desc: "Host apna hotspot on rakhe.",
         icon: "wifi",
         color: "#818cf8",
       },
       {
-        title: "Friends Join करें",
-        desc: "Friends host hotspot से connect हों.",
+        title: "Friends Join Karein",
+        desc: "Friends host ke hotspot se connect ho jayein.",
         icon: "people",
         color: "#38bdf8",
       },
       {
-        title: "QR या Room Code",
-        desc: "QR scan करें या room code enter करें.",
+        title: "QR Ya Room Code",
+        desc: "QR scan karo ya room code enter karo.",
         icon: "qr-code",
         color: "#facc15",
       },

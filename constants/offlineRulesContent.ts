@@ -22,10 +22,10 @@ export const OFFLINE_RULES_CONTENT: Record<
   OfflineRulesContent
 > = {
   EN: {
-    headerTitle: "Offline Rules",
+    headerTitle: "Game Rules",
     headerSubtitle: "",
     buttonText: "Let's Play",
-    toggleText: "हिंदी",
+    toggleText: "Hinglish",
     items: [
       {
         title: "One Phone",
@@ -67,43 +67,43 @@ export const OFFLINE_RULES_CONTENT: Record<
   },
   HI: {
     headerTitle: "Offline Rules",
-    headerSubtitle: "",
-    buttonText: "चलो खेलें",
+    headerSubtitle: "1 phone pe sab saath khelo",
+    buttonText: "Chalo Khelein",
     toggleText: "English",
     items: [
       {
-        title: "एक Phone",
-        desc: "सभी 4 खिलाड़ी एक ही phone पर साथ में खेलते हैं।",
+        title: "One Phone",
+        desc: "Saare 4 players ek hi phone par saath me khelte hain.",
         icon: "phone-portrait-outline",
         color: "#38bdf8",
       },
       {
         title: "Hidden Roles",
-        desc: "हर round में King, Police, Chor और Advisor होते हैं।",
+        desc: "Har round me King, Police, Chor aur Advisor roles hote hain.",
         icon: "person-circle-outline",
         color: "#a78bfa",
       },
       {
-        title: "पहले Reveal",
-        desc: "सबसे पहले King और Police public दिखते हैं।",
+        title: "Pehle Reveal",
+        desc: "Sabse pehle King aur Police sabko dikhte hain, taaki setup clear ho.",
         icon: "eye-outline",
         color: "#facc15",
       },
       {
         title: "Police Guess",
-        desc: "Police 3 mystery cards में से 1 चुनकर Chor पकड़ता है।",
+        desc: "Police 3 mystery cards me se 1 card choose karke Chor pakadne ki koshish karta hai.",
         icon: "search-outline",
         color: "#22c55e",
       },
       {
         title: "Fake Joker",
-        desc: "3 cards में Chor, Advisor और 1 fake Joker होता है।",
+        desc: "3 cards me Chor, Advisor aur 1 fake Joker hota hai.",
         icon: "happy-outline",
         color: "#fb7185",
       },
       {
-        title: "जीत कैसे होगी",
-        desc: "सही Chor पकड़ा तो Police side जीतेगी, वरना Chor side जीतती है।",
+        title: "Win Rule",
+        desc: "Agar Police sahi Chor pakad le to Police side jeetegi, warna Chor side jeet jayegi.",
         icon: "trophy-outline",
         color: "#818cf8",
       },

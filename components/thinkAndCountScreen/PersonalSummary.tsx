@@ -1,25 +1,30 @@
 import React from "react";
-import { View, ScrollView, TouchableOpacity, Image } from "react-native";
-import { hp, wp, rf } from "@/utils/responsive";
-import { Text } from "../Text";
+import { ScrollView, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { MatchReview } from "./MatchReview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { hp, rf, wp } from "@/utils/responsive";
+import { Text } from "../Text";
+import { MatchReview, MatchReviewItem } from "./MatchReview";
+
 interface PersonalSummaryProps {
-  matchHistory: any[];
+  matchHistory: MatchReviewItem[];
+  correctAnswers: number;
+  totalQuestions: number;
   isHindi: boolean;
   translateFn: (text: string) => string;
   onViewTable: () => void;
-  onFinish: () => void;
+  onContinue: () => void;
 }
 
 export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
   matchHistory,
+  correctAnswers,
+  totalQuestions,
   isHindi,
   translateFn,
   onViewTable,
-  onFinish,
+  onContinue,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -29,24 +34,69 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: wp(6),
-          paddingTop: hp(4),
+          paddingTop: insets.top + hp(2),
           paddingBottom: hp(15),
         }}
       >
-        {/* Header Section */}
-        <View className="items-center mb-8">
-          <View className="bg-indigo-500/20 p-4 rounded-full mb-4">
-            <Ionicons name="trophy" size={40} color="#818cf8" />
+        <View className="mb-8 overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.04] px-5 py-6">
+          <View className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-indigo-500/15" />
+          <View className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-cyan-500/10" />
+
+          <View className="items-center">
+            <View className="mb-4 rounded-full border border-indigo-400/20 bg-indigo-500/20 p-4">
+              <Ionicons name="trophy" size={36} color="#818cf8" />
+            </View>
+
+            <Text
+              style={{ fontSize: rf(2.7) }}
+              className="text-center font-main-bold text-white"
+            >
+              {isHindi ? "Match Summary" : "Match Summary"}
+            </Text>
+
+            <Text
+              style={{ fontSize: rf(1.35), lineHeight: rf(2) }}
+              className="mt-2 text-center font-main-md text-white/60"
+            >
+              {isHindi
+                ? "Har question ko kholo, answer samjho, phir final leaderboard dekho."
+                : "Open each question, review the answer, then head to the final leaderboard."}
+            </Text>
           </View>
-          <Text style={{ fontSize: rf(2.8) }} className="font-main-bold text-white text-center">
-            {isHindi ? "आपका प्रदर्शन (Your Performance)" : "Your Performance"}
-          </Text>
-          <Text style={{ fontSize: rf(1.4) }} className="font-main-md text-white/40 uppercase tracking-widest mt-1">
-            Learning Summary
-          </Text>
+
+          <View className="mt-5 flex-row justify-between">
+            <View className="mr-2 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+              <Text
+                style={{ fontSize: rf(1.15) }}
+                className="font-main-bold uppercase tracking-[2px] text-white/40"
+              >
+                {isHindi ? "Questions" : "Questions"}
+              </Text>
+              <Text
+                style={{ fontSize: rf(2.3) }}
+                className="mt-1 font-main-bold text-white"
+              >
+                {totalQuestions}
+              </Text>
+            </View>
+
+            <View className="ml-2 flex-1 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+              <Text
+                style={{ fontSize: rf(1.15) }}
+                className="font-main-bold uppercase tracking-[2px] text-emerald-300/60"
+              >
+                {isHindi ? "Correct" : "Correct"}
+              </Text>
+              <Text
+                style={{ fontSize: rf(2.3) }}
+                className="mt-1 font-main-bold text-emerald-300"
+              >
+                {`${correctAnswers}/${totalQuestions}`}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Match Review List */}
         <MatchReview
           history={matchHistory}
           isHindi={isHindi}
@@ -55,7 +105,6 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
         />
       </ScrollView>
 
-      {/* Floating Finish Button */}
       <View
         style={{
           position: "absolute",
@@ -66,15 +115,18 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
           paddingHorizontal: wp(6),
           paddingTop: hp(2),
         }}
-        className="bg-black/80 backdrop-blur-xl border-t border-white/5"
+        className="border-t border-white/5 bg-black/80 backdrop-blur-xl"
       >
         <TouchableOpacity
-          onPress={onFinish}
+          onPress={onContinue}
           activeOpacity={0.8}
-          className="bg-indigo-600 h-16 rounded-2xl items-center justify-center shadow-2xl shadow-indigo-500/50"
+          className="h-16 items-center justify-center rounded-2xl bg-indigo-600 shadow-2xl shadow-indigo-500/50"
         >
-          <Text style={{ fontSize: rf(1.8) }} className="font-main-bold text-white uppercase tracking-widest">
-            {isHindi ? "गेम समाप्त करें (Finish Game)" : "FINISH GAME"}
+          <Text
+            style={{ fontSize: rf(1.8) }}
+            className="font-main-bold uppercase tracking-widest text-white"
+          >
+            {isHindi ? "Final Leaderboard" : "FINAL LEADERBOARD"}
           </Text>
         </TouchableOpacity>
       </View>

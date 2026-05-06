@@ -28,6 +28,7 @@ import {
   sanitizeJoiningPlayer,
   checkLobbyDataChanged,
 } from "./LobbyDataHelpers";
+import { isLobbyPresenceToastAllowed } from "./LobbyToastVisibility";
 import { BotEngine as QuizBotEngine } from "../QuizBotEngine";
 import { logLanDebug, updateDebugMetric } from "../observability/DebugService";
 
@@ -129,7 +130,9 @@ export const handleLobbyPacket = (
 
     if (isNewJoin && !deps.announcedPlayerIds.has(joiningPlayer.id)) {
       deps.announcedPlayerIds.add(joiningPlayer.id);
-      toast.success(`${joiningPlayer.name} joined!`);
+      if (isLobbyPresenceToastAllowed(state)) {
+        toast.success(`${joiningPlayer.name} joined!`);
+      }
     }
 
     if (isDataChanged) {

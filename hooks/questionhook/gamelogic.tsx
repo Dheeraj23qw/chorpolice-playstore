@@ -70,10 +70,14 @@ export const useQuizGameLogic = () => {
   const postAnswerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const leaderboardAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const lastQuestionRef = useRef<any>(null);
   const initialHostSyncSentRef = useRef(false);
   const roundSummaryReceivedRef = useRef(false);
   const roundLockedRef = useRef(false);
+  const roundAdvanceInFlightRef = useRef(false);
   const currentQuestionIdRef = useRef<string | null>(null);
   const roundStartedAtRef = useRef<number | null>(null);
   const roundDeadlineAtRef = useRef<number | null>(null);
@@ -162,6 +166,19 @@ export const useQuizGameLogic = () => {
     }
   }, []);
 
+  const clearLeaderboardAdvanceTimeout = useCallback(() => {
+    if (leaderboardAdvanceTimeoutRef.current) {
+      clearTimeout(leaderboardAdvanceTimeoutRef.current);
+      leaderboardAdvanceTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearLeaderboardAdvanceTimeout();
+    };
+  }, [clearLeaderboardAdvanceTimeout]);
+
   const generateUniqueQuestion = useCallback(() => {
     let nextQuestion = getRandomQuestion();
 
@@ -172,6 +189,48 @@ export const useQuizGameLogic = () => {
     lastQuestionRef.current = nextQuestion;
     return nextQuestion;
   }, [getRandomQuestion]);
+
+  const advanceMultiplayerRound = useCallback(() => {
+    if (!isMultiplayer || !isHost) {
+      return false;
+    }
+
+    if (roundAdvanceInFlightRef.current) {
+      return true;
+    }
+
+    roundAdvanceInFlightRef.current = true;
+    clearLeaderboardAdvanceTimeout();
+
+    const nextQuestion = generateUniqueQuestion();
+    const nextRound = QuizEngine.state.currentRound;
+    const startAt = Date.now();
+    const durationMs = getTimeLimitMs();
+
+    if (__DEV__) {
+      console.log(`[Quiz] Advancing from leaderboard to round ${nextRound}.`);
+    }
+
+    broadcastPacket({
+      type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
+      question: nextQuestion,
+      optionsLength: nextQuestion?.options?.length || 0,
+      round: nextRound,
+      questionId: `tc-round-${nextRound}-${startAt}`,
+      roundStartedAt: startAt,
+      deadlineAt: startAt + durationMs,
+      durationMs,
+      serverNow: Date.now(),
+    });
+
+    return true;
+  }, [
+    clearLeaderboardAdvanceTimeout,
+    generateUniqueQuestion,
+    getTimeLimitMs,
+    isHost,
+    isMultiplayer,
+  ]);
 
   const initRoundProgress = useCallback(() => {
     if (!isMultiplayer) return;
@@ -279,9 +338,11 @@ export const useQuizGameLogic = () => {
 
       clearTimer();
       clearPostAnswerTimeout();
+      clearLeaderboardAdvanceTimeout();
 
       roundLockedRef.current = false;
       roundSummaryReceivedRef.current = false;
+      roundAdvanceInFlightRef.current = false;
       hostClockOffsetRef.current =
         typeof packet.serverNow === "number" ? packet.serverNow - Date.now() : 0;
       roundStartedAtRef.current =
@@ -608,6 +669,7 @@ export const useQuizGameLogic = () => {
   const handleNextQuestion = useCallback(() => {
     AudioEngine.play("next", "ui");
     clearPostAnswerTimeout();
+    clearLeaderboardAdvanceTimeout();
 
     if (questionIndex + 1 >= NUM_QUESTIONS) {
       if (isMultiplayer) {
@@ -622,24 +684,7 @@ export const useQuizGameLogic = () => {
 
     if (isMultiplayer) {
       if (!isHost) return;
-
-      const nextQuestion = generateUniqueQuestion();
-      const nextRound = QuizEngine.state.currentRound;
-      const startAt = Date.now();
-      const durationMs = getTimeLimitMs();
-
-      broadcastPacket({
-        type: MODES.THINK_AND_COUNT.QUESTION_SYNC,
-        question: nextQuestion,
-        optionsLength: nextQuestion?.options?.length || 0,
-        round: nextRound,
-        questionId: `tc-round-${nextRound}-${startAt}`,
-        roundStartedAt: startAt,
-        deadlineAt: startAt + durationMs,
-        durationMs,
-        serverNow: Date.now(),
-      });
-
+      advanceMultiplayerRound();
       return;
     }
 
@@ -671,19 +716,16 @@ export const useQuizGameLogic = () => {
     setQuestionIndex(nextRound - 1);
     setActiveQuestionId(nextQuestionId);
   }, [
+    advanceMultiplayerRound,
     buildLocalQuestionId,
+    clearLeaderboardAdvanceTimeout,
     clearPostAnswerTimeout,
     clearTimer,
-    correctAnswer,
-    dispatch,
     generateUniqueQuestion,
     getTimeLimitMs,
     isHost,
     isMultiplayer,
-    leaderboardData,
     questionIndex,
-    router,
-    syncLocalQuizStats,
   ]);
 
   useEffect(() => {
@@ -704,6 +746,7 @@ export const useQuizGameLogic = () => {
         }
 
         clearPostAnswerTimeout();
+        clearLeaderboardAdvanceTimeout();
         setIsDynamicPopUp(false);
         setLeaderboardData(packet.leaderboard);
         setRoundProgress((prev) => {
@@ -723,8 +766,16 @@ export const useQuizGameLogic = () => {
 
         roundSummaryReceivedRef.current = true;
         roundLockedRef.current = false;
+        roundAdvanceInFlightRef.current = false;
         setIsWaitingForOthers(false);
         setIsLeaderboardVisible(true);
+
+        if (isHost && !packet.isLastRound) {
+          leaderboardAdvanceTimeoutRef.current = setTimeout(() => {
+            leaderboardAdvanceTimeoutRef.current = null;
+            advanceMultiplayerRound();
+          }, 2500);
+        }
 
         if (packet.isLastRound) {
           syncLocalQuizStats(packet.leaderboard);
@@ -897,7 +948,9 @@ export const useQuizGameLogic = () => {
 
     return () => unsubscribe();
   }, [
+    advanceMultiplayerRound,
     applyQuestionSync,
+    clearLeaderboardAdvanceTimeout,
     clearPostAnswerTimeout,
     clearTimer,
     dispatch,
@@ -1006,6 +1059,25 @@ export const useQuizGameLogic = () => {
     },
     [dispatch, resetGame, router],
   );
+
+  const handleOpenFinalLeaderboard = useCallback(() => {
+    clearTimer();
+    clearPostAnswerTimeout();
+    clearLeaderboardAdvanceTimeout();
+    AudioEngine.stop("timer");
+    setIsPersonalSummaryVisible(false);
+    setIsLeaderboardVisible(false);
+    setIsWaitingForOthers(false);
+
+    requestAnimationFrame(() => {
+      router.replace("/quiz-result" as any);
+    });
+  }, [
+    clearLeaderboardAdvanceTimeout,
+    clearPostAnswerTimeout,
+    clearTimer,
+    router,
+  ]);
 
   const handleQuit = useCallback(
     () => handleNavigation("/mode-select"),
@@ -1180,5 +1252,6 @@ export const useQuizGameLogic = () => {
     toggleHindi: () => setIsHindi((prev) => !prev),
     matchHistory,
     isPersonalSummaryVisible,
+    handleOpenFinalLeaderboard,
   };
 };

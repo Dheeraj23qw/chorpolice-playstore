@@ -36,13 +36,19 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
   return (
     <Modal
       visible={visible}
-      transparent
       animationType="fade"
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <View className="flex-1">
-        <Pressable onPress={onClose} className="absolute inset-0 bg-black/70" />
+      <View className="flex-1 bg-[#04050B]">
+        <LinearGradient
+          colors={["#05060D", "#0B1020", "#05060D"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="absolute inset-0"
+        />
+        <View className="absolute inset-0 bg-black/65" />
+        <Pressable onPress={onClose} className="absolute inset-0" />
 
         <View className="flex-1 items-center justify-center px-5">
           <AnimatePresence>

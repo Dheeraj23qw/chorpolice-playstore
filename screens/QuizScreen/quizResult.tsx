@@ -24,6 +24,7 @@ export default function QuizResult() {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
 
   // ✅ NEW STATE
   const [showStandings, setShowStandings] = useState(false);
@@ -55,8 +56,6 @@ export default function QuizResult() {
       ? imgData.src
       : require("@/assets/images/chorsipahi/kid1.webp");
   }, []);
-
-  const isMultiplayer = Object.keys(QuizEngine.state.playerScores).length > 1;
 
   const standings = isMultiplayer
     ? Object.entries(QuizEngine.state.playerScores)
