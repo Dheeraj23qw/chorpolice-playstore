@@ -1,7 +1,7 @@
 import React from "react";
-import { GamePlaySection } from "../GamePlaySection";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GamePlaySection } from "../components/GamePlaySection";
 
 /**
  * Waiting Phase:
@@ -27,7 +27,7 @@ const WaitingView = ({ g }: any) => {
         handleCardClickWithBounce={() => {}}
         toggleModal={g.toggleModal}
         round={g.round}
-        message={isWaitingForHost ? "Waiting for host..." : (g.message || null)}
+        message={isWaitingForHost ? "Waiting for host..." : g.message || null}
         getCardStyle={g.getCardStyle}
         showTableButton={g.showTableButton}
       />

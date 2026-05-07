@@ -3,8 +3,8 @@ import { View } from "react-native";
 
 import OverlayPopUp from "@/modal/overlaypop";
 
-import { GamePlaySection } from "../GamePlaySection";
 import CinematicReveal from "./CinematicReveal";
+import { GamePlaySection } from "./GamePlaySection";
 
 const BoardWithPopups = ({ g }: any) => {
   if (g.isDynamicPopUp && g.mediaId != null) {
@@ -74,7 +74,9 @@ const BoardWithPopups = ({ g }: any) => {
                 ? "Catch the Thief and stay away from Joker."
                 : "Police is investigating...";
             }
-            return g.message || (g.canInteract ? "Find the Thief!" : "Watching...");
+            return (
+              g.message || (g.canInteract ? "Find the Thief!" : "Watching...")
+            );
           })()}
           getCardStyle={g.getCardStyle}
           showTableButton={g.showTableButton}
