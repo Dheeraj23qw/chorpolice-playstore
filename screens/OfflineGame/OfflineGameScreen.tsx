@@ -16,10 +16,12 @@ import { OfflineGameHeader } from "./components/OfflineGameHeader";
 import { OfflineInvestigationBanner } from "./components/OfflineInvestigationBanner";
 import { OfflineLeaderboardModal } from "./components/OfflineLeaderboardModal";
 import { OfflineResultOverlay } from "./components/OfflineResultOverlay";
+import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
 
 const COUNTDOWN_STEP_MS = 1400;
 const PUBLIC_REVEAL_SETTLE_MS = 1400;
-const INVESTIGATION_ENTRY_MS = 1200;
+/** Match multiplayer: full mystery shuffle animation before police_turn */
+const INVESTIGATION_ENTRY_MS = CP_FLOW_TIMINGS.MYSTERY_SHUFFLE_DURATION_MS;
 const DEALING_SPIN_MS = 2500;
 
 const OfflineGameScreen = () => {
@@ -101,6 +103,7 @@ const OfflineGameScreen = () => {
 
       timerRefs.current.push(countdownStart);
     } else if (g.phase === "investigation_shuffle") {
+      // Hold in shuffle phase for the full animation duration (same as multiplayer)
       const policeTurnTimer = setTimeout(() => {
         g.setPhase("police_turn");
       }, INVESTIGATION_ENTRY_MS);
