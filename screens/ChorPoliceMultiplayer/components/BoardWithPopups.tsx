@@ -82,6 +82,7 @@ const BoardWithPopups = ({ g }: any) => {
           showTableButton={g.showTableButton}
           isHighlight={g.gamePhase === "police_turn" && g.canInteract}
           invisibleIndices={g.invisibleIndices}
+          countdown={g.countdown}
           localPlayerName={g.localPlayerName}
           myRole={g.myRole}
           gamePhase={g.gamePhase}

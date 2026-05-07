@@ -14,12 +14,16 @@ import { dispatchPacket } from "@/service/packetDispatcher";
 import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
 import {
   DEALING_SPIN_MS,
+  PUBLIC_REVEAL_COUNTDOWN_START,
+  PUBLIC_REVEAL_COUNTDOWN_STEP_MS,
   PUBLIC_REVEAL_SETTLE_MS,
 } from "@/screens/ChorPoliceMultiplayer/components/GamePlaySection/constants";
 
 // ─── Derived offsets (read-only, computed once at module level) ───────────────
 const T_SHUFFLE  = DEALING_SPIN_MS;
-const T_PUBLIC   = PUBLIC_REVEAL_SETTLE_MS;
+const T_PUBLIC =
+  PUBLIC_REVEAL_SETTLE_MS +
+  PUBLIC_REVEAL_COUNTDOWN_STEP_MS * PUBLIC_REVEAL_COUNTDOWN_START;
 const T_PRIVATE  = CP_FLOW_TIMINGS.HUMAN_ROLE_REVEAL_DURATION_MS;
 const T_MYSTERY  = CP_FLOW_TIMINGS.MYSTERY_SHUFFLE_DURATION_MS;
 
@@ -41,6 +45,7 @@ interface RevealDeps {
   localPlayerId: string;
   setInvestigationTargets: (targets: any[]) => void;
   setMessage: (msg: string) => void;
+  setCountdown: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 export const useCPRevealSequence = ({
@@ -55,6 +60,7 @@ export const useCPRevealSequence = ({
   localPlayerId,
   setInvestigationTargets,
   setMessage,
+  setCountdown,
 }: RevealDeps) => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -78,6 +84,7 @@ export const useCPRevealSequence = ({
       setAreCardsClickable(false);
       setShowTableButton(false);
       setMessage("Shuffling all cards...");
+      setCountdown(null);
 
       // ── Phase 1: Public King + Police Reveal (after shuffle) ─────────────
       const t_publicReveal = setTimeout(() => {
@@ -90,6 +97,26 @@ export const useCPRevealSequence = ({
       }, OFFSET_PUBLIC_REVEAL);
       timerRefs.current.push(t_publicReveal);
 
+      const countdownOffset = OFFSET_PUBLIC_REVEAL + PUBLIC_REVEAL_SETTLE_MS;
+
+      const t_countdownThree = setTimeout(() => {
+        setCountdown(3);
+        AudioEngine.play("select", "ui");
+      }, countdownOffset);
+      timerRefs.current.push(t_countdownThree);
+
+      const t_countdownTwo = setTimeout(() => {
+        setCountdown(2);
+        AudioEngine.play("select", "ui");
+      }, countdownOffset + PUBLIC_REVEAL_COUNTDOWN_STEP_MS);
+      timerRefs.current.push(t_countdownTwo);
+
+      const t_countdownOne = setTimeout(() => {
+        setCountdown(1);
+        AudioEngine.play("select", "ui");
+      }, countdownOffset + PUBLIC_REVEAL_COUNTDOWN_STEP_MS * 2);
+      timerRefs.current.push(t_countdownOne);
+
       // ── Phase 2: Private Role Reveal ──────────────────────────────────────
       // NOTE: myRoleRef is read lazily inside this timer so it is guaranteed
       // to be set by the time CP_ROLE_ASSIGN has been processed (which arrives
@@ -101,6 +128,7 @@ export const useCPRevealSequence = ({
           : null
         );
         console.log(`[CP_FLOW] Human role reveal started: ${role ?? "unknown"}`);
+        setCountdown(null);
         setMessage("");
         dispatch(setReduxGamePhase("private_reveal"));
       }, OFFSET_PRIVATE_REVEAL);
@@ -160,6 +188,7 @@ export const useCPRevealSequence = ({
       timerRefs,
       setInvestigationTargets,
       setMessage,
+      setCountdown,
     ],
   );
 

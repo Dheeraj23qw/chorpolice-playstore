@@ -255,6 +255,7 @@ const OfflineGameScreen = () => {
               <OfflineGameBoard
                 players={g.players}
                 roles={g.roles}
+                round={g.currentRound}
                 phase={g.phase}
                 flippedIndices={flippedIndices}
                 isSpinning={isSpinning}

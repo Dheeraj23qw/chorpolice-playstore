@@ -20,6 +20,7 @@ export interface GamePlaySectionProps {
   toggleModal: () => void;
   round: number;
   message: string | null;
+  countdown?: number | null;
   getCardStyle: (index: number) => any;
   showTableButton: boolean;
   isHighlight?: boolean;

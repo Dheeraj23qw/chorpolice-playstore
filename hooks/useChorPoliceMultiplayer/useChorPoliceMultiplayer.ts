@@ -112,6 +112,7 @@ export const useChorPoliceMultiplayer = () => {
   const [quizOptionDisabled, setQuizOptionDisabled] = useState(false);
   const [quizDone, setQuizDone] = useState(false);
   const [message, setMessage] = useState("");
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
   const [invisibleIndices, setInvisibleIndices] = useState<number[]>([]);
   const [popupTable, setPopupTable] = useState(false);
@@ -197,7 +198,8 @@ export const useChorPoliceMultiplayer = () => {
     myRoleRef, 
     localPlayerId,
     setInvestigationTargets,
-    setMessage 
+    setMessage,
+    setCountdown,
   });
   const scoreQuiz = useCPScoreQuiz({ isHostRef, timerRefs, currentQuizPlayerIdRef, scoreQuizStartedRef, quizOptionDisabledRef, setQuizDone, setQuizOptionDisabled, setQuizPlayerIndex, setQuizOptions, resolveScoreQuizPlayers });
 
@@ -310,6 +312,7 @@ export const useChorPoliceMultiplayer = () => {
     roundStartPendingRef.current = true;
     setIsPlayButtonDisabled(true);
     setMessage("Shuffling cards...");
+    setCountdown(null);
     const roundStartPacket = { type: MODES.CHOR_POLICE.ROUND_START, round: ChorPoliceEngine.state.currentRound };
     console.log(`🎭 [CPHook] Shuffling... sending ROUND_START:`, JSON.stringify(roundStartPacket));
     
@@ -422,6 +425,7 @@ export const useChorPoliceMultiplayer = () => {
     playerNames, isPlayButtonDisabled,
     policeIndex: reduxPoliceIndex, kingIndex: reduxKingIndex, advisorIndex: reduxAdvisorIndex, thiefIndex: reduxThiefIndex,
     playerScores, scoreQuizPlayers, round: reduxCurrentRound, totalRounds: reduxTotalRounds, message, showTableButton,
+    countdown,
     popupIndex, isDynamicPopUp, mediaId, mediaType, playerData, areCardsClickable, revealData,
     gamePhase: reduxGamePhase, myRole: reduxMyRole as Role | null,
     popupTable, canSeeBoard, canInteract,

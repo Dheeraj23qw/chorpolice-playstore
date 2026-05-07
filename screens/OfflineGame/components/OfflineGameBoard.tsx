@@ -8,12 +8,22 @@ import {
   OfflineGamePhase,
 } from "@/hooks/useOfflineChorPolice";
 import { hp, wp } from "@/utils/responsive";
+import {
+  MYSTERY_BOARD_HEIGHT,
+  MYSTERY_BOARD_WIDTH,
+  MYSTERY_CARD_HEIGHT,
+  MYSTERY_CARD_WIDTH,
+  MYSTERY_SLOTS,
+} from "@/screens/ChorPoliceMultiplayer/components/GamePlaySection/constants";
+import { useMysteryShuffle } from "@/screens/ChorPoliceMultiplayer/components/GamePlaySection/hooks/useMysteryShuffle";
+import { getMysteryMotion } from "@/screens/ChorPoliceMultiplayer/components/GamePlaySection/utils/mysteryMotion";
 import { OfflineCard } from "./OfflineCard";
 import { OfflineCountdownBadge } from "./OfflineCountdownBadge";
 
 interface OfflineGameBoardProps {
   players: OfflinePlayer[];
   roles: string[];
+  round: number;
   phase: OfflineGamePhase;
   flippedIndices: Set<number>;
   isSpinning: boolean;
@@ -29,6 +39,7 @@ interface OfflineGameBoardProps {
 export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
   players,
   roles,
+  round,
   phase,
   flippedIndices,
   isSpinning,
@@ -40,6 +51,12 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
   countdown,
   onInvestigationClick,
 }) => {
+  const mysteryShuffleStep = useMysteryShuffle(
+    phase,
+    round,
+    investigationTargets.length,
+  );
+
   const renderGridCard = (idx: number) => {
     const player = players[idx] || {
       name: `Player ${idx + 1}`,
@@ -105,14 +122,31 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
   const renderTargetCard = (target: InvestigationTarget | undefined, idx: number) => {
     const targetId = target?.id;
     const isClicked = targetId !== undefined && clickedTargetId === targetId;
+    const motion = getMysteryMotion(
+      idx,
+      isClicked,
+      phase,
+      mysteryShuffleStep,
+    );
 
     return (
       <MotiView
-        key={targetId ?? `target-fallback-${idx}`}
-        className={idx === 2 ? "w-[47%] aspect-[3/4.2] self-center" : "w-[47%] aspect-[3/4.2]"}
-        from={{ opacity: 0, scale: 0.5, translateY: 50 }}
-        animate={{ opacity: 1, scale: 1, translateY: 0 }}
-        transition={{ delay: idx * 90, type: "timing", duration: 380 }}
+        key={`${round}-${targetId ?? `target-fallback-${idx}`}`}
+        from={{
+          opacity: 0,
+          scale: 0.76,
+          left: (MYSTERY_SLOTS[idx] ?? MYSTERY_SLOTS[0]).left,
+          top: (MYSTERY_SLOTS[idx] ?? MYSTERY_SLOTS[0]).top + hp(3),
+          rotateZ: idx === 1 ? "8deg" : "-8deg",
+        }}
+        animate={motion.animate}
+        transition={motion.transition}
+        style={{
+          position: "absolute",
+          width: MYSTERY_CARD_WIDTH,
+          height: MYSTERY_CARD_HEIGHT,
+          zIndex: phase === "investigation_shuffle" ? 40 - idx : idx + 1,
+        }}
       >
         <OfflineCard
           index={target?.playerIndex ?? 10 + idx}
@@ -146,13 +180,17 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
   return (
     <View className="relative flex-1">
       {isInvestigationPhase ? (
-        <View className="gap-y-8">
-          <View className="w-full flex-row justify-between">
-            {investigationTargets.slice(0, 2).map((target, idx) =>
-              renderTargetCard(target, idx),
-            )}
+        <View className="items-center pt-1">
+          <View
+            style={{
+              width: MYSTERY_BOARD_WIDTH,
+              height: MYSTERY_BOARD_HEIGHT,
+            }}
+          >
+            {investigationTargets
+              .slice(0, 3)
+              .map((target, idx) => renderTargetCard(target, idx))}
           </View>
-          {renderTargetCard(investigationTargets[2], 2)}
         </View>
       ) : (
         <View className="gap-y-8 pb-10">

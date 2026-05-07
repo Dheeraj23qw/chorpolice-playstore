@@ -2,6 +2,8 @@ import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { OfflineCountdownBadge } from "@/screens/OfflineGame/components/OfflineCountdownBadge";
+
 import { useDealingStage } from "./hooks/useDealingStage";
 import { useMysteryShuffle } from "./hooks/useMysteryShuffle";
 import { GamePlaySectionProps } from "./types";
@@ -21,6 +23,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   handleCardClickWithBounce,
   round,
   message,
+  countdown,
   getCardStyle,
   isHighlight,
   invisibleIndices = [],
@@ -55,6 +58,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
   return (
     <SafeAreaView className="flex-1 bg-transparent">
+      <View className="relative flex-1">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
@@ -102,6 +106,8 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           )}
         </View>
       </ScrollView>
+      {countdown !== null && <OfflineCountdownBadge value={countdown} />}
+      </View>
     </SafeAreaView>
   );
 };
