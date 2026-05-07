@@ -1,6 +1,9 @@
 import { storage } from "@/storage/mmkv";
 
 const QUIZ_NARRATION_ENABLED_KEY = "settings_quiz_narration_enabled";
+const QUIZ_NARRATION_VOICE_ID_KEY = "settings_quiz_narration_voice_id";
+const QUIZ_NARRATION_RATE_KEY = "settings_quiz_narration_rate";
+const QUIZ_NARRATION_PITCH_KEY = "settings_quiz_narration_pitch";
 
 /**
  * Saves the quiz narration preference to MMKV.
@@ -26,3 +29,36 @@ export const loadQuizNarrationEnabled = (): boolean => {
     return true;
   }
 };
+
+export const saveQuizNarrationVoiceId = (voiceId: string | undefined) => {
+  storage.set(QUIZ_NARRATION_VOICE_ID_KEY, voiceId || "");
+};
+
+export const loadQuizNarrationVoiceId = (): string | undefined => {
+  const value = storage.getString(QUIZ_NARRATION_VOICE_ID_KEY);
+  if (value === "") return undefined;
+  // Default to the high-quality network voice if nothing is set
+  return value === undefined ? "hi-in-x-hie-network" : value;
+};
+
+
+export const saveQuizNarrationRate = (rate: number) => {
+  storage.set(QUIZ_NARRATION_RATE_KEY, rate);
+};
+
+export const loadQuizNarrationRate = (): number => {
+  const val = storage.getNumber(QUIZ_NARRATION_RATE_KEY);
+  return val === undefined ? 0.80 : val;
+};
+
+export const saveQuizNarrationPitch = (pitch: number) => {
+  storage.set(QUIZ_NARRATION_PITCH_KEY, pitch);
+};
+
+export const loadQuizNarrationPitch = (): number => {
+  const val = storage.getNumber(QUIZ_NARRATION_PITCH_KEY);
+  return val === undefined ? 0.80 : val;
+};
+
+
+

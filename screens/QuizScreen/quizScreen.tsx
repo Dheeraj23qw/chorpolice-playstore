@@ -14,6 +14,7 @@ import { hp, rf, wp } from "@/utils/responsive";
 import {
   buildLocalizedQuizOptions,
   translateToHindi,
+  translateOptionsToHindi,
 } from "@/utils/QuestionTranslator";
 import GameTable from "../../components/thinkAndCountScreen/GameTable";
 import OptionsSection from "../../components/thinkAndCountScreen/OptionsSection";
@@ -26,8 +27,8 @@ import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingSta
 import { RootState } from "@/redux/store";
 import { toggleQuizNarration } from "@/redux/reducers/soundReducer";
 import { useQuizNarration } from "@/hooks/useQuizNarration";
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
+import { NarrationSettingsModal } from "../../components/thinkAndCountScreen/NarrationSettingsModal";
+import { QuizFloatingActions } from "../../components/quiz/QuizFloatingActions";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -35,6 +36,8 @@ const QuizScreen = () => {
   const quizNarrationEnabled = useSelector(
     (state: RootState) => state.sound.quizNarrationEnabled,
   );
+  const [isNarrationSettingsOpen, setIsNarrationSettingsOpen] =
+    React.useState(false);
 
   const {
     countdown,
@@ -77,10 +80,13 @@ const QuizScreen = () => {
     : question?.options || [];
 
   const { repeatNarration } = useQuizNarration({
-    question: isHindi ? translateToHindi(question?.question) : question?.question,
-    options: isHindi ? buildLocalizedQuizOptions(visibleOptions) : visibleOptions,
+    question: isHindi
+      ? translateToHindi(question?.question)
+      : question?.question,
+    options: isHindi ? translateOptionsToHindi(visibleOptions) : visibleOptions,
     isHindi,
-    isQuizActive: !isWaitingForOthers && !isLeaderboardVisible && !isPersonalSummaryVisible,
+    isQuizActive:
+      !isWaitingForOthers && !isLeaderboardVisible && !isPersonalSummaryVisible,
     isRevealPhase: isDynamicPopUp,
     narrationEnabled: quizNarrationEnabled,
     questionId: activeQuestionId,
@@ -171,29 +177,7 @@ const QuizScreen = () => {
             paddingBottom: insets.bottom,
           }}
         >
-          <View
-            style={{
-              top: insets.top > 0 ? insets.top + hp(1) : hp(7),
-              paddingHorizontal: wp(5),
-              paddingVertical: hp(1),
-            }}
-            className="absolute z-50 self-center rounded-full border border-white/20 bg-white/10 shadow-2xl backdrop-blur-xl"
-          >
-            <Text
-              style={{ fontSize: rf(1.4) }}
-              className="font-main-bold uppercase tracking-[3px] text-indigo-400"
-            >
-              {isLeaderboardVisible
-                ? isHindi
-                  ? `Round ${questionIndex + 1} Result`
-                  : `Round ${questionIndex + 1} Results`
-                : isHindi
-                  ? `Question ${questionIndex + 1}`
-                  : `Question ${questionIndex + 1}`}
-            </Text>
-          </View>
-
-          <View style={{ marginTop: hp(8) }}>
+          <View style={{ marginTop: hp(2) }}>
             {!isContentBlocked && <Timer countdown={countdown} />}
           </View>
 
@@ -220,61 +204,7 @@ const QuizScreen = () => {
               />
             ) : !isContentBlocked ? (
               <View>
-                <View className="mb-6 flex-row items-center gap-3">
-                  <View className="flex-1">
-                    <QuizLanguageToggle
-                      isHindi={isHindi}
-                      onToggle={toggleHindi}
-                    />
-                  </View>
-
-                  {/* Glassmorphism Narration Controls */}
-                  <View className="flex-row items-center gap-2">
-                    {/* Replay Button (Only visible if enabled) */}
-                    {quizNarrationEnabled && (
-                      <Pressable
-                        onPress={repeatNarration}
-                        className="h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/10 active:scale-90"
-                      >
-                        <Ionicons
-                          name="refresh-outline"
-                          size={22}
-                          color="#818cf8"
-                        />
-                      </Pressable>
-                    )}
-
-                    {/* Toggle Button */}
-                    <Pressable
-                      onPress={handleToggleNarration}
-                      className="overflow-hidden rounded-2xl active:scale-95"
-                    >
-                      <BlurView
-                        intensity={30}
-                        tint="light"
-                        className="h-[68px] px-5 flex-row items-center justify-center border border-white/20 bg-white/10"
-                      >
-                        <Ionicons
-                          name={
-                            quizNarrationEnabled
-                              ? "volume-high-outline"
-                              : "volume-mute-outline"
-                          }
-                          size={28}
-                          color={quizNarrationEnabled ? "#818cf8" : "#94a3b8"}
-                        />
-                        <View className="ml-3">
-                          <Text
-                            style={{ fontSize: rf(1.1) }}
-                            className="font-main-bold text-white uppercase"
-                          >
-                            {quizNarrationEnabled ? "Narration On" : "Narration Off"}
-                          </Text>
-                        </View>
-                      </BlurView>
-                    </Pressable>
-                  </View>
-                </View>
+                <QuizLanguageToggle isHindi={isHindi} onToggle={toggleHindi} />
 
                 <QuestionSection
                   question={
@@ -282,6 +212,10 @@ const QuizScreen = () => {
                       ? translateToHindi(question?.question)
                       : question?.question
                   }
+                  narrationEnabled={quizNarrationEnabled}
+                  onToggleNarration={handleToggleNarration}
+                  onReplay={repeatNarration}
+                  onOpenSettings={() => setIsNarrationSettingsOpen(true)}
                 />
 
                 <View
@@ -332,6 +266,11 @@ const QuizScreen = () => {
         isMultiplayer={isMultiplayer}
         currentRound={questionIndex + 1}
         totalRounds={NUM_QUESTIONS}
+      />
+
+      <NarrationSettingsModal
+        visible={isNarrationSettingsOpen}
+        onClose={() => setIsNarrationSettingsOpen(false)}
       />
     </View>
   );

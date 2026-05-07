@@ -21,9 +21,12 @@ interface UseSummaryNarrationParams {
  */
 export const useSummaryNarration = (params?: UseSummaryNarrationParams) => {
   const { correctAnswers, totalQuestions, isHindi, isSummaryActive } = params || {};
-  const narrationEnabled = useSelector(
-    (state: RootState) => state.sound.quizNarrationEnabled
-  );
+  const {
+    quizNarrationEnabled: narrationEnabled,
+    quizNarrationVoiceId,
+    quizNarrationRate,
+    quizNarrationPitch,
+  } = useSelector((state: RootState) => state.sound);
 
   const hasSpokenSummary = useRef(false);
 
@@ -47,7 +50,16 @@ export const useSummaryNarration = (params?: UseSummaryNarrationParams) => {
       const normalized = QuizNarrationService.normalizeQuizSpeechText(text);
       const lang = QuizNarrationService.detectSpeechLanguage(normalized);
 
-      await QuizNarrationService.speakQuizQuestion(normalized, lang);
+      let voiceId = quizNarrationVoiceId;
+      if (!voiceId) {
+        voiceId = await QuizNarrationService.getBestQuizVoice(lang);
+      }
+
+      await QuizNarrationService.speakQuizQuestion(normalized, lang, {
+        voice: voiceId,
+        rate: quizNarrationRate,
+        pitch: quizNarrationPitch,
+      });
       
       if (isAuto) {
         hasSpokenSummary.current = true;
@@ -55,7 +67,15 @@ export const useSummaryNarration = (params?: UseSummaryNarrationParams) => {
     } catch (e) {
       if (__DEV__) console.warn("[Speech] Summary trigger failed:", e);
     }
-  }, [narrationEnabled, correctAnswers, totalQuestions, isHindi]);
+  }, [
+    narrationEnabled,
+    correctAnswers,
+    totalQuestions,
+    isHindi,
+    quizNarrationVoiceId,
+    quizNarrationRate,
+    quizNarrationPitch,
+  ]);
 
   const speakReviewItem = useCallback(async (
     question: string,
@@ -75,11 +95,26 @@ export const useSummaryNarration = (params?: UseSummaryNarrationParams) => {
       const normalized = QuizNarrationService.normalizeQuizSpeechText(text);
       const lang = QuizNarrationService.detectSpeechLanguage(normalized);
 
-      await QuizNarrationService.speakQuizQuestion(normalized, lang);
+      let voiceId = quizNarrationVoiceId;
+      if (!voiceId) {
+        voiceId = await QuizNarrationService.getBestQuizVoice(lang);
+      }
+
+      await QuizNarrationService.speakQuizQuestion(normalized, lang, {
+        voice: voiceId,
+        rate: quizNarrationRate,
+        pitch: quizNarrationPitch,
+      });
     } catch (e) {
       if (__DEV__) console.warn("[Speech] Review item trigger failed:", e);
     }
-  }, [narrationEnabled]);
+  }, [
+    narrationEnabled,
+    quizNarrationVoiceId,
+    quizNarrationRate,
+    quizNarrationPitch,
+  ]);
+
 
   // EFFECT: Auto-speak summary once when active
   useEffect(() => {

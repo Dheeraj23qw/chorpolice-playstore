@@ -13,7 +13,9 @@ type SoundName =
   | "king"
   | "timer"
   | "timesup"
+  | "spin"
   | "police";
+
 
 type PlayerMap = Partial<Record<SoundName, AudioPlayer>>;
 type SoundCategory = "ui" | "gameplay" | "background";
@@ -52,7 +54,9 @@ const soundPaths: Record<SoundName, any> = {
   timer: require("@/assets/audio/QuizScreen/timer.mp3"),
   timesup: require("@/assets/audio/QuizScreen/timesup.mp3"),
   lose: require("@/assets/audio/chorPolice/lose.mp3"),
+  spin: require("@/assets/audio/chorPolice/round.mp3"),
 };
+
 
 /* ---------------- INTERNAL STATE ---------------- */
 

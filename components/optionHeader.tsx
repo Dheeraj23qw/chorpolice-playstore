@@ -14,6 +14,7 @@ import { CircleBtn } from "./CircleBtn"; // Import from new chunk
 import { useHeaderActions } from "@/hooks/useHeaderActions";
 import { useAppSelector } from "@/hooks/useAppRedux";
 import { generateNumericCode } from "@/utils/referral";
+import { NarrationSettingsModal } from "./thinkAndCountScreen/NarrationSettingsModal";
 
 const SLATE_TRANSPARENT = "rgba(0, 0, 0, 0.1)";
 const ICON_COLOR = "#FFFFFF";
@@ -28,6 +29,8 @@ const OptionHeader = memo(function OptionHeader() {
     router,
     toggleSound,
   } = useHeaderActions();
+
+  const [narrationModalVisible, setNarrationModalVisible] = React.useState(false);
 
   const btnDim = responsiveWidth(11);
   const iconSize = responsiveFontSize(2.8);
@@ -48,14 +51,15 @@ const OptionHeader = memo(function OptionHeader() {
         btnDim={btnDim}
         marginBetween={marginBetween}
         backgroundColor={SLATE_TRANSPARENT}
-        onPress={toggleSound}
+        onPress={() => setNarrationModalVisible(true)}
       >
         <Ionicons
-          name={isMuted ? "volume-mute" : "volume-high"}
+          name="mic-outline"
           size={iconSize}
           color={ICON_COLOR}
         />
       </CircleBtn>
+
 
       <CircleBtn
         btnDim={btnDim}
@@ -105,10 +109,19 @@ const OptionHeader = memo(function OptionHeader() {
         router={router}
         onRatePress={() => setModalVisible(true)}
         onSharePress={() => handleShare(referralCode)}
+        onSoundToggle={toggleSound}
+        isMuted={isMuted}
+      />
+
+
+      <NarrationSettingsModal
+        visible={narrationModalVisible}
+        onClose={() => setNarrationModalVisible(false)}
       />
     </View>
   );
 });
+
 
 OptionHeader.displayName = "OptionHeader";
 export default OptionHeader;

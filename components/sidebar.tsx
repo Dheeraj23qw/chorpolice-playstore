@@ -31,7 +31,10 @@ import {
   Star,
   Share2,
   Book,
+  Volume2,
+  VolumeX,
 } from "lucide-react-native";
+
 import { rf } from "@/utils/responsive";
 import { Text } from "./Text";
 
@@ -41,6 +44,8 @@ export const FullScreenMenu = ({
   router,
   onRatePress,
   onSharePress,
+  onSoundToggle,
+  isMuted,
 }: any) => {
   const { width, height } = useWindowDimensions();
   const [canScroll, setCanScroll] = useState(false);
@@ -76,9 +81,16 @@ export const FullScreenMenu = ({
     { label: "Stats", icon: BarChart3, path: "/stats" },
     { label: "Profile", icon: User, path: "/profile" },
     { label: "Awards", icon: Medal, path: "/awards" },
+    {
+      label: isMuted ? "Sound Off" : "Sound On",
+      icon: isMuted ? VolumeX : Volume2,
+      action: onSoundToggle,
+    },
     { label: "Rate Us", icon: Star, action: onRatePress },
     { label: "Bugs", icon: Bug, path: "/report-bug" },
   ];
+
+
 
   return (
     <Modal transparent visible={visible} animationType="none">

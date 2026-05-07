@@ -111,26 +111,111 @@ export const stopQuizNarration = async () => {
   }
 };
 
+let cachedVoices: Speech.Voice[] | null = null;
+
+/**
+ * Loads available voices and finds the best match for the given language.
+ * Prefers en-IN for English/Hinglish and hi-IN for Hindi.
+ * Prefers bold male voices if available.
+ * Prefers 'enhanced' or high-quality voices.
+ */
+export const getBestQuizVoice = async (language: string): Promise<string | undefined> => {
+  try {
+    if (!cachedVoices) {
+      cachedVoices = await Speech.getAvailableVoicesAsync();
+    }
+
+    if (!cachedVoices || cachedVoices.length === 0) return undefined;
+
+    // Filter by language first
+    const langLower = language.toLowerCase();
+    const matchingVoices = cachedVoices.filter(v => 
+      v.language.toLowerCase().startsWith(langLower) || 
+      (langLower === "en-in" && v.language.toLowerCase().startsWith("en")) ||
+      (langLower === "hi-in" && v.language.toLowerCase().startsWith("hi"))
+    );
+
+    if (matchingVoices.length === 0) return undefined;
+
+    // Helper to check if voice is likely male
+    const isMale = (v: Speech.Voice) => {
+      const lower = (v.identifier + v.name).toLowerCase();
+      return lower.includes("male") || lower.includes("man") || lower.includes("guy");
+    };
+
+    // Special case: check for specific high-quality Hindi voice requested
+    if (langLower.startsWith("hi")) {
+        const hieNetwork = matchingVoices.find(v => v.identifier === "hi-in-x-hie-network");
+        if (hieNetwork) return hieNetwork.identifier;
+    }
+
+    // Preference 1: Male + Exact region + Enhanced
+    const maleEnhanced = matchingVoices.find(v => 
+      v.language.toLowerCase() === langLower && 
+      isMale(v) &&
+      (v.quality === Speech.VoiceQuality.Enhanced || (v as any).enhanced)
+    );
+    if (maleEnhanced) return maleEnhanced.identifier;
+
+    // Preference 2: Male + Exact region
+    const maleExact = matchingVoices.find(v => v.language.toLowerCase() === langLower && isMale(v));
+    if (maleExact) return maleExact.identifier;
+
+    // Preference 3: Exact match for region + enhanced
+    const bestMatch = matchingVoices.find(v => 
+      v.language.toLowerCase() === langLower && 
+      (v.quality === Speech.VoiceQuality.Enhanced || (v as any).enhanced)
+    );
+    if (bestMatch) return bestMatch.identifier;
+
+    // Fallback: First matching voice
+    return matchingVoices[0].identifier;
+  } catch (error) {
+    console.error("[Speech] Failed to get best voice:", error);
+    return undefined;
+  }
+};
+
+export interface SpeakOptions {
+  voice?: string;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  onStart?: () => void;
+  onDone?: () => void;
+}
+
 /**
  * Speaks the provided text using expo-speech.
- * Uses rate 0.88 for better clarity in quiz context.
+ * Uses provided tuning parameters or defaults.
  */
 export const speakQuizQuestion = async (
   text: string,
   language: string,
-  onStart?: () => void,
-  onDone?: () => void,
+  options: SpeakOptions = {}
 ) => {
   try {
     await stopQuizNarration();
 
     if (!text || !text.trim()) return;
 
+    const {
+      voice,
+      rate = 0.80,
+      pitch = 0.80,
+      volume = 1.0,
+      onStart,
+      onDone,
+    } = options;
+
+
+
     Speech.speak(text, {
       language,
-      rate: 0.88,
-      pitch: 1.0,
-      volume: 1.0,
+      voice,
+      rate,
+      pitch,
+      volume,
       onStart,
       onDone,
       onError: (error) => {
@@ -145,3 +230,4 @@ export const speakQuizQuestion = async (
     }
   }
 };
+

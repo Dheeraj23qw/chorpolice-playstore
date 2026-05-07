@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
+import { useSelector } from "react-redux";
+
+import { RootState } from "@/redux/store";
 import * as QuizNarrationService from "@/service/QuizNarrationService";
 
 interface UseQuizNarrationParams {
@@ -14,12 +17,6 @@ interface UseQuizNarrationParams {
 
 /**
  * Hook to manage quiz narration lifecycle.
- * Safety Hardened: 
- * - Ensures single narration per questionId.
- * - Stops speech on reveal/wait phases.
- * - Stops speech when app goes to background.
- * - Does NOT auto-repeat if narration is toggled ON mid-question.
- * - Cleans up on unmount.
  */
 export const useQuizNarration = ({
   question,
@@ -32,6 +29,12 @@ export const useQuizNarration = ({
 }: UseQuizNarrationParams) => {
   const lastSpokenId = useRef<string | null>(null);
   const narrationEnabledRef = useRef(narrationEnabled);
+
+  const {
+    quizNarrationVoiceId,
+    quizNarrationRate,
+    quizNarrationPitch,
+  } = useSelector((state: RootState) => state.sound);
 
   // Sync ref with prop
   useEffect(() => {
@@ -51,11 +54,31 @@ export const useQuizNarration = ({
       const normalizedText = QuizNarrationService.normalizeQuizSpeechText(speechText);
       const lang = QuizNarrationService.detectSpeechLanguage(normalizedText);
 
-      await QuizNarrationService.speakQuizQuestion(normalizedText, lang);
+      // Resolve voice: use stored voice or find best fallback
+      let voiceId = quizNarrationVoiceId;
+      if (!voiceId) {
+        voiceId = await QuizNarrationService.getBestQuizVoice(lang);
+      }
+
+      await QuizNarrationService.speakQuizQuestion(normalizedText, lang, {
+        voice: voiceId,
+        rate: quizNarrationRate,
+        pitch: quizNarrationPitch,
+      });
     } catch (e) {
       if (__DEV__) console.warn("[Speech] Hook trigger failed:", e);
     }
-  }, [narrationEnabled, question, options, isQuizActive, isRevealPhase]);
+  }, [
+    narrationEnabled,
+    question,
+    options,
+    isQuizActive,
+    isRevealPhase,
+    quizNarrationVoiceId,
+    quizNarrationRate,
+    quizNarrationPitch,
+  ]);
+
 
   // EFFECT: Automatic narration trigger on question change
   useEffect(() => {
