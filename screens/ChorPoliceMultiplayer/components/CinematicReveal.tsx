@@ -6,6 +6,8 @@ import { Text } from "@/components/Text";
 import { Easing } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
+
 const roleImages: Record<string, any> = {
   King: require("../../../assets/images/chorsipahi/king.webp"),
   Advisor: require("../../../assets/images/chorsipahi/advisor.webp"),
@@ -38,7 +40,7 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete?.();
-    }, 4000); // Increased to 4s for better dramatic effect
+    }, CP_FLOW_TIMINGS.CINEMATIC_RESULT_REVEAL_MS);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -76,7 +78,7 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
           }}
           transition={{
             type: "timing",
-            duration: 2200,
+            duration: 1100,
             easing: Easing.bezier(0.2, 0.8, 0.2, 1),
           }}
           style={styles.cardContainer}
@@ -123,7 +125,7 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
             <MotiView
               from={{ opacity: 0, translateY: 20 }}
               animate={{ opacity: 1, translateY: 0 }}
-              transition={{ delay: 1900, type: "spring" }}
+              transition={{ delay: 900, type: "spring" }}
               style={styles.textContainer}
             >
               <Text
@@ -133,18 +135,37 @@ const CinematicReveal: React.FC<CinematicRevealProps> = ({
                 style={[
                   styles.textShadow,
                   { 
-                    fontSize: rf(2.4), 
-                    letterSpacing: wp(0.8),
+                    fontSize: rf(2.8), 
+                    letterSpacing: wp(1.2),
                     paddingHorizontal: wp(2)
                   }
                 ]}
               >
-                {isCorrect 
-                  ? `POLICE ${policeName?.toUpperCase() || ""} CAUGHT THIEF` 
-                  : role === "Joker" 
-                    ? "POLICE CAUGHT JOKER! (FAKE)" 
-                    : `POLICE CAUGHT ADVISOR ${advisorName?.toUpperCase() || ""}`}
+                {isCorrect ? "POLICE WIN" : "THIEF ESCAPED"}
               </Text>
+              
+              <MotiView
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1100, type: "timing" }}
+              >
+                <Text
+                  className="mt-2 text-center font-main-medium uppercase text-white/80"
+                  style={{ 
+                    fontSize: rf(1.4), 
+                    letterSpacing: wp(0.5),
+                    textShadowColor: "rgba(0,0,0,0.5)",
+                    textShadowOffset: { width: 0, height: 2 },
+                    textShadowRadius: 4
+                  }}
+                >
+                  {isCorrect 
+                    ? `CAUGHT THIEF` 
+                    : role === "Joker" 
+                      ? "CAUGHT JOKER! (FAKE)" 
+                      : `CAUGHT ADVISOR`}
+                </Text>
+              </MotiView>
             </MotiView>
           </View>
         </MotiView>

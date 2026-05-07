@@ -108,15 +108,17 @@ export const ChorPoliceBotBehavior = {
       let guessPayload: any = { playerId: policeId };
 
       if (investigationTargets && investigationTargets.length > 0) {
-        const pick = investigationTargets[Math.floor(Math.random() * investigationTargets.length)];
+        const pickedIdx = Math.floor(Math.random() * investigationTargets.length);
+        const pick = investigationTargets[pickedIdx];
         guessPayload.targetId = pick.id;
-        guessPayload.targetIndex = pick.playerIndex; // null for Joker
-        console.log(`🤖 [CPBot] picked target: ${pick.id} (Role: ${pick.role})`);
+        guessPayload.mysteryIndex = pickedIdx; 
+        console.log(`[CP_MYSTERY] Bot selected mysteryIndex=${pickedIdx}`);
       } else {
+        // Legacy fallback - find the logical mystery index if targets array is somehow missing
         const hiddenIndices = [0, 1, 2, 3].filter(i => i !== kingIndex && i !== policeIndex);
         const pickIndex = hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
-        guessPayload.targetIndex = pickIndex;
-        console.log(`🤖 [CPBot] picked legacy index: ${pickIndex}`);
+        guessPayload.mysteryIndex = pickIndex; 
+        console.log(`🤖 [CPBot] picked legacy mystery index: ${pickIndex}`);
       }
 
       const timer = setTimeout(() => {

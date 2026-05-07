@@ -84,6 +84,7 @@ const BoardWithPopups = ({ g }: any) => {
           myRole={g.myRole}
           gamePhase={g.gamePhase}
           investigationTargets={g.investigationTargets}
+          popupIndex={g.popupIndex}
         />
       </View>
     </>

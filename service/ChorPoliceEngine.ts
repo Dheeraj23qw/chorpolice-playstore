@@ -107,17 +107,15 @@ export const ChorPoliceEngine = {
 
       case CP.POLICE_GUESS:
         if (packet.targetId) {
-          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received — ID: ${packet.targetId}`);
-          ChorPoliceEngine.evaluateGuess(packet.targetId);
-        } else if (packet.targetIndex !== undefined) {
-          // Backward compatibility for index-based guesses
+          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received — ID: ${packet.targetId}, MysteryIndex: ${packet.mysteryIndex}`);
+          ChorPoliceEngine.evaluateGuess(packet.targetId, packet.mysteryIndex);
+        } else if (packet.mysteryIndex !== undefined) {
+          // Backward compatibility
           const targets = ChorPoliceEngine.state.investigationTargets;
-          const matchedTarget = targets.find(t => t.playerIndex === packet.targetIndex);
-          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received (Legacy Index: ${packet.targetIndex})`);
+          const matchedTarget = targets[packet.mysteryIndex];
+          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received (Legacy MysteryIndex: ${packet.mysteryIndex})`);
           if (matchedTarget) {
-            ChorPoliceEngine.evaluateGuess(matchedTarget.id);
-          } else {
-            console.error(`🚨 [CPEngine] Guess failed: index ${packet.targetIndex} not found in current round targets.`);
+            ChorPoliceEngine.evaluateGuess(matchedTarget.id, packet.mysteryIndex);
           }
         }
         break;
@@ -571,7 +569,7 @@ export const ChorPoliceEngine = {
   },
 
   /* ─── Evaluate the Police player's guess ─── */
-  evaluateGuess: (targetId: string): void => {
+  evaluateGuess: (targetId: string, mysteryIndex?: number): void => {
     if (!ChorPoliceEngine.state.isRoundActive) {
       console.log("🛡️ [CPEngine] Ignoring duplicate guess — round not active.");
       return;
@@ -584,13 +582,6 @@ export const ChorPoliceEngine = {
 
     if (!target) {
       console.error(`🚨 [CPEngine] Guess failed: targetId ${targetId} not found in current investigationTargets!`);
-      return;
-    }
-
-    // 🛡️ REVEALED CARD GUARD: Although Joker targets are typically only mystery cards,
-    // we verify that the playerIndex (if any) isn't the King or Police.
-    if (target.playerIndex !== null && (target.playerIndex === policeIndex || target.playerIndex === kingIndex)) {
-      console.warn(`🛡️ [CPEngine] Ignoring guess on revealed role: ${target.role}`);
       return;
     }
 
@@ -629,14 +620,12 @@ export const ChorPoliceEngine = {
     // Broadcast result to all players
     const CP = MODES.CHOR_POLICE;
     const leaderboard = ChorPoliceEngine.getLeaderboard();
-    const targetIndex = investigationTargets.findIndex(t => t.id === targetId);
 
     PacketRouter.broadcast({
       type: CP.ROUND_RESULT,
       correct,
       guessedTargetId: targetId,
-      guessedTargetIndex: targetIndex,
-      guessedPlayerIndex: target?.playerIndex ?? null,
+      guessedMysteryIndex: mysteryIndex ?? investigationTargets.findIndex(t => t.id === targetId),
       guessedRole,
       round: currentRound,
       allRoles: players.map((p, i) => ({

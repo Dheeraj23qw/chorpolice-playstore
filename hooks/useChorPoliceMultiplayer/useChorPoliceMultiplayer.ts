@@ -331,22 +331,25 @@ export const useChorPoliceMultiplayer = () => {
     setAreCardsClickable(false);
     AudioEngine.play("select", "ui");
 
+    // Map physical index (10, 11, 12) back to mysteryIndex (0, 1, 2)
+    const mysteryIndex = index >= 10 ? index - 10 : index;
+    console.log(`[CP_MYSTERY] Human selected mysteryIndex=${mysteryIndex}`);
+
     const guessPacket = { 
       type: MODES.CHOR_POLICE.POLICE_GUESS, 
-      targetId: targetId, // Use ID-based targeting
-      targetIndex: index, // Maintain index for legacy fallback
+      targetId: targetId,
+      mysteryIndex: mysteryIndex,
       playerId: localPlayerId 
     };
 
     if (isHost) {
-      flipCard(index, 1, 1500, flipAnimsRef.current, setFlippedStates, flippedStates, reduxRoles, clickedCards, () => {}, () => {}, dispatch, true);
       setClickedCards(prev => { const n = [...prev]; n[index] = true; return n; });
       handleIncomingPacket(guessPacket);
       return;
     }
     setMessage("Sending your guess...");
     sendPacketToHost(guessPacket);
-  }, [isHost, localPlayerId, reduxMyRole, reduxGamePhase, reduxRoles, areCardsClickable, flippedStates, firstCardClicked, clickedCards, dispatch, investigationTargets]);
+  }, [isHost, localPlayerId, reduxMyRole, reduxGamePhase, areCardsClickable, flippedStates, firstCardClicked, clickedCards, investigationTargets]);
 
   const handleCardClickWithBounce = useCallback((index: number) => {
     if (reduxMyRole !== "Police" || !areCardsClickable) return;

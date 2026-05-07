@@ -1,9 +1,9 @@
 import { Animated } from "react-native";
 import { CPMultiplayerContext } from "./types";
 import { AudioEngine } from "@/audio/audioEngine";
-import { revealAllCards } from "../../useChorPoliceMultiplayer/helpers/revealAllCardsUtils";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { setMyRole as setReduxMyRole, setGamePhase as setReduxGamePhase } from "@/redux/reducers/sessionSlice";
+import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
 
 export const handleRoundResult = (packet: any, context: CPMultiplayerContext) => {
   const { 
@@ -39,50 +39,55 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
   });
 
   const pickedRole = packet.guessedRole || (packet.correct ? "Thief" : "Advisor");
-  // The UI should reveal the card at the mystery target index (0-2)
-  const mysteryIndex = typeof packet.guessedTargetIndex === 'number' ? packet.guessedTargetIndex : 0;
+  // 🎭 Mystery Index is 0, 1, or 2 corresponding to mystery cards at 10, 11, 12
+  const mysteryIndex = typeof packet.guessedMysteryIndex === 'number' ? packet.guessedMysteryIndex : 0;
   
-  // For the result popup reveal
-  setPopupIndex(5);
-  setRevealData({ role: pickedRole, isCorrect: packet.correct, index: mysteryIndex });
-  AudioEngine.play(packet.correct ? "win" : "lose", "gameplay");
-
-  // Flip the targeted mystery card
-  const targetPhysIndex = packet.guessedPlayerIndex !== null ? packet.guessedPlayerIndex : (10 + mysteryIndex);
+  // 1. Flip ONLY the clicked mysterious card first
+  const mysteryPhysIndex = 10 + mysteryIndex;
+  console.log(`[CP_MYSTERY] Flipping selected mystery card=${mysteryIndex}`);
   
   setFlippedStates(prev => {
     const next = [...prev];
-    next[targetPhysIndex] = true;
+    next[mysteryPhysIndex] = true;
     return next;
   });
 
-  const tReveal = setTimeout(() => {
-    const currentFlipped = refs.flippedStatesRef.current;
-    const currentClicked = refs.clickedCardsRef.current;
-    const engineRoles = packet.allRoles?.map((info: any) => info.role) ?? [
-      ...ChorPoliceEngine.state.roles,
-    ];
+  // 2. Flip remaining mystery cards after delay
+  const tMysteryRemaining = setTimeout(() => {
+    console.log("[CP_MYSTERY] Flipping remaining mystery cards");
+    setFlippedStates(prev => {
+      const next = [...prev];
+      // Flip all 3 mystery cards (10, 11, 12) to reveal identities
+      next[10] = true;
+      next[11] = true;
+      next[12] = true;
+      return next;
+    });
+    AudioEngine.play("select", "ui");
+  }, CP_FLOW_TIMINGS.POLICE_REMAINING_CARDS_DELAY_MS);
+  refs.timerRefs.current.push(tMysteryRemaining);
 
-    const revealTimer = revealAllCards(
-      engineRoles,
-      currentFlipped,
-      refs.flipAnimsRef.current,
-      setFlippedStates,
-      currentClicked,
-      () => {},
-      () => {},
-      dispatch,
-    );
-    refs.timerRefs.current.push(revealTimer);
-  }, 2800);
-  refs.timerRefs.current.push(tReveal);
+  // 3. Show Cinematic Reveal after mystery cards are visible
+  const T_CINEMATIC = CP_FLOW_TIMINGS.POLICE_REMAINING_CARDS_DELAY_MS + CP_FLOW_TIMINGS.POLICE_REMAINING_CARDS_FLIP_MS;
+  const tCinematic = setTimeout(() => {
+    console.log("[CP_MYSTERY] Cinematic result reveal started");
+    setPopupIndex(5);
+    setRevealData({ role: pickedRole, isCorrect: packet.correct, index: mysteryIndex });
+    AudioEngine.play(packet.correct ? "win" : "lose", "gameplay");
+  }, T_CINEMATIC);
+  refs.timerRefs.current.push(tCinematic);
 
-  const t5 = setTimeout(() => {
+  // 4. Show Final Result Popup after cinematic duration
+  const T_RESULT = T_CINEMATIC + CP_FLOW_TIMINGS.CINEMATIC_RESULT_REVEAL_MS;
+  const tResult = setTimeout(() => {
+    console.log("[CP_MYSTERY] Cinematic result reveal ended");
     setPopupIndex(packet.correct ? 4 : 3);
-  }, 5500);
-  refs.timerRefs.current.push(t5);
+  }, T_RESULT); 
+  refs.timerRefs.current.push(tResult);
 
-  const t6 = setTimeout(() => {
+  // 5. Final transition to next phase (Video / Quiz)
+  const T_NEXT = T_RESULT + 3000; // Hold final result for 3 seconds
+  const tNextPhase = setTimeout(() => {
     setIsDynamicPopUp(false);
     setShowTableButton(true);
 
@@ -95,7 +100,6 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
       logic.resolveScoreQuizPlayers();
       logic.playTransition("score_quiz");
     } else {
-      // 🛡️ RE-INITIALIZE SAFELY: Keep arrays at 20 items to prevent crashes in next round
       setFlipAnims(Array(20).fill(null).map(() => new Animated.Value(0)));
       setFlippedStates(Array(20).fill(false));
       setClickedCards(Array(20).fill(false));
@@ -109,6 +113,6 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
       refs.hasGuessedRef.current = false;
       dispatch(setReduxGamePhase("round_video"));
     }
-  }, 8500);
-  refs.timerRefs.current.push(t6);
+  }, T_NEXT);
+  refs.timerRefs.current.push(tNextPhase);
 };
