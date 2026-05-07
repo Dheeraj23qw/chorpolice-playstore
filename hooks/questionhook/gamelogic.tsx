@@ -1253,5 +1253,6 @@ export const useQuizGameLogic = () => {
     matchHistory,
     isPersonalSummaryVisible,
     handleOpenFinalLeaderboard,
+    activeQuestionId,
   };
 };

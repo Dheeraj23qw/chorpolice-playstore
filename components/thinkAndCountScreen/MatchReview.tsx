@@ -9,6 +9,7 @@ import Animated, {
 
 import { hp, rf } from "@/utils/responsive";
 import { Text } from "../Text";
+import { useSummaryNarration } from "@/hooks/useSummaryNarration";
 
 export interface MatchReviewItem {
   question: string;
@@ -31,6 +32,9 @@ export const MatchReview: React.FC<MatchReviewProps> = ({
   translateFn,
 }) => {
   const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
+  const { speakReviewItem, narrationEnabled } = useSummaryNarration({
+    isSummaryActive: true,
+  });
 
   const items = useMemo(
     () =>
@@ -124,6 +128,24 @@ export const MatchReview: React.FC<MatchReviewProps> = ({
                   color={isOpen ? "#A5B4FC" : "rgba(255,255,255,0.6)"}
                 />
               </View>
+
+              {/* Individual Narration Button */}
+              {narrationEnabled && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    speakReviewItem(
+                      localizedQuestion,
+                      localizedAnswer,
+                      item.hint,
+                      !!isHindi
+                    );
+                  }}
+                  className="ml-2 h-10 w-10 items-center justify-center rounded-full border border-indigo-400/20 bg-indigo-500/10"
+                >
+                  <Ionicons name="volume-high" size={18} color="#818cf8" />
+                </TouchableOpacity>
+              )}
             </View>
           </Pressable>
 

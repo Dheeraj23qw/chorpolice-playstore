@@ -1,17 +1,20 @@
 // soundSlice.ts
 import { AudioEngine } from "@/audio/audioEngine";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { loadQuizNarrationEnabled, saveQuizNarrationEnabled } from "@/storage/settingsStorage";
 
 interface SoundState {
   isLoading: boolean;
   isLoaded: boolean;
   isMuted: boolean;
+  quizNarrationEnabled: boolean;
 }
 
 const initialState: SoundState = {
   isLoading: false,
   isLoaded: false,
   isMuted: false,
+  quizNarrationEnabled: loadQuizNarrationEnabled(),
 };
 
 export const loadSounds = createAsyncThunk(
@@ -35,6 +38,14 @@ const soundSlice = createSlice({
       state.isMuted = action.payload;
       AudioEngine.setMuted(action.payload);
     },
+    toggleQuizNarration: (state) => {
+      state.quizNarrationEnabled = !state.quizNarrationEnabled;
+      saveQuizNarrationEnabled(state.quizNarrationEnabled);
+    },
+    setQuizNarrationEnabled: (state, action) => {
+      state.quizNarrationEnabled = action.payload;
+      saveQuizNarrationEnabled(action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -51,5 +62,5 @@ const soundSlice = createSlice({
   },
 });
 
-export const { setMuted } = soundSlice.actions;
+export const { setMuted, toggleQuizNarration, setQuizNarrationEnabled } = soundSlice.actions;
 export default soundSlice.reducer;

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hp, rf, wp } from "@/utils/responsive";
 import { Text } from "../Text";
 import { MatchReview, MatchReviewItem } from "./MatchReview";
+import { useSummaryNarration } from "@/hooks/useSummaryNarration";
 
 interface PersonalSummaryProps {
   matchHistory: MatchReviewItem[];
@@ -27,6 +28,12 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
   onContinue,
 }) => {
   const insets = useSafeAreaInsets();
+  const { speakSummary, narrationEnabled } = useSummaryNarration({
+    correctAnswers,
+    totalQuestions,
+    isHindi,
+    isSummaryActive: true,
+  });
 
   return (
     <View className="flex-1">
@@ -43,8 +50,19 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
           <View className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-cyan-500/10" />
 
           <View className="items-center">
-            <View className="mb-4 rounded-full border border-indigo-400/20 bg-indigo-500/20 p-4">
-              <Ionicons name="trophy" size={36} color="#818cf8" />
+            <View className="mb-4 flex-row items-center gap-3">
+              <View className="rounded-full border border-indigo-400/20 bg-indigo-500/20 p-4">
+                <Ionicons name="trophy" size={36} color="#818cf8" />
+              </View>
+
+              {narrationEnabled && (
+                <TouchableOpacity
+                  onPress={() => speakSummary()}
+                  className="h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/10 active:scale-90"
+                >
+                  <Ionicons name="volume-high" size={24} color="#818cf8" />
+                </TouchableOpacity>
+              )}
             </View>
 
             <Text

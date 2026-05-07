@@ -46,6 +46,12 @@ export const OFFLINE_RULES_CONTENT: Record<
         color: "#facc15",
       },
       {
+        title: "Stay Silent",
+        desc: "Thief and Advisor must not reveal themselves until Police answers.",
+        icon: "volume-mute-outline",
+        color: "#fb7185",
+      },
+      {
         title: "Police Guess",
         desc: "Police picks 1 mystery card to catch the Thief.",
         icon: "search-outline",
@@ -78,11 +84,18 @@ export const OFFLINE_RULES_CONTENT: Record<
         color: "#a78bfa",
       },
       {
-        title: "Pehle Reveal",
+        title: "Public Reveal",
         desc: "Sabse pehle King aur Police sabko dikhte hain, taaki setup clear ho.",
         icon: "eye-outline",
         color: "#facc15",
       },
+      {
+        title: "Stay Silent",
+        desc: "Chor aur Mantri Police ke answer dene tak apna role kisi ko nahi batayenge.",
+        icon: "volume-mute-outline",
+        color: "#fb7185",
+      },
+
       {
         title: "Police Guess",
         desc: "Police 3 mystery cards me se 1 card choose karke Chor pakadne ki koshish karta hai.",

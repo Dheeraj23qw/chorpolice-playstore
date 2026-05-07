@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useEffect } from "react";
-import { BackHandler, Image, ScrollView, View } from "react-native";
+import { BackHandler, Image, ScrollView, View, Pressable } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "@/components/Text";
@@ -22,9 +23,18 @@ import { QuizButton } from "../../components/thinkAndCountScreen/QuizButtons";
 import { QuizLanguageToggle } from "../../components/thinkAndCountScreen/QuizLanguageToggle";
 import Timer from "../../components/thinkAndCountScreen/Timer";
 import { WaitingState } from "@/components/MultiPlayerQuizLeaderboard/WaitingState";
+import { RootState } from "@/redux/store";
+import { toggleQuizNarration } from "@/redux/reducers/soundReducer";
+import { useQuizNarration } from "@/hooks/useQuizNarration";
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
+  const quizNarrationEnabled = useSelector(
+    (state: RootState) => state.sound.quizNarrationEnabled,
+  );
 
   const {
     countdown,
@@ -59,7 +69,26 @@ const QuizScreen = () => {
     isPersonalSummaryVisible,
     handleOpenFinalLeaderboard,
     correctAnswer,
+    activeQuestionId,
   } = useQuizGameLogic();
+
+  const visibleOptions = isFiftyFiftyActive
+    ? remainingOptions || []
+    : question?.options || [];
+
+  const { repeatNarration } = useQuizNarration({
+    question: isHindi ? translateToHindi(question?.question) : question?.question,
+    options: isHindi ? buildLocalizedQuizOptions(visibleOptions) : visibleOptions,
+    isHindi,
+    isQuizActive: !isWaitingForOthers && !isLeaderboardVisible && !isPersonalSummaryVisible,
+    isRevealPhase: isDynamicPopUp,
+    narrationEnabled: quizNarrationEnabled,
+    questionId: activeQuestionId,
+  });
+
+  const handleToggleNarration = useCallback(() => {
+    dispatch(toggleQuizNarration());
+  }, [dispatch]);
 
   useEffect(() => {
     const backAction = () => {
@@ -83,9 +112,6 @@ const QuizScreen = () => {
   );
 
   const isContentBlocked = isWaitingForOthers || isLeaderboardVisible;
-  const visibleOptions = isFiftyFiftyActive
-    ? remainingOptions || []
-    : question?.options || [];
 
   return (
     <View className="flex-1 bg-black">
@@ -194,10 +220,61 @@ const QuizScreen = () => {
               />
             ) : !isContentBlocked ? (
               <View>
-                <QuizLanguageToggle
-                  isHindi={isHindi}
-                  onToggle={toggleHindi}
-                />
+                <View className="mb-6 flex-row items-center gap-3">
+                  <View className="flex-1">
+                    <QuizLanguageToggle
+                      isHindi={isHindi}
+                      onToggle={toggleHindi}
+                    />
+                  </View>
+
+                  {/* Glassmorphism Narration Controls */}
+                  <View className="flex-row items-center gap-2">
+                    {/* Replay Button (Only visible if enabled) */}
+                    {quizNarrationEnabled && (
+                      <Pressable
+                        onPress={repeatNarration}
+                        className="h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/10 active:scale-90"
+                      >
+                        <Ionicons
+                          name="refresh-outline"
+                          size={22}
+                          color="#818cf8"
+                        />
+                      </Pressable>
+                    )}
+
+                    {/* Toggle Button */}
+                    <Pressable
+                      onPress={handleToggleNarration}
+                      className="overflow-hidden rounded-2xl active:scale-95"
+                    >
+                      <BlurView
+                        intensity={30}
+                        tint="light"
+                        className="h-[68px] px-5 flex-row items-center justify-center border border-white/20 bg-white/10"
+                      >
+                        <Ionicons
+                          name={
+                            quizNarrationEnabled
+                              ? "volume-high-outline"
+                              : "volume-mute-outline"
+                          }
+                          size={28}
+                          color={quizNarrationEnabled ? "#818cf8" : "#94a3b8"}
+                        />
+                        <View className="ml-3">
+                          <Text
+                            style={{ fontSize: rf(1.1) }}
+                            className="font-main-bold text-white uppercase"
+                          >
+                            {quizNarrationEnabled ? "Narration On" : "Narration Off"}
+                          </Text>
+                        </View>
+                      </BlurView>
+                    </Pressable>
+                  </View>
+                </View>
 
                 <QuestionSection
                   question={
