@@ -74,7 +74,6 @@ export const useCPRevealSequence = ({
       setAreCardsClickable(false);
       setShowTableButton(false);
       setMessage("Shuffling all cards...");
-      AudioEngine.play("spin", "gameplay");
 
       // ── Phase 1: Public King + Police Reveal (after shuffle) ─────────────
       const t_publicReveal = setTimeout(() => {

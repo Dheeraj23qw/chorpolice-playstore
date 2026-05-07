@@ -15,7 +15,7 @@ export const CP_FLOW_TIMINGS = {
   CARD_FLIP_DURATION_MS: 600,
 
   /** When non-King/Police cards start fading OUT during the dealing animation. */
-  NON_REVEAL_FADE_OFFSET_MS: 6800,
+  NON_REVEAL_FADE_OFFSET_MS: 7000,
 
   // --- Police Investigation Reveal Flow ---
 

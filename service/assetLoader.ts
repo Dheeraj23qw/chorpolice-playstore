@@ -16,7 +16,6 @@ const BACKGROUND_ASSETS = [
   require("@/assets/audio/chorPolice/quiz.mp3"),
   require("@/assets/audio/chorPolice/round.mp3"),
   require("@/assets/audio/chorPolice/select.mp3"),
-  require("@/assets/audio/chorPolice/spin.mp3"),
   require("@/assets/audio/chorPolice/won.mp3"),
   require("@/assets/audio/maingame/king.mp3"),
   require("@/assets/audio/maingame/police.mp3"),

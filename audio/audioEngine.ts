@@ -6,7 +6,6 @@ import { AppState } from "react-native";
 type SoundName =
   | "win"
   | "lose"
-  | "spin"
   | "next"
   | "quiz"
   | "level"
@@ -44,7 +43,6 @@ const QUIZ_DUCK_VOLUME = 0.1;
 
 const soundPaths: Record<SoundName, any> = {
   win: require("@/assets/audio/chorPolice/won.mp3"),
-  spin: require("@/assets/audio/chorPolice/spin.mp3"),
   next: require("@/assets/audio/chorPolice/round.mp3"),
   quiz: require("@/assets/audio/chorPolice/quiz.mp3"),
   level: require("@/assets/audio/chorPolice/level.mp3"),
@@ -119,8 +117,6 @@ const restoreQuizVolumeIfNeeded = () => {
 /* ---------------- ENGINE ---------------- */
 
 export const AudioEngine = {
-
-
   /* ---------- GLOBAL LOAD ---------- */
   loadAll() {
     // This pre-creates the players for all sounds so there's no lag when playing
@@ -147,7 +143,7 @@ export const AudioEngine = {
 
   /* ---------- CONTROL ---------- */
 
-    isMuted() {
+  isMuted() {
     return isMutedState;
   },
 
@@ -178,8 +174,7 @@ export const AudioEngine = {
     createIfMissing(name);
 
     const now = Date.now();
-    if (lastPlayed[name] && now - lastPlayed[name]! < SOUND_COOLDOWN)
-      return;
+    if (lastPlayed[name] && now - lastPlayed[name]! < SOUND_COOLDOWN) return;
 
     lastPlayed[name] = now;
 

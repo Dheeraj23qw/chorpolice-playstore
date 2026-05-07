@@ -101,13 +101,14 @@ const OverlayPopUp: React.FC<ExtendedProps> = ({
       Animated.parallel([
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 600,
+          duration: 800,
+          easing: Easing.out(Easing.exp),
           useNativeDriver: true,
         }),
-        Animated.spring(scaleAnim, {
+        Animated.timing(scaleAnim, {
           toValue: 1,
-          friction: 8,
-          tension: 40,
+          duration: 800,
+          easing: Easing.out(Easing.back(1.5)),
           useNativeDriver: true,
         }),
         Animated.loop(

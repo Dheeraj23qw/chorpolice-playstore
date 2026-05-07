@@ -28,8 +28,8 @@ interface ChorSipahiCardProps {
   showStatusOverlay?: boolean;
   isHighlight?: boolean;
   isMystery?: boolean;
+  highlightColor?: string;
 }
-
 const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
   index,
   player,
@@ -43,11 +43,14 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
   showStatusOverlay = true,
   isHighlight = false,
   isMystery = false,
+  highlightColor,
 }) => {
   const handlePress = () => {
     AudioEngine.play("select", "ui");
     onPress(index);
   };
+
+  const themeColor = highlightColor || "#6366f1";
 
   return (
     <View style={style} className="aspect-[3/4.2] w-full">
@@ -84,13 +87,15 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
                   loop: true,
                 }}
                 style={{
-                  backgroundColor: 'rgba(99, 102, 241, 0.15)', 
+                  backgroundColor: `${themeColor}25`, 
+                  borderColor: themeColor,
                 }}
-                className="absolute inset-0 z-10 border-[4px] border-indigo-500 rounded-[26px] items-center justify-center"
+                className="absolute inset-0 z-10 border-[4px] rounded-[26px] items-center justify-center"
               >
-                <View className="rounded-full bg-indigo-500 px-4 py-1.5 shadow-lg shadow-indigo-500/50">
-                  <Text className="font-main-bold text-[10px] text-white uppercase tracking-widest">Mystery</Text>
-                </View>
+                <View 
+                  style={{ backgroundColor: themeColor, shadowColor: themeColor }}
+                  className="h-2 w-12 rounded-full shadow-lg" 
+                />
               </MotiView>
             )}
             {(isMystery || phase === "police_turn") ? (
