@@ -1,4 +1,4 @@
-import React, { useEffect, memo } from "react";
+import React, { useEffect, memo, useState } from "react";
 import {
   View,
   BackHandler,
@@ -14,8 +14,6 @@ import ScoreTable from "@/modal/ShowTableModal";
 import { useChorPoliceMultiplayer } from "@/hooks/useChorPoliceMultiplayer/useChorPoliceMultiplayer";
 
 // Views
-
-// Exit Modal
 import QuizExitModal from "@/modal/QuizExitModal";
 import WaitingView from "./views/WaitingView";
 import DealingView from "./views/DealingView";
@@ -26,10 +24,13 @@ import ScoreQuizView from "./views/ScoreQuizView";
 import FinalResultView from "./views/FinalResultView";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import { RoleRevealView } from "./views/RoleRevealView";
+import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
 
 const ChorPoliceMultiplayerScreen = () => {
   const insets = useSafeAreaInsets();
   const g = useChorPoliceMultiplayer();
+
+  const [isRulesVisible, setIsRulesVisible] = useState(false);
 
   /* ───────── HANDLE BACK PRESS ───────── */
   useEffect(() => {
@@ -47,12 +48,12 @@ const ChorPoliceMultiplayerScreen = () => {
         <VideoPlayerComponent
           index={1}
           onVideoEnd={() => {
-            // Move to whichever phase was queued
             g.setGamePhase(g.nextPhase);
           }}
         />
       );
     }
+
     switch (g.gamePhase) {
       case "waiting":
         return <WaitingView g={g} />;
@@ -98,28 +99,57 @@ const ChorPoliceMultiplayerScreen = () => {
       {/* Content */}
       <View className="flex-1">{renderView()}</View>
 
-      {/* 🏆 PERSISTENT RANKING BUTTON */}
+      {/* TOP ACTION BUTTONS */}
       <View
-        className="absolute right-6 z-[1000]"
+        className="absolute right-6 z-[1000] flex-row items-center"
         style={{ top: insets.top + 10 }}
       >
+        {/* RULES BUTTON */}
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={g.toggleModal}
-          className="h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
+          onPress={() => setIsRulesVisible(true)}
+          className="mr-3 h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
         >
           <BlurView
             intensity={10}
             style={StyleSheet.absoluteFill}
             tint="dark"
           />
-          <Ionicons name="trophy-outline" size={20} color="#FACC15" />
+
+          <View className="h-full w-full items-center justify-center">
+            <Ionicons name="book-outline" size={20} color="#C7D2FE" />
+          </View>
+
+          <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-cyan-400" />
+        </TouchableOpacity>
+
+        {/* 🏆 PERSISTENT RANKING BUTTON */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={g.toggleModal}
+          className="h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
+        >
+          <BlurView
+            intensity={10}
+            style={StyleSheet.absoluteFill}
+            tint="dark"
+          />
+
+          <View className="h-full w-full items-center justify-center">
+            <Ionicons name="trophy-outline" size={20} color="#FACC15" />
+          </View>
 
           <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-indigo-500" />
         </TouchableOpacity>
       </View>
 
-      {/* Score Table (Global) */}
+      {/* Online Rules Modal */}
+      <OfflineRulesModal
+        visible={isRulesVisible}
+        onClose={() => setIsRulesVisible(false)}
+      />
+
+      {/* Score Table Global */}
       <ScoreTable
         playerNames={g.playerNames}
         playerScores={g.playerScores}

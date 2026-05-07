@@ -29,5 +29,5 @@ export const CP_FLOW_TIMINGS = {
   POLICE_REMAINING_CARDS_FLIP_MS: 700,
 
   /** Duration of the cinematic result overlay ("Police Win", etc) (ms). */
-  CINEMATIC_RESULT_REVEAL_MS: 1500,
+  CINEMATIC_RESULT_REVEAL_MS: 3000,
 } as const;

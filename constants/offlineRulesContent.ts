@@ -66,17 +66,11 @@ export const OFFLINE_RULES_CONTENT: Record<
     ],
   },
   HI: {
-    headerTitle: "Offline Rules",
-    headerSubtitle: "1 phone pe sab saath khelo",
+    headerTitle: "Game Rules",
+    headerSubtitle: "",
     buttonText: "Chalo Khelein",
     toggleText: "English",
     items: [
-      {
-        title: "One Phone",
-        desc: "Saare 4 players ek hi phone par saath me khelte hain.",
-        icon: "phone-portrait-outline",
-        color: "#38bdf8",
-      },
       {
         title: "Hidden Roles",
         desc: "Har round me King, Police, Chor aur Advisor roles hote hain.",

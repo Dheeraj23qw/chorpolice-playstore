@@ -12,7 +12,6 @@ import {
   OfflineRulesLanguage,
   OfflineRulesItem,
 } from "@/constants/offlineRulesContent";
-
 interface OfflineRulesModalProps {
   visible: boolean;
   onClose: () => void;
@@ -63,7 +62,11 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
                   maxHeight: SCREEN_HEIGHT - (insets.top + insets.bottom + 40),
                 }}
               >
-                <BlurView intensity={70} tint="dark" className="overflow-hidden">
+                <BlurView
+                  intensity={70}
+                  tint="dark"
+                  className="overflow-hidden"
+                >
                   <LinearGradient
                     colors={[
                       "rgba(99,102,241,0.24)",
@@ -189,7 +192,7 @@ const RuleItem = ({
       className="mb-3 flex-row items-center rounded-3xl border border-white/10 bg-white/5 p-4"
     >
       <View
-        className="mr-4 h-13 w-13 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
+        className="h-13 w-13 mr-4 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
         style={{
           shadowColor: color,
           shadowOffset: { width: 0, height: 8 },
