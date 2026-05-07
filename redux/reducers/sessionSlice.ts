@@ -42,6 +42,21 @@ export type GamePhase =
   | "investigation_shuffle"
   | "final_result";
 
+export type CardDealPreset =
+  | "classicSpin"
+  | "tornadoDeal"
+  | "waveDeal"
+  | "orbitDeal"
+  | "popBurstDeal";
+
+export const CARD_DEAL_PRESETS: CardDealPreset[] = [
+  "classicSpin",
+  "tornadoDeal",
+  "waveDeal",
+  "orbitDeal",
+  "popBurstDeal",
+];
+
 interface RoundRoleState {
   roles: string[];
   policeIndex: number | null;
@@ -92,6 +107,8 @@ interface SessionState {
   advisorIndex: number | null;
   myRole: string | null;
   isRoundActive: boolean;
+  isBotThinking: boolean;
+  dealAnimationPreset: CardDealPreset;
   stake: number;
 
   // ── Economy / Coins ──
@@ -113,6 +130,8 @@ const INITIAL_GAME_STATE = {
   advisorIndex: null as number | null,
   myRole: null as string | null,
   isRoundActive: false,
+  isBotThinking: false,
+  dealAnimationPreset: "classicSpin" as CardDealPreset,
   stake: 0,
   economy: {
     matchId: null as string | null,
@@ -292,6 +311,14 @@ export const sessionSlice = createSlice({
       state.isRoundActive = action.payload;
     },
 
+    setBotThinking: (state, action: PayloadAction<boolean>) => {
+      state.isBotThinking = action.payload;
+    },
+
+    setDealAnimationPreset: (state, action: PayloadAction<CardDealPreset>) => {
+      state.dealAnimationPreset = action.payload;
+    },
+
     setStake: (state, action: PayloadAction<number>) => {
       state.stake = action.payload;
     },
@@ -369,6 +396,8 @@ export const {
   setRoundState,
   setMyRole,
   setRoundActive,
+  setDealAnimationPreset,
+  setBotThinking,
   setStake,
   setPlayerConnectionStatus,
   setLocalReconnecting,

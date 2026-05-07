@@ -2,7 +2,10 @@ import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { Animated } from "react-native";
 import { AppDispatch } from "@/redux/store";
-import { setGamePhase as setReduxGamePhase } from "@/redux/reducers/sessionSlice";
+import { 
+  setGamePhase as setReduxGamePhase,
+  setDealAnimationPreset
+} from "@/redux/reducers/sessionSlice";
 import { AudioEngine } from "@/audio/audioEngine";
 import { flipCard } from "../useChorPoliceMultiplayer/helpers/flipCardUtil";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
@@ -60,6 +63,12 @@ export const useCPRevealSequence = ({
 
       // ── Phase 0: Shuffle / Dealing ────────────────────────────────────────
       console.log("[CP_FLOW] Shuffle started");
+      
+      if (packet.dealAnimationPreset) {
+        console.log("[CP_ANIMATION] Selected deal preset from packet:", packet.dealAnimationPreset);
+        dispatch(setDealAnimationPreset(packet.dealAnimationPreset));
+      }
+
       dispatch(setReduxGamePhase("dealing"));
       setInvisibleIndices([]);
       setAreCardsClickable(false);

@@ -67,3 +67,8 @@ export const selectEconomy = createSelector(
   [selectSession],
   (session) => session.economy,
 );
+
+export const selectDealAnimationPreset = createSelector(
+  [selectSession],
+  (session) => session.dealAnimationPreset,
+);

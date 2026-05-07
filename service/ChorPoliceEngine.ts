@@ -9,6 +9,8 @@ import {
   setRoundState,
   setStake,
   initMatchEconomy,
+  setDealAnimationPreset,
+  CARD_DEAL_PRESETS,
 } from "@/redux/reducers/sessionSlice";
 
 /**
@@ -541,6 +543,11 @@ export const ChorPoliceEngine = {
     const policeIdx = ChorPoliceEngine.state.policeIndex;
     const kingIdx = ChorPoliceEngine.state.kingIndex;
 
+    // 1.5. Randomize deal animation preset (Host only)
+    const preset = CARD_DEAL_PRESETS[Math.floor(Math.random() * CARD_DEAL_PRESETS.length)];
+    dispatch(setDealAnimationPreset(preset));
+
+    console.log(`[CP_START] startRound: selected preset=${preset}`);
     console.log("[CP_START] startRound: before PUBLIC_REVEAL");
     PacketRouter.broadcast({
       type: CP.PUBLIC_REVEAL,
@@ -551,6 +558,7 @@ export const ChorPoliceEngine = {
       kingIndex: kingIdx,
       policeIndex: policeIdx,
       round: currentRound,
+      dealAnimationPreset: preset,
       // Send full player list for UI rendering
       players: players.map((p, i) => ({
         id: p.id,

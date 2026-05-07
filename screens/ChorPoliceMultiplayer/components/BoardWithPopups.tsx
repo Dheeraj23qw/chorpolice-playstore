@@ -85,6 +85,7 @@ const BoardWithPopups = ({ g }: any) => {
           gamePhase={g.gamePhase}
           investigationTargets={g.investigationTargets}
           popupIndex={g.popupIndex}
+          dealAnimationPreset={g.dealAnimationPreset}
         />
       </View>
     </>

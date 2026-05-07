@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import PlayButton from "@/components/RajamantriGameScreen/playButton";
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
+import { CardDealPreset } from "@/redux/reducers/sessionSlice";
 import { Text } from "@/components/Text";
 import { OfflineInvestigationBanner } from "@/screens/OfflineGame/components/OfflineInvestigationBanner";
 import { hp, rf, wp } from "@/utils/responsive";
@@ -48,11 +49,88 @@ const MYSTERY_SHUFFLE_ROTATIONS = [
   ["0deg", "-10deg", "7deg", "0deg"],
 ] as const;
 
-const getOfflineStyleSpin = (index: number) => ({
-  translateX: index % 2 === 0 ? 5 : -5,
-  translateY: index < 2 ? 5 : -5,
-  rotate: "1080deg",
+/** 📦 Card Start: Neutral center position for Classic/Tornado */
+const getNeutralCenterStart = (index: number) => {
+  const isLeft = index % 2 === 0;
+  const isTop = index < 2;
+  return {
+    translateX: isLeft ? wp(23) : -wp(23),
+    translateY: isTop ? hp(12) : -hp(12),
+    rotate: "0deg",
+    scale: 1,
+    opacity: 0,
+  };
+};
+
+/** 🌀 Classic/Tornado Shuffle: Move and Spin */
+const getClassicShuffle = (index: number) => {
+  const isLeft = index % 2 === 0;
+  const isTop = index < 2;
+  return {
+    translateX: isLeft ? wp(23) : -wp(23),
+    translateY: isTop ? hp(12) : -hp(12),
+    rotate: "1080deg",
+    scale: 1,
+    opacity: 1,
+  };
+};
+
+const getTornadoShuffle = (index: number) => {
+  const isLeft = index % 2 === 0;
+  const isTop = index < 2;
+  return {
+    translateX: (isLeft ? wp(23) : -wp(23)) + (index % 2 === 0 ? 2 : -2),
+    translateY: (isTop ? hp(12) : -hp(12)) + (index < 2 ? 2 : -2),
+    rotate: "1440deg",
+    scale: 0.9,
+    opacity: 1,
+  };
+};
+
+/** 🌊 Wave: Start far off-screen */
+const getWaveStart = (index: number) => {
+  const startPos = [
+    { x: -wp(100), y: 0 }, { x: wp(100), y: 0 }, { x: 0, y: -hp(50) }, { x: 0, y: hp(50) },
+  ][index];
+  return { translateX: startPos.x, translateY: startPos.y, rotate: "45deg", scale: 0.8, opacity: 0 };
+};
+
+const getWaveShuffle = () => ({
+  translateX: 0,
+  translateY: 0,
+  rotate: "0deg",
   scale: 1,
+  opacity: 1,
+});
+
+/** 🛰️ Orbit: Circular placement start */
+const getOrbitStart = (index: number) => {
+  const angle = (index * Math.PI) / 2;
+  const radius = wp(50); // Start further out
+  return { translateX: Math.cos(angle) * radius, translateY: Math.sin(angle) * radius, rotate: `${index * 90}deg`, scale: 0.5, opacity: 0 };
+};
+
+const getOrbitShuffle = (index: number) => {
+  const angle = (index * Math.PI) / 2;
+  const radius = wp(10);
+  return { translateX: Math.cos(angle) * radius, translateY: Math.sin(angle) * radius, rotate: `${index * 180 + 360}deg`, scale: 1, opacity: 1 };
+};
+
+/** 💥 Pop Burst: Start tiny at center */
+const getPopBurstStart = (index: number) => ({
+  translateX: 0,
+  translateY: 0,
+  rotate: "0deg",
+  scale: 0.01,
+  opacity: 0,
+});
+
+const getPopBurstShuffle = (index: number) => ({
+  translateX: index % 2 === 0 ? 10 : -10,
+  translateY: index < 2 ? 10 : -10,
+  rotate: `${(index - 1.5) * 20}deg`,
+  scale: 1.1,
+  opacity: 1,
 });
 
 const getOfflineRevealPlacement = (index: number, role: string) => {
@@ -92,7 +170,8 @@ interface GamePlaySectionProps {
   myRole?: string | null;
   gamePhase?: string;
   investigationTargets?: InvestigationTarget[];
-  popupIndex?: number | null;
+  popupIndex: number | null;
+  dealAnimationPreset?: CardDealPreset;
 }
 
 export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
@@ -116,9 +195,67 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   gamePhase = "waiting",
   investigationTargets = [],
   popupIndex,
+  dealAnimationPreset = "classicSpin",
 }) => {
   const [dealingStage, setDealingStage] = useState<DealingStage>("idle");
   const [mysteryShuffleStep, setMysteryShuffleStep] = useState(3);
+
+  console.log("[CP_ANIMATION] Selected deal preset:", dealAnimationPreset);
+
+  const getCardStartStyle = (preset: CardDealPreset, index: number) => {
+    switch (preset) {
+      case "classicSpin":
+      case "tornadoDeal":
+        return getNeutralCenterStart(index);
+      case "waveDeal":
+        return getWaveStart(index);
+      case "orbitDeal":
+        return getOrbitStart(index);
+      case "popBurstDeal":
+        return getPopBurstStart(index);
+      default:
+        return getNeutralCenterStart(index);
+    }
+  };
+
+  const getCardShuffleStyle = (preset: CardDealPreset, index: number) => {
+    switch (preset) {
+      case "classicSpin":
+        return getClassicShuffle(index);
+      case "tornadoDeal":
+        return getTornadoShuffle(index);
+      case "waveDeal":
+        return getWaveShuffle();
+      case "orbitDeal":
+        return getOrbitShuffle(index);
+      case "popBurstDeal":
+        return getPopBurstShuffle(index);
+      default:
+        return getClassicShuffle(index);
+    }
+  };
+
+  const getCardDealTransition = (preset: CardDealPreset, index: number) => {
+    if (preset === "waveDeal") {
+      return {
+        type: "timing" as const,
+        duration: DEALING_SPIN_MS,
+        delay: index * 120,
+      };
+    }
+    if (preset === "popBurstDeal") {
+      return {
+        type: "spring" as const,
+        damping: 12,
+        stiffness: 120,
+        delay: index * 80,
+      };
+    }
+    return {
+      type: "timing" as const,
+      duration: DEALING_SPIN_MS,
+    };
+  };
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -171,20 +308,11 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
       (gamePhase === "investigation_shuffle" || gamePhase === "police_turn");
 
     if (dealingStage === "spin") {
-      const spin = getOfflineStyleSpin(index);
-
+      const shuffle = getCardShuffleStyle(dealAnimationPreset, index);
+      if (__DEV__) console.log(`[CP_ANIMATION] Card ${index} SPIN -> translateX: ${shuffle.translateX}, translateY: ${shuffle.translateY}, rotate: ${shuffle.rotate}`);
       return {
-        animate: {
-          opacity: 1,
-          scale: spin.scale,
-          translateX: spin.translateX,
-          translateY: spin.translateY,
-          rotate: spin.rotate,
-        },
-        transition: {
-          type: "timing" as const,
-          duration: DEALING_SPIN_MS,
-        },
+        animate: shuffle,
+        transition: getCardDealTransition(dealAnimationPreset, index),
         zIndex: 100,
       };
     }
@@ -317,11 +445,18 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
   const renderGridCard = (index: number, name: string) => {
     const motion = getGridCardMotion(index);
+    const startStyle = getCardStartStyle(dealAnimationPreset, index);
+
+    // [CP_ANIMATION] Proper logs for card rendering
+    if (dealingStage !== "idle") {
+      console.log(`[CP_ANIMATION] Rendering Card ${index} - Preset: ${dealAnimationPreset}, Stage: ${dealingStage}`);
+    }
 
     return (
       <MotiView
-        key={index}
+        key={`${round}-${index}`}
         className="aspect-[3/4.2] w-[47%]"
+        from={startStyle}
         animate={motion.animate}
         transition={motion.transition}
         style={{ zIndex: motion.zIndex }}

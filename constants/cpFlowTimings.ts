@@ -13,7 +13,7 @@
  */
 export const CP_FLOW_TIMINGS = {
   /** Duration of the card dealing/spinning animation (ms). */
-  SHUFFLE_DURATION_MS: 5000,
+  SHUFFLE_DURATION_MS: 6000,
 
   /** How long King + Police cards are held in the center before role reveal (ms). */
   PUBLIC_REVEAL_DURATION_MS: 2000,
@@ -28,7 +28,7 @@ export const CP_FLOW_TIMINGS = {
   CARD_FLIP_DURATION_MS: 600,
 
   /** When non-King/Police cards start fading OUT during the dealing animation. */
-  NON_REVEAL_FADE_OFFSET_MS: 3000,
+  NON_REVEAL_FADE_OFFSET_MS: 4000,
 
   // --- Police Investigation Reveal Flow ---
 

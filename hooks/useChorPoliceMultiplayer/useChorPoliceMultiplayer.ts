@@ -28,6 +28,7 @@ import {
   selectStake,
   selectEconomy,
   selectLocalPlayerName,
+  selectDealAnimationPreset,
 } from "@/redux/selectors/sessionSelectors";
 import { toast } from "@/components/feedback/toast";
 import { AudioEngine } from "@/audio/audioEngine";
@@ -83,6 +84,7 @@ export const useChorPoliceMultiplayer = () => {
   const reduxTotalRounds = useSelector(selectTotalRounds);
   const reduxStake = useSelector(selectStake);
   const economy = useSelector(selectEconomy);
+  const dealAnimationPreset = useSelector(selectDealAnimationPreset);
 
   const localPlayerId = typeof params.playerId === "string" ? params.playerId : reduxLocalPlayerId || "host_id";
   const isHost = typeof params.isHost === "string" ? params.isHost === "true" : reduxIsHost;
@@ -429,5 +431,6 @@ export const useChorPoliceMultiplayer = () => {
     isHost, localPlayerId, localPlayerName, nextPhase, playTransition, invisibleIndices,
     setGamePhase: (phase: GamePhase) => dispatch(setReduxGamePhase(phase)),
     investigationTargets,
+    dealAnimationPreset,
   };
 };

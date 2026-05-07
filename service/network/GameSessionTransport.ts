@@ -17,6 +17,7 @@ import { updateDebugMetric } from "../observability/DebugService";
 import { normalizePeerIp } from "./normalizePeerIp";
 import { framePacket, extractFrames } from "./TcpFraming";
 import { TcpServerManager } from "./TcpServerManager";
+import { TCP_STATS, resetTcpStats } from "./TcpDiagnostics";
 import { createClientState, connectToHost, connectAsync as clientConnectAsync } from "./TcpClient";
 
 type PacketHandler = (packet: any, sourceIp?: string) => void;
@@ -43,27 +44,6 @@ const state = {
   clientSockets: new Map<string, any>(), clientIps: new Set<string>(),
   playerIdByIp: new Map<string, string>(), ipByPlayerId: new Map<string, string>(),
   clientBuffers: new Map<string, Buffer>(),
-};
-
-// ── Diagnostic Stats (Debug Only) ──
-const TCP_STATS = {
-  totalSafeSendAttempts: 0,
-  totalSafeSendSuccess: 0,
-  totalSafeSendDroppedDestroyed: 0,
-  totalSafeSendDroppedNotOpen: 0,
-  totalStaleCallbacksIgnored: 0,
-  totalStaleTimeoutsIgnored: 0,
-  totalSocketCleanupCompleted: 0,
-};
-
-const resetStats = () => {
-  TCP_STATS.totalSafeSendAttempts = 0;
-  TCP_STATS.totalSafeSendSuccess = 0;
-  TCP_STATS.totalSafeSendDroppedDestroyed = 0;
-  TCP_STATS.totalSafeSendDroppedNotOpen = 0;
-  TCP_STATS.totalStaleCallbacksIgnored = 0;
-  TCP_STATS.totalStaleTimeoutsIgnored = 0;
-  TCP_STATS.totalSocketCleanupCompleted = 0;
 };
 
 // ── Server Start (port rotation) ──
@@ -196,7 +176,7 @@ export const GameSessionTransport = {
   start: async ({ isHost, localPlayerId, hostIp = null, hostPort, onPacket }: SessionConfig) => {
     console.log(`[TCP_DEBUG] SESSION_START isHost=${isHost} hostIp=${hostIp}`);
     await GameSessionTransport.stop();
-    resetStats();
+    resetTcpStats();
     isClosing = false; // Reset after stop completes
     currentSessionId++;
     const thisSession = currentSessionId;
@@ -390,10 +370,4 @@ export const GameSessionTransport = {
     safeSendStats: { ...TCP_STATS },
     clientSockets: Array.from(state.clientSockets.keys()),
   }),
-
-  // Internal bridge for TcpClient to report stale events
-  __reportStaleEvent: (isTimeout: boolean) => {
-    if (isTimeout) TCP_STATS.totalStaleTimeoutsIgnored++;
-    else TCP_STATS.totalStaleCallbacksIgnored++;
-  },
 };
