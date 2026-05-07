@@ -60,11 +60,12 @@ export const useQuizNarration = ({
         voiceId = await QuizNarrationService.getBestQuizVoice(lang);
       }
 
-      await QuizNarrationService.speakQuizQuestion(normalizedText, lang, {
+      QuizNarrationService.speakQuizQuestion(normalizedText, lang, {
         voice: voiceId,
         rate: quizNarrationRate,
         pitch: quizNarrationPitch,
       });
+
     } catch (e) {
       if (__DEV__) console.warn("[Speech] Hook trigger failed:", e);
     }

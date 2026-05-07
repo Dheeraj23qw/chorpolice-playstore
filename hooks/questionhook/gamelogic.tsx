@@ -1065,9 +1065,6 @@ export const useQuizGameLogic = () => {
     clearPostAnswerTimeout();
     clearLeaderboardAdvanceTimeout();
     AudioEngine.stop("timer");
-    setIsPersonalSummaryVisible(false);
-    setIsLeaderboardVisible(false);
-    setIsWaitingForOthers(false);
 
     requestAnimationFrame(() => {
       router.replace("/quiz-result" as any);

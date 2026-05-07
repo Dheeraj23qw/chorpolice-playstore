@@ -115,9 +115,9 @@ const LobbySetupScreen = ({
   useEffect(() => {
     if (!getLobbyHelpShown()) {
       setUiState("help");
-      setLobbyHelpShown(true);
     }
   }, []);
+
 
   // ── Toast messages for every network state transition ──────────────────
   const prevStatusRef = React.useRef(status);
@@ -484,8 +484,12 @@ const LobbySetupScreen = ({
 
       <MultiplayerHelpModal
         visible={uiState === "help"}
-        onClose={() => setUiState("normal")}
+        onClose={() => {
+          setLobbyHelpShown(true);
+          setUiState("normal");
+        }}
       />
+
 
       <UpdateAppModal
         isVisible={showUpdateModal}

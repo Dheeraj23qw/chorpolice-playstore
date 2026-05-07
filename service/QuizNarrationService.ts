@@ -127,21 +127,29 @@ export const getBestQuizVoice = async (language: string): Promise<string | undef
 
     if (!cachedVoices || cachedVoices.length === 0) return undefined;
 
-    // Filter by language first
+    // Filter by language first AND enforce male-only voices
     const langLower = language.toLowerCase();
-    const matchingVoices = cachedVoices.filter(v => 
-      v.language.toLowerCase().startsWith(langLower) || 
-      (langLower === "en-in" && v.language.toLowerCase().startsWith("en")) ||
-      (langLower === "hi-in" && v.language.toLowerCase().startsWith("hi"))
-    );
+    const matchingVoices = cachedVoices.filter(v => {
+      const vLang = v.language.toLowerCase();
+      const vName = (v.name + v.identifier).toLowerCase();
+      const isCorrectLang = vLang.startsWith(langLower) || 
+                           (langLower === "en-in" && vLang.startsWith("en")) ||
+                           (langLower === "hi-in" && vLang.startsWith("hi"));
+      
+      const isFemale = vName.includes("female") || vName.includes("woman") || 
+                       vName.includes("lady") || vName.includes("girl");
+      
+      return isCorrectLang && !isFemale;
+    });
 
     if (matchingVoices.length === 0) return undefined;
 
-    // Helper to check if voice is likely male
+    // Helper to check if voice is definitely male
     const isMale = (v: Speech.Voice) => {
       const lower = (v.identifier + v.name).toLowerCase();
       return lower.includes("male") || lower.includes("man") || lower.includes("guy");
     };
+
 
     // Special case: check for specific high-quality Hindi voice requested
     if (langLower.startsWith("hi")) {
@@ -195,9 +203,11 @@ export const speakQuizQuestion = async (
   options: SpeakOptions = {}
 ) => {
   try {
-    await stopQuizNarration();
+    // Instant interrupt for maximum responsiveness
+    Speech.stop();
 
     if (!text || !text.trim()) return;
+
 
     const {
       voice,

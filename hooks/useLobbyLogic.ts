@@ -220,7 +220,8 @@ export const useLobbyLogic = (
             isHost: String(isHost),
           },
         } as any);
-      }, 600);
+      }, 100);
+
     },
     [isHost, router],
   );

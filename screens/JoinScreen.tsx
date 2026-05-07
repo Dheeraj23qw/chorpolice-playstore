@@ -143,9 +143,9 @@ const JoinScreen = () => {
   useEffect(() => {
     if (!getJoinHelpShown()) {
       setShowHelp(true);
-      setJoinHelpShown(true);
     }
   }, []);
+
 
   /* ── Avatar init ── */
   useEffect(() => {
@@ -423,7 +423,14 @@ const JoinScreen = () => {
         </>
       )}
 
-      <MultiplayerHelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
+      <MultiplayerHelpModal 
+        visible={showHelp} 
+        onClose={() => {
+          setJoinHelpShown(true);
+          setShowHelp(false);
+        }} 
+      />
+
     </KeyboardAvoidingView>
   );
 };

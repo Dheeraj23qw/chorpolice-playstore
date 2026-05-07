@@ -123,13 +123,20 @@ export const NarrationSettingsModal = ({
         try {
           const availableVoices = await Speech.getAvailableVoicesAsync();
           const filtered = availableVoices
-            .filter(
-              (v) =>
-                v.language.toLowerCase().startsWith("en") ||
-                v.language.toLowerCase().startsWith("hi"),
-            )
+            .filter((v) => {
+              const lang = v.language.toLowerCase();
+              const name = (v.name + v.identifier).toLowerCase();
+              const isTargetLang = lang.startsWith("en") || lang.startsWith("hi");
+              const isFemale =
+                name.includes("female") ||
+                name.includes("woman") ||
+                name.includes("lady") ||
+                name.includes("girl");
+              return isTargetLang && !isFemale;
+            })
             .sort((a, b) => (a.language.includes("-IN") ? -1 : 1));
           setVoices(filtered);
+
         } finally {
           setLoading(false);
         }
@@ -251,6 +258,25 @@ export const NarrationSettingsModal = ({
                         </Text>
                       </Pressable>
                     </View>
+
+                    {/* Restore Recommended */}
+                    <Pressable
+                      onPress={() => {
+                        dispatch(setQuizNarrationVoiceId("hi-in-x-hie-network"));
+                        dispatch(setQuizNarrationRate(0.80));
+                        dispatch(setQuizNarrationPitch(0.80));
+                      }}
+                      className="mb-4 flex-row items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 py-3 active:bg-amber-500/20"
+                    >
+                      <Ionicons name="sparkles" size={rf(1.6)} color="#fbbf24" />
+                      <Text
+                        className="ml-2 font-main-bold uppercase text-amber-200"
+                        style={{ fontSize: rf(1.2) }}
+                      >
+                        Restore Recommended Settings
+                      </Text>
+                    </Pressable>
+
 
                     <StepperRow
                       label="Speed"

@@ -7,6 +7,7 @@ import { hp, rf, wp } from "@/utils/responsive";
 import { Text } from "../Text";
 import { MatchReview, MatchReviewItem } from "./MatchReview";
 import { useSummaryNarration } from "@/hooks/useSummaryNarration";
+import { QuizLanguageToggle } from "./QuizLanguageToggle";
 
 interface PersonalSummaryProps {
   matchHistory: MatchReviewItem[];
@@ -16,6 +17,7 @@ interface PersonalSummaryProps {
   translateFn: (text: string) => string;
   onViewTable: () => void;
   onContinue: () => void;
+  onToggle: () => void;
 }
 
 export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
@@ -26,6 +28,7 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
   translateFn,
   onViewTable,
   onContinue,
+  onToggle,
 }) => {
   const insets = useSafeAreaInsets();
   const { speakSummary, narrationEnabled } = useSummaryNarration({
@@ -55,7 +58,6 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
                 <Ionicons name="trophy" size={36} color="#818cf8" />
               </View>
             </View>
-
 
             <Text
               style={{ fontSize: rf(2.7) }}
@@ -105,6 +107,10 @@ export const PersonalSummary: React.FC<PersonalSummaryProps> = ({
               </Text>
             </View>
           </View>
+        </View>
+
+        <View className="mb-4 w-full">
+          <QuizLanguageToggle isHindi={isHindi} onToggle={onToggle} />
         </View>
 
         <MatchReview

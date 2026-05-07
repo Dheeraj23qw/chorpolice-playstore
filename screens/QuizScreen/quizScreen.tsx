@@ -28,7 +28,6 @@ import { RootState } from "@/redux/store";
 import { toggleQuizNarration } from "@/redux/reducers/soundReducer";
 import { useQuizNarration } from "@/hooks/useQuizNarration";
 import { NarrationSettingsModal } from "../../components/thinkAndCountScreen/NarrationSettingsModal";
-import { QuizFloatingActions } from "../../components/quiz/QuizFloatingActions";
 
 const QuizScreen = () => {
   const insets = useSafeAreaInsets();
@@ -167,7 +166,10 @@ const QuizScreen = () => {
             translateFn={translateToHindi}
             onViewTable={() => setIsTableOpen(true)}
             onContinue={handleOpenFinalLeaderboard}
+            onToggle={toggleHindi}
           />
+
+
         </View>
       ) : (
         <View
