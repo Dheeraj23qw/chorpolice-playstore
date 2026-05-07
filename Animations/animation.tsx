@@ -30,14 +30,8 @@ export const bounceAnimation = (animValue: Animated.Value) => {
 };
 
 // Function to handle flip and bounce animations
-export const flipAndBounceStyle = (flipAnim: Animated.Value, bounceAnim: Animated.Value) => ({
+export const flipAndBounceStyle = (_flipAnim: Animated.Value, bounceAnim: Animated.Value) => ({
   transform: [
-    {
-      rotateY: flipAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["0deg", "14400deg"],
-      }),
-    },
     {
       scale: bounceAnim,
     },

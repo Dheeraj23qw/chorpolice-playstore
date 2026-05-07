@@ -8,12 +8,25 @@ import { flipCard } from "../useChorPoliceMultiplayer/helpers/flipCardUtil";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { MODES } from "@/constants/Networking";
 import { dispatchPacket } from "@/service/packetDispatcher";
+import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
+
+// ─── Derived offsets (read-only, computed once at module level) ───────────────
+const T_SHUFFLE  = CP_FLOW_TIMINGS.SHUFFLE_DURATION_MS;
+const T_PUBLIC   = CP_FLOW_TIMINGS.PUBLIC_REVEAL_DURATION_MS;
+const T_PRIVATE  = CP_FLOW_TIMINGS.HUMAN_ROLE_REVEAL_DURATION_MS;
+const T_MYSTERY  = CP_FLOW_TIMINGS.MYSTERY_SHUFFLE_DURATION_MS;
+
+// Cumulative offsets for each phase start
+const OFFSET_PUBLIC_REVEAL   = T_SHUFFLE;
+const OFFSET_PRIVATE_REVEAL  = T_SHUFFLE + T_PUBLIC;
+const OFFSET_MYSTERY_SHUFFLE = T_SHUFFLE + T_PUBLIC + T_PRIVATE;
+const OFFSET_POLICE_TURN     = T_SHUFFLE + T_PUBLIC + T_PRIVATE + T_MYSTERY;
 
 interface RevealDeps {
   flipAnimsRef: React.RefObject<Animated.Value[]>;
   setFlippedStates: React.Dispatch<React.SetStateAction<boolean[]>>;
   setInvisibleIndices: React.Dispatch<React.SetStateAction<number[]>>;
-  setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean[]>>; // wait, setAreCardsClickable is boolean state
+  setAreCardsClickable: React.Dispatch<React.SetStateAction<boolean>>;
   setShowTableButton: React.Dispatch<React.SetStateAction<boolean>>;
   setPopupIndex: React.Dispatch<React.SetStateAction<number | null>>;
   timerRefs: React.RefObject<ReturnType<typeof setTimeout>[]>;
@@ -35,89 +48,108 @@ export const useCPRevealSequence = ({
   localPlayerId,
   setInvestigationTargets,
   setMessage,
-}: any) => {
+}: RevealDeps) => {
   const dispatch = useDispatch<AppDispatch>();
 
-  const triggerRevealSequence = useCallback((packet: any) => {
-    console.log(`🎭 [RevealSequence] 🚀 triggerRevealSequence() STARTED. King: ${packet.kingIndex}, Police: ${packet.policeIndex}`);
-    const { kingIndex: kIdx, policeIndex: pIdx, policeId, kingId } = packet;
-    const engineRoles = [...ChorPoliceEngine.state.roles];
+  const triggerRevealSequence = useCallback(
+    (packet: any) => {
+      const { kingIndex: kIdx, policeIndex: pIdx, policeId, kingId } = packet;
+      const engineRoles = [...ChorPoliceEngine.state.roles];
+      const flipAnims = flipAnimsRef.current;
+      const emptyStates = Array(20).fill(false);
 
-    // Start with DEALING phase
-    dispatch(setReduxGamePhase("dealing"));
+      // ── Phase 0: Shuffle / Dealing ────────────────────────────────────────
+      console.log("[CP_FLOW] Shuffle started");
+      dispatch(setReduxGamePhase("dealing"));
+      setInvisibleIndices([]);
+      setAreCardsClickable(false);
+      setShowTableButton(false);
+      setMessage("Shuffling all cards...");
+      AudioEngine.play("spin", "gameplay");
 
-    // 🔥 Immediately hide cards that are NOT King or Police during revolving
-    const hiddenDuringSpin = [0, 1, 2, 3].filter(idx => idx !== kIdx && idx !== pIdx);
-    console.log(`🎭 [RevealSequence] Hiding cards: ${hiddenDuringSpin.join(", ")}`);
-    setInvisibleIndices(hiddenDuringSpin);
+      // ── Phase 1: Public King + Police Reveal (after shuffle) ─────────────
+      const t_publicReveal = setTimeout(() => {
+        console.log("[CP_FLOW] Public reveal started");
+        AudioEngine.play("level", "gameplay");
+        setMessage("King and Police revealed");
 
-    AudioEngine.play("level", "gameplay");
+        flipCard(kIdx, 1, 1, flipAnims, setFlippedStates, emptyStates, engineRoles, emptyStates, () => {}, () => {}, dispatch, true);
+        flipCard(pIdx, 1, 1, flipAnims, setFlippedStates, emptyStates, engineRoles, emptyStates, () => {}, () => {}, dispatch, true);
+      }, OFFSET_PUBLIC_REVEAL);
+      timerRefs.current.push(t_publicReveal);
 
-    const _flipAnims = flipAnimsRef.current;
-    
-    const emptyStates = Array(20).fill(false);
-    
-    // Step A: Flip King + Police (4s)
-    console.log("[RevealSequence] Starting King flip");
-    flipCard(kIdx, 1, 4000, _flipAnims, setFlippedStates, emptyStates, engineRoles, emptyStates, () => {}, () => {}, dispatch);
-    flipCard(pIdx, 1, 4000, _flipAnims, setFlippedStates, emptyStates, engineRoles, emptyStates, () => {}, () => {}, dispatch);
+      // ── Phase 2: Private Role Reveal ──────────────────────────────────────
+      // NOTE: myRoleRef is read lazily inside this timer so it is guaranteed
+      // to be set by the time CP_ROLE_ASSIGN has been processed (which arrives
+      // well before the 6 s offset below).
+      const t_privateReveal = setTimeout(() => {
+        const role = myRoleRef.current ?? (
+          policeId === localPlayerId ? "Police"
+          : kingId === localPlayerId ? "King"
+          : null
+        );
+        console.log(`[CP_FLOW] Human role reveal started: ${role ?? "unknown"}`);
+        setMessage("");
+        dispatch(setReduxGamePhase("private_reveal"));
+      }, OFFSET_PRIVATE_REVEAL);
+      timerRefs.current.push(t_privateReveal);
 
-    // Step B: HOLD for 1s after spin then show PRIVATE REVEAL (5s total)
-    console.log("[PRIVATE_REVEAL] timer scheduled");
-    const t3 = setTimeout(() => {
-      console.log("[PRIVATE_REVEAL] started");
-      
-      setMessage("Reveal your role...");
-      dispatch(setReduxGamePhase("private_reveal"));
-      
-      // Step C: END PRIVATE REVEAL and start INVESTIGATION SHUFFLE (7s total)
-      const t4 = setTimeout(() => {
-        console.log("[PRIVATE_REVEAL] ended");
-        
-        // Update mystery cards for investigation
+      // ── Phase 3: Mystery Investigation Shuffle ────────────────────────────
+      const t_mysteryShuffle = setTimeout(() => {
+        console.log("[CP_FLOW] Mystery shuffle started");
         if (packet.investigationTargets) {
-          console.log("[INVESTIGATION] targets ready", packet.investigationTargets);
           setInvestigationTargets(packet.investigationTargets);
         }
-
-        console.log("[INVESTIGATION] 3-card shuffle started");
-        setInvisibleIndices([0, 1, 2, 3]); // Hide all original cards to show mystery cards
+        setInvisibleIndices([0, 1, 2, 3]);
         dispatch(setReduxGamePhase("investigation_shuffle"));
-        setMessage("Shuffling mystery cards...");
+        setMessage("Catch the Thief and stay away from Joker.");
+        AudioEngine.play("spin", "gameplay");
+      }, OFFSET_MYSTERY_SHUFFLE);
+      timerRefs.current.push(t_mysteryShuffle);
 
-        // Step D: END SHUFFLE and start POLICE TURN (9s total)
-        const t5 = setTimeout(() => {
-          console.log("[INVESTIGATION] 3-card shuffle ended");
-          const resolvedRole = myRoleRef.current || (policeId === localPlayerId ? "Police" : kingId === localPlayerId ? "King" : null);
-          
-          setPopupIndex(null);
-          setMessage("");
-          dispatch(setReduxGamePhase("police_turn"));
+      // ── Phase 4: Police Turn Ready ────────────────────────────────────────
+      const t_policeTurn = setTimeout(() => {
+        console.log("[CP_FLOW] Police turn ready");
+        const resolvedRole =
+          myRoleRef.current ?? (
+            policeId === localPlayerId ? "Police"
+            : kingId  === localPlayerId ? "King"
+            : null
+          );
 
-          const isLocalPlayerPolice = resolvedRole === "Police";
-          console.log("[POLICE_TURN] interaction enabled", { isLocalPlayerPolice, myRole: resolvedRole });
-          
-          if (isLocalPlayerPolice) {
-            setAreCardsClickable(true);
-            setShowTableButton(true);
-          }
+        setPopupIndex(null);
+        setMessage("Catch the Thief and stay away from Joker.");
+        dispatch(setReduxGamePhase("police_turn"));
 
-          // 🤖 Trigger Bots precisely now
-          dispatchPacket({
-            type: MODES.CHOR_POLICE.POLICE_TURN_READY,
-            round: packet.round,
-            policeId: packet.policeId,
-            investigationTargets: packet.investigationTargets
-          });
-        }, 2000);
-        timerRefs.current.push(t5);
-      }, 2000);
-      timerRefs.current.push(t4);
-    }, 5000);
-    timerRefs.current.push(t3);
-  }, [dispatch, flipAnimsRef, localPlayerId, myRoleRef, setAreCardsClickable, setFlippedStates, setInvisibleIndices, setPopupIndex, setShowTableButton, timerRefs, setInvestigationTargets, setMessage]);
+        if (resolvedRole === "Police") {
+          setAreCardsClickable(true);
+          setShowTableButton(true);
+        }
 
-  return {
-    triggerRevealSequence,
-  };
+        dispatchPacket({
+          type: MODES.CHOR_POLICE.POLICE_TURN_READY,
+          round: packet.round,
+          policeId: packet.policeId,
+          investigationTargets: packet.investigationTargets,
+        });
+      }, OFFSET_POLICE_TURN);
+      timerRefs.current.push(t_policeTurn);
+    },
+    [
+      dispatch,
+      flipAnimsRef,
+      localPlayerId,
+      myRoleRef,
+      setAreCardsClickable,
+      setFlippedStates,
+      setInvisibleIndices,
+      setPopupIndex,
+      setShowTableButton,
+      timerRefs,
+      setInvestigationTargets,
+      setMessage,
+    ],
+  );
+
+  return { triggerRevealSequence };
 };

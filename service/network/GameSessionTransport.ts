@@ -5,6 +5,11 @@
  *  - TcpServerManager: port binding & server lifecycle
  *  - TcpClient: outbound connections & reconnect
  *  - TcpFraming: length-prefixed packet encoding/decoding
+ * 
+ * 🛡️ ARCHITECTURAL RULES:
+ * 1. NEVER call socket.write() directly. Use GameSessionTransport.safeSend().
+ * 2. ALWAYS set __explicitlyDestroyed = true before calling socket.destroy().
+ * 3. ALWAYS check isClosing and currentSessionId before sensitive operations.
  */
 import { Buffer } from "buffer";
 import { NETWORK } from "@/constants/Networking";
@@ -40,6 +45,27 @@ const state = {
   clientBuffers: new Map<string, Buffer>(),
 };
 
+// ── Diagnostic Stats (Debug Only) ──
+const TCP_STATS = {
+  totalSafeSendAttempts: 0,
+  totalSafeSendSuccess: 0,
+  totalSafeSendDroppedDestroyed: 0,
+  totalSafeSendDroppedNotOpen: 0,
+  totalStaleCallbacksIgnored: 0,
+  totalStaleTimeoutsIgnored: 0,
+  totalSocketCleanupCompleted: 0,
+};
+
+const resetStats = () => {
+  TCP_STATS.totalSafeSendAttempts = 0;
+  TCP_STATS.totalSafeSendSuccess = 0;
+  TCP_STATS.totalSafeSendDroppedDestroyed = 0;
+  TCP_STATS.totalSafeSendDroppedNotOpen = 0;
+  TCP_STATS.totalStaleCallbacksIgnored = 0;
+  TCP_STATS.totalStaleTimeoutsIgnored = 0;
+  TCP_STATS.totalSocketCleanupCompleted = 0;
+};
+
 // ── Server Start (port rotation) ──
 
 const startTcpServer = (): Promise<void> => {
@@ -58,11 +84,20 @@ const startTcpServer = (): Promise<void> => {
         const { server, promise } = TcpServerManager.tryListen(port, {
           onConnection: (socket) => {
             if (isClosing) {
-              try { socket.destroy(); } catch {}
+              try { 
+                (socket as any).__explicitlyDestroyed = true;
+                socket.destroy(); 
+              } catch {}
               return;
             }
             const ip = socket.remoteAddress?.replace("::ffff:", "") || "unknown";
-            if (ip === "unknown") { try { socket.destroy(); } catch {} return; }
+            if (ip === "unknown") { 
+              try { 
+                (socket as any).__explicitlyDestroyed = true;
+                socket.destroy(); 
+              } catch {} 
+              return; 
+            }
 
             console.log(`[TCP_DEBUG] CLIENT_CONNECTED ip=${ip}`);
             state.clientSockets.set(ip, socket);
@@ -119,33 +154,38 @@ const startTcpServer = (): Promise<void> => {
  * Returns false if write was skipped or failed.
  */
 const safeSend = (socket: any, framedData: Buffer, label: string, sid: number): boolean => {
+  TCP_STATS.totalSafeSendAttempts++;
+
   // Guard: session mismatch (stale callback)
   if (sid !== currentSessionId) {
-    if (__DEV__) console.log(`[TCP_DEBUG] WRITE_SKIPPED reason=stale_session label=${label} sid=${sid} current=${currentSessionId}`);
+    if (__DEV__) console.log(`[TCP] safeSend dropped: stale session label=${label} sid=${sid} current=${currentSessionId}`);
     return false;
   }
   // Guard: closing in progress
   if (isClosing) {
-    if (__DEV__) console.log(`[TCP_DEBUG] WRITE_SKIPPED reason=is_closing label=${label}`);
+    if (__DEV__) console.log(`[TCP] safeSend dropped: is_closing label=${label}`);
     return false;
   }
   // Guard: null or destroyed socket
-  if (!socket || socket.destroyed) {
-    if (__DEV__) console.log(`[TCP_DEBUG] WRITE_SKIPPED reason=socket_invalid label=${label} null=${!socket} destroyed=${socket?.destroyed}`);
+  if (!socket || socket.destroyed || (socket as any).__explicitlyDestroyed) {
+    TCP_STATS.totalSafeSendDroppedDestroyed++;
+    if (__DEV__) console.log(`[TCP] safeSend dropped: socket invalid (null=${!socket}, destroyed=${socket?.destroyed}, explicit=${(socket as any).__explicitlyDestroyed}) label=${label}`);
     return false;
   }
 
   // Guard: writable state
-  if (typeof socket.write !== "function" || socket.writable === false) {
-    if (__DEV__) console.log(`[TCP_DEBUG] WRITE_SKIPPED reason=not_writable label=${label}`);
+  if (typeof socket.write !== "function" || socket.readyState !== "open") {
+    TCP_STATS.totalSafeSendDroppedNotOpen++;
+    if (__DEV__) console.log(`[TCP] safeSend dropped: socket not open (state=${socket?.readyState}) label=${label}`);
     return false;
   }
 
   try {
     socket.write(framedData);
+    TCP_STATS.totalSafeSendSuccess++;
     return true;
   } catch (e) {
-    console.warn(`[TCP_DEBUG] WRITE_FAILED label=${label}`, e);
+    console.warn(`[TCP] safeSend write failed label=${label}`, e);
     return false;
   }
 };
@@ -156,6 +196,7 @@ export const GameSessionTransport = {
   start: async ({ isHost, localPlayerId, hostIp = null, hostPort, onPacket }: SessionConfig) => {
     console.log(`[TCP_DEBUG] SESSION_START isHost=${isHost} hostIp=${hostIp}`);
     await GameSessionTransport.stop();
+    resetStats();
     isClosing = false; // Reset after stop completes
     currentSessionId++;
     const thisSession = currentSessionId;
@@ -197,8 +238,27 @@ export const GameSessionTransport = {
 
       const cleanup = () => {
         state.hostIp = null;
-        state.clientSockets.forEach(s => { try { if (s && !s.destroyed) s.destroy(); } catch {} });
-        if (client.clientSocket) { try { if (!client.clientSocket.destroyed) client.clientSocket.destroy(); } catch {} client.clientSocket = null; }
+        // Capture sockets first, then clear map immediately to prevent new safeSend lookups
+        const socketsToDestroy = Array.from(state.clientSockets.values());
+        state.clientSockets.clear();
+
+        socketsToDestroy.forEach(s => { 
+          try { 
+            if (s && !s.destroyed) {
+              (s as any).__explicitlyDestroyed = true;
+              s.destroy(); 
+            }
+          } catch {} 
+        });
+        if (client.clientSocket) { 
+          try { 
+            if (!client.clientSocket.destroyed) {
+              (client.clientSocket as any).__explicitlyDestroyed = true;
+              client.clientSocket.destroy(); 
+            }
+          } catch {} 
+          client.clientSocket = null; 
+        }
         packetHandler = null; state.isHost = false; state.localPlayerId = "host_id";
         state.listeningPort = PRIMARY_PORT;
         state.clientSockets.clear(); state.clientIps.clear();
@@ -210,8 +270,19 @@ export const GameSessionTransport = {
 
       if (tcpServer) {
         try {
-          state.clientSockets.forEach(s => { try { if (s && !s.destroyed) s.destroy(); } catch {} });
+          // Capture and clear immediately
+          const socketsToDestroy = Array.from(state.clientSockets.values());
           state.clientSockets.clear();
+
+          socketsToDestroy.forEach(s => { 
+            try { 
+              if (s && !s.destroyed && !(s as any).__explicitlyDestroyed) {
+                TCP_STATS.totalSocketCleanupCompleted++;
+                (s as any).__explicitlyDestroyed = true;
+                s.destroy(); 
+              }
+            } catch {} 
+          });
           tcpServer.removeAllListeners();
           tcpServer.close(() => { cleanup(); safeResolve(true); });
           // Safety timeout: if server.close() callback never fires
@@ -243,7 +314,14 @@ export const GameSessionTransport = {
     state.ipByPlayerId.delete(playerId); state.playerIdByIp.delete(ip); state.clientIps.delete(ip);
     const socket = state.clientSockets.get(ip);
     if (socket) {
-      try { if (!socket.destroyed) socket.destroy(); } catch {}
+      try { 
+        if (!socket.destroyed && !(socket as any).__explicitlyDestroyed) {
+          if (__DEV__) console.log(`[TCP] socket cleanup complete for peer: ${ip}`);
+          TCP_STATS.totalSocketCleanupCompleted++;
+          (socket as any).__explicitlyDestroyed = true;
+          socket.destroy(); 
+        }
+      } catch {}
       state.clientSockets.delete(ip); state.clientBuffers.delete(ip);
     }
   },
@@ -301,4 +379,21 @@ export const GameSessionTransport = {
   /** Expose closing state for external guards (e.g. heartbeat) */
   get isClosing(): boolean { return isClosing; },
   getCurrentSessionId: (): number => currentSessionId,
+
+  /** ── Diagnostic API (Debug Only) ── */
+  getDebugSnapshot: () => ({
+    isClosing,
+    isRunning: !isClosing && (tcpServer != null || client.clientSocket != null),
+    activePeerCount: state.clientIps.size,
+    activeConnectionToken: client.attemptId,
+    activeClientSocketReadyState: client.clientSocket?.readyState ?? "null",
+    safeSendStats: { ...TCP_STATS },
+    clientSockets: Array.from(state.clientSockets.keys()),
+  }),
+
+  // Internal bridge for TcpClient to report stale events
+  __reportStaleEvent: (isTimeout: boolean) => {
+    if (isTimeout) TCP_STATS.totalStaleTimeoutsIgnored++;
+    else TCP_STATS.totalStaleCallbacksIgnored++;
+  },
 };

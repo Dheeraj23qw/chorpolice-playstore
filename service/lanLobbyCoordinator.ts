@@ -49,6 +49,7 @@ let joinTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingHostLobbyPromise: Promise<any> | null = null;
 const announcedPlayerIds = new Set<string>();
 const botAnnouncementTimers: ReturnType<typeof setTimeout>[] = [];
+let lobbyAnnouncementGeneration = 0;
 
 // ── Helpers ──
 const clearJoinAttempts = () => {
@@ -88,6 +89,7 @@ const stopCoordinator = async () => {
   console.log("[TCP_DEBUG] STOP_COORDINATOR_START");
 
   clearJoinAttempts();
+  lobbyAnnouncementGeneration += 1;
   botAnnouncementTimers.forEach(t => clearTimeout(t));
   botAnnouncementTimers.length = 0;
   announcedPlayerIds.clear();
@@ -112,6 +114,7 @@ const stopCoordinator = async () => {
 export const initHostLobby = ({ localPlayerId, name, avatarId, coins, gameType }: {
   localPlayerId: string; name: string; avatarId: number; coins: number; gameType: string;
 }) => {
+  const announcementGeneration = ++lobbyAnnouncementGeneration;
   const players = createInitialLobbyPlayers({ id: localPlayerId, name, avatarId, coins });
   store.dispatch(configureSessionState({ isHost: true, localPlayerId, gameType }));
   store.dispatch(setLobbyPlayers(players));
@@ -127,7 +130,10 @@ export const initHostLobby = ({ localPlayerId, name, avatarId, coins, gameType }
     
     botAnnouncementTimers.push(setTimeout(() => {
       const session = store.getState().session;
-      if (isLobbyPresenceToastAllowed(session)) {
+      if (
+        announcementGeneration === lobbyAnnouncementGeneration &&
+        isLobbyPresenceToastAllowed(session)
+      ) {
         toast.info(`${list} joined the room!`);
       }
     }, 1500));

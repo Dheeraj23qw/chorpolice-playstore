@@ -1,11 +1,17 @@
 /**
  * TcpClient — Manages outbound TCP connections from client to host.
  * Extracted from GameSessionTransport for Single Responsibility.
+ * 
+ * 🛡️ ARCHITECTURAL RULES:
+ * 1. NEVER destroy a socket from a stale timeout or callback.
+ * 2. ALWAYS verify thisAttemptId === cs.attemptId before destroying or modifying state.
+ * 3. ALWAYS use safeDestroySocket() instead of direct socket.destroy().
  */
 import TcpSocket from "react-native-tcp-socket";
 import { Buffer } from "buffer";
 import { NETWORK } from "@/constants/Networking";
 import { extractFrames } from "./TcpFraming";
+import { GameSessionTransport } from "./GameSessionTransport";
 
 type PacketHandler = (packet: any, sourceIp?: string) => void;
 
@@ -31,8 +37,9 @@ export const createClientState = (): ClientState => ({
 const safeDestroySocket = (socket: any, reason: string): void => {
   if (!socket) return;
   try {
-    if (!socket.destroyed) {
+    if (!socket.destroyed && !(socket as any).__explicitlyDestroyed) {
       devLog(`Destroying socket: ${reason}`);
+      (socket as any).__explicitlyDestroyed = true;
       socket.destroy();
     }
   } catch (e) {
@@ -92,7 +99,11 @@ export const connectToHost = (
       // FIX-1: Any data from host proves connection is alive — clear pending timeout
       clearConnectTimeout("data received from host");
       // Guard: stale callback after session change
-      if (thisAttemptId !== cs.attemptId) return;
+      if (thisAttemptId !== cs.attemptId) {
+        if (__DEV__) console.log(`[TCP] stale callback ignored (data) attempt=${thisAttemptId} current=${cs.attemptId}`);
+        GameSessionTransport.__reportStaleEvent(false);
+        return;
+      }
 
       try {
         const raw = Buffer.isBuffer(data) ? data : Buffer.from(data);
@@ -109,11 +120,21 @@ export const connectToHost = (
 
     cs.clientSocket.on("error", (error: any) => {
       clearConnectTimeout("socket error");
+      if (thisAttemptId !== cs.attemptId) {
+        if (__DEV__) console.log(`[TCP] stale callback ignored (error) attempt=${thisAttemptId} current=${cs.attemptId}`);
+        GameSessionTransport.__reportStaleEvent(false);
+        return;
+      }
       console.warn(`[TCP_DEBUG] HOST_CONN_ERROR attempt=${thisAttemptId}`, error?.message);
     });
 
     cs.clientSocket.on("close", () => {
       clearConnectTimeout("socket close");
+      if (thisAttemptId !== cs.attemptId) {
+        if (__DEV__) console.log(`[TCP] stale callback ignored (close) attempt=${thisAttemptId} current=${cs.attemptId}`);
+        GameSessionTransport.__reportStaleEvent(false);
+        return;
+      }
       console.log(`[TCP_DEBUG] HOST_SOCKET_CLOSE attempt=${thisAttemptId}`);
       sockets.delete(hostIp);
       // Only null out if this is still the active socket
@@ -164,7 +185,8 @@ export const connectToHost = (
   if (!reusingSocket) {
     connectionTimeout = setTimeout(() => {
       if (thisAttemptId !== cs.attemptId) {
-        devLog(`Stale timeout ignored for attempt ${thisAttemptId} (current: ${cs.attemptId})`);
+        if (__DEV__) console.log(`[TCP] stale timeout ignored attempt=${thisAttemptId} current=${cs.attemptId}`);
+        GameSessionTransport.__reportStaleEvent(true);
         return;
       }
       // FIX-1c: If socket is already registered (connected), do NOT destroy it

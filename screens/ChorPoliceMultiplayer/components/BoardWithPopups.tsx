@@ -6,14 +6,7 @@ import OverlayPopUp from "@/modal/overlaypop";
 import { GamePlaySection } from "../GamePlaySection";
 import CinematicReveal from "./CinematicReveal";
 
-/**
- * Handles:
- * - Board rendering
- * - Popups
- * - Score table
- */
 const BoardWithPopups = ({ g }: any) => {
-  // Full screen popup (win/lose GIF etc.)
   if (g.isDynamicPopUp && g.mediaId != null) {
     return (
       <OverlayPopUp
@@ -22,7 +15,7 @@ const BoardWithPopups = ({ g }: any) => {
         kingIndex={g.kingIndex}
         advisorIndex={g.advisorIndex}
         thiefIndex={g.thiefIndex}
-        displayDuration={2500} // Snappier 2.5s
+        displayDuration={2500}
         revealedRole={g.revealData?.role}
         isCorrect={g.revealData?.isCorrect}
       />
@@ -31,7 +24,6 @@ const BoardWithPopups = ({ g }: any) => {
 
   return (
     <>
-      {/* Role Reveal Popup */}
       {g.popupIndex === 5 && g.revealData && (
         <CinematicReveal
           index={g.revealData.index}
@@ -39,7 +31,7 @@ const BoardWithPopups = ({ g }: any) => {
           isCorrect={g.revealData.isCorrect}
           policeName={g.playerNames[g.policeIndex]}
           advisorName={g.playerNames[g.advisorIndex]}
-          onComplete={() => {}} // Hook handles timing
+          onComplete={() => {}}
         />
       )}
 
@@ -50,13 +42,12 @@ const BoardWithPopups = ({ g }: any) => {
           kingIndex={g.kingIndex}
           advisorIndex={g.advisorIndex}
           thiefIndex={g.thiefIndex}
-          displayDuration={2500} // Snappier 2.5s
+          displayDuration={2500}
           revealedRole={g.revealData?.role}
           isCorrect={g.revealData?.isCorrect}
         />
       )}
 
-      {/* Game Board */}
       <View className="flex-1 bg-transparent">
         <GamePlaySection
           isPlayButtonDisabled={g.isPlayButtonDisabled}
@@ -73,11 +64,17 @@ const BoardWithPopups = ({ g }: any) => {
           round={g.round}
           message={(() => {
             if (g.gamePhase === "result") return "Round Complete!";
-            if (g.gamePhase === "police_turn") {
-              const policeName = g.playerNames[g.policeIndex] || "Police";
-              return `${policeName}, find the Thief! 🔍`;
+            if (g.gamePhase === "investigation_shuffle") {
+              return g.canInteract
+                ? "Catch the Thief and stay away from Joker."
+                : "Mystery cards are shuffling...";
             }
-            return g.canInteract ? "Find the Thief! 🔍" : "Watching...";
+            if (g.gamePhase === "police_turn") {
+              return g.canInteract
+                ? "Catch the Thief and stay away from Joker."
+                : "Police is investigating...";
+            }
+            return g.message || (g.canInteract ? "Find the Thief!" : "Watching...");
           })()}
           getCardStyle={g.getCardStyle}
           showTableButton={g.showTableButton}

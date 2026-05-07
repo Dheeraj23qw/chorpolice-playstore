@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { View, Image, Platform, StyleSheet } from "react-native";
 import { Text } from "@/components/Text";
 import Animated, {
@@ -12,7 +12,7 @@ import Animated, {
   withDelay,
   Easing,
 } from "react-native-reanimated";
-import { wp, hp } from "@/utils/responsive";
+import { wp, hp, rf } from "@/utils/responsive";
 
 import { loadUsername } from "@/storage/userStorage";
 
@@ -24,7 +24,7 @@ interface RoleConfig {
 }
 
 interface Props {
-  role: "King" | "Thief" | "Advisor" | "Police";
+  role: "King" | "Thief" | "Advisor" | "Police" | null;
   round: number;
 }
 
@@ -60,13 +60,30 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
 
 export const RoleRevealView: React.FC<Props> = React.memo(({ role, round }) => {
   const playerName = loadUsername() || "PLAYER";
+  const resolvedRole = role || "Thief";
+  const [countdown, setCountdown] = useState<number | string>(3);
 
   // Memoize configs to prevent re-instantiation
   const config = useMemo(
-    () => ROLE_CONFIGS[role] || ROLE_CONFIGS.Thief,
-    [role],
+    () => ROLE_CONFIGS[resolvedRole] || ROLE_CONFIGS.Thief,
+    [resolvedRole],
   );
-  const image = useMemo(() => ROLE_ASSETS[role] || ROLE_ASSETS.Thief, [role]);
+  const image = useMemo(
+    () => ROLE_ASSETS[resolvedRole] || ROLE_ASSETS.Thief,
+    [resolvedRole],
+  );
+
+  // Countdown logic: 3, 2, 1, GO
+  useEffect(() => {
+    const t1 = setTimeout(() => setCountdown(2), 750);
+    const t2 = setTimeout(() => setCountdown(1), 1500);
+    const t3 = setTimeout(() => setCountdown("GO"), 2250);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
 
   // Float animation: Using linear timing for performance consistency
   const float = useSharedValue(0);
@@ -121,6 +138,17 @@ export const RoleRevealView: React.FC<Props> = React.memo(({ role, round }) => {
       >
         <Text style={styles.playerName}>{playerName}</Text>
         <Text style={styles.subtitle}>{config.subtitle}</Text>
+      </Animated.View>
+
+      {/* Countdown overlay */}
+      <Animated.View 
+        key={countdown}
+        entering={FadeInDown.duration(400)}
+        className="mt-8"
+      >
+        <Text style={[styles.countdownText, { color: config.color }]}>
+          {countdown}
+        </Text>
       </Animated.View>
     </View>
   );
@@ -186,5 +214,14 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 3,
     marginBottom: 8,
+  },
+  countdownText: {
+    fontSize: rf(6),
+    fontWeight: "900",
+    letterSpacing: 10,
+    textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
   },
 });

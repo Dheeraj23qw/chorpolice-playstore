@@ -1,17 +1,13 @@
 import React from "react";
-import { RoleRevealView } from "../views/RoleRevealView";
 import BoardWithPopups from "../components/BoardWithPopups";
 
 /**
- * Police Turn:
- * - Police/King → Board
- * - Thief/Advisor → Big role card
+ * Police Turn & Investigation Shuffle:
+ * All players (Police, King, Thief, Advisor) see the board.
+ * Private role reveal is handled separately by the `private_reveal` phase
+ * which renders <RoleRevealView> before this view is ever reached.
  */
 const PoliceTurnView = ({ g }: any) => {
-  if (!g.canSeeBoard && g.myRole) {
-    return <RoleRevealView role={g.myRole} round={g.round} />;
-  }
-
   return <BoardWithPopups g={g} />;
 };
 

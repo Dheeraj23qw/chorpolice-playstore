@@ -7,6 +7,8 @@ describe("isLobbyPresenceToastAllowed", () => {
         connectionStatus: "HOSTING",
         gamePhase: "idle",
         lobbyStage: "room",
+        gameType: "CHOR_POLICE",
+        players: [{ id: "host" }, { id: "bot-1" }],
       }),
     ).toBe(true);
 
@@ -15,6 +17,8 @@ describe("isLobbyPresenceToastAllowed", () => {
         connectionStatus: "CONNECTED",
         gamePhase: "idle",
         lobbyStage: "setup",
+        gameType: "CHOR_POLICE",
+        players: [{ id: "host" }, { id: "guest" }],
       }),
     ).toBe(true);
   });
@@ -25,6 +29,8 @@ describe("isLobbyPresenceToastAllowed", () => {
         connectionStatus: "CONNECTED",
         gamePhase: "waiting",
         lobbyStage: "room",
+        gameType: "CHOR_POLICE",
+        players: [{ id: "host" }, { id: "guest" }],
       }),
     ).toBe(false);
 
@@ -33,6 +39,8 @@ describe("isLobbyPresenceToastAllowed", () => {
         connectionStatus: "ERROR",
         gamePhase: "idle",
         lobbyStage: "room",
+        gameType: "CHOR_POLICE",
+        players: [{ id: "host" }, { id: "guest" }],
       }),
     ).toBe(false);
 
@@ -41,6 +49,18 @@ describe("isLobbyPresenceToastAllowed", () => {
         connectionStatus: "HOSTING",
         gamePhase: "idle",
         lobbyStage: "results",
+        gameType: "CHOR_POLICE",
+        players: [{ id: "host" }, { id: "guest" }],
+      }),
+    ).toBe(false);
+
+    expect(
+      isLobbyPresenceToastAllowed({
+        connectionStatus: "IDLE",
+        gamePhase: "idle",
+        lobbyStage: "room",
+        gameType: null,
+        players: [],
       }),
     ).toBe(false);
   });

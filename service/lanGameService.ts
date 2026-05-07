@@ -412,12 +412,20 @@ export const startHeartbeat = (isHost: boolean) => {
   HeartbeatService.start({
     onPing: (packet) => {
       // Guard: don't send pings if transport is closing
-      if (GameSessionTransport.isClosing) return;
+      if (GameSessionTransport.isClosing) {
+        if (__DEV__) console.log(`[TCP] heartbeat skipped because transport closed`);
+        return;
+      }
 
       if (isHost) {
         GameSessionTransport.sendToClients(packet);
       } else if (context.hostIp) {
-        GameSessionTransport.sendToHost(packet);
+        // Double check liveness before host ping
+        if (GameSessionTransport.isConnectedTo(context.hostIp)) {
+          GameSessionTransport.sendToHost(packet);
+        } else {
+          if (__DEV__) console.log(`[TCP] heartbeat skipped: host socket not connected`);
+        }
       }
     },
     onStale: (ip) => {

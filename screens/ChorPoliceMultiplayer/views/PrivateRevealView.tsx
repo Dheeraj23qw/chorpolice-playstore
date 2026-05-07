@@ -1,144 +1,130 @@
-import React, { useEffect, memo } from "react";
-import { View, StyleSheet, Image, Dimensions } from "react-native";
-import { MotiView, MotiText } from "moti";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Image, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
-import { rf } from "@/utils/responsive";
+import { MotiView, MotiText } from "moti";
 import { Text } from "@/components/Text";
+import { rf } from "@/utils/responsive";
 
-const { width } = Dimensions.get("window");
-
-interface PrivateRevealViewProps {
-  role: string | null;
-  playerName?: string;
+interface Props {
+  role: "King" | "Thief" | "Advisor" | "Police" | null;
+  round: number;
 }
 
-const roleData: Record<string, { title: string; color: string; icon: any; subtitle: string }> = {
+const ROLE_DATA: Record<string, { title: string; color: string; icon: any; subtitle: string }> = {
   King: {
     title: "YOU ARE KING",
-    color: "#FACC15", // Gold
+    color: "#FACC15",
     icon: require("@/assets/images/chorsipahi/king.webp"),
-    subtitle: "Rule with justice. Your life is in the Police's hands.",
+    subtitle: "Help the Police identify the real thief.",
   },
   Police: {
     title: "YOU ARE POLICE",
-    color: "#3B82F6", // Blue
+    color: "#3B82F6",
     icon: require("@/assets/images/chorsipahi/police.webp"),
-    subtitle: "Investigate carefully. Find the Thief to win points.",
+    subtitle: "Watch the shuffle carefully and catch the thief.",
   },
   Thief: {
     title: "YOU ARE THIEF",
-    color: "#EF4444", // Red
+    color: "#EF4444",
     icon: require("@/assets/images/chorsipahi/thief.webp"),
-    subtitle: "Blend in. If you remain hidden, you win the round.",
+    subtitle: "Stay hidden. If Police misses, you win the round.",
   },
   Advisor: {
     title: "YOU ARE ADVISOR",
-    color: "#10B981", // Green
+    color: "#10B981",
     icon: require("@/assets/images/chorsipahi/advisor.webp"),
-    subtitle: "The King trusts you. Keep the secret safe.",
+    subtitle: "Protect the secret and avoid suspicion.",
   },
 };
 
-const PrivateRevealView = ({ role, playerName }: PrivateRevealViewProps) => {
-  const data = role ? roleData[role] : null;
+const PrivateRevealView = ({ role, round }: Props) => {
+  const resolvedRole = role || "Thief";
+  const [countdown, setCountdown] = useState(3);
+  const data = useMemo(() => ROLE_DATA[resolvedRole], [resolvedRole]);
 
   useEffect(() => {
-    if (data) {
-      console.log("[PRIVATE_REVEAL] overlay visible");
-    }
-  }, [data, role]);
+    setCountdown(3);
+    const timers = [
+      setTimeout(() => setCountdown(2), 1000),
+      setTimeout(() => setCountdown(1), 2000),
+    ];
 
-  if (!data) return null;
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [resolvedRole, round]);
 
   return (
     <View style={StyleSheet.absoluteFill} className="items-center justify-center">
       <MotiView
         from={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ type: "timing", duration: 500 }}
+        transition={{ type: "timing", duration: 350 }}
         style={StyleSheet.absoluteFill}
       >
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={36} tint="dark" style={StyleSheet.absoluteFill} />
       </MotiView>
 
-      <MotiView
-        from={{ opacity: 0, scale: 0.8, translateY: 20 }}
-        animate={{ opacity: 1, scale: 1, translateY: 0 }}
-        transition={{ type: "spring", damping: 12, delay: 200 }}
-        className="w-[85%] items-center overflow-hidden rounded-[40px] border border-white/20 bg-white/5 p-8 shadow-2xl"
-      >
-        <BlurView intensity={15} tint="light" style={StyleSheet.absoluteFill} />
-        
-        {/* Glow effect based on role */}
-        <View 
-            style={{ backgroundColor: data.color }}
-            className="absolute -top-20 h-40 w-40 rounded-full blur-[60px] opacity-20" 
-        />
-
-        {playerName && (
-          <MotiText 
-            from={{ opacity: 0, translateY: -10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 300 }}
-            className="mb-2 font-main-bold text-xs uppercase tracking-[4px] text-white/60"
-          >
-            {playerName}
-          </MotiText>
-        )}
-
+      <View className="absolute left-0 right-0 top-16 items-center">
         <MotiView
-          from={{ rotateY: "90deg", opacity: 0 }}
-          animate={{ rotateY: "0deg", opacity: 1 }}
-          transition={{ type: "timing", duration: 800, delay: 400 }}
-          className="aspect-[3/4] w-full items-center justify-center rounded-[30px] border border-white/10 bg-black/40 shadow-2xl"
+          from={{ opacity: 0, translateY: -16 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: "spring", damping: 14 }}
+          className="rounded-full border border-white/10 bg-white/5 px-5 py-2"
         >
-          <Image
-            source={data.icon}
-            style={{ width: "80%", height: "80%" }}
-            resizeMode="contain"
-          />
-          
-          <View className="absolute bottom-6 rounded-full border border-white/20 bg-black/60 px-6 py-2">
-             <Text style={{ color: data.color }} className="font-main-bold text-sm uppercase tracking-[4px]">
-                {role}
-             </Text>
-          </View>
-        </MotiView>
-
-        <View className="mt-8 items-center">
-          <MotiText
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: 1000 }}
-            style={{ fontSize: rf(2.5), color: data.color }}
-            className="font-main-bold text-center uppercase tracking-widest"
-          >
-            {data.title}
-          </MotiText>
-          
-          <MotiText
-            from={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
-            transition={{ delay: 1200 }}
-            className="mt-2 text-center font-main text-xs italic text-white"
-          >
-            {data.subtitle}
-          </MotiText>
-        </View>
-
-        <MotiView
-          from={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1500 }}
-          className="mt-10 rounded-full border border-white/10 bg-white/5 px-4 py-2"
-        >
-          <Text className="font-main text-[10px] uppercase tracking-widest text-white/40">
-            Keep it secret • Only you can see this
+          <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-white/70">
+            GET SET READY
           </Text>
         </MotiView>
+
+        <MotiText
+          key={`${resolvedRole}-${countdown}`}
+          from={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", damping: 12 }}
+          style={{ fontSize: rf(5), color: data.color }}
+          className="mt-4 font-main-bold"
+        >
+          {countdown}
+        </MotiText>
+      </View>
+
+      <MotiView
+        from={{ opacity: 0, scale: 0.86, translateY: 18 }}
+        animate={{ opacity: 1, scale: 1, translateY: 0 }}
+        transition={{ type: "spring", damping: 14 }}
+        className="w-[84%] items-center overflow-hidden rounded-[36px] border border-white/15 bg-white/5 p-7"
+      >
+        <BlurView intensity={16} tint="light" style={StyleSheet.absoluteFill} />
+
+        <View className="absolute -top-16 h-32 w-32 rounded-full opacity-20" style={{ backgroundColor: data.color }} />
+
+        <View className="mb-4 rounded-full border border-white/10 bg-black/30 px-4 py-2">
+          <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-white/70">
+            ROUND {round}
+          </Text>
+        </View>
+
+        <View className="h-[280px] w-full items-center justify-center rounded-[28px] border border-white/10 bg-black/35">
+          <Image source={data.icon} style={{ width: "82%", height: "82%" }} resizeMode="contain" />
+          <View className="absolute bottom-5 rounded-full border border-white/15 bg-black/45 px-5 py-2">
+            <Text style={{ color: data.color }} className="font-main-bold text-sm uppercase tracking-[4px]">
+              {resolvedRole}
+            </Text>
+          </View>
+        </View>
+
+        <View className="mt-7 items-center">
+          <Text style={{ color: data.color, fontSize: rf(2.4) }} className="font-main-bold uppercase tracking-widest">
+            {data.title}
+          </Text>
+          <Text className="mt-3 text-center font-main text-xs italic text-white/80">
+            {data.subtitle}
+          </Text>
+        </View>
       </MotiView>
     </View>
   );
 };
 
-export default memo(PrivateRevealView);
+export default PrivateRevealView;
