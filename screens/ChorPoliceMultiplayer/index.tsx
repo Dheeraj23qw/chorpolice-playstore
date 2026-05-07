@@ -1,5 +1,11 @@
 import React, { useEffect, memo } from "react";
-import { View, BackHandler, Image, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  BackHandler,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -93,7 +99,7 @@ const ChorPoliceMultiplayerScreen = () => {
       <View className="flex-1">{renderView()}</View>
 
       {/* 🏆 PERSISTENT RANKING BUTTON */}
-      <View 
+      <View
         className="absolute right-6 z-[1000]"
         style={{ top: insets.top + 10 }}
       >
@@ -102,9 +108,13 @@ const ChorPoliceMultiplayerScreen = () => {
           onPress={g.toggleModal}
           className="h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
         >
-          <BlurView intensity={10} style={StyleSheet.absoluteFill} tint="dark" />
+          <BlurView
+            intensity={10}
+            style={StyleSheet.absoluteFill}
+            tint="dark"
+          />
           <Ionicons name="trophy-outline" size={20} color="#FACC15" />
-          
+
           <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-indigo-500" />
         </TouchableOpacity>
       </View>

@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OfflineCountdownBadge } from "@/screens/OfflineGame/components/OfflineCountdownBadge";
@@ -33,6 +33,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   dealAnimationPreset = "classicSpin",
 }) => {
   const dealingStage = useDealingStage(gamePhase, round);
+
   const mysteryShuffleStep = useMysteryShuffle(
     gamePhase,
     round,
@@ -56,58 +57,75 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
   if (isCinematicOrResult) return null;
 
+  const shouldShowCountdown = typeof countdown === "number" && countdown > 0;
   return (
     <SafeAreaView className="flex-1 bg-transparent">
       <View className="relative flex-1">
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
-        showsVerticalScrollIndicator={false}
-        className="px-6"
-      >
-        <RoundBadge round={round} />
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: 110,
+          }}
+          showsVerticalScrollIndicator={false}
+          className="px-6"
+        >
+          <RoundBadge round={round} />
 
-        <View className="mb-9">
-          <PlayOrInvestigationCTA
-            isInvestigation={isInvestigation}
-            message={message}
-            isPlayButtonDisabled={isPlayButtonDisabled}
-            handlePlay={handlePlay}
-            buttonText={buttonText}
-          />
-        </View>
+          <View className="mb-9">
+            <PlayOrInvestigationCTA
+              isInvestigation={isInvestigation}
+              message={message}
+              isPlayButtonDisabled={isPlayButtonDisabled}
+              handlePlay={handlePlay}
+              buttonText={buttonText}
+            />
+          </View>
 
-        <View className="flex-col gap-y-8">
-          {!isInvestigation ? (
-            <CardGrid
-              round={round}
-              roles={roles}
-              playerNames={playerNames}
-              flippedStates={flippedStates}
-              clickedCards={clickedCards}
-              isHighlight={isHighlight}
-              invisibleIndices={invisibleIndices}
-              gamePhase={gamePhase}
-              dealingStage={dealingStage}
-              dealAnimationPreset={dealAnimationPreset}
-              handleCardClick={handleCardClick}
-              handleCardClickWithBounce={handleCardClickWithBounce}
-              getCardStyle={getCardStyle}
-            />
-          ) : (
-            <InvestigationBoard
-              round={round}
-              gamePhase={gamePhase}
-              investigationTargets={investigationTargets}
-              flippedStates={flippedStates}
-              clickedCards={clickedCards}
-              mysteryShuffleStep={mysteryShuffleStep}
-              handleCardClick={handleCardClick}
-            />
-          )}
-        </View>
-      </ScrollView>
-      {countdown !== null && <OfflineCountdownBadge value={countdown} />}
+          <View className="flex-col gap-y-8">
+            {!isInvestigation ? (
+              <CardGrid
+                round={round}
+                roles={roles}
+                playerNames={playerNames}
+                flippedStates={flippedStates}
+                clickedCards={clickedCards}
+                isHighlight={isHighlight}
+                invisibleIndices={invisibleIndices}
+                gamePhase={gamePhase}
+                dealingStage={dealingStage}
+                dealAnimationPreset={dealAnimationPreset}
+                handleCardClick={handleCardClick}
+                handleCardClickWithBounce={handleCardClickWithBounce}
+                getCardStyle={getCardStyle}
+              />
+            ) : (
+              <InvestigationBoard
+                round={round}
+                gamePhase={gamePhase}
+                investigationTargets={investigationTargets}
+                flippedStates={flippedStates}
+                clickedCards={clickedCards}
+                mysteryShuffleStep={mysteryShuffleStep}
+                handleCardClick={handleCardClick}
+              />
+            )}
+          </View>
+        </ScrollView>
+
+        {shouldShowCountdown && (
+          <View pointerEvents="none" style={styles.countdownOverlay}>
+            <OfflineCountdownBadge value={countdown} />
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 9999,
+    elevation: 9999,
+  },
+});

@@ -119,15 +119,13 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
     );
   };
 
-  const renderTargetCard = (target: InvestigationTarget | undefined, idx: number) => {
+  const renderTargetCard = (
+    target: InvestigationTarget | undefined,
+    idx: number,
+  ) => {
     const targetId = target?.id;
     const isClicked = targetId !== undefined && clickedTargetId === targetId;
-    const motion = getMysteryMotion(
-      idx,
-      isClicked,
-      phase,
-      mysteryShuffleStep,
-    );
+    const motion = getMysteryMotion(idx, isClicked, phase, mysteryShuffleStep);
 
     return (
       <MotiView
@@ -162,7 +160,9 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
               onInvestigationClick(targetId, target?.playerIndex ?? null);
             }
           }}
-          disabled={phase !== "police_turn" || clickedTargetId !== null || !targetId}
+          disabled={
+            phase !== "police_turn" || clickedTargetId !== null || !targetId
+          }
           phase={phase}
           isHighlight={
             (phase === "police_turn" || phase === "investigation_shuffle") &&
@@ -204,8 +204,9 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
           </View>
         </View>
       )}
-
-      {countdown !== null && <OfflineCountdownBadge value={countdown} />}
+      {countdown !== null && countdown > 0 && (
+        <OfflineCountdownBadge value={countdown} />
+      )}
     </View>
   );
 };
