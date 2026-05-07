@@ -12,10 +12,14 @@ import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { MODES } from "@/constants/Networking";
 import { dispatchPacket } from "@/service/packetDispatcher";
 import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
+import {
+  DEALING_SPIN_MS,
+  PUBLIC_REVEAL_SETTLE_MS,
+} from "@/screens/ChorPoliceMultiplayer/components/GamePlaySection/constants";
 
 // ─── Derived offsets (read-only, computed once at module level) ───────────────
-const T_SHUFFLE  = CP_FLOW_TIMINGS.SHUFFLE_DURATION_MS;
-const T_PUBLIC   = CP_FLOW_TIMINGS.PUBLIC_REVEAL_DURATION_MS;
+const T_SHUFFLE  = DEALING_SPIN_MS;
+const T_PUBLIC   = PUBLIC_REVEAL_SETTLE_MS;
 const T_PRIVATE  = CP_FLOW_TIMINGS.HUMAN_ROLE_REVEAL_DURATION_MS;
 const T_MYSTERY  = CP_FLOW_TIMINGS.MYSTERY_SHUFFLE_DURATION_MS;
 

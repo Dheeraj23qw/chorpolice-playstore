@@ -1,8 +1,8 @@
-import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
 import { hp, wp } from "@/utils/responsive";
 
-export const DEALING_SPIN_MS = CP_FLOW_TIMINGS.SHUFFLE_DURATION_MS;
-export const FADE_START_MS = CP_FLOW_TIMINGS.NON_REVEAL_FADE_OFFSET_MS;
+export const DEALING_SPIN_MS = 2500;
+export const FADE_START_MS = DEALING_SPIN_MS;
+export const PUBLIC_REVEAL_SETTLE_MS = 1400;
 
 export const MYSTERY_CARD_WIDTH = wp(38);
 export const MYSTERY_CARD_HEIGHT = (MYSTERY_CARD_WIDTH * 4.2) / 3;

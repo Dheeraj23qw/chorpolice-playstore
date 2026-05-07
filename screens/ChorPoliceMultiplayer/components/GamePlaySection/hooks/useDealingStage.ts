@@ -12,7 +12,9 @@ export const useDealingStage = (gamePhase: string, round: number) => {
     if (gamePhase === "dealing") {
       setDealingStage("spin");
 
-      timers.push(setTimeout(() => setDealingStage("fade"), FADE_START_MS));
+      if (FADE_START_MS < DEALING_SPIN_MS) {
+        timers.push(setTimeout(() => setDealingStage("fade"), FADE_START_MS));
+      }
       timers.push(setTimeout(() => setDealingStage("reveal"), DEALING_SPIN_MS));
     } else {
       setDealingStage("idle");
