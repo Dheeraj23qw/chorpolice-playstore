@@ -777,10 +777,8 @@ export const useQuizGameLogic = () => {
         setIsLeaderboardVisible(true);
 
         if (isHost && !packet.isLastRound) {
-          leaderboardAdvanceTimeoutRef.current = setTimeout(() => {
-            leaderboardAdvanceTimeoutRef.current = null;
-            advanceMultiplayerRound();
-          }, 2500);
+          // 🔥 REMOVED: Automatic advance timeout. 
+          // Progression is now manual via the host's "Next Round" button.
         }
 
         if (packet.isLastRound) {
@@ -833,10 +831,6 @@ export const useQuizGameLogic = () => {
           requestAnimationFrame(() => {
             router.push({ pathname: "/quiz-result" } as any);
           });
-          return;
-        }
-
-        if (packet.reason === "host_quit" && isHost) {
           return;
         }
 

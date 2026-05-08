@@ -22,6 +22,10 @@ export const handleGameEndCompleted = (packet: any, context: CPMultiplayerContex
   );
 
   logic.playTransition("final_result");
+  
+  // 🔥 STOP NETWORKING: Result is in Redux, no need for active heartbeat/transport.
+  // This prevents the "empty screen" bug if players leave while host is viewing results.
+  import("@/service/lanGameService").then(m => m.stopSession());
 
   if (store.getState().session.economy.settlementStatus === "PENDING") {
     logic.economy.handleSettlement(leaderboard, packet.totalPot ?? 0);

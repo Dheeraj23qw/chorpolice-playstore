@@ -4,6 +4,8 @@ import { broadcastPacket } from "@/service/lanGameService";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import store from "@/redux/store";
 
+import { toast } from "@/components/feedback/toast";
+
 export const handleGameEndExit = (packet: any, context: CPMultiplayerContext) => {
   const { refs, logic } = context;
   const _localPlayerId = refs.localPlayerIdRef.current;
@@ -16,6 +18,10 @@ export const handleGameEndExit = (packet: any, context: CPMultiplayerContext) =>
 
   if (refund > 0) {
     logic.economy.handleRefund(refund, packet.reason === "host_quit" ? "Host left." : "A player left.");
+  } else if (!isLeaver) {
+    // 🔥 FEEDBACK: Ensure all non-faulty players know why the match ended
+    const msg = packet.reason === "host_quit" ? "The host has left the game." : "A player has left. Match ended for fairness.";
+    toast.error("Match Ended", msg, 4000);
   }
   
   logic.cleanup.navigateToHome();
