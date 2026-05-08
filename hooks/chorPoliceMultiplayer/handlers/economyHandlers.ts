@@ -1,7 +1,7 @@
 import { CPMultiplayerContext } from "./types";
 import { updatePlayerScores as updateReduxScores } from "@/redux/reducers/playerReducer";
 import store from "@/redux/store";
-import { cleanupAfterMatchCompleted } from "@/service/lanGameService";
+import { cleanupAfterMatchCompleted, markMatchSettledLocally } from "@/service/lanGameService";
 
 export const handleGameEndCompleted = (packet: any, context: CPMultiplayerContext) => {
   const { refs, dispatch, logic, setQuizDone } = context;
@@ -28,6 +28,10 @@ export const handleGameEndCompleted = (packet: any, context: CPMultiplayerContex
   // Handle settlement BEFORE cleanup (coins still need economy state)
   if (store.getState().session.economy.settlementStatus === "PENDING") {
     logic.economy.handleSettlement(leaderboard, packet.totalPot ?? 0);
+    const matchId = packet.matchId || store.getState().session.economy.matchId;
+    if (matchId) {
+      markMatchSettledLocally(matchId);
+    }
   }
 
   // 🔥 POST-MATCH SOCKET CLEANUP

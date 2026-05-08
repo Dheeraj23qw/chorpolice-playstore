@@ -1,6 +1,6 @@
 import { NETWORK } from "../constants/Networking";
 import { PacketRouter } from "@/service/PacketRouter";
-import { updateDebugMetric } from "./observability/DebugService";
+import { updateDebugMetric, logLanDebug } from "./observability/DebugService";
 import { HeartbeatService } from "./network/HeartbeatService";
 import { GameSessionTransport } from "./network/GameSessionTransport";
 import { isLobbyPresenceToastAllowed } from "./network/LobbyToastVisibility";
@@ -282,6 +282,16 @@ export const cleanupAfterMatchCompleted = async (opts: {
   }
 };
 
+export const markMatchSettledLocally = (matchId: string) => {
+  if (!matchId) return;
+  matchSettlementLedger[matchId] = {
+    settled: true,
+    settlementType: "completed",
+    refundedPlayerIds: [],
+    penalizedPlayerIds: [],
+  };
+};
+
 // Re-export from leaf module to avoid breaking existing consumers
 import { normalizePeerIp } from "./network/normalizePeerIp";
 export { normalizePeerIp };
@@ -525,6 +535,14 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
     const { matchId, faultyPlayerId, faultyPlayerName, coinPolicy } = packet;
     console.log(`[RECONNECT] failed timeout faultyPlayer=${faultyPlayerName}`);
     
+    const economy = store.getState().session.economy;
+    if (economy.matchId === matchId && economy.settlementStatus === "SETTLED") {
+      console.log("[CP][MONEY] Abnormal dismissal ignored: match already settled");
+      logLanDebug("[CP][LAN] Final result wins over reconnect failure");
+      cleanupAllReconnectionTimers?.();
+      return;
+    }
+
     store.dispatch(resolveReconnectFailed());
     
     // Handle settlement locally for this client
@@ -671,6 +689,13 @@ export const startHeartbeat = (isHost: boolean) => {
 
           // Set timeout to dismiss match
           const timer = setTimeout(() => {
+            const state = store.getState().session;
+            if (state.economy.settlementStatus === "SETTLED") {
+              console.log("[CP][LAN] Late timeout ignored after settlement");
+              reconnectTimers.delete(playerId);
+              return;
+            }
+
             console.log(`📡 [LAN] Recovery window expired for ${playerId}. Dismissing match.`);
             
             const failPacket = {
@@ -714,6 +739,13 @@ export const startHeartbeat = (isHost: boolean) => {
         handleIncomingPacket(reconnectPacket);
 
         const timer = setTimeout(() => {
+          const state = store.getState().session;
+          if (state.economy.settlementStatus === "SETTLED") {
+            console.log("[CP][LAN] Late timeout ignored after settlement");
+            reconnectTimers.delete("host");
+            return;
+          }
+
           console.log(`📡 [LAN] Host recovery window expired. Dismissing match locally.`);
           
           const failPacket = {

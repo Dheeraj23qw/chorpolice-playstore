@@ -52,6 +52,13 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
     return next;
   });
 
+  // 🔥 Mark the card as clicked so it shows green/red border on all screens
+  setClickedCards(prev => {
+    const next = [...prev];
+    next[mysteryPhysIndex] = true;
+    return next;
+  });
+
   // 2. Flip remaining mystery cards after delay
   const tMysteryRemaining = setTimeout(() => {
     console.log("[CP_MYSTERY] Flipping remaining mystery cards");
