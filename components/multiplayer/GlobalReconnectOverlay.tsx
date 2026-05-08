@@ -81,7 +81,7 @@ export const GlobalReconnectOverlay = () => {
                 <Ionicons name="alert-circle" size={rf(4)} color="#FACC15" />
               </View>
               <Text style={styles.title} className="font-main-bold">
-                Connection Lost
+                Connection unstable
               </Text>
             </View>
 
@@ -103,7 +103,7 @@ export const GlobalReconnectOverlay = () => {
                   {disconnectedPlayerName || (isHostLost ? "Host" : "Player")}
                 </Text>
                 <Text style={styles.playerStatus}>
-                  {isHostLost ? "The host disconnected" : "disconnected from the match"}
+                  {isHostLost ? "Connection with host unstable" : "Connection unstable"}
                 </Text>
               </View>
 
@@ -115,7 +115,7 @@ export const GlobalReconnectOverlay = () => {
                    <Text style={styles.timerLabel}>SEC</Text>
                 </View>
                 <Text style={styles.instruction}>
-                  Game paused. Waiting for reconnection...
+                  Trying to reconnect...
                 </Text>
               </View>
             </View>

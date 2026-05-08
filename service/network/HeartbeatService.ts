@@ -72,7 +72,7 @@ export const HeartbeatService = {
         // ── STALE PEER DETECTION ──
         // Rely on absolute time rather than just tick counts to prevent
         // false positives during temporary lag spikes.
-        if (timeSinceLastSeen > 15000) {
+        if (timeSinceLastSeen > 10000) {
           // FIX-4: Before declaring stale, check if TCP socket is actually still alive.
           if (callbacks?.isConnectedTo?.(ip)) {
             if (__DEV__) console.log(`[Heartbeat] Stale check SKIPPED for ${ip}: TCP socket still alive (lastSeen ${Math.floor(timeSinceLastSeen/1000)}s ago). Resetting tracker.`);

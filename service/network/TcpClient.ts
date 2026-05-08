@@ -138,6 +138,10 @@ export const connectToHost = (
       }
       console.log(`[TCP_DEBUG] HOST_SOCKET_CLOSE attempt=${thisAttemptId}`);
       sockets.delete(hostIp);
+      
+      // 🔥 Trigger soft reconnect flow immediately on socket close
+      packetHandler?.({ type: "LOCAL_SOCKET_CLOSED", hostIp }, hostIp);
+      
       // Only null out if this is still the active socket
       if (cs.clientSocket && thisAttemptId === cs.attemptId) {
         cs.clientSocket = null;
