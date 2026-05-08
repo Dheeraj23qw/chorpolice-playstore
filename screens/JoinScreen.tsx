@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,7 +18,7 @@ import {
 } from "@/service/lanLobbyCoordinator";
 import { NETWORK } from "@/constants/Networking";
 import { getGatewayIpAddress } from "@/utils/NetworkUtils";
-import { setLocalSessionIdentity } from "@/redux/reducers/sessionSlice";
+import { setLocalSessionIdentity, setSessionError } from "@/redux/reducers/sessionSlice";
 import store, { AppDispatch, RootState } from "@/redux/store";
 import { JoinQRSection } from "@/components/JoinScreen/JoinQRSection";
 import { JoinCodeSection } from "@/components/JoinScreen/JoinCodeSection";
@@ -159,7 +159,18 @@ const JoinScreen = () => {
       }
     };
   }, []);
-
+  // 🔥 FRESH ENTRY: Reset UI state every time JoinScreen gains focus.
+  // This guarantees re-entry after leaving always starts clean,
+  // regardless of previous join attempt results.
+  useFocusEffect(
+    useCallback(() => {
+      setIsSmartJoining(false);
+      setJoiningRoomIp(null);
+      setRoomCode("");
+      dispatch(setSessionError(null));
+      console.log("[JoinScreen] Focus: UI state reset for fresh entry");
+    }, [dispatch])
+  );
 
   /* ── Avatar init ── */
   useEffect(() => {

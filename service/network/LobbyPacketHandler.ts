@@ -44,6 +44,7 @@ export type LobbyPacketDeps = {
   leaveLanLobby: LeaveFn;
   triggerJoin: () => void;
   announcedPlayerIds: Set<string>;
+  checkAndTriggerProfileSync: () => void;
 };
 
 export const handleLobbyPacket = (
@@ -169,6 +170,7 @@ export const handleLobbyPacket = (
     console.log(`[LAN_ORCH] [CLIENT] Received player list update (count=${packet.players.length})`);
     deps.clearJoinAttempts();
     deps.syncPlayerListLocally(packet.players);
+    deps.checkAndTriggerProfileSync();
     store.dispatch(setLobbyStage(packet.lobbyStage === "setup" ? "setup" : "room"));
     
     if (!state.isHost) {

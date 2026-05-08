@@ -35,6 +35,7 @@ export class LanDiscoveryService {
   private static isBroadcasting = false;
   private static isListening = false;
   private static fallbackDeviceId: string | null = null;
+  private static listenRunId = 0;
 
   // ── Constants ──
   private static readonly APP_ID = "chorpolice";
@@ -144,18 +145,27 @@ export class LanDiscoveryService {
       }
     });
 
-    const broadcastData = JSON.stringify({
-      appId: this.APP_ID,
-      type: "LOBBY_DISCOVERY",
-      deviceId: this.getSessionDeviceId(),
-      ...payload,
-    });
-
     // Build deduplicated list of broadcast targets
     const targets = this.getBroadcastTargets(payload.hostIp);
 
     const sendToAll = () => {
       if (!this.broadcastSocket) return;
+      
+      const state = store.getState().session;
+      const playerCount = state.players.length;
+      
+      const broadcastData = JSON.stringify({
+        appId: this.APP_ID,
+        type: "LOBBY_DISCOVERY",
+        deviceId: this.getSessionDeviceId(),
+        ...payload,
+        playerCount,
+        maxPlayers: 4,
+        gameType: state.gameType,
+      });
+
+      console.log(`[LAN][DISCOVERY] Host announcement sent { playerCount: ${playerCount} }`);
+
       for (const target of targets) {
         try {
           this.broadcastSocket.send(
@@ -303,10 +313,37 @@ export class LanDiscoveryService {
    * All discoveries are merged and deduplicated by useLanDiscovery hook.
    */
   static startListening(onDiscovery: (result: DiscoveryResult) => void) {
-    this.stopListening();
+    const runId = ++this.listenRunId;
+
+    // Synchronously close any existing listen socket so the new one can bind.
+    // Do NOT call full stopListening (that would reset listenRunId guard).
+    if (this.listenSocket) {
+      const old = this.listenSocket;
+      this.listenSocket = null;
+      try { old.dropMembership(this.MULTICAST_GROUP); } catch {}
+      try { old.close(); } catch {}
+    }
+    if (this.queryInterval) {
+      clearInterval(this.queryInterval);
+      this.queryInterval = null;
+    }
+    if (this.bindRetryTimeout) {
+      clearTimeout(this.bindRetryTimeout);
+      this.bindRetryTimeout = null;
+    }
+
+    // Restart Zeroconf scan cleanly.
+    this.removeZeroconfHandlers();
+    if (this.zeroconfRescanInterval) {
+      clearInterval(this.zeroconfRescanInterval);
+      this.zeroconfRescanInterval = null;
+    }
+    try { this.getZeroconf().stop(); } catch {}
+
     this.isListening = true;
 
-    logLanDebug("[Discovery] Starting discovery listener");
+    logLanDebug(`[Discovery] Starting discovery listener runId=${runId}`);
+    console.log(`[LAN][DISCOVERY] Listener start requested runId=${runId}`);
     updateDebugMetric("lanUdpListener", "listening");
 
     // ── UDP Listener ──
@@ -376,8 +413,16 @@ export class LanDiscoveryService {
 
     // Try primary port, then random fallback
     const bindPort = retryCount === 0 ? this.UDP_PORT : 0;
+    const currentRunId = this.listenRunId;
 
     this.listenSocket.bind(bindPort, (err: any) => {
+      if (currentRunId !== this.listenRunId) {
+        console.log("[LAN][DISCOVERY] Stale listener callback ignored");
+        try { this.listenSocket.close(); } catch {}
+        this.listenSocket = null;
+        return;
+      }
+
       if (err) {
         console.warn(`[Discovery] Listen bind error on port ${bindPort}:`, err?.message);
 
@@ -404,7 +449,7 @@ export class LanDiscoveryService {
         // Subnet broadcasts will still work
       }
 
-      console.log(`[Discovery] Listener active on port ${bindPort === 0 ? "random" : bindPort}`);
+      console.log(`[LAN][DISCOVERY] Listener active runId=${currentRunId}`);
       updateDebugMetric("lanUdpListener", "listening");
 
       // 🚀 Active Probe Mode: Send queries periodically
@@ -509,8 +554,16 @@ export class LanDiscoveryService {
     }, 20000); // Production timing
   }
 
-  static stopListening() {
-    logLanDebug("[Discovery] Stopping discovery listener");
+  static stopListening(opts?: { runId?: number }) {
+    // If caller explicitly provides a runId that is older than current, ignore.
+    // If no runId provided (e.g. external stop from coordinator), always execute.
+    if (opts?.runId !== undefined && opts.runId < this.listenRunId) {
+      console.log("[LAN][DISCOVERY] Stop ignored: newer listener active");
+      return;
+    }
+
+    logLanDebug("[LAN][DISCOVERY] Discovery stopped safely");
+    console.log("[LAN][DISCOVERY] Discovery stopped safely");
     updateDebugMetric("lanUdpListener", "idle");
     this.isListening = false;
 

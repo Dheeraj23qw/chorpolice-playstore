@@ -36,6 +36,7 @@ import {
   startHeartbeat,
   subscribeToPackets,
   cleanupAllReconnectionTimers,
+  cleanupStaleNetworkResources,
 } from "./lanGameService";
 import { HeartbeatService } from "./network/HeartbeatService";
 import { GameSessionTransport } from "./network/GameSessionTransport";
@@ -52,8 +53,7 @@ import { startIpDetectionLoop } from "./HostIpDetector";
 // ── Module state ──
 let unsubscribeNetInfo: (() => void) | null = null;
 let unsubscribePackets: (() => void) | null = null;
-/** Prevents duplicate stopCoordinator invocations during rapid leave/join */
-let isStopping = false;
+let stopCoordinatorPromise: Promise<void> | null = null;
 let joinRetryInterval: ReturnType<typeof setInterval> | null = null;
 let joinTimeout: ReturnType<typeof setTimeout> | null = null;
 let pendingHostLobbyPromise: Promise<any> | null = null;
@@ -88,6 +88,18 @@ const syncPlayerListLocally = (players: SessionPlayer[]) => {
   store.dispatch(setLobbyPlayers(players.slice(0, 4)));
 };
 
+let pendingProfileSync = false;
+
+const checkAndTriggerProfileSync = () => {
+  const s = store.getState().session;
+  const inList = s.players.some((p) => p.id === s.localPlayerId);
+  if (pendingProfileSync && inList) {
+    console.log("[LAN][PROFILE] Client profile sync sent after player list arrived");
+    syncLocalLobbyProfile({});
+    pendingProfileSync = false;
+  }
+};
+
 const buildJoinPacketFromState = () =>
   buildJoinPacket(store.getState().session, store.getState().wallet.coins);
 
@@ -107,6 +119,7 @@ const packetDeps: LobbyPacketDeps = {
     }
   },
   announcedPlayerIds,
+  checkAndTriggerProfileSync,
 };
 
 const ensurePacketSubscription = () => {
@@ -121,38 +134,47 @@ const ensurePacketSubscription = () => {
 };
 
 const stopCoordinator = async () => {
-  if (isStopping) {
-    console.log("[TCP_DEBUG] STOP_COORDINATOR skipped=already_stopping");
+  // If a stop is already in flight, wait for it — never skip
+  if (stopCoordinatorPromise) {
+    console.log("[TCP_DEBUG] STOP_COORDINATOR waiting for in-flight stop");
+    await stopCoordinatorPromise;
     return;
   }
-  isStopping = true;
+
   console.log("[TCP_DEBUG] STOP_COORDINATOR_START");
 
-  clearJoinAttempts();
-  lobbyAnnouncementGeneration += 1;
-  botAnnouncementTimers.forEach((t) => clearTimeout(t));
-  botAnnouncementTimers.length = 0;
-  announcedPlayerIds.clear();
-  if (unsubscribePackets) {
-    unsubscribePackets();
-    unsubscribePackets = null;
-  }
-  if (unsubscribeNetInfo) {
-    unsubscribeNetInfo();
-    unsubscribeNetInfo = null;
-  }
+  stopCoordinatorPromise = (async () => {
+    clearJoinAttempts();
+    pendingHostLobbyPromise = null;
+    pendingProfileSync = false;
+    lobbyAnnouncementGeneration += 1;
+    botAnnouncementTimers.forEach((t) => clearTimeout(t));
+    botAnnouncementTimers.length = 0;
+    announcedPlayerIds.clear();
+    if (unsubscribePackets) {
+      unsubscribePackets();
+      unsubscribePackets = null;
+    }
+    if (unsubscribeNetInfo) {
+      unsubscribeNetInfo();
+      unsubscribeNetInfo = null;
+    }
 
-  // ── RECONNECT CLEANUP ──
-  cleanupAllReconnectionTimers();
+    // ── RECONNECT CLEANUP ──
+    cleanupAllReconnectionTimers();
 
-  // CRITICAL: Stop heartbeat BEFORE transport to prevent write-after-destroy
-  HeartbeatService.stop();
-  await GameSessionTransport.stop();
-  await LanDiscoveryService.stopBroadcasting();
-  LanDiscoveryService.stopListening();
+    // CRITICAL: Stop heartbeat BEFORE transport to prevent write-after-destroy
+    HeartbeatService.stop();
+    await GameSessionTransport.stop();
+    await LanDiscoveryService.stopBroadcasting();
+    LanDiscoveryService.stopListening();
 
-  isStopping = false;
-  console.log("[TCP_DEBUG] STOP_COORDINATOR_DONE");
+    console.log("[TCP_DEBUG] STOP_COORDINATOR_DONE");
+  })().finally(() => {
+    stopCoordinatorPromise = null;
+  });
+
+  await stopCoordinatorPromise;
 };
 
 // ── Public API ──
@@ -184,7 +206,7 @@ export const initHostLobby = async ({
   );
 
   // 🔥 FIX: Clean up any previous stale network session before becoming a Host
-  await GameSessionTransport.stop();
+  await cleanupStaleNetworkResources({ reason: "host_init" });
   await LanDiscoveryService.stopBroadcasting();
   LanDiscoveryService.stopListening();
 
@@ -346,7 +368,6 @@ export const joinLanLobby = async ({
     new Set([
       ...(hostIp ? [hostIp] : []),
       ...candidateIps,
-      ...LanCandidateIpService.getCommonGateways(),
     ]),
   );
   const portsToTry = hostPort
@@ -369,7 +390,7 @@ export const joinLanLobby = async ({
   ): Promise<{ ip: string; port: number; socket: any }> => {
     if (
       GameSessionTransport.getCurrentSessionId() !== startSessionId ||
-      isStopping
+      stopCoordinatorPromise !== null
     ) {
       throw new Error("ABORTED");
     }
@@ -450,19 +471,26 @@ export const joinLanLobby = async ({
           probeSocket.destroy();
         } catch {}
       }
-      if (e.message !== "ABORTED") {
+      if (e.message !== "ABORTED" && GameSessionTransport.getCurrentSessionId() === startSessionId) {
         console.log(`[LAN_ORCH] candidate failed ${ip}:${port} (${e.message})`);
+      } else if (e.message !== "ABORTED") {
+        console.log(`[LAN][JOIN] Late candidate failure ignored`);
       }
       throw e;
     }
   };
 
   // ── MARVEL PROBING: Staggered Batches ───────────────────────────────────────
+  const localIp = store.getState().session.localIp;
   const primaryCandidates = Array.from(
-    new Set([...(hostIp ? [hostIp] : []), ...candidateIps]),
+    new Set([
+      ...(hostIp ? [hostIp] : []),
+      ...candidateIps.filter(ip => ip !== localIp)
+    ]),
   );
+  
   const fallbackCandidates = LanCandidateIpService.getCommonGateways().filter(
-    (ip) => !primaryCandidates.includes(ip),
+    (ip) => !primaryCandidates.includes(ip) && ip !== localIp,
   );
 
   const runBatch = (ips: string[]) => {
@@ -483,7 +511,7 @@ export const joinLanLobby = async ({
       socket: any;
     }>((resolve, reject) => {
       setTimeout(async () => {
-        if (result || isStopping) return;
+        if (result || stopCoordinatorPromise !== null) return;
         try {
           const res = await Promise.any(runBatch(fallbackCandidates));
           resolve(res);
@@ -510,6 +538,9 @@ export const joinLanLobby = async ({
       console.log("[LAN_ORCH] marvel join error:", err.message);
     }
   } finally {
+    if (result) {
+      console.log("[LAN][JOIN] Candidate attempts cancelled after success");
+    }
     allProbeSockets.forEach((s) => {
       if (result && s === result.socket) return;
       try {
@@ -670,6 +701,8 @@ export const syncLocalLobbyProfile = ({
     console.log(
       `[LAN_ORCH] Local player ${s.localPlayerId} not in list yet; updating local identity only.`,
     );
+    console.log("[LAN][PROFILE] Client profile sync queued until player list arrives");
+    pendingProfileSync = true;
   }
 
   if (s.isHost) {

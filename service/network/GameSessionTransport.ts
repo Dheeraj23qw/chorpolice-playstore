@@ -213,33 +213,18 @@ export const GameSessionTransport = {
   },
 
   stop: async (): Promise<boolean> => {
-    // Idempotent: if already closing, return existing promise
     if (pendingServerStopPromise) return pendingServerStopPromise;
-    // Guard: if already closed and nothing to clean, fast-return
-    if (isClosing) return Promise.resolve(true);
 
-    console.log("[TCP_DEBUG] SESSION_STOP_START");
-    isClosing = true;
-    currentSessionId++; client.attemptId++;
-    pendingServerStartPromise = null;
-
-    pendingServerStopPromise = new Promise(resolve => {
-      let resolved = false;
-      const safeResolve = (val: boolean) => {
-        if (resolved) return;
-        resolved = true;
-        tcpServer = null;
-        pendingServerStopPromise = null;
-        console.log(`[TCP_DEBUG] SESSION_STOP_DONE success=${val}`);
-        resolve(val);
-      };
+    pendingServerStopPromise = (async () => {
+      isClosing = true;
+      console.log("[TCP_DEBUG] SESSION_STOP_START");
+      currentSessionId++; client.attemptId++;
+      pendingServerStartPromise = null;
 
       const cleanup = () => {
         state.hostIp = null;
-        // Capture sockets first, then clear map immediately to prevent new safeSend lookups
         const socketsToDestroy = Array.from(state.clientSockets.values());
         state.clientSockets.clear();
-
         socketsToDestroy.forEach(s => {
           try {
             if (s && !s.destroyed) {
@@ -266,8 +251,8 @@ export const GameSessionTransport = {
         updateDebugMetric("hostIp", "N/A");
       };
 
-      if (tcpServer) {
-        try {
+      try {
+        if (tcpServer) {
           // Capture and clear immediately
           const socketsToDestroy = Array.from(state.clientSockets.values());
           state.clientSockets.clear();
@@ -282,14 +267,30 @@ export const GameSessionTransport = {
             } catch { }
           });
           tcpServer.removeAllListeners();
-          tcpServer.close(() => { cleanup(); safeResolve(true); });
-          // Safety timeout: if server.close() callback never fires
-          setTimeout(() => { cleanup(); safeResolve(false); }, 800);
-        } catch { cleanup(); safeResolve(false); }
-      } else {
-        cleanup(); safeResolve(true);
+          
+          const closeSuccess = await new Promise<boolean>(resolve => {
+            tcpServer.close(() => { cleanup(); resolve(true); });
+            setTimeout(() => { cleanup(); resolve(false); }, 800);
+          });
+          
+          tcpServer = null;
+          console.log(`[TCP_DEBUG] SESSION_STOP_DONE success=${closeSuccess}`);
+          return closeSuccess;
+        } else {
+          cleanup();
+          console.log(`[TCP_DEBUG] SESSION_STOP_DONE success=true`);
+          return true;
+        }
+      } catch (e) {
+        cleanup();
+        console.warn("[TCP_DEBUG] SESSION_STOP_DONE success=false", e);
+        return false;
+      } finally {
+        isClosing = false;
+        pendingServerStopPromise = null;
       }
-    });
+    })();
+
     return pendingServerStopPromise;
   },
 

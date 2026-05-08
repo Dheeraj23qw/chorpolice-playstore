@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { DiscoveryResult } from "@/service/network/LanDiscoveryStrategy";
+import { useFocusEffect } from "expo-router";
 import { startLanDiscovery, stopLanDiscovery } from "@/service/lanLobbyCoordinator";
 
 /**
@@ -71,27 +72,29 @@ export const useLanDiscovery = (enabled: boolean = false) => {
   }, []);
 
   // ── Start/stop discovery lifecycle ──
-  useEffect(() => {
-    if (!enabled) {
-      stopLanDiscovery();
-      setIsSearching(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!enabled) {
+        stopLanDiscovery();
+        setIsSearching(false);
+        setDiscoveredRooms([]);
+        return;
+      }
+
+      console.log("[LAN][DISCOVERY] JoinScreen focused, starting discovery");
       setDiscoveredRooms([]);
-      return;
-    }
+      setIsSearching(true);
 
-    console.log("[useLanDiscovery] Starting discovery listener...");
-    setDiscoveredRooms([]);
-    setIsSearching(true);
+      // Use a stable wrapper so the socket callback never stales
+      startLanDiscovery((result) => onDiscoveryRef.current(result));
 
-    // Use a stable wrapper so the socket callback never stales
-    startLanDiscovery((result) => onDiscoveryRef.current(result));
-
-    return () => {
-      console.log("[useLanDiscovery] Cleaning up discovery listener.");
-      stopLanDiscovery();
-      setIsSearching(false);
-    };
-  }, [enabled]); // ← only re-run when enabled flips, not on every render
+      return () => {
+        console.log("[LAN][DISCOVERY] JoinScreen blurred, stopping discovery");
+        stopLanDiscovery();
+        setIsSearching(false);
+      };
+    }, [enabled])
+  );
 
   // ── Stale data cleanup ──
   // Remove rooms not seen in >10 seconds (generous: 2s broadcast * 5 missed packets)
