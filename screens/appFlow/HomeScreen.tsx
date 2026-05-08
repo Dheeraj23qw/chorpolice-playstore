@@ -8,6 +8,7 @@ import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import store from "@/redux/store";
 import { cleanupStaleNetworkResources } from "@/service/lanGameService";
 import { LanDiscoveryService } from "@/service/network/LanDiscoveryService";
+import { clearSession } from "@/redux/reducers/sessionSlice";
 
 export default function HomeScreen() {
   const isSoundLoaded = useAppSelector((state) => state.sound.isLoaded);
@@ -22,6 +23,10 @@ export default function HomeScreen() {
       // Also stop UDP discovery if somehow left running
       LanDiscoveryService.stopListening();
       void LanDiscoveryService.stopBroadcasting();
+
+      // Clear session state (remove old players, reset phase)
+      store.dispatch(clearSession());
+      console.log("[LAN][CLEANUP] Session cleared on Home focus");
     }, [])
   );
 

@@ -233,7 +233,7 @@ export const useLobbyLogic = (
     
     if (isHost && localPlayerId && !hostBootstrappedRef.current && !isAlreadyActive) {
       hostBootstrappedRef.current = true;
-      initHostLobby({
+      void initHostLobby({
         localPlayerId,
         name: userName.trim() || "PLAYER_1",
         avatarId: currentAvatarId,

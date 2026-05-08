@@ -64,19 +64,19 @@ const startTcpServer = (): Promise<void> => {
         const { server, promise } = TcpServerManager.tryListen(port, {
           onConnection: (socket) => {
             if (isClosing) {
-              try { 
+              try {
                 (socket as any).__explicitlyDestroyed = true;
-                socket.destroy(); 
-              } catch {}
+                socket.destroy();
+              } catch { }
               return;
             }
             const ip = socket.remoteAddress?.replace("::ffff:", "") || "unknown";
-            if (ip === "unknown") { 
-              try { 
+            if (ip === "unknown") {
+              try {
                 (socket as any).__explicitlyDestroyed = true;
-                socket.destroy(); 
-              } catch {} 
-              return; 
+                socket.destroy();
+              } catch { }
+              return;
             }
 
             console.log(`[TCP_DEBUG] CLIENT_CONNECTED ip=${ip}`);
@@ -111,7 +111,7 @@ const startTcpServer = (): Promise<void> => {
             state.listeningPort = actualPort;
             console.log(`[TCP_DEBUG] SERVER_LISTENING port=${actualPort}`);
           },
-          onError: () => {},
+          onError: () => { },
         }, 3000);
         await promise;
         pendingServerStartPromise = null;
@@ -199,7 +199,7 @@ export const GameSessionTransport = {
    */
   useSocket: (hostIp: string, socket: any) => {
     if (isClosing) {
-      try { (socket as any).__explicitlyDestroyed = true; socket.destroy(); } catch {}
+      try { (socket as any).__explicitlyDestroyed = true; socket.destroy(); } catch { }
       return;
     }
     console.log(`[TCP_DEBUG] PROMOTING_SOCKET host=${hostIp}`);
@@ -240,22 +240,22 @@ export const GameSessionTransport = {
         const socketsToDestroy = Array.from(state.clientSockets.values());
         state.clientSockets.clear();
 
-        socketsToDestroy.forEach(s => { 
-          try { 
+        socketsToDestroy.forEach(s => {
+          try {
             if (s && !s.destroyed) {
               (s as any).__explicitlyDestroyed = true;
-              s.destroy(); 
+              s.destroy();
             }
-          } catch {} 
+          } catch { }
         });
-        if (client.clientSocket) { 
-          try { 
+        if (client.clientSocket) {
+          try {
             if (!client.clientSocket.destroyed) {
               (client.clientSocket as any).__explicitlyDestroyed = true;
-              client.clientSocket.destroy(); 
+              client.clientSocket.destroy();
             }
-          } catch {} 
-          client.clientSocket = null; 
+          } catch { }
+          client.clientSocket = null;
         }
         packetHandler = null; state.isHost = false; state.localPlayerId = "host_id";
         state.listeningPort = PRIMARY_PORT;
@@ -272,14 +272,14 @@ export const GameSessionTransport = {
           const socketsToDestroy = Array.from(state.clientSockets.values());
           state.clientSockets.clear();
 
-          socketsToDestroy.forEach(s => { 
-            try { 
+          socketsToDestroy.forEach(s => {
+            try {
               if (s && !s.destroyed && !(s as any).__explicitlyDestroyed) {
                 TCP_STATS.totalSocketCleanupCompleted++;
                 (s as any).__explicitlyDestroyed = true;
-                s.destroy(); 
+                s.destroy();
               }
-            } catch {} 
+            } catch { }
           });
           tcpServer.removeAllListeners();
           tcpServer.close(() => { cleanup(); safeResolve(true); });
@@ -312,14 +312,14 @@ export const GameSessionTransport = {
     state.ipByPlayerId.delete(playerId); state.playerIdByIp.delete(ip); state.clientIps.delete(ip);
     const socket = state.clientSockets.get(ip);
     if (socket) {
-      try { 
+      try {
         if (!socket.destroyed && !(socket as any).__explicitlyDestroyed) {
           if (__DEV__) console.log(`[TCP] socket cleanup complete for peer: ${ip}`);
           TCP_STATS.totalSocketCleanupCompleted++;
           (socket as any).__explicitlyDestroyed = true;
-          socket.destroy(); 
+          socket.destroy();
         }
-      } catch {}
+      } catch { }
       state.clientSockets.delete(ip); state.clientBuffers.delete(ip);
     }
   },

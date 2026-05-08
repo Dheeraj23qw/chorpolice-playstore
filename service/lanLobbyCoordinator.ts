@@ -157,7 +157,7 @@ const stopCoordinator = async () => {
 
 // ── Public API ──
 
-export const initHostLobby = ({
+export const initHostLobby = async ({
   localPlayerId,
   name,
   avatarId,
@@ -182,6 +182,12 @@ export const initHostLobby = ({
   console.log(
     `[LAN_ORCH] Initializing Host Lobby for ${localPlayerId} (${name})`,
   );
+
+  // 🔥 FIX: Clean up any previous stale network session before becoming a Host
+  await GameSessionTransport.stop();
+  await LanDiscoveryService.stopBroadcasting();
+  LanDiscoveryService.stopListening();
+
   const announcementGeneration = ++lobbyAnnouncementGeneration;
   const players = createInitialLobbyPlayers({
     id: localPlayerId,
