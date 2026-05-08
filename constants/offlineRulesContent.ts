@@ -28,12 +28,6 @@ export const OFFLINE_RULES_CONTENT: Record<
     toggleText: "Hinglish",
     items: [
       {
-        title: "One Phone",
-        desc: "All 4 players play together on the same phone.",
-        icon: "phone-portrait-outline",
-        color: "#38bdf8",
-      },
-      {
         title: "Hidden Roles",
         desc: "Each round has 1 King, 1 Police, 1 Thief, and 1 Advisor.",
         icon: "person-circle-outline",

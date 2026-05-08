@@ -267,6 +267,7 @@ export const useChorPoliceMultiplayer = () => {
   // ── Side Effects ──
   useEffect(() => {
     if (reduxGamePhase === "score_quiz" && isHost && !scoreQuizStartedRef.current) {
+      if (selectIsReconnectActive(store.getState())) return;
       const startTimer = setTimeout(() => scoreQuiz.queueScoreQuizTurn(0), 300);
       timerRefs.current.push(startTimer);
     }
@@ -306,7 +307,10 @@ export const useChorPoliceMultiplayer = () => {
     console.log(`🎭 [CPHook] handlePlay() triggered. Phase: ${gamePhaseRef.current}, Pending: ${roundStartPendingRef.current}, Active: ${ChorPoliceEngine.state.isRoundActive}`);
     
     // 🔥 PAUSE GUARD: Block interaction during reconnect
-    if (selectIsReconnectActive(store.getState())) return;
+    if (selectIsReconnectActive(store.getState())) {
+      console.log("[LAN][MATCH] CP action blocked during reconnect");
+      return;
+    }
 
     if (!isHost || gamePhaseRef.current !== "waiting" || roundStartPendingRef.current || ChorPoliceEngine.state.isRoundActive) return;
     if (ChorPoliceEngine.state.players.length !== 4) { 
@@ -326,6 +330,10 @@ export const useChorPoliceMultiplayer = () => {
   }, [isHost]);
 
   const handleCardClick = useCallback((index: number, explicitTargetId?: string) => {
+    if (selectIsReconnectActive(store.getState())) {
+      console.log("[LAN][MATCH] CP action blocked during reconnect");
+      return;
+    }
     if (reduxMyRole !== "Police" || reduxGamePhase !== "police_turn" || !areCardsClickable || flippedStates[index] || firstCardClicked || hasGuessedRef.current) return;
     
     // Use explicit targetId if provided (from investigation mystery cards),
@@ -391,6 +399,10 @@ export const useChorPoliceMultiplayer = () => {
   }, [dispatch]);
 
   const handleQuizOption = useCallback((selectedScore: number) => {
+    if (selectIsReconnectActive(store.getState())) {
+      console.log("[LAN][MATCH] CP action blocked during reconnect");
+      return;
+    }
     if (quizOptionDisabledRef.current || gamePhaseRef.current !== "score_quiz" || currentQuizPlayerIdRef.current !== localPlayerId) return;
     quizOptionDisabledRef.current = true;
     setQuizOptionDisabled(true);

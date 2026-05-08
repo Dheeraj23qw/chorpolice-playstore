@@ -14,6 +14,7 @@ import {
   clearReconnectState 
 } from "@/redux/reducers/reconnectSlice";
 import { AppDispatch, RootState } from "@/redux/store";
+import { reconnectToHost } from "@/service/lanGameService";
 
 export const GlobalReconnectOverlay = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,6 +35,19 @@ export const GlobalReconnectOverlay = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, [isActive, dispatch]);
+
+  const { isHost, hostIp, localPlayerId } = useSelector((state: RootState) => state.session);
+
+  // Periodic reconnection attempts for clients
+  useEffect(() => {
+    if (isActive && !isHost && hostIp && localPlayerId) {
+      const interval = setInterval(() => {
+        reconnectToHost(hostIp, localPlayerId);
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isActive, isHost, hostIp, localPlayerId]);
 
   if (!isActive) return null;
 

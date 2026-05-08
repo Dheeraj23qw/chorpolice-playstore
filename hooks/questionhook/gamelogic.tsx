@@ -85,6 +85,7 @@ export const useQuizGameLogic = () => {
   const hostClockOffsetRef = useRef(0);
   const lastHostSignalAtRef = useRef(Date.now());
   const hostDisconnectHandledRef = useRef(false);
+  const isQuizTimerFrozenLoggedRef = useRef(false);
 
   const buildLocalQuestionId = useCallback(
     (round: number) => `tc-local-${round}-${Date.now()}`,
@@ -420,6 +421,12 @@ export const useQuizGameLogic = () => {
 
   const handleTimeUp = useCallback(() => {
     if (roundLockedRef.current) return;
+    
+    // 🔥 PAUSE GUARD: If reconnecting or disconnected, prevent auto-submit
+    if (selectIsReconnectActive(store.getState())) {
+      console.log("[LAN][MATCH] Quiz auto-submit blocked due to disconnect");
+      return;
+    }
 
     roundLockedRef.current = true;
     clearTimer();
@@ -471,7 +478,14 @@ export const useQuizGameLogic = () => {
       
       // 🔥 PAUSE GUARD: If reconnecting, freeze countdown
       if (selectIsReconnectActive(store.getState())) {
+        if (!isQuizTimerFrozenLoggedRef.current) {
+          console.log("[LAN][MATCH] Quiz timer frozen due to disconnect");
+          console.log("[LAN][MATCH] Gameplay frozen during reconnect");
+          isQuizTimerFrozenLoggedRef.current = true;
+        }
         return;
+      } else {
+        isQuizTimerFrozenLoggedRef.current = false;
       }
 
       const remainingMs = Math.max(
@@ -585,6 +599,12 @@ export const useQuizGameLogic = () => {
     (answer: string) => {
       if (roundLockedRef.current || !question) return;
 
+      // 🔥 PAUSE GUARD: If reconnecting or disconnected, prevent answer
+      if (selectIsReconnectActive(store.getState())) {
+        console.log("[LAN][MATCH] Quiz answer blocked due to disconnect");
+        return;
+      }
+
       roundLockedRef.current = true;
       clearTimer();
       AudioEngine.stop("timer");
@@ -673,6 +693,10 @@ export const useQuizGameLogic = () => {
   }, [fiftyFiftyUsageCount, question]);
 
   const handleNextQuestion = useCallback(() => {
+    if (selectIsReconnectActive(store.getState())) {
+      console.log("[LAN][MATCH] Quiz action blocked during reconnect");
+      return;
+    }
     AudioEngine.play("next", "ui");
     clearPostAnswerTimeout();
     clearLeaderboardAdvanceTimeout();

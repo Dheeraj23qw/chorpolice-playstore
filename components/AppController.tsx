@@ -341,22 +341,14 @@ export default function AppController() {
         <VideoScreen onComplete={handleVideoComplete} />,
       );
     case "HOME":
-      return wrapPhase("home", 
-        <>
-          <HomeScreen />
-          <ReconnectOverlay />
-        </>
-      );
+      return wrapPhase("home", <HomeScreen />);
     case "SPLASH":
     default:
       return wrapPhase(
         "splash",
-        <>
-          <PremiumSplashCard
-            source={require("@/assets/modalImages/intro.webp")}
-          />
-          <ReconnectOverlay />
-        </>,
+        <PremiumSplashCard
+          source={require("@/assets/modalImages/intro.webp")}
+        />,
       );
   }
 }
