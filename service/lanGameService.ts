@@ -9,7 +9,8 @@ import {
   setPlayerConnectionStatus, 
   setLocalReconnecting, 
   tickReconnectTimeout,
-  clearSession
+  clearSession,
+  setConnectionStatus
 } from "@/redux/reducers/sessionSlice";
 import { ChorPoliceEngine } from "./ChorPoliceEngine";
 import { QuizEngine } from "./QuizEngine";
@@ -230,6 +231,30 @@ export const stopSession = async () => {
  * @param opts.preserveResult - Must be true; exists as a safety contract
  */
 let isMatchCleaningUp = false;
+
+/**
+ * Stops all background network resources (heartbeat, timers, listeners, TCP transport).
+ * Safe to call anytime (idempotent). Does not mark a match as completed or set guards.
+ */
+export const cleanupStaleNetworkResources = async (opts: { reason: string }) => {
+  console.log(`[LAN][CLEANUP] Cleaning stale network resources (reason=${opts.reason})`);
+  try {
+    HeartbeatService.stop();
+    cleanupAllReconnectionTimers();
+    if (unsubscribeNetInfo) {
+      unsubscribeNetInfo();
+      unsubscribeNetInfo = null;
+    }
+    clearAllListeners();
+    store.dispatch(clearReconnectState());
+    store.dispatch(setConnectionStatus("IDLE"));
+    await GameSessionTransport.stop();
+    console.log("[LAN][CLEANUP] Stale network resources cleaned");
+  } catch (e) {
+    console.warn("[LAN][CLEANUP] Stale cleanup error (non-fatal):", e);
+  }
+};
+
 export const cleanupAfterMatchCompleted = async (opts: {
   reason: string;
   preserveResult?: boolean;
@@ -241,41 +266,11 @@ export const cleanupAfterMatchCompleted = async (opts: {
   }
   isMatchCleaningUp = true;
 
-  console.log(`[CP][LAN] Final result reached, cleaning sockets (reason=${opts.reason})`);
+  console.log(`[CP][LAN] Final result reached, starting match cleanup (reason=${opts.reason})`);
 
   try {
-    // 1. Stop heartbeat first to prevent writes to dead sockets
-    HeartbeatService.stop();
-    console.log("[CP][LAN] Heartbeat stopped");
-
-    // 2. Clear all reconnection timers/intervals
-    cleanupAllReconnectionTimers();
-    console.log("[CP][LAN] Reconnect timers cleared");
-
-    // 3. Unsubscribe NetInfo listener (host-side network monitoring)
-    if (unsubscribeNetInfo) {
-      unsubscribeNetInfo();
-      unsubscribeNetInfo = null;
-    }
-
-    // 4. Clear all packet listeners (no more incoming packet processing)
-    clearAllListeners();
-    console.log("[CP][LAN] Packet listeners cleared");
-
-    // 5. Clear reconnect overlay state (if somehow still active)
-    store.dispatch(clearReconnectState());
-
-    // 6. Destroy TCP transport (client socket + server if host)
-    await GameSessionTransport.stop();
-    console.log("[CP][LAN] TCP transport stopped");
-
-    // NOTE: We do NOT dispatch clearSession() here.
-    // Redux result data (scores, leaderboard, economy) must survive
-    // so that FinalResultView can render correctly.
-
-    console.log("[CP][LAN] Cleanup complete");
-  } catch (e) {
-    console.warn("[CP][LAN] Cleanup error (non-fatal):", e);
+    await cleanupStaleNetworkResources({ reason: opts.reason });
+    console.log("[CP][LAN] Match cleanup complete");
   } finally {
     // Reset the guard after a brief delay to allow any trailing calls to be caught
     setTimeout(() => { isMatchCleaningUp = false; }, 2000);

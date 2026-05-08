@@ -14,6 +14,7 @@ import { PremiumSplashCard } from "@/components/PremiumSplashCard";
 import { assetLoader } from "@/service/assetLoader";
 import { syncLocalLobbyProfile } from "@/service/lanLobbyCoordinator";
 import { AudioEngine } from "@/audio/audioEngine";
+
 import {
   getOnboardingDone,
   setOnboardingDone,
@@ -131,6 +132,8 @@ export default function AppController() {
       syncLocalLobbyProfile({ coins });
     }
   }, [coins, connectionStatus]);
+
+
 
   const handleOnboardingComplete = useCallback(() => {
     setOnboardingDone(true);

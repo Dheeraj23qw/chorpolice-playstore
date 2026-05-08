@@ -421,9 +421,20 @@ export const joinLanLobby = async ({
           reject(new Error("CLOSED"));
         });
 
-        probeSocket.write(
-          framePacket({ type: NETWORK.PING, timestamp: Date.now() }),
-        );
+        if (probeSocket && !probeSocket.destroyed && probeSocket.readyState === "open") {
+          try {
+            probeSocket.write(
+              framePacket({ type: NETWORK.PING, timestamp: Date.now() }),
+            );
+          } catch (e) {
+            console.warn("[LAN_ORCH] probe write failed", e);
+            cleanup();
+            reject(e);
+          }
+        } else {
+          cleanup();
+          reject(new Error("SOCKET_NOT_READY"));
+        }
       });
     } catch (e: any) {
       if (probeSocket) {
