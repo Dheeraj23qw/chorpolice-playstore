@@ -16,6 +16,7 @@ import AppExitModal from "@/modal/AppExitModal";
 import { useAppExit } from "@/hooks/useAppExit";
 import ModalRoot from "@/components/ModalRoot";
 import NotificationController from "@/components/NotificationController";
+import { GlobalReconnectOverlay } from "@/components/multiplayer/GlobalReconnectOverlay";
 
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { PremiumSplashCard } from "@/components/PremiumSplashCard";
@@ -79,6 +80,7 @@ function AppLayout() {
       />
       <NotificationController />
       <ModalRoot />
+      <GlobalReconnectOverlay />
     </View>
   );
 }

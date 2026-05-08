@@ -12,6 +12,7 @@ import {
   setDealAnimationPreset,
   CARD_DEAL_PRESETS,
 } from "@/redux/reducers/sessionSlice";
+import { selectIsReconnectActive } from "@/redux/reducers/reconnectSlice";
 
 /**
  * --- CHOR POLICE ENGINE (Multiplayer) ---
@@ -92,6 +93,12 @@ export const ChorPoliceEngine = {
 
   /* ─── IGameEngine: processMultiplayer ─── */
   processMultiplayer: (packet: any, _sourceIp?: string): void => {
+    // 🔥 PAUSE GUARD: Block all gameplay processing while reconnect is active
+    if (selectIsReconnectActive(store.getState())) {
+      console.log(`[CPEngine] ⏸️ Packet ${packet.type} deferred (reconnect active)`);
+      return;
+    }
+
     const CP = MODES.CHOR_POLICE;
 
     switch (packet.type) {

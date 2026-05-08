@@ -12,6 +12,7 @@ import {
   setRoundActive,
   setStake as setReduxStake,
 } from "@/redux/reducers/sessionSlice";
+import { selectIsReconnectActive } from "@/redux/reducers/reconnectSlice";
 
 type QuizPlayerScore = {
   id: string;
@@ -140,6 +141,12 @@ export const QuizEngine = {
   },
 
   processMultiplayer: (packet: any) => {
+    // 🔥 PAUSE GUARD: Block all gameplay processing while reconnect is active
+    if (selectIsReconnectActive(store.getState())) {
+      console.log(`[QuizEngine] ⏸️ Packet ${packet.type} deferred (reconnect active)`);
+      return;
+    }
+
     switch (packet.type) {
       case MODES.THINK_AND_COUNT.GAME_START:
         {
@@ -232,6 +239,11 @@ export const QuizEngine = {
       
       const durationMs = packet.durationMs || 10000;
       QuizEngine._safetyTimer = setTimeout(() => {
+        // 🔥 PAUSE GUARD: If reconnecting, defer safety timeout
+        if (selectIsReconnectActive(store.getState())) {
+           console.log(`[QuizEngine] ⏱️ Safety timeout deferred (reconnect active)`);
+           return;
+        }
         if (QuizEngine.state.currentRound > QuizEngine.state.totalRounds) return;
         console.log(`[QuizEngine] ⏱️ Safety timeout reached for round ${QuizEngine.state.currentRound}. Forcing completion.`);
         QuizEngine.completeRound();

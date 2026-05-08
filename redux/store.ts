@@ -25,6 +25,7 @@ import soundSlice from "./reducers/soundReducer";
 import { sessionSlice } from "./reducers/sessionSlice";
 import offlineSessionReducer from "./reducers/offlineSessionSlice";
 import uiReducer from "./reducers/uiStateSlice";
+import reconnectReducer from "./reducers/reconnectSlice";
 const preloadedWallet = loadWallet() ?? { coins: 0, firstLaunch: true };
 const storedStats = loadQuizStats();
 const preloadedQuizStats = storedStats
@@ -50,6 +51,7 @@ const store = configureStore({
     session: sessionSlice.reducer,
     offlineSession: offlineSessionReducer,
     ui: uiReducer,
+    reconnect: reconnectReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -15,6 +15,7 @@ import {
   markStakeDebited, 
   setSettlementStatus 
 } from "@/redux/reducers/sessionSlice";
+import { selectIsReconnectActive } from "@/redux/reducers/reconnectSlice";
 import { selectEconomy } from "@/redux/selectors/sessionSelectors";
 import store from "@/redux/store";
 import { toast } from "@/components/feedback/toast";
@@ -467,6 +468,11 @@ export const useQuizGameLogic = () => {
 
     const tick = () => {
       if (!roundDeadlineAtRef.current) return;
+      
+      // 🔥 PAUSE GUARD: If reconnecting, freeze countdown
+      if (selectIsReconnectActive(store.getState())) {
+        return;
+      }
 
       const remainingMs = Math.max(
         0,

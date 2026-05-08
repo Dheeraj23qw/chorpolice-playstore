@@ -33,6 +33,24 @@ const walletSlice = createSlice({
     },
 
     resetWallet: () => initialState,
+    
+    /**
+     * PRODUCTION SETTLEMENT RULE:
+     * Innocent players get refunded ONLY if the stake was already debited.
+     */
+    refundCoins: (state, action: PayloadAction<number>) => {
+      state.coins += action.payload;
+    },
+
+    /**
+     * PRODUCTION SETTLEMENT RULE:
+     * Faulty player forfeits stake. 
+     * If stake was already debited at match start, this should NOT deduct again.
+     * Use ONLY if stake was NOT yet debited.
+     */
+    forfeitCoins: (state, action: PayloadAction<number>) => {
+      state.coins -= action.payload;
+    },
   },
 });
 
@@ -41,5 +59,7 @@ export const {
   setCoins,
   setFirstLaunch,
   claimFirstLaunchBonus,
+  refundCoins,
+  forfeitCoins,
 } = walletSlice.actions;
 export default walletSlice.reducer;

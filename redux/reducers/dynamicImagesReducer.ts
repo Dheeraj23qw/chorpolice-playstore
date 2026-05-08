@@ -4,7 +4,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 // Define the shape of your player images
 interface PlayerImage {
   type: string;
-  src: string; // Update the type as needed based on your src
+  src: any; // Updated to any to support required assets (resource IDs)
 }
 
 interface PlayerImagesState {

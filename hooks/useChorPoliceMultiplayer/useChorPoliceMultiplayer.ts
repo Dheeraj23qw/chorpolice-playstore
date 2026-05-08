@@ -15,6 +15,7 @@ import {
   resetGameState,
   type GamePhase,
 } from "@/redux/reducers/sessionSlice";
+import { selectIsReconnectActive } from "@/redux/reducers/reconnectSlice";
 import {
   selectGamePhase,
   selectIsHost,
@@ -303,6 +304,10 @@ export const useChorPoliceMultiplayer = () => {
   // Handlers
   const handlePlay = useCallback(() => {
     console.log(`🎭 [CPHook] handlePlay() triggered. Phase: ${gamePhaseRef.current}, Pending: ${roundStartPendingRef.current}, Active: ${ChorPoliceEngine.state.isRoundActive}`);
+    
+    // 🔥 PAUSE GUARD: Block interaction during reconnect
+    if (selectIsReconnectActive(store.getState())) return;
+
     if (!isHost || gamePhaseRef.current !== "waiting" || roundStartPendingRef.current || ChorPoliceEngine.state.isRoundActive) return;
     if (ChorPoliceEngine.state.players.length !== 4) { 
       console.warn(`🎭 [CPHook] handlePlay aborted: ${ChorPoliceEngine.state.players.length} players (need 4)`);

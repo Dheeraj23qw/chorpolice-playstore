@@ -8,15 +8,35 @@ import store from "@/redux/store";
 import { 
   setPlayerConnectionStatus, 
   setLocalReconnecting, 
-  tickReconnectTimeout 
+  tickReconnectTimeout,
+  clearSession
 } from "@/redux/reducers/sessionSlice";
 import { ChorPoliceEngine } from "./ChorPoliceEngine";
 import { QuizEngine } from "./QuizEngine";
 import { toast } from "@/components/feedback/toast";
 import { registerIncomingPacketHandler, notifyGenericListeners } from "@/service/packetDispatcher";
+import { 
+  startReconnectWindow, 
+  resolveReconnectSuccess, 
+  resolveReconnectFailed, 
+  clearReconnectState,
+  ReconnectReason
+} from "@/redux/reducers/reconnectSlice";
+import { refundCoins, forfeitCoins } from "@/features/wallet/walletSlice";
+import { router } from "expo-router";
 
 const reconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 const reconnectIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
+
+// 🔥 IDEMPOTENT SETTLEMENT LEDGER: Ensures coins are only settled once per match
+interface SettlementRecord {
+  settled: boolean;
+  settlementType: "completed" | "dismissed_reconnect_failed";
+  faultyPlayerId?: string;
+  refundedPlayerIds: string[];
+  penalizedPlayerIds: string[];
+}
+const matchSettlementLedger: Record<string, SettlementRecord> = {};
 
 /**
  * Force clear all pending reconnection timers and intervals.
@@ -268,17 +288,19 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
       const player = state.players.find(p => p.id === playerId);
       
       const isRoomValid = roomCode === state.roomCode;
+      const isMatchValid = !packet.matchId || packet.matchId === state.economy.matchId;
+      const windowOpen = reconnectTimers.has(playerId); 
       const playerExists = !!player;
       const tokenMatches = player?.sessionToken === sessionToken;
       const deviceMatches = !player?.deviceId || player.deviceId === deviceId;
       const statusAllows = player?.connectionStatus === "RECONNECTING" || player?.connectionStatus === "DISCONNECTED";
 
-      if (!isRoomValid || !playerExists || !tokenMatches || !deviceMatches || !statusAllows) {
-        console.warn(`📡 [LAN] Rejecting reconnect: room=${isRoomValid}, exists=${playerExists}, token=${tokenMatches}, status=${player?.connectionStatus}`);
+      if (!isRoomValid || !isMatchValid || !windowOpen || !playerExists || !tokenMatches || !deviceMatches || !statusAllows) {
+        console.warn(`📡 [LAN] Rejecting reconnect for ${playerId}: room=${isRoomValid}, match=${isMatchValid}, window=${windowOpen}, status=${player?.connectionStatus}`);
         
         GameSessionTransport.sendToPeer(sourceIp, {
           type: NETWORK.RECONNECT_FAIL,
-          reason: !isRoomValid ? "wrong_room" : !tokenMatches ? "invalid_token" : "not_reconnecting"
+          reason: !isRoomValid ? "wrong_room" : !windowOpen ? "timeout" : "invalid_identity"
         });
         return;
       }
@@ -302,7 +324,16 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
       // Store the session token locally in Redux for this player
       store.dispatch(setPlayerConnectionStatus({ playerId, status: "CONNECTED" }));
 
-      // Broadcast success
+      // 🔥 CHESS.COM STYLE: Notify everyone to clear the overlay
+      const resumePacket = {
+        type: NETWORK.PLAYER_RECONNECTED,
+        matchId: state.economy.matchId || ChorPoliceEngine.state.matchId,
+        playerId
+      };
+      handleIncomingPacket(resumePacket); // Clear host overlay
+      broadcastPacket(resumePacket, { processLocally: false }); // Clear client overlays
+
+      // Broadcast legacy status for older components
       broadcastPacket({
         type: "RECONNECT_STATUS",
         playerId,
@@ -386,6 +417,82 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
     return;
   }
 
+  // ── CHESS.COM STYLE RECONNECT PACKETS ──
+
+  if (packet.type === NETWORK.PLAYER_RECONNECTING) {
+    const { disconnectedPlayerId, disconnectedPlayerName, disconnectedPlayerAvatar, deadlineAt, reason, matchId } = packet;
+    console.log(`[RECONNECT] start player=${disconnectedPlayerName} reason=${reason} deadlineAt=${deadlineAt}`);
+    
+    store.dispatch(startReconnectWindow({
+      disconnectedPlayerId,
+      disconnectedPlayerName,
+      disconnectedPlayerAvatar,
+      deadlineAt,
+      reason,
+      matchId
+    }));
+    return;
+  }
+
+  if (packet.type === NETWORK.PLAYER_RECONNECTED) {
+    console.log(`[RECONNECT] success resume matchId=${packet.matchId} for player=${packet.playerId}`);
+    store.dispatch(resolveReconnectSuccess());
+    return;
+  }
+
+  if (packet.type === NETWORK.RECONNECT_FAILED_MATCH_DISMISSED) {
+    const { matchId, faultyPlayerId, faultyPlayerName, coinPolicy } = packet;
+    console.log(`[RECONNECT] failed timeout faultyPlayer=${faultyPlayerName}`);
+    
+    store.dispatch(resolveReconnectFailed());
+    
+    // Handle settlement locally for this client
+    if (matchId && !matchSettlementLedger[matchId]?.settled) {
+      const localId = store.getState().session.localPlayerId;
+      if (localId === faultyPlayerId) {
+        const state = store.getState().session;
+        const stakeDebited = state.economy.stakeDebited;
+        const stakeAmount = state.economy.stakeAmount || state.stake;
+        if (coinPolicy.forfeitFaultyPlayerStake && !stakeDebited) {
+          console.log(`[RECONNECT] settlement forfeit player=${localId} amount=${stakeAmount}`);
+          store.dispatch(forfeitCoins(stakeAmount));
+        } else {
+          console.log(`[RECONNECT] settlement skip_forfeit (already debited) player=${localId}`);
+        }
+      } else if (coinPolicy.refundInnocentPlayers) {
+        const state = store.getState().session;
+        const stakeDebited = state.economy.stakeDebited;
+        const stakeAmount = state.economy.stakeAmount || state.stake;
+        if (stakeDebited) {
+          console.log(`[RECONNECT] settlement refund player=${localId} amount=${stakeAmount}`);
+          store.dispatch(refundCoins(stakeAmount));
+          // 🔥 Add the requested "Safe Money" toast
+          toast.success("Your Money is Safe", `Stake of ${stakeAmount} coins has been refunded to your wallet.`);
+        } else {
+          console.log(`[RECONNECT] settlement skip_refund (not debited) player=${localId}`);
+        }
+      }
+      
+      matchSettlementLedger[matchId] = {
+        settled: true,
+        settlementType: "dismissed_reconnect_failed",
+        faultyPlayerId,
+        refundedPlayerIds: localId !== faultyPlayerId ? [localId!] : [],
+        penalizedPlayerIds: localId === faultyPlayerId ? [localId!] : []
+      };
+    }
+
+    toast.error("Match Dismissed", `${faultyPlayerName} failed to reconnect.`);
+    
+    setTimeout(() => {
+      console.log("[RECONNECT] cleanup complete");
+      store.dispatch(clearReconnectState());
+      store.dispatch(clearSession());
+      router.replace("/mode-select");
+    }, 3000);
+    return;
+  }
+
   notifyListeners(packet, sourceIp);
   if (__DEV__) {
     console.log(`🌐 [LAN] HANDOFF TO ROUTER: ${packet.type}`);
@@ -451,70 +558,92 @@ export const startHeartbeat = (isHost: boolean) => {
           GameSessionTransport.sendToClients(leavePacket);
           handleIncomingPacket(leavePacket, ip);
         } else {
-          // Mid-game: Trigger reconnection window
-          console.log(`📡 [LAN] Peer ${playerId} lost connection. Starting 20s recovery window.`);
+          // Mid-game: Trigger 60s Chess.com style reconnection window
+          console.log(`📡 [LAN] Peer ${playerId} lost connection. Starting 60s recovery window.`);
           
-          store.dispatch(setPlayerConnectionStatus({ playerId, status: "RECONNECTING" }));
-          broadcastPacket({
-            type: "RECONNECT_STATUS",
-            playerId,
-            status: "RECONNECTING"
-          });
+          const s = store.getState().session;
+          const player = s.players.find(p => p.id === playerId);
+          const deadlineAt = Date.now() + 60000;
+          const matchId = s.economy.matchId || ChorPoliceEngine.state.matchId;
 
-          // Start timer for bot replacement
+          const reconnectPacket = {
+            type: NETWORK.PLAYER_RECONNECTING,
+            disconnectedPlayerId: playerId,
+            disconnectedPlayerName: player?.name || "Player",
+            disconnectedPlayerAvatar: player?.avatarId || 1,
+            deadlineAt,
+            reason: "heartbeat_timeout" as ReconnectReason,
+            matchId
+          };
+
+          // Update host state and broadcast to everyone else
+          handleIncomingPacket(reconnectPacket); // Process locally to show overlay on host
+          broadcastPacket(reconnectPacket, { processLocally: false });
+
+          // Set timeout to dismiss match
           const timer = setTimeout(() => {
-            console.log(`📡 [LAN] Recovery window expired for ${playerId}. Replacing with BOT.`);
-            ChorPoliceEngine.replacePlayerWithBot(playerId);
-            reconnectTimers.delete(playerId);
-            clearInterval(reconnectIntervals.get(playerId));
-            reconnectIntervals.delete(playerId);
+            console.log(`📡 [LAN] Recovery window expired for ${playerId}. Dismissing match.`);
             
-            toast.warning("Player lost", "Reconnection failed. Bot joined.");
-          }, NETWORK.RECONNECT_TIMEOUT_MS);
+            const failPacket = {
+              type: NETWORK.RECONNECT_FAILED_MATCH_DISMISSED,
+              matchId,
+              faultyPlayerId: playerId,
+              faultyPlayerName: player?.name || "Player",
+              reason: "reconnect_timeout",
+              coinPolicy: {
+                refundInnocentPlayers: true,
+                forfeitFaultyPlayerStake: true
+              }
+            };
+
+            handleIncomingPacket(failPacket);
+            broadcastPacket(failPacket, { processLocally: false });
+
+            reconnectTimers.delete(playerId);
+          }, 60000);
 
           reconnectTimers.set(playerId, timer);
         }
       } else {
         // Client side: Host is stale
-        console.log(`📡 [LAN] Host at ${ip} is stale. Starting reconnection overlay.`);
+        console.log(`📡 [LAN] Host at ${ip} is stale. Starting 60s reconnection overlay.`);
         
-        const phase = store.getState().session.gamePhase;
-        if (phase === "idle" || phase === "finished" || phase === "final_result") {
-          // Normal disconnect for non-game phases
-          const leavePacket = {
-            type: NETWORK.PLAYER_LEAVE,
-            playerId: "host_id",
-            reason: "host_disconnected",
+        const s = store.getState().session;
+        const deadlineAt = Date.now() + 60000;
+        const matchId = s.economy.matchId || ChorPoliceEngine.state.matchId;
+
+        const reconnectPacket = {
+          type: NETWORK.PLAYER_RECONNECTING,
+          disconnectedPlayerId: "host",
+          disconnectedPlayerName: "Host",
+          disconnectedPlayerAvatar: 1,
+          deadlineAt,
+          reason: "host_lost" as ReconnectReason,
+          matchId
+        };
+
+        handleIncomingPacket(reconnectPacket);
+
+        const timer = setTimeout(() => {
+          console.log(`📡 [LAN] Host recovery window expired. Dismissing match locally.`);
+          
+          const failPacket = {
+            type: NETWORK.RECONNECT_FAILED_MATCH_DISMISSED,
+            matchId,
+            faultyPlayerId: "host",
+            faultyPlayerName: "Host",
+            reason: "reconnect_timeout",
+            coinPolicy: {
+              refundInnocentPlayers: true,
+              forfeitFaultyPlayerStake: false // Host already disconnected, client just refunds self
+            }
           };
-          handleIncomingPacket(leavePacket, ip);
-        } else {
-          // Trigger local reconnect overlay
-          store.dispatch(setLocalReconnecting({ 
-            isReconnecting: true, 
-            timeout: Math.floor(NETWORK.RECONNECT_TIMEOUT_MS / 1000) 
-          }));
 
-          const interval = setInterval(() => {
-            store.dispatch(tickReconnectTimeout());
-          }, 1000);
-          reconnectIntervals.set("host", interval);
+          handleIncomingPacket(failPacket);
+          reconnectTimers.delete("host");
+        }, 60000);
 
-          const timer = setTimeout(() => {
-            clearInterval(reconnectIntervals.get("host"));
-            reconnectIntervals.delete("host");
-            
-            toast.error("Match ended", "Host disconnected. Coins refunded.");
-            
-            const leavePacket = {
-              type: NETWORK.PLAYER_LEAVE,
-              playerId: "host_id",
-              reason: "host_disconnected",
-            };
-            handleIncomingPacket(leavePacket, ip);
-          }, NETWORK.RECONNECT_TIMEOUT_MS);
-
-          reconnectTimers.set("host", timer);
-        }
+        reconnectTimers.set("host", timer);
       }
     },
     onApIsolation: () => {
