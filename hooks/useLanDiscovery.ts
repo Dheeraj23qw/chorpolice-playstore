@@ -3,14 +3,14 @@ import { DiscoveryResult } from "@/service/network/LanDiscoveryStrategy";
 import { startLanDiscovery, stopLanDiscovery } from "@/service/lanLobbyCoordinator";
 
 /**
- * Bug 2 fix: Listener only starts when `enabled=true`.
- *   - On JoinScreen: enabled=true (joiner listens for rooms)
- *   - On LobbySetupScreen: do NOT pass this hook at all, or pass enabled=false
- *     so the listener doesn't conflict with the host broadcaster on the same port.
+ * useLanDiscovery — React hook for automatic LAN room discovery.
  *
- * Bug 3 fix: Use a stable ref for the callback so the useEffect dependency
- *   never changes after mount. This prevents the socket from being torn down
- *   and recreated on every render.
+ * ARCHITECTURE:
+ * - Only active when `enabled=true` (JoinScreen).
+ * - Merges and deduplicates rooms from multiple sources (UDP, NSD, QR).
+ * - Evicts stale rooms not seen in >10s (generous window for dropped packets).
+ * - Uses stable refs so the UDP socket is never torn down on re-render.
+ * - Discovery failure is silent — QR and Room Code join always work.
  */
 export const useLanDiscovery = (enabled: boolean = false) => {
   const [discoveredRooms, setDiscoveredRooms] = useState<DiscoveryResult[]>([]);
@@ -23,12 +23,12 @@ export const useLanDiscovery = (enabled: boolean = false) => {
     const now = Date.now();
     const newRoom: DiscoveryResult = {
       ...result,
-      lastSeenAt: result.lastSeenAt || now,
+      lastSeenAt: now,
       sources: result.sources || [result.source],
     };
 
     setDiscoveredRooms((prev) => {
-      // 1. Find existing room by priority: lobbyId -> roomCode -> ip+port
+      // 1. Find existing room by priority: lobbyId → roomCode → ip+port
       const existingIndex = prev.findIndex(
         (room) =>
           (newRoom.lobbyId && room.lobbyId === newRoom.lobbyId) ||
@@ -38,21 +38,16 @@ export const useLanDiscovery = (enabled: boolean = false) => {
 
       if (existingIndex !== -1) {
         const existingRoom = prev[existingIndex];
-        
+
         // Merge sources array uniquely
         const mergedSources = Array.from(
           new Set([...(existingRoom.sources || [existingRoom.source]), newRoom.source])
         );
 
-        if (!existingRoom.sources?.includes(newRoom.source)) {
-           console.log(`[useLanDiscovery] Merged duplicate room ${existingRoom.lobbyId} (sources: ${mergedSources.join(", ")})`);
-        }
-
-        // Update existing room with new info, but keep richer metadata if incoming is missing it
+        // Update existing room with new info, keep richer metadata if incoming is missing
         const updatedRoom: DiscoveryResult = {
           ...existingRoom,
           ...newRoom,
-          // Keep old values if new values are undefined
           hostName: newRoom.hostName || existingRoom.hostName,
           lobbyId: newRoom.lobbyId || existingRoom.lobbyId,
           roomCode: newRoom.roomCode || existingRoom.roomCode,
@@ -61,7 +56,7 @@ export const useLanDiscovery = (enabled: boolean = false) => {
           protocolVersion: newRoom.protocolVersion || existingRoom.protocolVersion,
           lastSeenAt: now,
           sources: mergedSources,
-          source: newRoom.source, // update to latest active source
+          source: newRoom.source,
         };
 
         const updatedRooms = [...prev];
@@ -69,10 +64,13 @@ export const useLanDiscovery = (enabled: boolean = false) => {
         return updatedRooms;
       }
 
+      // Cap at 10 rooms to prevent memory bloat from rogue networks
+      if (prev.length >= 10) return prev;
       return [...prev, newRoom];
     });
   }, []);
 
+  // ── Start/stop discovery lifecycle ──
   useEffect(() => {
     if (!enabled) {
       stopLanDiscovery();
@@ -81,7 +79,7 @@ export const useLanDiscovery = (enabled: boolean = false) => {
       return;
     }
 
-    console.log("[useLanDiscovery] Starting UDP listener...");
+    console.log("[useLanDiscovery] Starting discovery listener...");
     setDiscoveredRooms([]);
     setIsSearching(true);
 
@@ -89,23 +87,24 @@ export const useLanDiscovery = (enabled: boolean = false) => {
     startLanDiscovery((result) => onDiscoveryRef.current(result));
 
     return () => {
-      console.log("[useLanDiscovery] Cleaning up UDP listener.");
+      console.log("[useLanDiscovery] Cleaning up discovery listener.");
       stopLanDiscovery();
       setIsSearching(false);
     };
   }, [enabled]); // ← only re-run when enabled flips, not on every render
 
-  // 🧹 STALE DATA CLEANUP: Remove rooms not seen in > 7 seconds
+  // ── Stale data cleanup ──
+  // Remove rooms not seen in >10 seconds (generous: 2s broadcast * 5 missed packets)
   useEffect(() => {
     if (!enabled) return;
-    
+
     const interval = setInterval(() => {
       const now = Date.now();
       setDiscoveredRooms((prev) => {
-        const next = prev.filter((r) => now - (r.lastSeenAt || 0) < 7000);
+        const next = prev.filter((r) => now - (r.lastSeenAt || 0) < 15000); // 15s TTL
         return next.length !== prev.length ? next : prev;
       });
-    }, 3000);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [enabled]);
@@ -113,6 +112,6 @@ export const useLanDiscovery = (enabled: boolean = false) => {
   return {
     discoveredRooms,
     isSearching,
-    clearRooms: () => setDiscoveredRooms([]),
+    clearRooms: useCallback(() => setDiscoveredRooms([]), []),
   };
 };
