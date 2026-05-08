@@ -1,4 +1,4 @@
-import React, { useMemo, memo } from "react";
+import React, { useMemo, memo, useEffect } from "react";
 import { View, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
@@ -11,11 +11,22 @@ import { playerImages } from "@/constants/playerData";
 import { Text } from "@/components/Text";
 import { selectLocalPlayerId } from "@/redux/selectors/sessionSelectors";
 import { ActionButtons } from "@/screens/QuizScreen/components/renderButtons";
+import { cleanupAfterMatchCompleted } from "@/service/lanGameService";
 
 const MemoizedLeaderboard = memo(Leaderboard);
 const MemoizedWinnerSection = memo(WinnerSection);
 
 const FinalResultView = ({ onExit }: any) => {
+  // 🔥 BACKUP: Ensure sockets are cleaned up when result screen mounts/unmounts
+  useEffect(() => {
+    // Mount: Backup cleanup in case economyHandlers path was missed
+    cleanupAfterMatchCompleted({ reason: "final_result_mount_backup", preserveResult: true });
+    
+    return () => {
+      // Unmount: Final safety net (e.g. hardware back, swipe, forced navigation)
+      cleanupAfterMatchCompleted({ reason: "final_result_unmount_backup", preserveResult: true });
+    };
+  }, []);
   const playerScoresRedux = useSelector(
     (state: RootState) => state.player.playerScores,
   );

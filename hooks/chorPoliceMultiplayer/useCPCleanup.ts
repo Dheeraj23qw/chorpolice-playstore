@@ -7,7 +7,7 @@ import {
   clearSession,
   resetGameState,
 } from "@/redux/reducers/sessionSlice";
-import { stopSession } from "@/service/lanGameService";
+import { stopSession, cleanupAfterMatchCompleted } from "@/service/lanGameService";
 import { leaveLanLobby } from "@/service/lanLobbyCoordinator";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
@@ -44,8 +44,9 @@ export const useCPCleanup = ({
     ChorPoliceBotBehavior.reset();
     clearAllTimers();
 
+    // Idempotent transport cleanup — safe even if already called
+    await cleanupAfterMatchCompleted({ reason: "full_cleanup" });
     await leaveLanLobby();
-    await stopSession();
   }, [clearAllTimers, currentQuizPlayerIdRef, scoreQuizStartedRef, roundStartPendingRef]);
 
   const handleFinalExit = useCallback(async (target?: string) => {

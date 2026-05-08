@@ -217,6 +217,71 @@ export const stopSession = async () => {
   console.log("[TCP_DEBUG] STOP_SESSION_DONE");
 };
 
+/**
+ * 🔥 POST-MATCH TRANSPORT-ONLY CLEANUP
+ * 
+ * Shuts down all LAN networking (heartbeat, TCP, listeners, reconnect timers)
+ * WITHOUT clearing Redux result/score data.
+ * 
+ * Idempotent: safe to call multiple times from different triggers
+ * (final result dispatch, screen unmount, back press, etc.)
+ * 
+ * @param opts.reason - Why cleanup is happening (for debug logs)
+ * @param opts.preserveResult - Must be true; exists as a safety contract
+ */
+let isMatchCleaningUp = false;
+export const cleanupAfterMatchCompleted = async (opts: {
+  reason: string;
+  preserveResult?: boolean;
+} = { reason: "completed" }) => {
+  // ── IDEMPOTENCY GUARD ──
+  if (isMatchCleaningUp) {
+    console.log(`[CP][LAN] Cleanup already in progress, skipping duplicate (reason=${opts.reason})`);
+    return;
+  }
+  isMatchCleaningUp = true;
+
+  console.log(`[CP][LAN] Final result reached, cleaning sockets (reason=${opts.reason})`);
+
+  try {
+    // 1. Stop heartbeat first to prevent writes to dead sockets
+    HeartbeatService.stop();
+    console.log("[CP][LAN] Heartbeat stopped");
+
+    // 2. Clear all reconnection timers/intervals
+    cleanupAllReconnectionTimers();
+    console.log("[CP][LAN] Reconnect timers cleared");
+
+    // 3. Unsubscribe NetInfo listener (host-side network monitoring)
+    if (unsubscribeNetInfo) {
+      unsubscribeNetInfo();
+      unsubscribeNetInfo = null;
+    }
+
+    // 4. Clear all packet listeners (no more incoming packet processing)
+    clearAllListeners();
+    console.log("[CP][LAN] Packet listeners cleared");
+
+    // 5. Clear reconnect overlay state (if somehow still active)
+    store.dispatch(clearReconnectState());
+
+    // 6. Destroy TCP transport (client socket + server if host)
+    await GameSessionTransport.stop();
+    console.log("[CP][LAN] TCP transport stopped");
+
+    // NOTE: We do NOT dispatch clearSession() here.
+    // Redux result data (scores, leaderboard, economy) must survive
+    // so that FinalResultView can render correctly.
+
+    console.log("[CP][LAN] Cleanup complete");
+  } catch (e) {
+    console.warn("[CP][LAN] Cleanup error (non-fatal):", e);
+  } finally {
+    // Reset the guard after a brief delay to allow any trailing calls to be caught
+    setTimeout(() => { isMatchCleaningUp = false; }, 2000);
+  }
+};
+
 // Re-export from leaf module to avoid breaking existing consumers
 import { normalizePeerIp } from "./network/normalizePeerIp";
 export { normalizePeerIp };
