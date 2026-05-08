@@ -42,6 +42,7 @@ export type LobbyPacketDeps = {
   broadcastPlayerList: BroadcastFn;
   clearJoinAttempts: ClearJoinFn;
   leaveLanLobby: LeaveFn;
+  triggerJoin: () => void;
   announcedPlayerIds: Set<string>;
 };
 
@@ -50,14 +51,14 @@ export const handleLobbyPacket = (
   rawSourceIp: string | undefined,
   deps: LobbyPacketDeps,
 ) => {
-  const state = store.getState().session;
-  const sourceIp = normalizePeerIp(rawSourceIp);
-
   if (!packet?.type) return;
+  const sourceIp = normalizePeerIp(rawSourceIp);
 
   // ── PLAYER_JOIN (host only) ──
   if (packet.type === NETWORK.PLAYER_JOIN) {
+    const state = store.getState().session; // Fetch fresh state
     if (!state.isHost) return;
+    console.log(`[LAN_ORCH] [HOST] Received join request from ${sourceIp || "unknown"}`);
 
     // Room code validation
     if (packet.roomCode && state.roomCode && packet.roomCode !== state.roomCode) {
@@ -90,7 +91,7 @@ export const handleLobbyPacket = (
       const existing = state.players[existingIndex];
       // IDEMPOTENCY: Only update and broadcast if data actually changed
       if (checkLobbyDataChanged(existing, joiningPlayer)) {
-        console.log(`[Lobby] Merging updated data for existing player ${joiningPlayer.id}`);
+        console.log(`[LAN_ORCH] [HOST] Data changed for ${joiningPlayer.id}: ${existing.name} -> ${joiningPlayer.name}, avatar ${existing.avatarId} -> ${joiningPlayer.avatarId}`);
         nextPlayers = [...state.players];
         nextPlayers[existingIndex] = { ...existing, ...joiningPlayer, isBot: false };
         isDataChanged = true;
@@ -125,6 +126,7 @@ export const handleLobbyPacket = (
 
     // FIX-5: Only register peer on new joins or data changes to avoid registration spam
     if (sourceIp && (isNewJoin || isDataChanged)) {
+      console.log(`[LAN_ORCH] [HOST] Registered new peer ${joiningPlayer.id} at ${sourceIp}`);
       registerRemotePeer(joiningPlayer.id, sourceIp);
     }
 
@@ -135,34 +137,54 @@ export const handleLobbyPacket = (
       }
     }
 
+    // 1. Host side: Update local state first
     if (isDataChanged) {
+      console.log(`[LAN_ORCH] [HOST] Updating local list (new count: ${nextPlayers.length})`);
       deps.syncPlayerListLocally(nextPlayers);
+      
+      // 2. Host side: Broadcast to all clients
+      console.log(`[LAN_ORCH] [HOST] Broadcasting updated list to all clients.`);
       deps.broadcastPlayerList(nextPlayers);
+
       // Sync bot engine state
-      if (state.gameType === "THINK_AND_COUNT") {
+      const freshState = store.getState().session;
+      if (freshState.gameType === "THINK_AND_COUNT") {
         QuizBotEngine.updateActiveBots(nextPlayers);
       }
     } else if (sourceIp) {
       // Re-send current state to confirm the duplicate join without broadcasting
+      const freshState = store.getState().session;
+      console.log(`[LAN_ORCH] [HOST] Re-sending current list to 192.168.1.30 (no data change)`);
       sendPacketToPeer(sourceIp, {
         type: NETWORK.PLAYER_LIST_UPDATE,
-        players: state.players,
-        lobbyStage: state.lobbyStage,
+        players: freshState.players,
+        lobbyStage: freshState.lobbyStage,
       });
     }
     return;
   }
 
-  // ── PLAYER_LIST_UPDATE (client) ──
   if (packet.type === NETWORK.PLAYER_LIST_UPDATE && Array.isArray(packet.players)) {
+    const state = store.getState().session; // Fetch fresh state
+    console.log(`[LAN_ORCH] [CLIENT] Received player list update (count=${packet.players.length})`);
     deps.clearJoinAttempts();
     deps.syncPlayerListLocally(packet.players);
     store.dispatch(setLobbyStage(packet.lobbyStage === "setup" ? "setup" : "room"));
+    
     if (!state.isHost) {
       const wasConnecting = state.connectionStatus === "CONNECTING";
-      store.dispatch(setConnectionStatus("CONNECTED"));
-      store.dispatch(setSessionError(null));
-      if (wasConnecting) {
+      const isInList = packet.players.some((p: SessionPlayer) => p.id === state.localPlayerId);
+      
+      // 🔥 SELF-HEALING: If host sent a list but I'm NOT in it, I need to re-join
+      if (!isInList && state.localPlayerId) {
+        console.warn(`[LAN_ORCH] [CLIENT] Received list WITHOUT myself. Triggering re-join...`);
+        deps.triggerJoin();
+      }
+
+      if (wasConnecting || state.connectionStatus === "IDLE") {
+        store.dispatch(setConnectionStatus("CONNECTED"));
+        store.dispatch(setSessionError(null));
+        console.log(`[LAN_ORCH] [CLIENT] Connection finalized! status -> CONNECTED`);
         logLanDebug("client connected");
         updateDebugMetric("lanClientConnection", "connected");
         toast.success("All set! 🎉", "You've successfully joined the room.");
@@ -175,6 +197,7 @@ export const handleLobbyPacket = (
   if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId) {
     deps.clearJoinAttempts();
 
+    const state = store.getState().session; // Fetch fresh state
     // TERMINATE GAME IF IN PROGRESS — human leaving mid-game ends session
     if (state.gamePhase !== "idle") {
       const leaver = state.players.find(p => p.id === packet.playerId);

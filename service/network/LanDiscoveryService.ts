@@ -46,7 +46,7 @@ export class LanDiscoveryService {
   }) {
     await this.stopBroadcasting();
 
-    logLanDebug(`[UDP] Starting broadcast: room=${payload.roomCode}, hostIp=${payload.hostIp}`);
+    logLanDebug(`[LAN_ORCH] Starting broadcast: room=${payload.roomCode}, hostIp=${payload.hostIp}`);
     updateDebugMetric("lanUdpBroadcaster", "starting");
 
     if (!dgram || !dgram.createSocket) {
@@ -128,8 +128,8 @@ export class LanDiscoveryService {
       }
 
       updateDebugMetric("lanUdpBroadcaster", "running");
-      logLanDebug(`[UDP] Broadcaster ready → targets: ${targets.join(" | ")}`);
-      console.log(`[UDP] Broadcasting to: ${targets.join(", ")}`);
+      logLanDebug(`[LAN_ORCH] Broadcaster ready → targets: ${targets.join(" | ")}`);
+      console.log(`[LAN_ORCH] Broadcasting to: ${targets.join(", ")}`);
 
       // Send immediately so joiner sees the room within ~1s, then repeat every 2s
       sendToAll();
@@ -157,14 +157,14 @@ export class LanDiscoveryService {
         }
       );
       this.publishedServiceName = serviceName; // Store for cleanup
-      logLanDebug(`[NSD] Published Zeroconf service: ${serviceName}`);
+      logLanDebug(`[LAN_ORCH] [NSD] Published Zeroconf service: ${serviceName}`);
     } catch (e) {
       console.warn("[NSD] Zeroconf publish failed", e);
     }
   }
 
   static async stopBroadcasting() {
-    logLanDebug("[UDP] Stopping broadcast");
+    logLanDebug("[LAN_ORCH] Stopping broadcast");
     updateDebugMetric("lanUdpBroadcaster", "idle");
     if (this.broadcastInterval) {
       clearInterval(this.broadcastInterval);
@@ -178,7 +178,7 @@ export class LanDiscoveryService {
     
     try {
       if (this.publishedServiceName) {
-        logLanDebug(`[NSD] Unpublishing Zeroconf service: ${this.publishedServiceName}`);
+        logLanDebug(`[LAN_ORCH] [NSD] Unpublishing Zeroconf service: ${this.publishedServiceName}`);
         this.zeroconf.unpublishService(this.publishedServiceName);
         this.publishedServiceName = null;
       }
@@ -195,11 +195,11 @@ export class LanDiscoveryService {
   static startListening(onDiscovery: (result: DiscoveryResult) => void) {
     this.stopListening();
 
-    logLanDebug("[UDP] Starting listener");
+    logLanDebug("[LAN_ORCH] Starting discovery listener");
     updateDebugMetric("lanUdpListener", "listening");
 
     if (!dgram || !dgram.createSocket) {
-      logLanDebug("[UDP] dgram module not found — native build required.");
+      logLanDebug("[LAN_ORCH] [UDP] dgram module not found — native build required.");
       updateDebugMetric("lanUdpListener", "failed");
       return;
     }
@@ -219,7 +219,7 @@ export class LanDiscoveryService {
           // Use rinfo.address (actual sender IP) — NOT data.hostIp
           // rinfo gives us the real IP even if hostIp in payload is wrong/fallback
           const senderIp = rinfo.address;
-          logLanDebug(`[UDP] Packet from ${senderIp}: room=${data.roomCode}, host=${data.hostName}`);
+          logLanDebug(`[LAN_ORCH] Discovery packet from ${senderIp}: room=${data.roomCode}, host=${data.hostName}`);
           updateDebugMetric("lanLastUdpPacket", `${senderIp} → ${data.hostName}`);
           onDiscovery({
             ip: senderIp,
@@ -246,7 +246,7 @@ export class LanDiscoveryService {
       // Join multicast group so we receive multicast packets from the host
       try {
         this.listenSocket.addMembership(this.MULTICAST_GROUP);
-        logLanDebug(`[UDP] Joined multicast group ${this.MULTICAST_GROUP}`);
+        logLanDebug(`[LAN_ORCH] Joined multicast group ${this.MULTICAST_GROUP}`);
       } catch (e) {
         // addMembership may fail on some Android devices / hotspot interfaces
         // That's OK — subnet broadcasts will still work
@@ -298,7 +298,7 @@ export class LanDiscoveryService {
         }
 
         if (senderIp) {
-          logLanDebug(`[NSD] Discovered via Zeroconf from ${senderIp}`);
+          logLanDebug(`[LAN_ORCH] [NSD] Discovered via Zeroconf from ${senderIp}`);
           onDiscovery({
             ip: senderIp,
             port: service.port,
@@ -322,7 +322,7 @@ export class LanDiscoveryService {
     });
 
     try {
-      logLanDebug("[NSD] Started Zeroconf scan");
+      logLanDebug("[LAN_ORCH] [NSD] Started Zeroconf scan");
       this.zeroconf.scan("chorpolice", "tcp", "local.");
     } catch (e) {
       console.warn("[NSD] Zeroconf scan failed", e);
@@ -330,7 +330,7 @@ export class LanDiscoveryService {
   }
 
   static stopListening() {
-    logLanDebug("[UDP] Stopping listener");
+    logLanDebug("[LAN_ORCH] Stopping discovery listener");
     updateDebugMetric("lanUdpListener", "idle");
     
     if (this.listenSocket) {

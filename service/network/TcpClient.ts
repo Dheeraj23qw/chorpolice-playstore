@@ -207,27 +207,18 @@ export const connectToHost = (
 };
 
 /**
- * One-shot async connection probe. Used by Smart Join to test candidate IPs.
+ * Independent connection probe. Does NOT use or modify the singleton ClientState.
+ * Returns the connected socket if successful, allowing the caller to 'promote' it.
  */
-export const connectAsync = (
-  cs: ClientState,
+export const probeAsync = (
   hostIp: string,
   hostPort: number,
-  sockets: Map<string, any>,
-  packetHandler: PacketHandler | null,
-): Promise<void> => {
+  timeoutMs: number = 1000
+): Promise<any> => {
   return new Promise((resolve, reject) => {
     const port = hostPort || NETWORK.TCP_SERVER_PORT;
-    if (cs.clientSocket) {
-      safeDestroySocket(cs.clientSocket, "connectAsync pre-cleanup");
-      cs.clientSocket = null;
-    }
-    cs.hostBuffer = Buffer.alloc(0);
-    cs.attemptId++;
-    const thisAttemptId = cs.attemptId;
-    devLog(`Async connecting to ${hostIp}:${port}... (attempt ${thisAttemptId})`);
-
     let finished = false;
+    let socket: any = null;
     let timeout: ReturnType<typeof setTimeout> | null = null;
 
     const finish = (err?: Error) => {
@@ -235,46 +226,25 @@ export const connectAsync = (
       finished = true;
       if (timeout) { clearTimeout(timeout); timeout = null; }
       if (err) {
-        safeDestroySocket(cs.clientSocket, "connectAsync error finish");
-        cs.clientSocket = null;
+        if (socket) {
+          try {
+            (socket as any).__explicitlyDestroyed = true;
+            socket.destroy();
+          } catch {}
+        }
         reject(err);
       } else {
-        resolve();
+        resolve(socket);
       }
     };
 
     try {
-      cs.clientSocket = TcpSocket.createConnection({ port, host: hostIp }, () => {
-        devLog(`Async connection success: ${hostIp}:${port}`);
-        if (thisAttemptId === cs.attemptId) {
-          sockets.set(hostIp, cs.clientSocket);
-        }
+      socket = TcpSocket.createConnection({ port, host: hostIp }, () => {
         finish();
       });
-
-      timeout = setTimeout(() => {
-        if (finished) return;
-        finish(new Error(`Connection to ${hostIp}:${port} timed out`));
-      }, 1200);
-
-      cs.clientSocket.on("error", (err: any) => finish(err));
-      cs.clientSocket.on("close", () => finish(new Error("Socket closed before connection")));
-
-      cs.clientSocket.on("data", (data: any) => {
-        // Guard: ignore data if attempt is stale
-        if (thisAttemptId !== cs.attemptId) return;
-        try {
-          const raw = Buffer.isBuffer(data) ? data : Buffer.from(data);
-          cs.hostBuffer = Buffer.concat([cs.hostBuffer, raw]);
-          const [packets, remaining] = extractFrames(cs.hostBuffer);
-          cs.hostBuffer = remaining;
-          for (const env of packets) {
-            packetHandler?.(env.packet, hostIp);
-          }
-        } catch (e) {
-          console.warn("[TCP_DEBUG] ASYNC_DATA_PARSE_ERROR", e);
-        }
-      });
+      socket.on("error", (err: any) => finish(err));
+      socket.on("close", () => finish(new Error("Closed")));
+      timeout = setTimeout(() => finish(new Error("Timeout")), timeoutMs);
     } catch (e: any) {
       finish(e);
     }

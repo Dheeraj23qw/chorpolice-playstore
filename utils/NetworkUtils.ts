@@ -64,10 +64,11 @@ export const getLocalIpAddress = async (options: { useFallback?: boolean } = {})
       updateDebugMetric("lanCandidates", candidates);
 
       // If we have a valid WiFi IP, return it immediately
-      if (netState.type === "wifi" && !isInvalid && !isCellular) {
+      // PROD-FIX: Even if it's 10.*, if we are on WiFi, it's a valid local IP (common on campus/office networks)
+      if (netState.type === "wifi" && !isInvalid) {
         console.log(`${TAG} ✅ Valid WiFi IP found: ${ip}`);
         updateDebugMetric("lanIsFallback", false);
-        return { ip: ip!, isFallback: false };   // ← Bug 1 fix: was `return ip` (wrong shape)
+        return { ip: ip!, isFallback: false };
       }
 
       // If we have any valid candidates, prefer them

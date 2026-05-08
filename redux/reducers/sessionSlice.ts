@@ -269,8 +269,17 @@ export const sessionSlice = createSlice({
         : null;
 
       if (localPlayer) {
-        state.localPlayerName = localPlayer.name;
-        state.localAvatarId = localPlayer.avatarId;
+        // console.log(`[LAN_ORCH] [REDUX] Matched local player ${localPlayer.id} in list.`);
+        // 🔥 FIX: Only overwrite local identity if it's currently empty/default.
+        // This prevents the "echo" from the network from fighting with the local input.
+        if (!state.localPlayerName || state.localPlayerName === "User") {
+          state.localPlayerName = localPlayer.name;
+        }
+        if (!state.localAvatarId || state.localAvatarId === 1) {
+          state.localAvatarId = localPlayer.avatarId;
+        }
+      } else if (state.localPlayerId) {
+        // console.warn(`[LAN_ORCH] [REDUX] Local player ${state.localPlayerId} NOT in received list!`);
       }
     },
 

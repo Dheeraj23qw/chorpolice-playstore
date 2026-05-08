@@ -18,7 +18,7 @@ import { normalizePeerIp } from "./normalizePeerIp";
 import { framePacket, extractFrames } from "./TcpFraming";
 import { TcpServerManager } from "./TcpServerManager";
 import { TCP_STATS, resetTcpStats } from "./TcpDiagnostics";
-import { createClientState, connectToHost, connectAsync as clientConnectAsync } from "./TcpClient";
+import { createClientState, connectToHost, probeAsync as clientProbeAsync } from "./TcpClient";
 
 type PacketHandler = (packet: any, sourceIp?: string) => void;
 type SessionConfig = { isHost: boolean; localPlayerId: string; hostIp?: string | null; hostPort?: number; onPacket: PacketHandler };
@@ -191,8 +191,26 @@ export const GameSessionTransport = {
     }
   },
 
-  connectAsync: (hostIp: string, hostPort: number): Promise<void> =>
-    clientConnectAsync(client, hostIp, hostPort, state.clientSockets, packetHandler),
+  probeAsync: (hostIp: string, hostPort: number, timeoutMs?: number): Promise<any> =>
+    clientProbeAsync(hostIp, hostPort, timeoutMs),
+
+  /**
+   * Promotes an independently probed socket to be the official session socket.
+   */
+  useSocket: (hostIp: string, socket: any) => {
+    if (isClosing) {
+      try { (socket as any).__explicitlyDestroyed = true; socket.destroy(); } catch {}
+      return;
+    }
+    console.log(`[TCP_DEBUG] PROMOTING_SOCKET host=${hostIp}`);
+    state.hostIp = hostIp;
+    client.clientSocket = socket;
+    state.clientSockets.set(hostIp, socket);
+    // Trigger the standard listener attachment via setHostIp or manually
+    // In this case, we've already done the handshake, so we just need to 
+    // ensure standard listeners are attached for subsequent packets.
+    GameSessionTransport.setHostIp(hostIp, state.listeningPort);
+  },
 
   stop: async (): Promise<boolean> => {
     // Idempotent: if already closing, return existing promise

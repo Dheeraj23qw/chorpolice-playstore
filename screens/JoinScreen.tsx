@@ -19,7 +19,7 @@ import {
 import { NETWORK } from "@/constants/Networking";
 import { getGatewayIpAddress } from "@/utils/NetworkUtils";
 import { setLocalSessionIdentity } from "@/redux/reducers/sessionSlice";
-import { AppDispatch, RootState } from "@/redux/store";
+import store, { AppDispatch, RootState } from "@/redux/store";
 import { JoinQRSection } from "@/components/JoinScreen/JoinQRSection";
 import { JoinCodeSection } from "@/components/JoinScreen/JoinCodeSection";
 import { DiscoveredRoomsSection } from "@/components/JoinScreen/DiscoveredRoomsSection";
@@ -141,9 +141,23 @@ const JoinScreen = () => {
 
   // ✨ FIRST TIME HELP: Auto-show help if not shown before
   useEffect(() => {
+    console.log("[JoinScreen] Entered Screen");
     if (!getJoinHelpShown()) {
       setShowHelp(true);
     }
+    
+    // Cleanup on unmount (Hardware back, Swipe back, etc.)
+    return () => {
+      const s = store.getState().session;
+      // 🔥 FIX: DO NOT leave if we are transitioning to the lobby!
+      // Only cleanup if we are NOT connected or connecting.
+      if (s.connectionStatus !== "CONNECTED" && s.connectionStatus !== "CONNECTING") {
+        console.log("[JoinScreen] Exiting Screen - triggering cleanup (status=" + s.connectionStatus + ")");
+        leaveLanLobby();
+      } else {
+        console.log("[JoinScreen] Exiting Screen - navigation safe (keeping connection alive)");
+      }
+    };
   }, []);
 
 
@@ -242,16 +256,14 @@ const JoinScreen = () => {
       return;
     }
     const gateway = await getGatewayIpAddress();
-    console.log(`[JoinScreen] Manual Join: code=${roomCode}, local=${session.localIp}, gateway=${gateway}`);
+    console.log(`[LAN_ORCH] room code connect triggered code=${roomCode}`);
     
     const candidates = getCandidateIpsForRoomCode(roomCode, session.localIp, gateway);
-    console.log(`[JoinScreen] Candidates generated:`, candidates);
-
     if (candidates.length === 0) {
       toast.error("Invalid Code", "Please enter a valid 3-digit room code.");
       return;
     }
-    await handleConnectToIp(candidates[0], NETWORK.TCP_SERVER_PORT, candidates, roomCode);
+    await handleConnectToIp(candidates[0], undefined, candidates, roomCode);
   }, [roomCode, handleConnectToIp, session.localIp]);
 
   /* ─────────────────── UI ─────────────────── */
@@ -350,6 +362,7 @@ const JoinScreen = () => {
           isSearching={isSearching}
           joiningIp={joiningRoomIp}
           onJoin={(room) => {
+            console.log(`[LAN_ORCH] auto-discovery join selected ip=${room.ip}`);
             handleConnectToIp(room.ip, room.port, [], room.roomCode || null);
           }}
         />
