@@ -63,7 +63,6 @@ class NotificationService {
       name: "General",
       description: "Game reminders, streaks, and rewards",
       importance: Notifications.AndroidImportance.MAX,
-      sound: "default",
       vibrationPattern: [0, 250, 250, 250],
       lightColor: "#A855F7",
       lockscreenVisibility:
@@ -77,7 +76,6 @@ class NotificationService {
       name: "Alerts",
       description: "High-priority reminders and reward nudges",
       importance: Notifications.AndroidImportance.MAX, // Upgraded to MAX for production visibility
-      sound: "default",
       vibrationPattern: [0, 500, 200, 500],
       lightColor: "#f97316",
       lockscreenVisibility:
@@ -217,7 +215,7 @@ class NotificationService {
           title: params.title,
           body: params.body,
           data: params.data,
-          sound: "default",
+          sound: true,
           color: params.color ?? "#22c55e",
           priority: Notifications.AndroidNotificationPriority.HIGH,
           ...(Platform.OS === "android" && {
@@ -425,7 +423,7 @@ class NotificationService {
             title: selectedMessage.title,
             body: selectedMessage.body,
             data: { screen: "/mode-select" },
-            sound: "default",
+            sound: true,
             color: "#6366f1",
             categoryIdentifier: "NIGHT_RETENTION",
             // 🛡️ Android Safety: Ensure channel is specified

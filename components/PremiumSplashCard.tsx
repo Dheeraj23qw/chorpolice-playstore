@@ -87,11 +87,11 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   glassLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 2,
   },
   glassBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 32,
     borderWidth: 1.2,
     borderColor: "rgba(255, 255, 255, 0.15)",

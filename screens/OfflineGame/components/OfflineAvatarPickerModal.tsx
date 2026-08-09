@@ -34,7 +34,7 @@ export const OfflineAvatarPickerModal: React.FC<
         <BlurView
           intensity={18}
           tint="dark"
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
 
         <Pressable className="flex-1" onPress={onClose} />

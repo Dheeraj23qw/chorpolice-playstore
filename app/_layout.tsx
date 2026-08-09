@@ -118,7 +118,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <GlobalErrorBoundary>
           <View className="flex-1 bg-black" onLayout={onLayoutRootView}>
-            <StatusBar hidden translucent backgroundColor="transparent" />
+            <StatusBar hidden />
             <AppLayout />
             <ToastProvider />
           </View>

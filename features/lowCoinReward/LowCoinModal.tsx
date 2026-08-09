@@ -48,8 +48,9 @@ export const LowCoinModal = ({
           transition={{ type: "spring", damping: 15 }}
           className="w-full max-w-sm overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
         >
-          <BlurView intensity={60} tint="dark" className="items-center p-8">
-            {/* CLOSE BUTTON */}
+          <BlurView intensity={60} tint="dark">
+            <View className="items-center p-8">
+              {/* CLOSE BUTTON */}
             <TouchableOpacity
               onPress={onClose}
               className="absolute right-4 top-4 z-10 h-8 w-8 items-center justify-center rounded-full bg-white/5"
@@ -110,6 +111,7 @@ export const LowCoinModal = ({
                   Don&apos;t show again
                 </Text>
               </TouchableOpacity>
+            </View>
             </View>
           </BlurView>
         </MotiView>

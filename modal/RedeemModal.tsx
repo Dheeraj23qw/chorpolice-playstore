@@ -95,8 +95,9 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
           animate={{ scale: 1, opacity: 1, translateY: 0 }}
           className="w-full max-w-sm overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
         >
-          <BlurView intensity={40} tint="dark" className="p-8 items-center">
-            <View className="mb-6 h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+          <BlurView intensity={40} tint="dark">
+            <View className="p-8 items-center">
+              <View className="mb-6 h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
               <Ionicons name="gift-outline" size={32} color="#818cf8" />
             </View>
 
@@ -132,6 +133,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
             <TouchableOpacity onPress={onClose} className="mt-4">
               <Text className="text-xs font-main-bold text-white/20 uppercase tracking-widest">Cancel</Text>
             </TouchableOpacity>
+            </View>
           </BlurView>
         </MotiView>
       </View>

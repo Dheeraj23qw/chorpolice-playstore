@@ -22,7 +22,7 @@ export const OfflineSetupFooter: React.FC<OfflineSetupFooterProps> = ({
       <BlurView
         intensity={28}
         tint="dark"
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <View className="absolute left-0 right-0 top-0 h-px bg-white/10" />
 

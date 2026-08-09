@@ -10,7 +10,7 @@ export const useSystemUI = () => {
         // 🕵️ Hide the navigation bar
         await NavigationBar.setVisibilityAsync("hidden");
 
-        await NavigationBar.setButtonStyleAsync("light");
+        NavigationBar.setStyle("light");
 
         Appearance.setColorScheme("dark");
       }

@@ -142,12 +142,9 @@ export default function UserProfile() {
         {/* Referral Success Summary */}
         <View className="mt-6 px-5">
           <View className="overflow-hidden rounded-3xl border border-indigo-500/20 bg-indigo-500/5">
-            <BlurView
-              intensity={12}
-              tint="dark"
-              className="flex-row items-center px-5 py-5"
-            >
-              {/* ICON */}
+            <BlurView intensity={12} tint="dark">
+              <View className="flex-row items-center px-5 py-5">
+                {/* ICON */}
               <View className="h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/20">
                 <Network size={22} color="#818cf8" />
               </View>
@@ -178,6 +175,7 @@ export default function UserProfile() {
                 >
                   {referralStats.totalEarned.toLocaleString()} 🪙
                 </Text>
+              </View>
               </View>
             </BlurView>
           </View>

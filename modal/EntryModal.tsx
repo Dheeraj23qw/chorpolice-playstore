@@ -210,15 +210,17 @@ export const EntryModal: React.FC<EntryModalProps> = ({
               <View className="mt-4 overflow-hidden rounded-3xl">
                 <LinearGradient
                   colors={["rgba(34,197,94,0.15)", "rgba(0,0,0,0.3)"]}
-                  className="items-center border border-green-500/20 py-4"
+                  className="border border-green-500/20"
                 >
-                  <Text className="text-[9px] uppercase tracking-[3px] text-green-400/50">
-                    Total Prize
-                  </Text>
+                  <View className="items-center py-4">
+                    <Text className="text-[9px] uppercase tracking-[3px] text-green-400/50">
+                      Total Prize
+                    </Text>
 
-                  <Text className="mt-1 font-main-bold text-2xl text-green-400">
-                    {totalPrize.toLocaleString()}
-                  </Text>
+                    <Text className="mt-1 font-main-bold text-2xl text-green-400">
+                      {totalPrize.toLocaleString()}
+                    </Text>
+                  </View>
                 </LinearGradient>
               </View>
 
@@ -239,20 +241,22 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                     colors={
                       isTooExpensive ? ["#222", "#111"] : ["#6366f1", "#4f46e5"]
                     }
-                    className="h-14 items-center justify-center rounded-full shadow-lg"
+                    className="rounded-full shadow-lg"
                     style={{
                       shadowColor: "#6366f1",
                       shadowOpacity: isTooExpensive ? 0 : 0.4,
                       shadowRadius: 12,
                     }}
                   >
-                    <Text
-                      className={`font-main-bold text-sm tracking-wide ${
-                        isTooExpensive ? "text-white/30" : "text-white"
-                      }`}
-                    >
-                      {isTooExpensive ? "Not Enough Coins" : "Start Match"}
-                    </Text>
+                    <View className="h-14 items-center justify-center">
+                      <Text
+                        className={`font-main-bold text-sm tracking-wide ${
+                          isTooExpensive ? "text-white/30" : "text-white"
+                        }`}
+                      >
+                        {isTooExpensive ? "Not Enough Coins" : "Start Match"}
+                      </Text>
+                    </View>
                   </LinearGradient>
                 </MotiView>
               </TouchableOpacity>

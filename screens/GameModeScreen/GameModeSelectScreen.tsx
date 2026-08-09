@@ -70,7 +70,7 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
               <BlurView
                 intensity={18}
                 tint="dark"
-                style={StyleSheet.absoluteFillObject}
+                style={StyleSheet.absoluteFill}
               />
               <Ionicons name="chevron-back" size={24} color="white" />
             </TouchableOpacity>

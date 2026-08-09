@@ -26,7 +26,7 @@ export const OfflineSetupHeader: React.FC<OfflineSetupHeaderProps> = ({
           <BlurView
             intensity={18}
             tint="dark"
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
           <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>

@@ -29,32 +29,34 @@ export const CollapsibleCard = ({
           <MotiView
             animate={{ scale: pressed ? 0.97 : 1 }}
             transition={{ type: "timing", duration: 120 }}
-            className="flex-row items-center justify-between rounded-3xl border border-white/10 bg-white/[0.08] p-5"
+            className="rounded-3xl border border-white/10 bg-white/[0.08]"
           >
-            <View className="flex-row items-center">
-              {/* ICON */}
-              <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
-                <Ionicons name={icon} size={20} color="#818cf8" />
+            <View className="flex-row items-center justify-between p-5">
+              <View className="flex-row items-center">
+                {/* ICON */}
+                <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
+                  <Ionicons name={icon} size={20} color="#818cf8" />
+                </View>
+
+                <View>
+                  <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white/40">
+                    {label}
+                  </Text>
+
+                  <Text className="font-main-bold text-base text-white">
+                    {isOpen ? "CLOSE SELECTOR" : title}
+                  </Text>
+                </View>
               </View>
 
-              <View>
-                <Text className="font-main-bold text-[10px] uppercase tracking-widest text-white/40">
-                  {label}
-                </Text>
-
-                <Text className="font-main-bold text-base text-white">
-                  {isOpen ? "CLOSE SELECTOR" : title}
-                </Text>
-              </View>
+              {/* 🔄 ROTATING CHEVRON */}
+              <MotiView
+                animate={{ rotate: isOpen ? "180deg" : "0deg" }}
+                transition={{ type: "timing", duration: 250 }}
+              >
+                <Ionicons name="chevron-down" size={24} color="white" />
+              </MotiView>
             </View>
-
-            {/* 🔄 ROTATING CHEVRON */}
-            <MotiView
-              animate={{ rotate: isOpen ? "180deg" : "0deg" }}
-              transition={{ type: "timing", duration: 250 }}
-            >
-              <Ionicons name="chevron-down" size={24} color="white" />
-            </MotiView>
           </MotiView>
         )}
       </Pressable>

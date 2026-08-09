@@ -147,17 +147,19 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
                         colors={["#818cf8", "#6366f1", "#4f46e5"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
-                        className="h-14 flex-row items-center justify-center"
+                        className="h-14"
                       >
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={20}
-                          color="white"
-                        />
+                        <View className="flex-1 flex-row items-center justify-center">
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color="white"
+                          />
 
-                        <Text className="ml-2 font-main-bold uppercase tracking-[2px] text-white">
-                          {content.buttonText}
-                        </Text>
+                          <Text className="ml-2 font-main-bold uppercase tracking-[2px] text-white">
+                            {content.buttonText}
+                          </Text>
+                        </View>
                       </LinearGradient>
                     </Pressable>
                   </View>
@@ -187,8 +189,9 @@ const HelpItem = ({
         duration: 260,
         delay: index * 60,
       }}
-      className="mb-3 flex-row items-center rounded-3xl border border-white/10 bg-white/5 p-4"
+      className="mb-3 rounded-3xl border border-white/10 bg-white/5"
     >
+      <View className="flex-row items-center p-4">
       <View
         className="h-13 w-13 mr-4 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
         style={{
@@ -218,6 +221,7 @@ const HelpItem = ({
         >
           {desc}
         </Text>
+      </View>
       </View>
     </MotiView>
   );

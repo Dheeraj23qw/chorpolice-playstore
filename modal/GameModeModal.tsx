@@ -137,7 +137,8 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
               animate={{ translateY: 0, opacity: 1, scale: 1 }}
               transition={{ duration: 400 }}
             >
-              <BlurView intensity={80} tint="dark" className="p-6">
+              <BlurView intensity={80} tint="dark">
+                <View className="p-6">
                 {/* HEADER */}
                 <View className="mb-6 items-center">
                   <View className="h-16 w-16 items-center justify-center rounded-full bg-white/5">
@@ -169,30 +170,32 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
                   >
                     <LinearGradient
                       colors={["#7C3AED33", "#7C3AED10"]}
-                      className="flex-row items-center border border-purple-400/20 p-4"
+                      className="border border-purple-400/20"
                     >
-                      <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
+                      <View className="flex-row items-center p-4">
+                        <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
+                          <Ionicons
+                            name="wifi-outline"
+                            size={rf(2.5)}
+                            color="#C084FC"
+                          />
+                        </View>
+
+                        <View className="flex-1">
+                          <Text className="font-main-bold text-base text-white">
+                            HOST GAME
+                          </Text>
+                          <Text className="text-xs text-white/40">
+                            Create your own lobby
+                          </Text>
+                        </View>
+
                         <Ionicons
-                          name="wifi-outline"
-                          size={rf(2.5)}
+                          name="arrow-forward"
+                          size={rf(1.8)}
                           color="#C084FC"
                         />
                       </View>
-
-                      <View className="flex-1">
-                        <Text className="font-main-bold text-base text-white">
-                          HOST GAME
-                        </Text>
-                        <Text className="text-xs text-white/40">
-                          Create your own lobby
-                        </Text>
-                      </View>
-
-                      <Ionicons
-                        name="arrow-forward"
-                        size={rf(1.8)}
-                        color="#C084FC"
-                      />
                     </LinearGradient>
                   </TouchableOpacity>
                 </MotiView>
@@ -210,33 +213,36 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
                   >
                     <LinearGradient
                       colors={["#2563EB33", "#2563EB10"]}
-                      className="flex-row items-center border border-blue-400/20 p-4"
+                      className="border border-blue-400/20"
                     >
-                      <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
+                      <View className="flex-row items-center p-4">
+                        <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
+                          <Ionicons
+                            name="search-outline"
+                            size={rf(2.5)}
+                            color="#60A5FA"
+                          />
+                        </View>
+
+                        <View className="flex-1">
+                          <Text className="font-main-bold text-base text-white">
+                            JOIN GAME
+                          </Text>
+                          <Text className="text-xs text-white/40">
+                            Find nearby players
+                          </Text>
+                        </View>
+
                         <Ionicons
-                          name="search-outline"
-                          size={rf(2.5)}
+                          name="arrow-forward"
+                          size={rf(1.8)}
                           color="#60A5FA"
                         />
                       </View>
-
-                      <View className="flex-1">
-                        <Text className="font-main-bold text-base text-white">
-                          JOIN GAME
-                        </Text>
-                        <Text className="text-xs text-white/40">
-                          Find nearby players
-                        </Text>
-                      </View>
-
-                      <Ionicons
-                        name="arrow-forward"
-                        size={rf(1.8)}
-                        color="#60A5FA"
-                      />
                     </LinearGradient>
                   </TouchableOpacity>
                 </MotiView>
+                </View>
               </BlurView>
             </MotiView>
           </Pressable>

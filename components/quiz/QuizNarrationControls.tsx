@@ -67,17 +67,19 @@ export const QuizNarrationControls = ({
         <BlurView
           intensity={30}
           tint="light"
-          className="h-[42px] w-[42px] items-center justify-center border border-white/20 bg-white/10"
+          className="h-[42px] w-[42px] border border-white/20 bg-white/10"
         >
-          <Ionicons
-            name={
-              narrationEnabled
-                ? "volume-high-outline"
-                : "volume-mute-outline"
-            }
-            size={22}
-            color={narrationEnabled ? "#818cf8" : "#94a3b8"}
-          />
+          <View className="flex-1 items-center justify-center">
+            <Ionicons
+              name={
+                narrationEnabled
+                  ? "volume-high-outline"
+                  : "volume-mute-outline"
+              }
+              size={22}
+              color={narrationEnabled ? "#818cf8" : "#94a3b8"}
+            />
+          </View>
         </BlurView>
       </Pressable>
     </View>

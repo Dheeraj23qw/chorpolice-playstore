@@ -64,27 +64,28 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              className="px-6 py-5"
             >
-              {/* ✨ TOP LIGHT LINE */}
-              <View className="absolute left-6 right-6 top-0 h-[1px] bg-white/40" />
+              <View className="px-6 py-5">
+                {/* ✨ TOP LIGHT LINE */}
+                <View className="absolute left-6 right-6 top-0 h-[1px] bg-white/40" />
 
-              {/* 🎯 CONTENT */}
-              <Text
-                className={`text-center font-main-bold text-[17px] tracking-tight ${
-                  disabled ? "text-white/40" : "text-white"
-                }`}
-              >
-                {title}
-              </Text>
+                {/* 🎯 CONTENT */}
+                <Text
+                  className={`text-center font-main-bold text-[17px] tracking-tight ${
+                    disabled ? "text-white/40" : "text-white"
+                  }`}
+                >
+                  {title}
+                </Text>
 
-              <Text
-                className={`mt-1 text-center text-[11px] uppercase tracking-[1.5px] ${
-                  disabled ? "text-white/30" : "text-indigo-200/80"
-                }`}
-              >
-                {subtitle}
-              </Text>
+                <Text
+                  className={`mt-1 text-center text-[11px] uppercase tracking-[1.5px] ${
+                    disabled ? "text-white/30" : "text-indigo-200/80"
+                  }`}
+                >
+                  {subtitle}
+                </Text>
+              </View>
             </LinearGradient>
           </View>
         </MotiView>

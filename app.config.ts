@@ -11,16 +11,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "chorpolice",
   userInterfaceStyle: "dark",
   backgroundColor: "#050508",
-  androidStatusBar: {
-    barStyle: "light-content",
-    backgroundColor: "#050508",
-    translucent: true,
-    hidden: true,
-  },
-  splash: {
-    backgroundColor: "#050508",
-    resizeMode: "contain",
-  },
   icon: "./assets/images/adaptive-icon.png",
   runtimeVersion: { policy: "appVersion" },
   assetBundlePatterns: ["assets/images/*", "assets/audio/*", "assets/gif/*"],
@@ -70,12 +60,29 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-video",
     "expo-system-ui", // 🛡️ Prevents the initial white flash on boot
     [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#050508",
+        image: "./assets/images/adaptive-icon.png",
+        imageWidth: 200,
+        resizeMode: "contain",
+      },
+    ],
+    [
+      "expo-status-bar",
+      {
+        hidden: true,
+        translucent: true,
+        backgroundColor: "#050508",
+        style: "light",
+      },
+    ],
+    [
       "expo-navigation-bar",
       {
-        appearance: "dark",
+        style: "dark",
         backgroundColor: "#050508",
-        visibility: "hidden", // 🕵️ Hides the bar by default
-        behavior: "sticky-immersive", // 🎮 Best for games; bar auto-hides after swipe
+        hidden: true, // 🕵️ Hides the bar by default
       },
     ],
     [

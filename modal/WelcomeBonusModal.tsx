@@ -46,8 +46,9 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
           className="w-full max-w-sm overflow-hidden rounded-[50px] border border-white/40"
           style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
         >
-          <BlurView intensity={95} tint="dark" className="items-center p-10">
-            {/* FLOATING THIEF */}
+          <BlurView intensity={95} tint="dark">
+            <View className="items-center p-10">
+              {/* FLOATING THIEF */}
             <MotiView
               from={{ translateY: 0 }}
               animate={{ translateY: -15 }}
@@ -110,6 +111,7 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
             <Text className="mt-6 font-main-md text-[9px] uppercase tracking-[4px] text-white/20">
               TAP TO CONTINUE
             </Text>
+            </View>
           </BlurView>
         </MotiView>
       </View>

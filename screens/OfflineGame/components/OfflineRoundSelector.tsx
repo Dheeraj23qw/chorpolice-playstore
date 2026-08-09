@@ -72,7 +72,7 @@ const OfflineRoundSelector: React.FC = () => {
       <View style={styles.cardShell}>
         <LinearGradient
           colors={["rgba(59,130,246,0.10)", "rgba(255,255,255,0.02)"]}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
 
         <View style={styles.innerBorder} />
@@ -95,7 +95,7 @@ const OfflineRoundSelector: React.FC = () => {
                 {isSelected && (
                   <LinearGradient
                     colors={["#818CF8", "#4F46E5"]}
-                    style={StyleSheet.absoluteFillObject}
+                    style={StyleSheet.absoluteFill}
                   />
                 )}
 

@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     elevation: 25,
   },
   innerShadow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 10,
     borderColor: "rgba(0,0,0,0.2)",
     borderRadius: 32,

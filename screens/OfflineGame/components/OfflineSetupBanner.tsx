@@ -19,7 +19,7 @@ export const OfflineSetupBanner: React.FC<OfflineSetupBannerProps> = ({
       <BlurView
         intensity={18}
         tint="dark"
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <LinearGradient
         colors={["rgba(99,102,241,0.20)", "rgba(255,255,255,0.03)"]}

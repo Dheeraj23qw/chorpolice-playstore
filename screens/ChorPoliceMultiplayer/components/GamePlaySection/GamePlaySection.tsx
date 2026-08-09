@@ -124,7 +124,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
 const styles = StyleSheet.create({
   countdownOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 9999,
     elevation: 9999,
   },

@@ -104,12 +104,14 @@ export const QuizFloatingActions = ({ actions }: QuizFloatingActionsProps) => {
             colors={isOpen ? ["#4f46e5", "#3730a3"] : ["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
             className="absolute h-full w-full"
           />
-          <BlurView intensity={20} className="h-full w-full items-center justify-center">
-            <Ionicons
-              name={isOpen ? "close" : "ellipsis-vertical"}
-              size={rf(2.4)}
-              color="white"
-            />
+          <BlurView intensity={20} className="h-full w-full">
+            <View className="flex-1 items-center justify-center">
+              <Ionicons
+                name={isOpen ? "close" : "ellipsis-vertical"}
+                size={rf(2.4)}
+                color="white"
+              />
+            </View>
           </BlurView>
         </MotiView>
       </Pressable>
