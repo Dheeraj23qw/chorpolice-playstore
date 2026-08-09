@@ -33,8 +33,16 @@ const clampProgress = (value: number, min: number, max: number) => {
   return Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
 };
 
-const StepperRow = memo(
-  ({ label, subtitle, icon, value, min, max, onDecrease, onIncrease }: any) => {
+const StepperRow = memo(function StepperRow({
+  label,
+  subtitle,
+  icon,
+  value,
+  min,
+  max,
+  onDecrease,
+  onIncrease,
+}: any) {
     const progress = clampProgress(value, min, max);
     const canDecrease = value > min;
     const canIncrease = value < max;
@@ -103,8 +111,8 @@ const StepperRow = memo(
         </View>
       </View>
     );
-  },
-);
+});
+
 
 export const NarrationSettingsModal = ({
   visible,

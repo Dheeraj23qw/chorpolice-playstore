@@ -1,15 +1,9 @@
 import React, { useEffect } from "react";
-import { View } from "react-native";
+import { View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import Animated, { 
-    useSharedValue, 
-    useAnimatedStyle, 
-    interpolate, 
-    Extrapolation 
-} from "react-native-reanimated";
 
 import { AppDispatch } from "@/redux/store";
 import { AudioEngine } from "@/audio/audioEngine";
@@ -31,9 +25,6 @@ const GameModeScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const isModalOpen = useSelector(selectIsModalOpenUI);
   
-  // 🚀 Buttery Smooth Background Parallax
-  const scrollX = useSharedValue(0);
-
   useEffect(() => {
     BotEngine.prepareEngine(10);
     AudioEngine.stopAllExceptQuiz();
@@ -42,22 +33,11 @@ const GameModeScreen: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const animatedBgStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-        scrollX.value,
-        [-100, 0, 100],
-        [1.05, 1, 1.05],
-        Extrapolation.CLAMP
-    );
-    return { transform: [{ scale }] };
-  });
-
   return (
     <View className="flex-1 bg-black">
-      {/* 1. BACKGROUND WITH BUTTERY PARALLAX */}
-      <Animated.Image
+      {/* 1. BACKGROUND */}
+      <Image
         source={require("@/assets/images/bg/image.webp")}
-        style={[animatedBgStyle]}
         className="absolute h-full w-full"
         resizeMode="cover"
       />
@@ -89,9 +69,9 @@ const GameModeScreen: React.FC = () => {
             <UserProfilecard />
         </View>
 
-        {/* Game List (Pushed to Bottom) */}
-        <View className="flex-1 justify-end pb-4">
-            <GameModeList scrollX={scrollX} />
+        {/* Game List */}
+        <View className="flex-1 pb-6">
+            <GameModeList />
         </View>
       </View>
 
