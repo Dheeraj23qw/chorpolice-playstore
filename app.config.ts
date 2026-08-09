@@ -106,8 +106,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         android: {
           enableHermes: true,
           enableProguardInReleaseBuilds: true,
-          compileSdkVersion: 35,
-          targetSdkVersion: 35,
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
+          buildToolsVersion: "36.0.0",
           compiler: "r8",
           usesCleartextTraffic: true,
           extraProguardRules:
