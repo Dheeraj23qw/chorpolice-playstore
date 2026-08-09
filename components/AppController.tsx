@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { Linking, View, TouchableOpacity } from "react-native";
+import { Linking, View, TouchableOpacity, StyleSheet } from "react-native";
 
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
@@ -211,7 +211,7 @@ export default function AppController() {
           >
             <LinearGradient
               colors={["#6366F1", "#4F46E5"]}
-              className="absolute h-full w-full"
+              style={StyleSheet.absoluteFill}
             />
             <Text className="font-main-bold text-lg text-white">UPDATE NOW</Text>
           </TouchableOpacity>
@@ -273,7 +273,7 @@ export default function AppController() {
           >
             <LinearGradient
               colors={["#10B981", "#059669"]}
-              className="absolute h-full w-full"
+              style={StyleSheet.absoluteFill}
             />
             <Text className="font-main-bold text-lg text-white">
               RESTART NOW

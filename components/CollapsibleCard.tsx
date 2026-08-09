@@ -69,8 +69,9 @@ export const CollapsibleCard = ({
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
             exit={{ opacity: 0, translateY: -10, scale: 0.98 }}
             transition={{ type: "timing", duration: 250 }}
-            className="mt-4 overflow-hidden"
+            className="overflow-hidden"
           >
+            <View className="mt-4">
             {/* INNER CONTENT (OPTIONAL STAGGER READY) */}
             <MotiView
               from={{ opacity: 0 }}
@@ -79,6 +80,7 @@ export const CollapsibleCard = ({
             >
               {children}
             </MotiView>
+            </View>
           </MotiView>
         )}
       </AnimatePresence>

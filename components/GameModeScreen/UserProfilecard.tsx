@@ -136,11 +136,13 @@ const UserProfileCard = () => {
         <BlurView
           intensity={20}
           tint="light"
-          className="overflow-hidden rounded-xl border border-orange-500/30 bg-orange-500/5 px-3 py-1.5"
+          className="overflow-hidden rounded-xl border border-orange-500/30 bg-orange-500/5"
         >
+          <View className="px-3 py-1.5">
           <Text className="font-main-bold text-[10px] tracking-tight text-orange-400">
             🔥 {streak} DAY STREAK
           </Text>
+          </View>
         </BlurView>
       </View>
 

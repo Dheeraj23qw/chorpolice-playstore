@@ -74,7 +74,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
       <BlurView
         intensity={25}
         tint="dark"
-        className="flex-1 rounded-3xl overflow-hidden border border-white/10 bg-black/20"
+        style={{ flex: 1 }}
+        className="rounded-3xl overflow-hidden border border-white/10 bg-black/20"
       >
         <View className="flex-1 items-center justify-center">
     

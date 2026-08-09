@@ -16,7 +16,7 @@ export const FloatingDebugToggle: React.FC<FloatingDebugToggleProps> = ({ onTogg
         scale: 1,
         rotate: isOpen ? "90deg" : "0deg"
       }}
-      className="absolute bottom-6 right-6 z-[999]"
+      style={{ position: "absolute", bottom: 24, right: 24, zIndex: 999 }}
     >
       <Pressable
         onPress={onToggle}

@@ -177,14 +177,16 @@ const ScoreTable: React.FC<Props> = ({
                      colors={["#4F46E5", "#3730A3"]}
                      start={{ x: 0, y: 0 }}
                      end={{ x: 1, y: 1 }}
-                     className="items-center justify-center py-5 shadow-xl shadow-indigo-500/30"
+                     className="shadow-xl shadow-indigo-500/30"
                    >
+                     <View className="items-center justify-center py-5">
                      <Text
                        style={{ fontSize: rf(1.7) }}
                        className="font-main-bold uppercase tracking-[3px] text-white"
                      >
                        Back to Game
                      </Text>
+                     </View>
                    </LinearGradient>
                  </TouchableOpacity>
               </View>

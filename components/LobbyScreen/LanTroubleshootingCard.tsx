@@ -12,8 +12,9 @@ export const LanTroubleshootingCard: React.FC = () => {
       from={{ opacity: 0, translateY: 10 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 500 }}
-      className="mt-6 w-full rounded-2xl border border-white/5 bg-white/5 p-5"
+      className="rounded-2xl border border-white/5 bg-white/5"
     >
+      <View className="mt-6 w-full p-5">
       <View className="flex-row items-center gap-2 mb-3">
         <Ionicons name="bulb-outline" size={rf(1.8)} color="#93c5fd" />
         <Text style={{ fontSize: rf(1.4) }} className="font-main-bold uppercase tracking-wider text-blue-300">
@@ -41,7 +42,7 @@ export const LanTroubleshootingCard: React.FC = () => {
           </Text>
         </View>
       </View>
-
+      </View>
 
     </MotiView>
   );

@@ -67,9 +67,9 @@ export const QuizNarrationControls = ({
         <BlurView
           intensity={30}
           tint="light"
-          className="h-[42px] w-[42px] border border-white/20 bg-white/10"
+          className="border border-white/20 bg-white/10"
         >
-          <View className="flex-1 items-center justify-center">
+          <View className="h-[42px] w-[42px] items-center justify-center">
             <Ionicons
               name={
                 narrationEnabled

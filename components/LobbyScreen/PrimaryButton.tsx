@@ -42,8 +42,8 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
             damping: 18,
             stiffness: 250,
           }}
-          className="w-full"
         >
+          <View className="w-full">
           {/* 🔥 OUTER GLOW */}
           {!disabled && (
             <View className="absolute inset-0 rounded-3xl bg-indigo-500/20 blur-2xl" />
@@ -87,6 +87,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                 </Text>
               </View>
             </LinearGradient>
+          </View>
           </View>
         </MotiView>
       )}

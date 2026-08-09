@@ -181,10 +181,11 @@ export const NarrationSettingsModal = ({
               from={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 flex-1 bg-black/60"
+              className="bg-black/60"
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
             >
               <Pressable className="absolute inset-0" onPress={onClose}>
-                <BlurView intensity={20} tint="dark" className="flex-1" />
+                <BlurView intensity={20} tint="dark" style={{ flex: 1 }} />
               </Pressable>
 
               <View className="flex-1 justify-center px-5">
@@ -197,7 +198,7 @@ export const NarrationSettingsModal = ({
                 >
                   <LinearGradient
                     colors={["rgba(99,102,241,0.15)", "rgba(15,23,42,1)"]}
-                    className="absolute inset-0"
+                    style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
                   />
 
                   <View className="p-6">

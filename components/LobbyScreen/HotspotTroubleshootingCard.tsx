@@ -38,8 +38,9 @@ export const HotspotTroubleshootingCard: React.FC = () => {
     <MotiView
       from={{ opacity: 0, translateY: 10 }}
       animate={{ opacity: 1, translateY: 0 }}
-      className="mt-4 w-full rounded-2xl border border-blue-500/10 bg-blue-500/5 p-4"
+      className="rounded-2xl border border-blue-500/10 bg-blue-500/5"
     >
+      <View className="mt-4 w-full p-4">
       <AnimatePresence exitBeforeEnter>
         {!isFixed ? (
           <MotiView 
@@ -47,8 +48,8 @@ export const HotspotTroubleshootingCard: React.FC = () => {
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="items-center"
           >
+            <View className="items-center">
             <View className="flex-row items-center gap-2 mb-2">
               <Ionicons name="help-circle-outline" size={rf(1.8)} color="#93c5fd" />
               <Text style={{ fontSize: rf(1.4) }} className="font-main-bold text-blue-300">
@@ -67,14 +68,15 @@ export const HotspotTroubleshootingCard: React.FC = () => {
                 Try Hotspot Fix
               </Text>
             </Pressable>
+            </View>
           </MotiView>
         ) : (
           <MotiView 
             key="fixed"
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="items-center"
           >
+            <View className="items-center">
             <View className="flex-row items-center gap-2 mb-2">
               <Ionicons name="checkmark-circle-outline" size={rf(1.8)} color="#4ade80" />
               <Text style={{ fontSize: rf(1.4) }} className="font-main-bold text-green-400">
@@ -84,9 +86,11 @@ export const HotspotTroubleshootingCard: React.FC = () => {
             <Text style={{ fontSize: rf(1.25) }} className="text-center text-white/60 px-2">
               Hotspot mode active. Ask friends to scan.
             </Text>
+            </View>
           </MotiView>
         )}
       </AnimatePresence>
+      </View>
     </MotiView>
   );
 };

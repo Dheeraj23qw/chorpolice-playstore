@@ -13,8 +13,9 @@ export const JoinStepsCard = () => {
 
       <LinearGradient
         colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.02)"]}
-        className="rounded-[30px] border border-white/10 p-5"
+        className="rounded-[30px] border border-white/10"
       >
+        <View className="p-5">
         <MotiView
           from={{ opacity: 0, translateY: 12 }}
           animate={{ opacity: 1, translateY: 0 }}
@@ -58,6 +59,7 @@ export const JoinStepsCard = () => {
             </View>
           </View>
         </MotiView>
+        </View>
       </LinearGradient>
     </View>
   );

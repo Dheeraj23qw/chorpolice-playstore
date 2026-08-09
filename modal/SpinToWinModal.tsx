@@ -1,5 +1,5 @@
 import React, { useEffect, memo } from "react";
-import { Modal, View, Pressable } from "react-native";
+import { Modal, View, Pressable, StyleSheet } from "react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -72,8 +72,9 @@ const SpinController: React.FC<SpinControllerProps> = ({
           colors={["rgba(99,102,241,0.35)", "rgba(0,0,0,0.85)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          className="flex-1 items-center justify-center"
+          style={{ flex: 1 }}
         >
+          <View className="flex-1 items-center justify-center">
           {/* 🧊 ONLY THIS BECOMES GLASS */}
           <Pressable onPress={onSpin} className="w-full px-6">
             <Animated.View style={modalAnimatedStyle}>
@@ -82,7 +83,7 @@ const SpinController: React.FC<SpinControllerProps> = ({
                 <BlurView
                   intensity={30}
                   tint="dark"
-                  className="absolute h-full w-full"
+                  style={StyleSheet.absoluteFill}
                 />
 
                 {/* soft reflection (glass feel) */}
@@ -94,7 +95,7 @@ const SpinController: React.FC<SpinControllerProps> = ({
                   ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  className="absolute h-full w-full"
+                  style={StyleSheet.absoluteFill}
                 />
 
                 {/* CONTENT */}
@@ -120,6 +121,7 @@ const SpinController: React.FC<SpinControllerProps> = ({
               </View>
             </Animated.View>
           </Pressable>
+          </View>
         </LinearGradient>
       </View>
     </Modal>

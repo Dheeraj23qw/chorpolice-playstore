@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable, Image } from "react-native";
+import { View, Pressable, Image, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -35,7 +35,7 @@ export const GameModeRow = ({ item, onPress }: Props) => {
         <BlurView intensity={25} tint="dark">
           <LinearGradient
             colors={["rgba(99, 102, 241, 0.08)", "transparent"]}
-            className="absolute inset-0"
+            style={StyleSheet.absoluteFill}
           />
           <View className="flex-row items-center px-5 py-4">
 

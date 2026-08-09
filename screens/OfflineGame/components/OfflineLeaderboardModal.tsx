@@ -24,8 +24,10 @@ export const OfflineLeaderboardModal: React.FC<
         <MotiView
           from={{ translateY: 600 }}
           animate={{ translateY: 0 }}
-          className="mt-auto rounded-t-[40px] border-t border-white/10 bg-[#0a0a0c] p-8 pb-12"
+          className="rounded-t-[40px] border-t border-white/10 bg-[#0a0a0c]"
+          style={{ marginTop: "auto" }}
         >
+          <View className="p-8 pb-12">
           <View className="mb-8 flex-row items-center justify-between">
             <Text className="font-main-bold text-2xl text-white">
               Leaderboard
@@ -59,6 +61,7 @@ export const OfflineLeaderboardModal: React.FC<
                 </View>
               </View>
             ))}
+          </View>
           </View>
         </MotiView>
       </View>

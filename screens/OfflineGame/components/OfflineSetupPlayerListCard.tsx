@@ -33,7 +33,7 @@ export const OfflineSetupPlayerListCard: React.FC<
       />
       <LinearGradient
         colors={["rgba(99,102,241,0.16)", "rgba(255,255,255,0.03)"]}
-        className="absolute inset-0"
+        style={StyleSheet.absoluteFill}
       />
 
       <View className="flex-row items-center px-5 py-4">

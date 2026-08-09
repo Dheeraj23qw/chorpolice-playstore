@@ -33,8 +33,8 @@ const OfflinePlayerCardComponent: React.FC<OfflinePlayerCardProps> = ({
     >
       <LinearGradient
         colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]}
-        className="p-5"
       >
+        <View className="p-5">
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-4">
             <Text
@@ -64,6 +64,7 @@ const OfflinePlayerCardComponent: React.FC<OfflinePlayerCardProps> = ({
               </View>
             </View>
           </Pressable>
+        </View>
         </View>
       </LinearGradient>
     </MotiView>

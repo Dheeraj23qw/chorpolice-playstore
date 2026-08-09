@@ -124,19 +124,24 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
             damping: 15,
             stiffness: 120,
           }}
-          className="w-full max-w-[400px] items-center overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f] p-8"
+          className="overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
+          style={{ width: "100%", maxWidth: 400, alignItems: "center" }}
         >
           {/* TOP ACCENT */}
           <View className="absolute top-0 h-1.5 w-24 rounded-b-full bg-indigo-500" />
 
+          <View className="p-8">
           {/* ICON */}
           <MotiView
             from={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", delay: 100 }}
-            className="mb-6 h-24 w-24 items-center justify-center rounded-[32px] border border-indigo-500/20 bg-indigo-500/10"
+            className="rounded-[32px] border border-indigo-500/20 bg-indigo-500/10"
+            style={{ marginBottom: 24 }}
           >
-            <Text className="text-5xl">⭐</Text>
+            <View className="h-24 w-24 items-center justify-center">
+              <Text className="text-5xl">⭐</Text>
+            </View>
           </MotiView>
 
           {/* TITLE */}
@@ -182,7 +187,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
             <MotiView
               from={{ opacity: 0, translateY: 20 }}
               animate={{ opacity: 1, translateY: 0 }}
-              className="mb-8 w-full"
+              style={{ marginBottom: 32, width: "100%" }}
             >
               <TextInput
                 placeholder={
@@ -225,6 +230,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
                 Maybe Later
               </Text>
             </TouchableOpacity>
+          </View>
           </View>
         </MotiView>
       </View>

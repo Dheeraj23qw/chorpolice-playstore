@@ -41,13 +41,14 @@ export const MysteryBoard: React.FC<MysteryBoardProps> = React.memo(({
         return (
           <MotiView
             key={i}
-            className="absolute aspect-[3/4.2] w-[38%]"
+            className="aspect-[3/4.2]"
             animate={{
               left: slot.left + 20,
               top: slot.top + 20,
               rotate: rot,
               scale: 1,
             }}
+            style={{ position: "absolute", width: "38%" }}
             transition={{
               type: "timing",
               duration: 800,

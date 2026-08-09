@@ -74,8 +74,9 @@ export const PlayerProfileCard = ({
         animate={{ opacity: 1, translateY: 0 }}
         exit={{ opacity: 0, translateY: -30, height: 0, marginBottom: 0 }}
         transition={{ type: "timing", duration: 350 }}
-        className="mb-6 overflow-hidden rounded-[36px]"
+        className="overflow-hidden rounded-[36px]"
       >
+        <View className="mb-6">
         <View className="absolute inset-0 rounded-[36px] bg-indigo-500/20 blur-2xl" />
 
         <LinearGradient
@@ -84,8 +85,9 @@ export const PlayerProfileCard = ({
             "rgba(255,255,255,0.03)",
             "rgba(0,0,0,0.2)",
           ]}
-          className="rounded-[36px] border border-white/10 p-6"
+          className="rounded-[36px] border border-white/10"
         >
+          <View className="p-6">
           {/* HEADER */}
           <View className="mb-8 flex-row items-center justify-between">
             <View className="flex-1 pr-4">
@@ -161,8 +163,9 @@ export const PlayerProfileCard = ({
                                 ? ["#6366F1", "#8B5CF6"]
                                 : ["transparent", "transparent"]
                             }
-                            className="items-center rounded-xl py-3"
+                            className="rounded-xl"
                           >
+                            <View className="items-center py-3">
                             <Text
                               className={
                                 isSelected
@@ -172,6 +175,7 @@ export const PlayerProfileCard = ({
                             >
                               {opt}
                             </Text>
+                            </View>
                           </LinearGradient>
                         </Pressable>
                       );
@@ -183,7 +187,9 @@ export const PlayerProfileCard = ({
               )}
             </CollapsibleCard>
           )}
+          </View>
         </LinearGradient>
+      </View>
       </MotiView>
 
       {/* ================= AVATAR MODAL (SMOOTH SHEET) ================= */}
@@ -193,16 +199,19 @@ export const PlayerProfileCard = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ type: "timing", duration: 180 }}
-          className="flex-1 bg-black/80"
+          className="bg-black/80"
+          style={{ flex: 1 }}
         >
+          <View className="flex-1">
           {/* SHEET (NO SPRING = NO LAG) */}
           <MotiView
             from={{ translateY: 600 }}
             animate={{ translateY: 0 }}
             exit={{ translateY: 600 }}
             transition={{ type: "timing", duration: 220 }}
-            className="mt-auto h-[80%] rounded-t-[36px] bg-[#050507] p-6"
+            className="rounded-t-[36px] bg-[#050507]"
           >
+            <View className="mt-auto h-[80%] p-6">
             {/* HEADER */}
             <View className="mb-6 flex-row items-center justify-between">
               <Text className="font-main-bold text-lg text-white">
@@ -221,7 +230,9 @@ export const PlayerProfileCard = ({
               gameMode="ONLINE"
               isTaken={(id: number) => takenSet.has(id)}
             />
+            </View>
           </MotiView>
+          </View>
         </MotiView>
       </Modal>
     </>

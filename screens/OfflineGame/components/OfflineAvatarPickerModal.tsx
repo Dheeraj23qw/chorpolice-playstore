@@ -44,15 +44,16 @@ export const OfflineAvatarPickerModal: React.FC<
           animate={{ translateY: 0, opacity: 1 }}
           transition={{ type: "timing", duration: 260 }}
           style={{ height: hp(70) }}
-          className="mt-auto overflow-hidden rounded-t-[36px] border border-white/10 bg-[#090B14]"
+          className="overflow-hidden rounded-t-[36px] border border-white/10 bg-[#090B14]"
         >
+          <View className="mt-auto flex-1">
           <LinearGradient
             colors={[
               "rgba(99,102,241,0.20)",
               "rgba(255,255,255,0.03)",
               "rgba(9,11,20,1)",
             ]}
-            className="absolute inset-0"
+            style={StyleSheet.absoluteFill}
           />
 
           <View className="items-center pt-3">
@@ -94,6 +95,7 @@ export const OfflineAvatarPickerModal: React.FC<
               gameMode="ONLINE"
               isTaken={isAvatarTaken}
             />
+          </View>
           </View>
         </MotiView>
       </View>

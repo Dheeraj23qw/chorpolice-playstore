@@ -140,13 +140,14 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
         animate={{ opacity: 1, translateY: 0 }}
         exit={{ opacity: 0, translateY: -8 }}
         transition={{ type: "timing", duration: 300 }}
-        className="mb-4 overflow-hidden rounded-2xl"
+        className="overflow-hidden rounded-2xl"
       >
+        <View className="mb-4">
         <LinearGradient
           colors={config.gradientColors}
-          className="p-4"
           style={{ borderWidth: 1, borderColor: config.borderColor, borderRadius: 16 }}
         >
+          <View className="p-4">
           <View className="flex-row items-start gap-3">
             {/* Icon */}
             <View className="mt-0.5">
@@ -200,7 +201,9 @@ export const NetworkStatusBanner: React.FC<NetworkStatusBannerProps> = ({
               )}
             </View>
           </View>
+          </View>
         </LinearGradient>
+        </View>
       </MotiView>
     </AnimatePresence>
   );

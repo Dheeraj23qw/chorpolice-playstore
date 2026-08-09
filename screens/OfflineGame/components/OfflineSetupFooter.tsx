@@ -35,7 +35,7 @@ export const OfflineSetupFooter: React.FC<OfflineSetupFooterProps> = ({
           colors={["#818CF8", "#6366F1", "#4F46E5"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="absolute inset-0"
+          style={StyleSheet.absoluteFill}
         />
         <View className="absolute inset-0 bg-white/8" />
         <View className="flex-1 flex-row items-center justify-center">

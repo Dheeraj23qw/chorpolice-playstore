@@ -23,12 +23,14 @@ export const PermissionFallbackCard: React.FC<PermissionFallbackCardProps> = ({
   <MotiView
     from={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
-    className="mx-1 overflow-hidden rounded-[30px]"
+    className="overflow-hidden rounded-[30px]"
   >
+    <View className="mx-1">
     <LinearGradient
       colors={["rgba(239,68,68,0.18)", "rgba(15,23,42,0.2)"]}
-      className="rounded-[30px] border border-red-400/20 p-5"
+      className="rounded-[30px] border border-red-400/20"
     >
+      <View className="p-5">
       <Text className="text-[10px] uppercase tracking-[3px] text-red-200">
         Permission Needed
       </Text>
@@ -44,11 +46,13 @@ export const PermissionFallbackCard: React.FC<PermissionFallbackCardProps> = ({
       <Pressable onPress={onPrimary} className="mt-5 overflow-hidden rounded-2xl active:scale-95">
         <LinearGradient
           colors={["#2563EB", "#1D4ED8"]}
-          className="rounded-2xl px-4 py-4"
+          className="rounded-2xl"
         >
+          <View className="px-4 py-4">
           <Text className="text-center font-main-bold uppercase tracking-[2px] text-white">
             {primaryLabel}
           </Text>
+          </View>
         </LinearGradient>
       </Pressable>
 
@@ -62,6 +66,8 @@ export const PermissionFallbackCard: React.FC<PermissionFallbackCardProps> = ({
           </Text>
         </Pressable>
       ) : null}
+      </View>
     </LinearGradient>
+    </View>
   </MotiView>
 );

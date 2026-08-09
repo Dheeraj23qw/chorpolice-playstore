@@ -1,7 +1,7 @@
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Image, Platform, View } from "react-native";
+import { Image, Platform, StyleSheet, View } from "react-native";
 
 type LobbyBackdropProps = {
   blurIntensity?: number;
@@ -23,12 +23,12 @@ export const LobbyBackdrop = ({
       <BlurView
         intensity={blurIntensity}
         tint="dark"
-        className="absolute inset-0"
+        style={StyleSheet.absoluteFill}
       />
     ) : (
       <View className="absolute inset-0 bg-black/45" />
     )}
 
-    <LinearGradient colors={gradientColors} className="absolute inset-0" />
+    <LinearGradient colors={gradientColors} style={StyleSheet.absoluteFill} />
   </View>
 );

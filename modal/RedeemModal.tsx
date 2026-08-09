@@ -93,8 +93,9 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
         <MotiView
           from={{ scale: 0.9, opacity: 0, translateY: 20 }}
           animate={{ scale: 1, opacity: 1, translateY: 0 }}
-          className="w-full max-w-sm overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
+          className="overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
         >
+          <View className="w-full max-w-sm">
           <BlurView intensity={40} tint="dark">
             <View className="p-8 items-center">
               <View className="mb-6 h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
@@ -135,6 +136,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
             </TouchableOpacity>
             </View>
           </BlurView>
+          </View>
         </MotiView>
       </View>
     </Modal>

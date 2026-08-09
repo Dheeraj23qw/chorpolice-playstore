@@ -240,8 +240,9 @@ const AvatarCard = ({
                   type: "timing",
                   duration: 250,
                 }}
-                className="absolute inset-0 items-center justify-center"
+                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
               >
+                <View className="items-center justify-center">
                 {/* BIG CENTER STAMP */}
                 <View className="items-center">
                   <View className="rounded-2xl bg-black/60 px-5 py-2">
@@ -253,6 +254,7 @@ const AvatarCard = ({
                   <Text className="mt-2 text-xs text-white/60">
                     Choose another avatar
                   </Text>
+                </View>
                 </View>
               </MotiView>
             )}

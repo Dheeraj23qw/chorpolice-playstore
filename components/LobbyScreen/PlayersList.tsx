@@ -33,8 +33,9 @@ export const PlayersList: React.FC<PlayersListProps> = ({
       from={{ opacity: 0, translateY: 16, scale: 0.98 }}
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
       transition={{ type: "spring", damping: 18 }}
-      className="mb-6 overflow-hidden rounded-[32px]"
+      className="overflow-hidden rounded-[32px]"
     >
+      <View className="mb-6">
       {/* Glow */}
       <View className="absolute inset-0 rounded-[32px] bg-indigo-500/10 blur-2xl" />
 
@@ -80,8 +81,9 @@ export const PlayersList: React.FC<PlayersListProps> = ({
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ type: "timing", duration: 180 }}
-              className="overflow-hidden px-4 pb-4"
+              className="overflow-hidden"
             >
+              <View className="px-4 pb-4">
               {hasPlayers ? (
                 <View>
                   {lobby.players.map((item, index) => (
@@ -111,9 +113,11 @@ export const PlayersList: React.FC<PlayersListProps> = ({
                   </Text>
                 </View>
               )}
+              </View>
             </MotiView>
           )}
         </AnimatePresence>
+      </View>
       </View>
     </MotiView>
   );

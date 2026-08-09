@@ -104,7 +104,8 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
               <GlowDisk index={index} scrollX={scrollX} color={item.accent} />
 
               <View className="w-full overflow-hidden rounded-[40px] border border-white/10">
-                <BlurView intensity={25} tint="dark" className="p-8 py-12">
+                <BlurView intensity={25} tint="dark">
+                  <View className="p-8 py-12">
                   <View className="items-center">
                     <AnimatedSlideImage
                       index={index}
@@ -119,6 +120,7 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
                     <Text className="mt-4 text-center text-base leading-6 text-white/50">
                       {item.description}
                     </Text>
+                  </View>
                   </View>
                 </BlurView>
               </View>
@@ -283,8 +285,9 @@ const AnimatedCTA = ({
             colors={isLoading ? ["#374151", "#1F2937"] : ["#A78BFA", "#60A5FA"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="items-center justify-center rounded-full px-10 py-5"
+            className="rounded-full"
           >
+            <View className="items-center justify-center px-10 py-5">
             {isLoading && (
               <ActivityIndicator
                 color="white"
@@ -329,6 +332,7 @@ const AnimatedCTA = ({
                   </Text>
                 </MotiView>
               </AnimatePresence>
+            </View>
             </View>
           </LinearGradient>
         </MotiView>

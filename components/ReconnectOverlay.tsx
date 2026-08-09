@@ -46,11 +46,11 @@ export const ReconnectOverlay = () => {
             from={{ opacity: 0, scale: 0.9, translateY: 20 }}
             animate={{ opacity: 1, scale: 1, translateY: 0 }}
             transition={{ type: "timing", duration: 400 }}
-            className="w-full max-w-sm overflow-hidden rounded-[32px] border border-white/10"
+            className="overflow-hidden rounded-[32px] border border-white/10"
+            style={{ width: "100%", maxWidth: 384 }}
           >
             <LinearGradient
               colors={["rgba(30, 30, 50, 0.8)", "rgba(10, 10, 20, 0.95)"]}
-              className="p-8 items-center"
             >
               {/* NEON GLOW EFFECT */}
               <View 
@@ -65,17 +65,23 @@ export const ReconnectOverlay = () => {
                 }} 
               />
 
+              <View className="p-8 items-center">
               <MotiView
                 animate={{ rotate: "360deg" }}
                 transition={{ loop: true, repeatReverse: false, duration: 2000, type: "timing" }}
-                className="mb-6 h-16 w-16 items-center justify-center rounded-full border-2 border-indigo-500/30"
+                className="rounded-full border-2 border-indigo-500/30"
+                style={{ marginBottom: 24 }}
               >
-                <LinearGradient
-                  colors={["#6366F1", "#8B5CF6"]}
-                  className="h-12 w-12 items-center justify-center rounded-full shadow-lg shadow-indigo-500"
-                >
-                  <ActivityIndicator color="white" size="small" />
-                </LinearGradient>
+                <View className="h-16 w-16 items-center justify-center">
+                  <LinearGradient
+                    colors={["#6366F1", "#8B5CF6"]}
+                    className="rounded-full shadow-lg shadow-indigo-500"
+                  >
+                    <View className="h-12 w-12 items-center justify-center">
+                      <ActivityIndicator color="white" size="small" />
+                    </View>
+                  </LinearGradient>
+                </View>
               </MotiView>
 
               <Text className="font-main-bold text-center text-2xl text-white">
@@ -96,7 +102,8 @@ export const ReconnectOverlay = () => {
                       width: `${(reconnectTimeoutRemaining / (NETWORK.RECONNECT_TIMEOUT_MS / 1000)) * 100}%` 
                     }}
                     transition={{ type: "timing", duration: 1000 }}
-                    className="h-full bg-indigo-500 shadow-sm shadow-indigo-400"
+                    style={{ height: "100%" }}
+                    className="bg-indigo-500 shadow-sm shadow-indigo-400"
                   />
                 </View>
                 
@@ -115,6 +122,7 @@ export const ReconnectOverlay = () => {
                   Attempt #{attemptCount}
                 </Text>
               )}
+              </View>
             </LinearGradient>
           </MotiView>
         </View>

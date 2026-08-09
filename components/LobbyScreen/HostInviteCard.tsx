@@ -35,16 +35,20 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
         exit={{ opacity: 0, translateY: -20, height: 0 }}
-        className="mb-5 overflow-hidden rounded-[30px]"
+        className="overflow-hidden rounded-[30px]"
       >
+        <View className="mb-5">
         <LinearGradient
           colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]}
-          className="rounded-[30px] border border-white/10 p-5"
+          className="rounded-[30px] border border-white/10"
         >
+          <View className="p-5">
           <Text className="text-white/62 text-sm leading-5">
             Room is ready for local play. Enable permissions to invite friends.
           </Text>
+          </View>
         </LinearGradient>
+        </View>
       </MotiView>
     );
   }
@@ -57,8 +61,9 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
         animate={{ opacity: 1, translateY: 0, scale: 1 }}
         exit={{ opacity: 0, translateY: -20, scale: 0.96, height: 0 }}
         transition={{ type: "spring", damping: 16 }}
-        className="mb-5 overflow-hidden rounded-[30px]"
+        className="overflow-hidden rounded-[30px]"
       >
+        <View className="mb-5">
         <View className="absolute inset-0 rounded-[30px] bg-indigo-500/10 blur-xl" />
 
         <LinearGradient
@@ -67,8 +72,9 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
             "rgba(255,255,255,0.03)",
             "rgba(0,0,0,0.16)",
           ]}
-          className="rounded-[30px] border border-white/10 p-5"
+          className="rounded-[30px] border border-white/10"
         >
+          <View className="p-5">
           {/* HEADER */}
           <View className="flex-row items-center justify-between">
             <Text className="text-[10px] uppercase tracking-[3px] text-emerald-200">
@@ -100,9 +106,11 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
                     duration: 2000,
                     type: "timing",
                   }}
-                  className="rounded-[24px] bg-white p-3"
+                  className="rounded-[24px] bg-white"
                 >
+                  <View className="p-3">
                   <QRCode value={lobby.qrPayload} size={QR_SIZE} />
+                  </View>
                 </MotiView>
               </Pressable>
 
@@ -129,12 +137,13 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
                     from={{ opacity: 0, translateY: 10 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     transition={{ delay: index * 80 }}
-                    className="flex-1"
                   >
+                    <View className="flex-1">
                     <View className="rounded-2xl border border-white/10 bg-black/25 px-3 py-3">
                       <Text className="text-center font-main-bold text-base tracking-[2px] text-white">
                         {part}
                       </Text>
+                    </View>
                     </View>
                   </MotiView>
                 ))}
@@ -145,22 +154,28 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
                 {({ pressed }) => (
                   <MotiView
                     animate={{ scale: pressed ? 0.96 : 1 }}
-                    className="mt-3 overflow-hidden rounded-2xl"
+                    className="overflow-hidden rounded-2xl"
                   >
+                    <View className="mt-3">
                     <LinearGradient
                       colors={["rgba(99,102,241,0.3)", "rgba(79,70,229,0.1)"]}
-                      className="rounded-2xl border border-indigo-400/20 px-4 py-3"
+                      className="rounded-2xl border border-indigo-400/20"
                     >
+                      <View className="px-4 py-3">
                       <Text className="text-center font-main-bold text-xs uppercase tracking-[2px] text-indigo-200">
                         Copy Room Code
                       </Text>
+                      </View>
                     </LinearGradient>
+                    </View>
                   </MotiView>
                 )}
               </Pressable>
             </View>
           </View>
+          </View>
         </LinearGradient>
+        </View>
       </MotiView>
 
       {/* ---------------- FULLSCREEN QR ---------------- */}
@@ -175,8 +190,8 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: "spring", damping: 15 }}
-              className="items-center"
             >
+              <View className="items-center">
               <View className="rounded-[32px] bg-white p-6">
                 <QRCode value={lobby.qrPayload} size={260} />
               </View>
@@ -191,6 +206,7 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
               >
                 <Ionicons name="close" size={22} color="white" />
               </Pressable>
+              </View>
             </MotiView>
           </Pressable>
         </Pressable>

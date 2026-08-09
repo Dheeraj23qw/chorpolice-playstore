@@ -131,7 +131,15 @@ export const QRScanner = ({
           duration: 1500,
           type: "timing",
         }}
-        className="absolute left-1/2 h-1 w-40 -translate-x-20 rounded-full bg-green-400/80"
+        style={{
+          position: "absolute",
+          left: "50%",
+          height: 4,
+          width: 160,
+          marginLeft: -80,
+          borderRadius: 999,
+          backgroundColor: "rgba(74,222,128,0.8)",
+        }}
       />
 
       {/* 🎯 SUCCESS OVERLAY */}
@@ -140,14 +148,17 @@ export const QRScanner = ({
           from={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 items-center justify-center bg-black/60"
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          className="bg-black/60"
         >
-          <Text 
-            style={{ fontSize: rf(2.2) }}
-            className="font-main-bold text-white"
-          >
-            Connected ✅
-          </Text>
+          <View className="items-center justify-center">
+            <Text 
+              style={{ fontSize: rf(2.2) }}
+              className="font-main-bold text-white"
+            >
+              Connected ✅
+            </Text>
+          </View>
         </MotiView>
       )}
     </View>

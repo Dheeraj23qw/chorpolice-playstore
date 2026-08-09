@@ -71,8 +71,9 @@ const PlayerCardComponent: React.FC<PlayerCardProps> = ({
             type: "timing",
             duration: flipDuration,
           }}
-          className="flex-1"
+          style={{ flex: 1 }}
         >
+          <View className="flex-1">
           <MotiView
             animate={{ opacity: flipped ? 0 : 1 }}
             transition={{
@@ -128,6 +129,7 @@ const PlayerCardComponent: React.FC<PlayerCardProps> = ({
               isCorrect={isCorrect}
             />
           </MotiView>
+          </View>
         </MotiView>
       </Animated.View>
     </TouchableOpacity>

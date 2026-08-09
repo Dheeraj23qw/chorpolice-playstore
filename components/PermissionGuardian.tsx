@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TouchableOpacity, ScrollView } from "react-native";
+import { View, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { MotiView } from "moti";
 import { Text } from "@/components/Text";
 import { usePermissionGuard } from "@/hooks/usePermissionGuard";
@@ -105,7 +105,7 @@ export const PermissionGuardian: React.FC<Props> = ({
       <LinearGradient
         colors={["#111827", "#050508", "#020617"]}
         locations={[0, 0.48, 1]}
-        className="absolute inset-0"
+        style={StyleSheet.absoluteFill}
       />
 
       <View className="absolute -right-24 top-12 h-72 w-72 rounded-full bg-indigo-500/20" />
@@ -118,12 +118,13 @@ export const PermissionGuardian: React.FC<Props> = ({
           transition={{ type: "spring", damping: 17 }}
           className="overflow-hidden rounded-[36px] border border-white/10 bg-white/5 shadow-2xl"
         >
-          <BlurView intensity={28} tint="dark" className="p-7">
+          <BlurView intensity={28} tint="dark">
+            <View className="p-7">
             <View className="items-center">
               <View className="mb-5 h-20 w-20 items-center justify-center overflow-hidden rounded-[28px] border border-indigo-300/20 bg-indigo-500/15">
                 <LinearGradient
                   colors={["rgba(129,140,248,0.35)", "rgba(79,70,229,0.10)"]}
-                  className="absolute inset-0"
+                  style={StyleSheet.absoluteFill}
                 />
 
                 <MaterialCommunityIcons
@@ -160,8 +161,9 @@ export const PermissionGuardian: React.FC<Props> = ({
                     from={{ opacity: 0, translateY: 8 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     transition={{ type: "timing", duration: 250 }}
-                    className="border-white/8 mb-3 flex-row items-center rounded-3xl border bg-white/5 p-4"
+                    className="rounded-3xl border border-white/8 bg-white/5"
                   >
+                    <View className="mb-3 flex-row items-center p-4">
                     <View
                       className="mr-4 h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
                       style={{
@@ -198,6 +200,7 @@ export const PermissionGuardian: React.FC<Props> = ({
                         {info.desc}
                       </Text>
                     </View>
+                    </View>
                   </MotiView>
                 );
               })}
@@ -223,8 +226,9 @@ export const PermissionGuardian: React.FC<Props> = ({
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                className="h-full flex-row items-center justify-center"
+                style={StyleSheet.absoluteFill}
               >
+                <View className="h-full flex-row items-center justify-center">
                 <MaterialCommunityIcons
                   name={
                     state === "blocked" ? "cog-outline" : "check-circle-outline"
@@ -236,6 +240,7 @@ export const PermissionGuardian: React.FC<Props> = ({
                 <Text className="ml-2 font-main-bold text-base uppercase tracking-[2px] text-white">
                   {state === "blocked" ? "Open Settings" : "Allow & Play"}
                 </Text>
+                </View>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -262,6 +267,7 @@ export const PermissionGuardian: React.FC<Props> = ({
                 </Text>
               </TouchableOpacity>
             )}
+            </View>
           </BlurView>
         </MotiView>
       </View>

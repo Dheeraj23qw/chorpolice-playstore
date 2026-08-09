@@ -70,11 +70,13 @@ const PrivateRevealView = ({ role, round }: Props) => {
           from={{ opacity: 0, translateY: -16 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: "spring", damping: 14 }}
-          className="rounded-full border border-white/10 bg-white/5 px-5 py-2"
+          className="rounded-full border border-white/10 bg-white/5"
         >
+          <View className="px-5 py-2">
           <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-white/70">
             GET SET READY
           </Text>
+          </View>
         </MotiView>
 
         <MotiText
@@ -93,12 +95,14 @@ const PrivateRevealView = ({ role, round }: Props) => {
         from={{ opacity: 0, scale: 0.86, translateY: 18 }}
         animate={{ opacity: 1, scale: 1, translateY: 0 }}
         transition={{ type: "spring", damping: 14 }}
-        className="w-[84%] items-center overflow-hidden rounded-[36px] border border-white/15 bg-white/5 p-7"
+        className="overflow-hidden rounded-[36px] border border-white/15 bg-white/5"
+        style={{ width: "84%" }}
       >
         <BlurView intensity={16} tint="light" style={StyleSheet.absoluteFill} />
 
         <View className="absolute -top-16 h-32 w-32 rounded-full opacity-20" style={{ backgroundColor: data.color }} />
 
+        <View className="items-center p-7">
         <View className="mb-4 rounded-full border border-white/10 bg-black/30 px-4 py-2">
           <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-white/70">
             ROUND {round}
@@ -121,6 +125,7 @@ const PrivateRevealView = ({ role, round }: Props) => {
           <Text className="mt-3 text-center font-main text-xs italic text-white/80">
             {data.subtitle}
           </Text>
+        </View>
         </View>
       </MotiView>
     </View>

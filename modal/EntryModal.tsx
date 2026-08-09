@@ -72,13 +72,14 @@ export const EntryModal: React.FC<EntryModalProps> = ({
           from={{ opacity: 0, scale: 0.9, translateY: 30 }}
           animate={{ opacity: 1, scale: 1, translateY: 0 }}
           transition={{ type: "timing", duration: 350 }}
-          className="w-full max-w-md overflow-hidden rounded-[36px]"
+          className="overflow-hidden rounded-[36px]"
         >
+          <View className="w-full max-w-md">
           <BlurView intensity={90} tint="dark">
             <LinearGradient
               colors={["rgba(255,255,255,0.06)", "rgba(0,0,0,0.4)"]}
-              className="p-6"
             >
+              <View className="p-6">
               {/* HEADER */}
               <View className="mb-6 items-center">
                 <MotiView
@@ -88,9 +89,11 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                 >
                   <LinearGradient
                     colors={["#6366f1", "#4f46e5"]}
-                    className="h-14 w-14 items-center justify-center rounded-2xl"
+                    className="rounded-2xl"
                   >
+                    <View className="h-14 w-14 items-center justify-center">
                     <Ionicons name="flash" size={22} color="white" />
+                    </View>
                   </LinearGradient>
                 </MotiView>
 
@@ -157,8 +160,9 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                                     isPicked && !isDisabled ? 0.4 : 0,
                                   shadowRadius: 20,
                                 }}
-                                className="items-center justify-center overflow-hidden rounded-3xl border py-5"
+                                className="overflow-hidden rounded-3xl border"
                               >
+                                <View className="items-center justify-center py-5">
                                 {/* LOCK OVERLAY */}
                                 {isDisabled && (
                                   <View className="absolute inset-0 items-center justify-center rounded-3xl bg-black/40">
@@ -196,6 +200,7 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                                 >
                                   coins
                                 </Text>
+                                </View>
                               </MotiView>
                             </TouchableOpacity>
                           </View>
@@ -267,8 +272,10 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                   cancel
                 </Text>
               </TouchableOpacity>
+              </View>
             </LinearGradient>
           </BlurView>
+          </View>
         </MotiView>
       </View>
     </Modal>

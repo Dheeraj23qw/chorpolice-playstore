@@ -46,8 +46,9 @@ export const LowCoinModal = ({
           from={{ scale: 0.9, opacity: 0, translateY: 20 }}
           animate={{ scale: 1, opacity: 1, translateY: 0 }}
           transition={{ type: "spring", damping: 15 }}
-          className="w-full max-w-sm overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
+          className="overflow-hidden rounded-[40px] border border-white/10 bg-[#0a0a0f]"
         >
+          <View className="w-full max-w-sm">
           <BlurView intensity={60} tint="dark">
             <View className="items-center p-8">
               {/* CLOSE BUTTON */}
@@ -114,6 +115,7 @@ export const LowCoinModal = ({
             </View>
             </View>
           </BlurView>
+          </View>
         </MotiView>
       </View>
     </Modal>

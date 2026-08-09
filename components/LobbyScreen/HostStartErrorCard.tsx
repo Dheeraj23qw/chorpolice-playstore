@@ -21,12 +21,14 @@ export const HostStartErrorCard: React.FC<HostStartErrorCardProps> = ({
   <MotiView
     from={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
-    className="mx-1 overflow-hidden rounded-[30px]"
+    className="overflow-hidden rounded-[30px]"
   >
+    <View className="mx-1">
     <LinearGradient
       colors={["rgba(245,158,11,0.18)", "rgba(15,23,42,0.2)"]}
-      className="rounded-[30px] border border-amber-400/20 p-5"
+      className="rounded-[30px] border border-amber-400/20"
     >
+      <View className="p-5">
       <Text className="text-[10px] uppercase tracking-[3px] text-amber-200">
         Room Problem
       </Text>
@@ -50,8 +52,9 @@ export const HostStartErrorCard: React.FC<HostStartErrorCardProps> = ({
               ? ["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]
               : ["#2563EB", "#1D4ED8"]
           }
-          className="rounded-2xl px-4 py-4"
+          className="rounded-2xl"
         >
+          <View className="px-4 py-4">
           <Text
             className={`text-center font-main-bold uppercase tracking-[2px] ${
               retrying ? "text-white/45" : "text-white"
@@ -59,6 +62,7 @@ export const HostStartErrorCard: React.FC<HostStartErrorCardProps> = ({
           >
             {retrying ? "Trying Again..." : "Try Hosting Again"}
           </Text>
+          </View>
         </LinearGradient>
       </Pressable>
 
@@ -72,6 +76,8 @@ export const HostStartErrorCard: React.FC<HostStartErrorCardProps> = ({
           </Text>
         </Pressable>
       ) : null}
+      </View>
     </LinearGradient>
+    </View>
   </MotiView>
 );

@@ -52,17 +52,19 @@ const OfflineResultOverlayComponent: React.FC<OfflineResultOverlayProps> = ({
         from={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 z-50 flex-1 items-center justify-center bg-black p-6"
+        className="bg-black"
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, alignItems: "center", justifyContent: "center" }}
       >
         {result.winner === "police" && isFinalRound && (
           <VictoryCelebration type="GOLD" intensity="MEDIUM" duration={4000} />
         )}
-        <View className="w-full">
+        <View className="w-full p-6">
           <MotiView
             from={{ scale: 0.9, opacity: 0, translateY: 20 }}
             animate={{ scale: 1, opacity: 1, translateY: 0 }}
-            className="w-full rounded-[40px] border border-white/20 bg-white/5 p-8"
+            className="rounded-[40px] border border-white/20 bg-white/5"
           >
+            <View className="p-8">
             <Text className="mb-2 text-center font-main-bold text-3xl text-white">
               {result.winner === "police" ? "POLICE WON!" : "THIEF ESCAPED!"}
             </Text>
@@ -124,6 +126,7 @@ const OfflineResultOverlayComponent: React.FC<OfflineResultOverlayProps> = ({
                 </Text>
               </TouchableOpacity>
             )}
+            </View>
           </MotiView>
         </View>
       </MotiView>

@@ -173,7 +173,7 @@ const OfflineSetupScreen = () => {
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
@@ -181,7 +181,7 @@ const OfflineSetupScreen = () => {
           from={{ opacity: 0, translateY: 12 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: "timing", duration: 260 }}
-          className="flex-1"
+          style={{ flex: 1 }}
         >
           <OfflineSetupHeader
             isPlayerListOpen={isPlayerListOpen}

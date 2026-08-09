@@ -50,9 +50,16 @@ const PlayerCardFrontFaceComponent: React.FC<PlayerCardFrontFaceProps> = ({
             style={{
               backgroundColor: `${themeColor}25`,
               borderColor: themeColor,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 10,
             }}
-            className="absolute inset-0 z-10 items-center justify-center rounded-[26px] border-[4px]"
+            className="rounded-[26px] border-[4px]"
           >
+            <View className="items-center justify-center">
             <View
               style={{
                 backgroundColor: themeColor,
@@ -60,6 +67,7 @@ const PlayerCardFrontFaceComponent: React.FC<PlayerCardFrontFaceProps> = ({
               }}
               className="h-2 w-12 rounded-full shadow-lg"
             />
+            </View>
           </MotiView>
         ) : (
           <View className="items-center rounded-2xl border border-indigo-400/30 bg-indigo-950/90 px-3 py-2 shadow-xl">

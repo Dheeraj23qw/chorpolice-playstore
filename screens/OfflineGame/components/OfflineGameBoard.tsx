@@ -99,8 +99,8 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
           translateY: publicRevealTranslateY,
         }}
         transition={{ type: "spring", damping: 16, stiffness: 90 }}
-        className="aspect-[3/4.2] w-[47%]"
-        style={{ zIndex: publicRevealZIndex }}
+        className="aspect-[3/4.2]"
+        style={{ zIndex: publicRevealZIndex, width: "47%" }}
       >
         <OfflineCard
           index={idx}

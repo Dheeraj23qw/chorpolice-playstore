@@ -8,7 +8,7 @@ export default function SplashPhaseScreen() {
     <View className="flex-1 items-center justify-center bg-black">
       <LinearGradient
         colors={["#020617", "#111827", "#050508"]}
-        className="absolute inset-0"
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
       <View className="absolute inset-0 items-center justify-center bg-black/20">

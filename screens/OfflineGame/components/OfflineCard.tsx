@@ -48,8 +48,7 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
             scale: 1 
         }}
         transition={{ type: "timing", duration: 2500 }}
-        style={{ zIndex: 100 }}
-        className="w-full"
+        style={{ zIndex: 100, width: "100%" }}
       >
          <ChorSipahiCard
             index={index}
@@ -92,8 +91,7 @@ const OfflineCardComponent: React.FC<OfflineCardProps> = ({
     <MotiView
       animate={crazyStyles}
       transition={{ type: "spring", damping: 12, stiffness: 100, delay: isDealing ? index * 80 : 0 }}
-      style={{ zIndex: isDealing ? 100 : 1 }}
-      className="w-full"
+      style={{ zIndex: isDealing ? 100 : 1, width: "100%" }}
     >
       <ChorSipahiCard
         index={index}

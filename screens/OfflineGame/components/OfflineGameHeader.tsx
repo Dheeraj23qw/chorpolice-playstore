@@ -38,8 +38,7 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({
           colors={["rgba(79,70,229,0.98)", "rgba(30,27,75,0.98)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="flex-1 items-center justify-center"
-          style={{ borderRadius: 999 }}
+          style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 999 }}
         >
           <View className="absolute inset-0 rounded-full bg-white/5" />
           <View className="absolute inset-[3px] rounded-full border border-white/10" />

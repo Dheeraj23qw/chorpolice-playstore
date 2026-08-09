@@ -33,8 +33,11 @@ export const OfflineCountdownBadge: React.FC<OfflineCountdownBadgeProps> = ({
         stiffness: 155,
         mass: 0.65,
       }}
-      className="absolute inset-x-0 items-center"
       style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        alignItems: "center",
         bottom: hp(2),
         zIndex: 999,
         elevation: 999,

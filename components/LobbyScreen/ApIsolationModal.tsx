@@ -42,8 +42,9 @@ export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
           from={{ opacity: 0, scale: 0.92, translateY: 20 }}
           animate={{ opacity: 1, scale: 1, translateY: 0 }}
           transition={{ type: "spring", damping: 14, stiffness: 120 }}
-          className="mx-6 w-[90%] max-w-[400px] overflow-hidden rounded-[32px]"
+          className="overflow-hidden rounded-[32px]"
         >
+          <View className="mx-6 w-[90%] max-w-[400px]">
           {/* Glow Effect */}
           <View className="absolute inset-0 rounded-[32px] bg-amber-500/15 blur-3xl" />
 
@@ -53,17 +54,19 @@ export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
               "rgba(255,255,255,0.03)",
               "rgba(0,0,0,0.3)",
             ]}
-            className="rounded-[32px] border border-amber-400/20 p-6"
+            className="rounded-[32px] border border-amber-400/20"
           >
+            <View className="p-6">
             {/* ICON */}
             <MotiView
               from={{ opacity: 0, scale: 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 100 }}
-              className="mb-4 items-center"
             >
+              <View className="mb-4 items-center">
               <View className="h-16 w-16 items-center justify-center rounded-full bg-amber-500/20">
                 <Ionicons name="wifi-outline" size={32} color="#F59E0B" />
+              </View>
               </View>
             </MotiView>
 
@@ -121,15 +124,19 @@ export const ApIsolationModal: React.FC<ApIsolationModalProps> = ({
               >
                 <LinearGradient
                   colors={["#F59E0B", "#D97706"]}
-                  className="items-center rounded-2xl py-3"
+                  className="rounded-2xl"
                 >
+                  <View className="items-center py-3">
                   <Text className="font-main-bold text-sm text-black">
                     {isHost ? "Open Hotspot" : "Open Wi-Fi"}
                   </Text>
+                  </View>
                 </LinearGradient>
               </Pressable>
             </View>
+            </View>
           </LinearGradient>
+          </View>
         </MotiView>
       </View>
     </Modal>

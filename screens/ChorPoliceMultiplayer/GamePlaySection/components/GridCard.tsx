@@ -57,11 +57,11 @@ const GridCardComponent: React.FC<GridCardProps> = ({
   return (
     <MotiView
       key={`${round}-${index}`}
-      className="aspect-[3/4.2] w-[47%]"
+      className="aspect-[3/4.2]"
       from={startStyle}
       animate={motion.animate}
       transition={motion.transition}
-      style={{ zIndex: motion.zIndex }}
+      style={{ zIndex: motion.zIndex, width: "47%" }}
     >
       <PlayerCard
         index={index}

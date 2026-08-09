@@ -109,7 +109,7 @@ export default function UnlockedAwardModal() {
             damping: 12,
             stiffness: 120,
           }}
-          className="w-full max-w-sm items-center"
+          style={{ width: "100%", maxWidth: 384, alignItems: "center" }}
         >
           {/* ROTATING RING */}
           <MotiView
@@ -120,7 +120,8 @@ export default function UnlockedAwardModal() {
               duration: 15000,
               type: "timing",
             }}
-            className="absolute -top-10 h-80 w-80 opacity-20"
+            style={{ position: "absolute", top: -40, height: 320, width: 320 }}
+            className="opacity-20"
           >
             <View className="absolute h-full w-full rounded-full border-[60px] border-dashed border-white/40" />
           </MotiView>

@@ -50,7 +50,7 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
@@ -58,8 +58,9 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
           from={{ opacity: 0, translateY: 12 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: "timing", duration: 260 }}
-          className="flex-1"
+          style={{ flex: 1 }}
         >
+          <View className="flex-1">
           {/* HEADER */}
           <View className="px-5 pt-2">
             <TouchableOpacity
@@ -96,6 +97,7 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
                 />
               ))}
             </View>
+          </View>
           </View>
         </MotiView>
       </SafeAreaView>

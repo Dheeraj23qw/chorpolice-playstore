@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
   useWindowDimensions,
+  StyleSheet,
 } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -85,7 +86,7 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
         <BlurView
           intensity={25}
           tint="dark"
-          className="absolute h-full w-full"
+          style={StyleSheet.absoluteFill}
         />
 
         {/* ATMOSPHERIC GRADIENT */}
@@ -97,7 +98,7 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
             "rgba(0,0,0,0.9)",
           ]}
           locations={[0, 0.2, 0.6, 1]}
-          className="absolute h-full w-full"
+          style={StyleSheet.absoluteFill}
         />
 
         {/* ✅ RESPONSIVE CENTER GLOW */}
@@ -106,19 +107,23 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 600 }}
           style={{
+            position: "absolute",
+            alignSelf: "center",
             width: glowSize,
             height: glowSize,
           }}
-          className="absolute self-center rounded-full"
+          className="rounded-full"
         >
+          <View className="absolute self-center">
           <LinearGradient
             colors={[
               "rgba(99, 102, 241, 0.15)",
               "rgba(59, 130, 246, 0.08)",
               "transparent",
             ]}
-            className="h-full w-full rounded-full blur-3xl"
+            style={styles.glowFill}
           />
+          </View>
         </MotiView>
 
         {/* CONTENT */}
@@ -268,5 +273,16 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  glowFill: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+  },
+});
 
 export default React.memo(GameModeModal);

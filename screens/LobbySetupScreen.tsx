@@ -333,9 +333,10 @@ const LobbySetupScreen = ({
             scale: isBlockingUI ? 0.95 : 1,
           }}
           transition={{ type: "timing", duration: 250 }}
-          className="flex-1"
           pointerEvents={isBlockingUI ? "none" : "auto"}
+          style={{ flex: 1 }}
         >
+          <View className="flex-1">
           <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
             <View className="h-16 justify-center">
               <AnimatePresence>
@@ -382,14 +383,16 @@ const LobbySetupScreen = ({
                       from={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="mb-6 overflow-hidden"
+                      className="overflow-hidden"
                     >
+                      <View className="mb-6">
                       <Text 
                         style={{ fontSize: rf(3.5) }}
                         className="font-main-bold text-white"
                       >
                         {lobby.isHost ? "Lobby Setup" : "Lobby Setup"}
                       </Text>
+                      </View>
                     </MotiView>
                   )}
                 </AnimatePresence>
@@ -401,12 +404,14 @@ const LobbySetupScreen = ({
                         For host: hide it when the players list is expanded. */}
                     <AnimatePresence>
                       {(!isPlayersListOpen || !lobby.isHost) && (
-                        <MotiView className="mb-8">
+                        <MotiView>
+                          <View className="mb-8">
                           <PlayerProfileCard
                             lobby={lobby}
                             getAvatarSource={getAvatarSource}
                             showGameSettings={lobby.isHost}
                           />
+                          </View>
                         </MotiView>
                       )}
                     </AnimatePresence>
@@ -433,6 +438,7 @@ const LobbySetupScreen = ({
               )}
             </View>
           </SafeAreaView>
+          </View>
         </MotiView>
 
         {/* 🔥 NEW: overlay (no logic touched) */}
@@ -443,8 +449,8 @@ const LobbySetupScreen = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 200 }}
-              className="absolute inset-0 z-40"
               pointerEvents="none"
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
             >
               <View className="absolute inset-0 bg-black/60" />
             </MotiView>
@@ -508,8 +514,9 @@ const LobbySetupScreen = ({
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[100]"
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 }}
           >
+            <View className="flex-1">
              <PermissionGuardian 
                 onAllGranted={() => {
                   console.log(`[LobbySetup] 🔓 PermissionGuardian → all granted. Syncing status + retrying host bootstrap.`);
@@ -528,6 +535,7 @@ const LobbySetupScreen = ({
                 title="Invite Friends"
                 description="We need Location permissions to generate a room code and help your friends find you."
               />
+            </View>
           </MotiView>
         )}
       </AnimatePresence>
@@ -546,9 +554,10 @@ const LobbySetupScreen = ({
                 from={{ opacity: 0, translateY: 100 }}
                 animate={{ opacity: 1, translateY: 0 }}
                 exit={{ opacity: 0, translateY: 100 }}
-                className="absolute bottom-20 left-6 right-6 z-[998]"
               >
+                <View className="absolute bottom-20 left-6 right-6 z-[998]">
                 <LanDebugPanel />
+                </View>
               </MotiView>
             )}
           </AnimatePresence>

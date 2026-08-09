@@ -87,8 +87,10 @@ const BugsScreen = () => {
             from={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", delay: 100 }}
-            className="mb-6 flex-row items-center rounded-[24px] border border-amber-500/20 bg-amber-500/10 p-4"
+            className="rounded-[24px] border border-amber-500/20 bg-amber-500/10"
+            style={{ marginBottom: 24 }}
           >
+            <View className="flex-row items-center p-4">
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20">
               <AlertTriangle size={20} color="#fbbf24" />
             </View>
@@ -100,6 +102,7 @@ const BugsScreen = () => {
                 Reports are usually reviewed within 24 hours.
               </Text>
             </View>
+            </View>
           </MotiView>
 
           {/* 📝 Form Container */}
@@ -107,8 +110,9 @@ const BugsScreen = () => {
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: "timing", duration: 500, delay: 200 }}
-            className="rounded-[32px] border border-white/5 bg-slate-900 p-6 shadow-2xl"
+            className="rounded-[32px] border border-white/5 bg-slate-900 shadow-2xl"
           >
+            <View className="p-6">
             {/* Issue Title */}
             <View className="mb-6">
               <View className="mb-2 flex-row items-center justify-between px-1">
@@ -191,6 +195,7 @@ const BugsScreen = () => {
                 </View>
               )}
             </TouchableOpacity>
+            </View>
           </MotiView>
 
           {/* Footer Info */}

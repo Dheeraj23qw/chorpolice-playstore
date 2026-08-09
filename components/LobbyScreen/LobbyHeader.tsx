@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable, Platform } from "react-native";
+import { View, Pressable, Platform, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -84,7 +84,7 @@ const GlassButton = ({
     >
       <LinearGradient
         colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0.02)"]}
-        className="absolute inset-0 items-center justify-center rounded-full border border-white/10"
+        style={[StyleSheet.absoluteFill, { borderRadius: 999, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }]}
       />
 
       {/* Background Glow */}

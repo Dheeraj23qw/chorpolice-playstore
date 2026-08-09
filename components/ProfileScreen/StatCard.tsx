@@ -24,7 +24,8 @@ export default function StatCard({ label, value, icon: Icon, color }: StatCardPr
         elevation: 5,
       }}
     >
-      <BlurView intensity={10} tint="dark" className="p-5">
+      <BlurView intensity={10} tint="dark">
+        <View className="p-5">
         <View
           className="mb-3 h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/5"
         >
@@ -45,6 +46,7 @@ export default function StatCard({ label, value, icon: Icon, color }: StatCardPr
           className="absolute -right-2 -top-2 h-12 w-12 rounded-full opacity-10"
           style={{ backgroundColor: color }}
         />
+        </View>
       </BlurView>
     </View>
   );

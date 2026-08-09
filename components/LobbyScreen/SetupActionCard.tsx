@@ -76,8 +76,9 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
     >
       <LinearGradient
         colors={["rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)"]}
-        className="border border-white/10 p-6"
+        className="border border-white/10"
       >
+        <View className="p-6">
         {lobby.isHost && (
           <View className="gap-4">
             {/* Invite / Share Section */}
@@ -98,8 +99,9 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                   return (
                     <MotiView
                       animate={{ scale: pressed && !showSpinner ? 0.98 : 1, opacity: showSpinner ? 0.7 : 1 }}
-                      className="flex-row items-center justify-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 py-4"
+                      className="rounded-2xl border border-blue-500/30 bg-blue-500/10"
                     >
+                      <View className="flex-row items-center justify-center gap-2 py-4">
                       {showSpinner ? (
                         <ActivityIndicator size="small" color="#93c5fd" />
                       ) : (
@@ -111,6 +113,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                       >
                         {label}
                       </Text>
+                      </View>
                     </MotiView>
                   );
                 }}
@@ -121,8 +124,9 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
               <MotiView
                 from={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className="overflow-hidden rounded-xl bg-white/5 p-3 border border-white/5"
+                className="overflow-hidden rounded-xl bg-white/5 border border-white/5"
               >
+                <View className="p-3">
                 <View className="flex-row items-center gap-2">
                   <Ionicons 
                     name={networkStatus === "denied" ? "lock-closed-outline" : "wifi-outline"} 
@@ -134,6 +138,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                       ? "Permission required for LAN play." 
                       : "Searching for network... Please make sure your hotspot or WiFi is ON."}
                   </Text>
+                </View>
                 </View>
               </MotiView>
             )}
@@ -152,6 +157,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
 
           </View>
         )}
+        </View>
       </LinearGradient>
     </MotiView>
   );

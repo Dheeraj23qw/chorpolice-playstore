@@ -63,8 +63,9 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
         <MotiView
           animate={{ rotateY: isFlipped ? "180deg" : "0deg" }}
           transition={{ type: "spring", damping: 15, stiffness: 100 }}
-          className="flex-1"
+          style={{ flex: 1 }}
         >
+          <View className="flex-1">
           {/* Front Card Face */}
           <MotiView
             animate={{ opacity: isFlipped ? 0 : 1 }}
@@ -89,13 +90,21 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
                 style={{
                   backgroundColor: `${themeColor}25`, 
                   borderColor: themeColor,
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 10,
                 }}
-                className="absolute inset-0 z-10 border-[4px] rounded-[26px] items-center justify-center"
+                className="rounded-[26px] border-[4px]"
               >
+                <View className="items-center justify-center">
                 <View 
                   style={{ backgroundColor: themeColor, shadowColor: themeColor }}
                   className="h-2 w-12 rounded-full shadow-lg" 
                 />
+                </View>
               </MotiView>
             )}
             {(isMystery || phase === "police_turn") ? (
@@ -160,6 +169,7 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
               <Text className="font-main-bold text-[11px] uppercase tracking-widest text-indigo-100">{role || "Unknown"}</Text>
             </View>
           </MotiView>
+          </View>
         </MotiView>
       </TouchableOpacity>
     </View>

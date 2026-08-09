@@ -54,8 +54,9 @@ export const JoinCodeSection = ({
     <View className="overflow-hidden rounded-[28px]">
       <LinearGradient
         colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.03)"]}
-        className="rounded-[28px] border border-white/10 p-5"
+        className="rounded-[28px] border border-white/10"
       >
+        <View className="p-5">
         {/* Header */}
         <Text className="text-[10px] uppercase tracking-[3px] text-white/35">
           Enter Room Code
@@ -134,8 +135,9 @@ export const JoinCodeSection = ({
                     ? ["rgba(255,255,255,0.10)", "rgba(255,255,255,0.05)"]
                     : ["#4F46E5", "#2563EB"]
                 }
-                className="rounded-2xl px-4 py-4"
+                className="rounded-2xl"
               >
+                <View className="px-4 py-4">
                 <Text
                   style={{ fontSize: rf(1.8) }}
                   className={`text-center font-main-bold uppercase tracking-[2px] ${
@@ -144,10 +146,12 @@ export const JoinCodeSection = ({
                 >
                   {isConnecting ? "CONNECTING..." : "JOIN ROOM"}
                 </Text>
+                </View>
               </LinearGradient>
             </MotiView>
           )}
         </Pressable>
+        </View>
       </LinearGradient>
     </View>
   );

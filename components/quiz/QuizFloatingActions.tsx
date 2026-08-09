@@ -86,8 +86,7 @@ export const QuizFloatingActions = ({ actions }: QuizFloatingActionsProps) => {
             loop: true,
             repeatReverse: false,
           }}
-          className="absolute h-12 w-12 rounded-full bg-indigo-500/30"
-          style={{ top: -2, left: -2 }}
+          style={styles.pulseAura}
         />
       )}
 
@@ -98,14 +97,15 @@ export const QuizFloatingActions = ({ actions }: QuizFloatingActionsProps) => {
             backgroundColor: isOpen ? "#4f46e5" : "transparent"
           }}
           transition={{ type: 'spring', damping: 12 }}
-          className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/30 shadow-2xl"
+          className="overflow-hidden rounded-full border border-white/30 shadow-2xl"
         >
+          <View className="h-12 w-12 items-center justify-center">
           <LinearGradient
             colors={isOpen ? ["#4f46e5", "#3730a3"] : ["rgba(255,255,255,0.15)", "rgba(255,255,255,0.05)"]}
-            className="absolute h-full w-full"
+            style={StyleSheet.absoluteFill}
           />
-          <BlurView intensity={20} className="h-full w-full">
-            <View className="flex-1 items-center justify-center">
+          <BlurView intensity={20}>
+            <View className="h-full w-full items-center justify-center">
               <Ionicons
                 name={isOpen ? "close" : "ellipsis-vertical"}
                 size={rf(2.4)}
@@ -113,6 +113,7 @@ export const QuizFloatingActions = ({ actions }: QuizFloatingActionsProps) => {
               />
             </View>
           </BlurView>
+          </View>
         </MotiView>
       </Pressable>
     </View>
@@ -134,5 +135,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+  },
+  pulseAura: {
+    position: "absolute",
+    top: -2,
+    left: -2,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(99,102,241,0.30)",
   },
 });

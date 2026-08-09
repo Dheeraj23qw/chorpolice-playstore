@@ -132,8 +132,8 @@ export const HandshakeStatus: React.FC<Props> = ({
       >
         <LinearGradient
           colors={["rgba(255,50,50,0.1)", "transparent"]}
-          className="p-6"
         >
+          <View className="p-6">
           <View className="mb-4 items-center">
             <View className="h-14 w-14 items-center justify-center rounded-full bg-red-500/20">
               <Ionicons name="alert-circle-outline" size={30} color="#F87171" />
@@ -162,8 +162,9 @@ export const HandshakeStatus: React.FC<Props> = ({
                   ? ["#6366f1", "#4338ca"]
                   : ["#EF4444", "#991B1B"]
               }
-              className="flex-row items-center justify-center rounded-2xl py-4"
+              className="rounded-2xl"
             >
+              <View className="flex-row items-center justify-center py-4">
               <Ionicons
                 name={
                   isPermissionDenied ? "settings-outline" : "refresh-outline"
@@ -177,8 +178,10 @@ export const HandshakeStatus: React.FC<Props> = ({
                   ? "Authorize in Settings"
                   : "Retry Connection"}
               </Text>
+              </View>
             </LinearGradient>
           </Pressable>
+          </View>
         </LinearGradient>
       </Animated.View>
     );
@@ -224,8 +227,8 @@ export const HandshakeStatus: React.FC<Props> = ({
     >
       <LinearGradient
         colors={["rgba(255,255,255,0.08)", "rgba(255,255,255,0.02)"]}
-        className="p-6"
       >
+        <View className="p-6">
         <Text className="mb-6 text-center text-[10px] uppercase tracking-widest text-white/50">
           Initializing Secure Protocol
         </Text>
@@ -277,6 +280,7 @@ export const HandshakeStatus: React.FC<Props> = ({
             </View>
           );
         })}
+        </View>
       </LinearGradient>
     </Animated.View>
   );

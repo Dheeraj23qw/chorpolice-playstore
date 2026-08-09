@@ -28,8 +28,9 @@ export const PermissionCard: React.FC<Props> = ({
 
       <LinearGradient
         colors={["rgba(239,68,68,0.18)", "rgba(15,23,42,0.22)"]}
-        className="rounded-[30px] border border-red-400/20 p-5"
+        className="rounded-[30px] border border-red-400/20"
       >
+        <View className="p-5">
         {/* HEADER */}
         <View className="flex-row items-center justify-between">
           <Text className="text-[10px] uppercase tracking-[3px] text-red-200">
@@ -79,15 +80,18 @@ export const PermissionCard: React.FC<Props> = ({
             >
               <LinearGradient
                 colors={["#2563EB", "#1D4ED8"]}
-                className="rounded-2xl px-4 py-4"
+                className="rounded-2xl"
               >
+                <View className="px-4 py-4">
                 <Text className="text-center font-main-bold uppercase tracking-[2px] text-white">
                   {primaryLabel}
                 </Text>
+                </View>
               </LinearGradient>
             </MotiView>
           )}
         </Pressable>
+        </View>
       </LinearGradient>
     </MotiView>
   );

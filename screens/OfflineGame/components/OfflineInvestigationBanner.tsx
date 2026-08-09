@@ -19,7 +19,8 @@ export const OfflineInvestigationBanner: React.FC<
       from={{ opacity: 0, translateY: -10, scale: 0.96 }}
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
       transition={{ type: "timing", duration: 320 }}
-      className="mb-5 overflow-hidden rounded-[28px]"
+      className="overflow-hidden rounded-[28px]"
+      style={{ marginBottom: 20 }}
     >
       <LinearGradient
         colors={["rgba(79,70,229,0.9)", "rgba(30,27,75,0.96)"]}

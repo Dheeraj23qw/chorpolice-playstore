@@ -35,8 +35,9 @@ export const LanDebugPanel: React.FC = () => {
     <MotiView
       from={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="mt-6 w-full rounded-3xl border border-white/10 bg-black/40 p-5"
+      className="rounded-3xl border border-white/10 bg-black/40"
     >
+      <View className="mt-6 w-full p-5">
       <View className="flex-row items-center justify-between mb-4">
         <Text className="font-main-bold text-xs uppercase tracking-[2px] text-blue-400">
           LAN Debug Panel
@@ -94,6 +95,7 @@ export const LanDebugPanel: React.FC = () => {
           Copy Full Debug Info
         </Text>
       </Pressable>
+      </View>
     </MotiView>
   );
 };

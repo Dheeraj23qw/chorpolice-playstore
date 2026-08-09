@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Pressable, View, ScrollView, Dimensions } from "react-native";
+import { Modal, Pressable, View, ScrollView, Dimensions, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { MotiView, AnimatePresence } from "moti";
@@ -44,7 +44,7 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
           colors={["#05060D", "#0B1020", "#05060D"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="absolute inset-0"
+          style={StyleSheet.absoluteFill}
         />
         <View className="absolute inset-0 bg-black/65" />
         <Pressable onPress={onClose} className="absolute inset-0" />
@@ -57,11 +57,12 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
                 animate={{ opacity: 1, scale: 1, translateY: 0 }}
                 exit={{ opacity: 0, scale: 0.94, translateY: 12 }}
                 transition={{ type: "spring", damping: 17, stiffness: 140 }}
-                className="w-full max-w-md overflow-hidden rounded-[36px]"
+                className="overflow-hidden rounded-[36px]"
                 style={{
                   maxHeight: SCREEN_HEIGHT - (insets.top + insets.bottom + 40),
                 }}
               >
+                <View className="w-full max-w-md">
                 <BlurView
                   intensity={70}
                   tint="dark"
@@ -73,7 +74,7 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
                       "rgba(15,23,42,0.94)",
                       "rgba(2,6,23,0.98)",
                     ]}
-                    className="absolute inset-0"
+                    style={StyleSheet.absoluteFill}
                   />
 
                   <View className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-500/20" />
@@ -149,8 +150,8 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
                         colors={["#818cf8", "#6366f1", "#4f46e5"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
-                        className="h-14 flex-row items-center justify-center"
                       >
+                        <View className="h-14 flex-row items-center justify-center">
                         <Ionicons
                           name="checkmark-circle"
                           size={20}
@@ -160,10 +161,12 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
                         <Text className="ml-2 font-main-bold uppercase tracking-[2px] text-white">
                           {content.buttonText}
                         </Text>
+                        </View>
                       </LinearGradient>
                     </Pressable>
                   </View>
                 </BlurView>
+                </View>
               </MotiView>
             )}
           </AnimatePresence>
@@ -189,8 +192,9 @@ const RuleItem = ({
         duration: 260,
         delay: index * 60,
       }}
-      className="mb-3 flex-row items-center rounded-3xl border border-white/10 bg-white/5 p-4"
+      className="rounded-3xl border border-white/10 bg-white/5"
     >
+      <View className="mb-3 flex-row items-center p-4">
       <View
         className="h-13 w-13 mr-4 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
         style={{
@@ -220,6 +224,7 @@ const RuleItem = ({
         >
           {desc}
         </Text>
+      </View>
       </View>
     </MotiView>
   );

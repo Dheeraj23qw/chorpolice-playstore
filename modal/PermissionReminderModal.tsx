@@ -27,7 +27,7 @@ export const PermissionReminderModal: React.FC<Props> = ({
   return (
     <Modal visible={isVisible} transparent animationType="fade">
       <View className="flex-1 items-center justify-center bg-black/60 px-6">
-        <BlurView intensity={20} className="absolute inset-0" />
+        <BlurView intensity={20} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} />
         
         <AnimatePresence>
           {isVisible && (
@@ -35,8 +35,10 @@ export const PermissionReminderModal: React.FC<Props> = ({
               from={{ opacity: 0, scale: 0.9, translateY: 20 }}
               animate={{ opacity: 1, scale: 1, translateY: 0 }}
               exit={{ opacity: 0, scale: 0.9, translateY: 20 }}
-              className="w-full bg-[#0b0b18] rounded-[32px] p-8 border border-white/10 shadow-2xl"
+              className="bg-[#0b0b18] rounded-[32px] border border-white/10 shadow-2xl"
+              style={{ width: "100%" }}
             >
+              <View className="p-8">
               <View className="items-center mb-6">
                 <View className="bg-amber-500/20 p-4 rounded-full mb-4">
                   <MaterialCommunityIcons name="wifi-lock" size={40} color="#fbbf24" />
@@ -75,6 +77,7 @@ export const PermissionReminderModal: React.FC<Props> = ({
                   Don&apos;t ask again
                 </Text>
               </TouchableOpacity>
+              </View>
             </MotiView>
           )}
         </AnimatePresence>

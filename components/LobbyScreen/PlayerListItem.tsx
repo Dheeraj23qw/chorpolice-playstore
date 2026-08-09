@@ -51,15 +51,17 @@ export const PlayerListItem: React.FC<PlayerListItemProps> = ({
             damping: 16,
             stiffness: 180,
           }}
-          className="mb-4 overflow-hidden rounded-3xl"
+          className="overflow-hidden rounded-3xl"
         >
+          <View className="mb-4">
           {/* 🔥 GLOW (reduced, cleaner) */}
           <View className="absolute inset-0 rounded-3xl bg-purple-500/10 blur-xl" />
 
           <LinearGradient
             colors={accentColors}
-            className="flex-row items-center rounded-3xl border border-white/10 p-4"
+            className="rounded-3xl border border-white/10"
           >
+            <View className="flex-row items-center p-4">
             {/* AVATAR */}
             <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
               <Image
@@ -93,7 +95,9 @@ export const PlayerListItem: React.FC<PlayerListItemProps> = ({
                 </View>
               )}
             </View>
+            </View>
           </LinearGradient>
+          </View>
         </MotiView>
       )}
     </Pressable>

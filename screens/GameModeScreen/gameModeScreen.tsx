@@ -42,7 +42,7 @@ const GameModeScreen: React.FC = () => {
         resizeMode="cover"
       />
 
-      <BlurView intensity={25} tint="dark" className="absolute h-full w-full" />
+      <BlurView intensity={25} tint="dark" style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} />
 
       <LinearGradient
         colors={[
@@ -52,7 +52,7 @@ const GameModeScreen: React.FC = () => {
           "rgba(0, 0, 0, 0.95)",
         ]}
         locations={[0, 0.25, 0.65, 1]}
-        className="absolute h-full w-full"
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
       {/* 3. CONTENT */}

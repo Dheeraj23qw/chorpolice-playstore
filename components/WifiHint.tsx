@@ -15,8 +15,9 @@ const WifiHint = () => {
       from={{ opacity: 0, translateY: 20 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 400 }}
-      className="mb-6 flex-row items-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4"
+      className="overflow-hidden rounded-3xl border border-white/10 bg-white/5"
     >
+      <View className="mb-6 flex-row items-center p-4">
       {/* 🔮 Responsive Glow */}
       <View
         style={{
@@ -74,6 +75,7 @@ const WifiHint = () => {
         <Text style={{ fontSize: rf(1.2) }} className="mt-2 text-red-400/70">
           Won’t work on mobile data or different WiFi
         </Text>
+      </View>
       </View>
     </MotiView>
   );

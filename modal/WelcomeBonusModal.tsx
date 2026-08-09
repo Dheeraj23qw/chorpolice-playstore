@@ -43,9 +43,10 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
             damping: 15,
             stiffness: 120,
           }}
-          className="w-full max-w-sm overflow-hidden rounded-[50px] border border-white/40"
+          className="overflow-hidden rounded-[50px] border border-white/40"
           style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
         >
+          <View className="w-full max-w-sm">
           <BlurView intensity={95} tint="dark">
             <View className="items-center p-10">
               {/* FLOATING THIEF */}
@@ -58,13 +59,14 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
                 duration: 1500,
                 repeatReverse: true,
               }}
-              className="mb-4"
             >
+              <View className="mb-4">
               <Image
                 source={require("@/assets/images/chorsipahi/thief.webp")}
                 className="h-32 w-32"
                 resizeMode="contain"
               />
+              </View>
             </MotiView>
 
             {/* TITLE */}
@@ -97,11 +99,12 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
                     ]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
-                    className="items-center py-5"
                   >
+                    <View className="items-center py-5">
                     <Text className="font-main-bold text-xl tracking-[2px] text-white">
                       ADD TO BAG
                     </Text>
+                    </View>
                   </LinearGradient>
                 </BlurView>
               </View>
@@ -113,6 +116,7 @@ export const WelcomeBonusModal: React.FC<WelcomeProps> = ({
             </Text>
             </View>
           </BlurView>
+          </View>
         </MotiView>
       </View>
     </Modal>
