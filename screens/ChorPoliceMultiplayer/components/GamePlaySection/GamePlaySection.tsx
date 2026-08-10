@@ -117,6 +117,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                 mysteryShuffleStep={mysteryShuffleStep}
                 mysteryRevealStep={mysteryRevealStep}
                 handleCardClick={handleCardClick}
+                localPlayerIndex={localPlayerIndex}
               />
             )}
           </View>

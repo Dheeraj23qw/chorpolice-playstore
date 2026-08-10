@@ -30,6 +30,7 @@ const WaitingView = ({ g }: any) => {
         message={isWaitingForHost ? "Waiting for host..." : g.message || null}
         getCardStyle={g.getCardStyle}
         showTableButton={g.showTableButton}
+        localPlayerIndex={g.localPlayerIndex}
       />
     </View>
   );

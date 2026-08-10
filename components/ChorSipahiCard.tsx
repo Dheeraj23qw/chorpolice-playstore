@@ -28,6 +28,7 @@ interface ChorSipahiCardProps {
   showStatusOverlay?: boolean;
   isHighlight?: boolean;
   isMystery?: boolean;
+  isLocalPlayer?: boolean;
   highlightColor?: string;
 }
 const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
@@ -43,6 +44,7 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
   showStatusOverlay = true,
   isHighlight = false,
   isMystery = false,
+  isLocalPlayer = false,
   highlightColor,
 }) => {
   const handlePress = () => {
@@ -127,6 +129,19 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
                   </Text>
                 </View>
               </>
+            )}
+
+            {isLocalPlayer && (
+              <View className="absolute right-2 top-2 z-30">
+                <View
+                  style={{ backgroundColor: "#fbbf24", shadowColor: "#fbbf24" }}
+                  className="rounded-full px-3 py-1 shadow-lg shadow-amber-500/50"
+                >
+                  <Text className="font-main-bold text-[9px] tracking-widest text-black">
+                    YOU
+                  </Text>
+                </View>
+              </View>
             )}
 
             {showStatusOverlay && isClicked && !isFlipped && (

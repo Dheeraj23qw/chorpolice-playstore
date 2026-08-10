@@ -32,6 +32,7 @@ type InvestigationBoardProps = {
   mysteryShuffleStep: number;
   mysteryRevealStep?: number;
   handleCardClick: (index: number, targetId?: string) => void;
+  localPlayerIndex?: number;
 };
 
 export const InvestigationBoard = memo(
@@ -44,6 +45,7 @@ export const InvestigationBoard = memo(
     mysteryShuffleStep,
     mysteryRevealStep = 0,
     handleCardClick,
+    localPlayerIndex,
   }: InvestigationBoardProps) => {
     if (__DEV__) {
       console.log("[CP_MYSTERY] Investigation board visible");
@@ -90,6 +92,10 @@ export const InvestigationBoard = memo(
               mysteryShuffleStep={mysteryShuffleStep}
               mysteryRevealStep={mysteryRevealStep}
               handleCardClick={handleCardClick}
+              isLocalPlayer={
+                localPlayerIndex != null &&
+                target.playerIndex === localPlayerIndex
+              }
             />
           ))}
 

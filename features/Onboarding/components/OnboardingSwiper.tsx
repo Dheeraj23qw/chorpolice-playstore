@@ -157,8 +157,9 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
           skipStyle,
           {
             position: "absolute",
-            right: 20,
-            top: insets.top + 12,
+            bottom: 24 + insets.bottom,
+            width: "100%",
+            alignItems: "center",
           },
         ]}
       >
@@ -166,11 +167,15 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
           activeOpacity={0.8}
           onPress={handleSkip}
           disabled={isCompleting}
-          className="rounded-full border border-white/10 bg-white/5 px-5 py-2"
+          className="rounded-full border border-white/10 bg-white/5 px-8 py-3"
         >
-          <Text className="font-main-bold text-sm uppercase tracking-[2px] text-white/70">
-            Skip
-          </Text>
+          {isCompleting ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Text className="font-main-bold text-sm uppercase tracking-[2px] text-white/70">
+              Skip
+            </Text>
+          )}
         </TouchableOpacity>
       </Animated.View>
 

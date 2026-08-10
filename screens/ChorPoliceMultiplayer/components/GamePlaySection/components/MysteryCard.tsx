@@ -22,6 +22,7 @@ type MysteryCardProps = {
   mysteryShuffleStep: number;
   mysteryRevealStep: number;
   handleCardClick: (index: number, targetId?: string) => void;
+  isLocalPlayer?: boolean;
 };
 
 export const MysteryCard = memo(
@@ -35,6 +36,7 @@ export const MysteryCard = memo(
     mysteryShuffleStep,
     mysteryRevealStep,
     handleCardClick,
+    isLocalPlayer = false,
   }: MysteryCardProps) => {
     const { physicalIndex, isFlipped, isClicked } = getMysteryCardState(
       target,
@@ -106,6 +108,7 @@ export const MysteryCard = memo(
             (gamePhase === "police_turn" ||
               gamePhase === "investigation_shuffle")
           }
+          isLocalPlayer={isLocalPlayer}
           isMystery
         />
       </MotiView>
