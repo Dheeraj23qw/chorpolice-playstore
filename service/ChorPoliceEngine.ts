@@ -71,7 +71,7 @@ export const ChorPoliceEngine = {
   engineName: "ChorPoliceEngine",
   state: {
     players: [] as CPPlayer[],
-    roles: [] as Role[],          // roles[i] = role of players[i]
+    roles: [] as Role[], // roles[i] = role of players[i]
     currentRound: 1,
     totalRounds: 3,
     scores: {} as Record<string, CPScoreEntry>,
@@ -83,7 +83,12 @@ export const ChorPoliceEngine = {
     advisorIndex: -1,
     isRoundActive: false,
     matchId: null as string | null,
-    investigationTargets: [] as Array<{ id: string; type: "THIEF" | "ADVISOR" | "JOKER"; role: string; playerIndex: number | null }>,
+    investigationTargets: [] as Array<{
+      id: string;
+      type: "THIEF" | "ADVISOR" | "JOKER";
+      role: string;
+      playerIndex: number | null;
+    }>,
     selectedTargetId: null as string | null,
   },
 
@@ -96,7 +101,9 @@ export const ChorPoliceEngine = {
   processMultiplayer: (packet: any, _sourceIp?: string): void => {
     // 🔥 PAUSE GUARD: Block all gameplay processing while reconnect is active
     if (selectIsReconnectActive(store.getState())) {
-      console.log(`[CPEngine] ⏸️ Packet ${packet.type} deferred (reconnect active)`);
+      console.log(
+        `[CPEngine] ⏸️ Packet ${packet.type} deferred (reconnect active)`,
+      );
       return;
     }
 
@@ -107,31 +114,44 @@ export const ChorPoliceEngine = {
         // PROD-4 FIX: if players are already initialised (host called init() directly),
         // skip re-init; just ensure phase is set correctly.
         if (ChorPoliceEngine.state.players.length > 0) {
-          console.log(`🎭 [CPEngine] 🟢 GAME_START — engine already initialised, skipping re-init.`);
+          console.log(
+            `🎭 [CPEngine] 🟢 GAME_START — engine already initialised, skipping re-init.`,
+          );
           dispatch(setGamePhase("waiting"));
           break;
         }
-        console.log(`🎭 [CPEngine] 🟢 GAME_START received — session ready. Waiting for host to click Play.`);
+        console.log(
+          `🎭 [CPEngine] 🟢 GAME_START received — session ready. Waiting for host to click Play.`,
+        );
         dispatch(setGamePhase("waiting"));
         break;
 
       case CP.POLICE_GUESS:
         if (packet.targetId) {
-          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received — ID: ${packet.targetId}, MysteryIndex: ${packet.mysteryIndex}`);
+          console.log(
+            `🎭 [CPEngine] 🎯 POLICE_GUESS received — ID: ${packet.targetId}, MysteryIndex: ${packet.mysteryIndex}`,
+          );
           ChorPoliceEngine.evaluateGuess(packet.targetId, packet.mysteryIndex);
         } else if (packet.mysteryIndex !== undefined) {
           // Backward compatibility
           const targets = ChorPoliceEngine.state.investigationTargets;
           const matchedTarget = targets[packet.mysteryIndex];
-          console.log(`🎭 [CPEngine] 🎯 POLICE_GUESS received (Legacy MysteryIndex: ${packet.mysteryIndex})`);
+          console.log(
+            `🎭 [CPEngine] 🎯 POLICE_GUESS received (Legacy MysteryIndex: ${packet.mysteryIndex})`,
+          );
           if (matchedTarget) {
-            ChorPoliceEngine.evaluateGuess(matchedTarget.id, packet.mysteryIndex);
+            ChorPoliceEngine.evaluateGuess(
+              matchedTarget.id,
+              packet.mysteryIndex,
+            );
           }
         }
         break;
 
       case CP.ROUND_START:
-        console.log(`🎭 [CPEngine] ▶️ ROUND_START received — starting round ${ChorPoliceEngine.state.currentRound}`);
+        console.log(
+          `🎭 [CPEngine] ▶️ ROUND_START received — starting round ${ChorPoliceEngine.state.currentRound}`,
+        );
         if (ChorPoliceEngine.state.isRoundActive) {
           console.warn(
             "🛡️ [CPEngine] Duplicate ROUND_START ignored — round already active.",
@@ -142,7 +162,8 @@ export const ChorPoliceEngine = {
         break;
 
       case CP.PUBLIC_REVEAL: {
-        const isNewRound = (packet.round || 1) !== ChorPoliceEngine.state.currentRound;
+        const isNewRound =
+          (packet.round || 1) !== ChorPoliceEngine.state.currentRound;
         ChorPoliceEngine.state.currentRound =
           packet.round ?? ChorPoliceEngine.state.currentRound;
         ChorPoliceEngine.state.policeIndex =
@@ -152,36 +173,41 @@ export const ChorPoliceEngine = {
         ChorPoliceEngine.state.isRoundActive = true;
 
         let currentRoles = [...ChorPoliceEngine.state.roles];
-        
+
         // 🛡️ STALE STATE PROTECTION:
         // If it's a new round, or if the current roles don't match the new public indices,
         // we must reset the client's role knowledge to "Hidden" for everything except
         // what is publicly revealed in this packet.
-        const needsReset = isNewRound || currentRoles.length === 0 || 
-          currentRoles[ChorPoliceEngine.state.kingIndex] !== "King" || 
+        const needsReset =
+          isNewRound ||
+          currentRoles.length === 0 ||
+          currentRoles[ChorPoliceEngine.state.kingIndex] !== "King" ||
           currentRoles[ChorPoliceEngine.state.policeIndex] !== "Police";
 
         if (needsReset) {
           // On the Host, ChorPoliceEngine.state.roles is already fully populated by startRound().
           // If we are the host, we don't want to "Hide" our own roles.
           // We check if the existing roles are actually a valid full set for this round.
-          const isHostWithFullRoles = currentRoles.length === 4 && 
+          const isHostWithFullRoles =
+            currentRoles.length === 4 &&
             currentRoles[ChorPoliceEngine.state.kingIndex] === "King" &&
             currentRoles[ChorPoliceEngine.state.policeIndex] === "Police" &&
-            currentRoles.includes("Thief") && 
+            currentRoles.includes("Thief") &&
             currentRoles.includes("Advisor");
 
           if (!isHostWithFullRoles) {
-            console.log(`🎭 [CPEngine] 🧹 Resetting stale roles for round ${ChorPoliceEngine.state.currentRound}`);
-            
+            console.log(
+              `🎭 [CPEngine] 🧹 Resetting stale roles for round ${ChorPoliceEngine.state.currentRound}`,
+            );
+
             // Get my current role from Redux to preserve it during reset
             const myRole = store.getState().session.myRole;
             const localId = store.getState().session.localPlayerId;
             const players = ChorPoliceEngine.state.players;
-            const myIndex = players.findIndex(p => p.id === localId);
+            const myIndex = players.findIndex((p) => p.id === localId);
 
             currentRoles = new Array(4).fill("Hidden");
-            
+
             // 🛡️ PRESERVE LOCAL PLAYER ROLE: if we already received ROLE_ASSIGN for this round
             if (myRole && myIndex !== -1) {
               currentRoles[myIndex] = myRole as Role;
@@ -190,7 +216,10 @@ export const ChorPoliceEngine = {
             if (packet.kingIndex !== undefined && packet.kingIndex !== null) {
               currentRoles[packet.kingIndex] = "King";
             }
-            if (packet.policeIndex !== undefined && packet.policeIndex !== null) {
+            if (
+              packet.policeIndex !== undefined &&
+              packet.policeIndex !== null
+            ) {
               currentRoles[packet.policeIndex] = "Police";
             }
             ChorPoliceEngine.state.roles = currentRoles;
@@ -199,14 +228,16 @@ export const ChorPoliceEngine = {
 
         // ── Redux sync ──
         dispatch(setRoundActive(true));
-        dispatch(setRoundState({
-          round: ChorPoliceEngine.state.currentRound,
-          roles: currentRoles,
-          policeIndex: ChorPoliceEngine.state.policeIndex,
-          kingIndex: ChorPoliceEngine.state.kingIndex,
-          thiefIndex: ChorPoliceEngine.state.thiefIndex,
-          advisorIndex: ChorPoliceEngine.state.advisorIndex,
-        }));
+        dispatch(
+          setRoundState({
+            round: ChorPoliceEngine.state.currentRound,
+            roles: currentRoles,
+            policeIndex: ChorPoliceEngine.state.policeIndex,
+            kingIndex: ChorPoliceEngine.state.kingIndex,
+            thiefIndex: ChorPoliceEngine.state.thiefIndex,
+            advisorIndex: ChorPoliceEngine.state.advisorIndex,
+          }),
+        );
         dispatch(setGamePhase("dealing"));
         break;
       }
@@ -216,23 +247,25 @@ export const ChorPoliceEngine = {
           const localPlayerId = store.getState().session.localPlayerId;
           if (packet.playerId === localPlayerId) {
             dispatch(setReduxMyRole(packet.role));
-            
+
             // 🚀 SYNC: If the roles array is already initialized (e.g. from previous round or current dealing)
             // update our own position in it so the UI shows our role immediately.
             if (ChorPoliceEngine.state.roles.length === 4) {
               const nextRoles = [...ChorPoliceEngine.state.roles];
               nextRoles[packet.playerIndex] = packet.role;
               ChorPoliceEngine.state.roles = nextRoles;
-              
+
               // Sync Redux so UI reflects our role in the card list
-              dispatch(setRoundState({
-                round: ChorPoliceEngine.state.currentRound,
-                roles: nextRoles,
-                policeIndex: ChorPoliceEngine.state.policeIndex,
-                kingIndex: ChorPoliceEngine.state.kingIndex,
-                thiefIndex: ChorPoliceEngine.state.thiefIndex,
-                advisorIndex: ChorPoliceEngine.state.advisorIndex,
-              }));
+              dispatch(
+                setRoundState({
+                  round: ChorPoliceEngine.state.currentRound,
+                  roles: nextRoles,
+                  policeIndex: ChorPoliceEngine.state.policeIndex,
+                  kingIndex: ChorPoliceEngine.state.kingIndex,
+                  thiefIndex: ChorPoliceEngine.state.thiefIndex,
+                  advisorIndex: ChorPoliceEngine.state.advisorIndex,
+                }),
+              );
             }
           }
         }
@@ -249,14 +282,23 @@ export const ChorPoliceEngine = {
 
         // ── Redux sync ──
         dispatch(setRoundActive(false));
-        dispatch(setRoundState({
-          round: ChorPoliceEngine.state.currentRound,
-          roles: [...ChorPoliceEngine.state.roles],
-          policeIndex: packet.allRoles?.findIndex((e: any) => e.role === "Police") ?? null,
-          kingIndex: packet.allRoles?.findIndex((e: any) => e.role === "King") ?? null,
-          thiefIndex: packet.allRoles?.findIndex((e: any) => e.role === "Thief") ?? null,
-          advisorIndex: packet.allRoles?.findIndex((e: any) => e.role === "Advisor") ?? null,
-        }));
+        dispatch(
+          setRoundState({
+            round: ChorPoliceEngine.state.currentRound,
+            roles: [...ChorPoliceEngine.state.roles],
+            policeIndex:
+              packet.allRoles?.findIndex((e: any) => e.role === "Police") ??
+              null,
+            kingIndex:
+              packet.allRoles?.findIndex((e: any) => e.role === "King") ?? null,
+            thiefIndex:
+              packet.allRoles?.findIndex((e: any) => e.role === "Thief") ??
+              null,
+            advisorIndex:
+              packet.allRoles?.findIndex((e: any) => e.role === "Advisor") ??
+              null,
+          }),
+        );
         dispatch(setGamePhase("result"));
         break;
 
@@ -265,7 +307,9 @@ export const ChorPoliceEngine = {
         break;
 
       case CP.GAME_END:
-        console.log(`🎭 [CPEngine] 🛑 GAME_END received — reason: ${packet.reason}`);
+        console.log(
+          `🎭 [CPEngine] 🛑 GAME_END received — reason: ${packet.reason}`,
+        );
         if (packet.reason === "completed") {
           const currentPhase = store.getState().session.gamePhase;
           if (currentPhase !== "video_transition") {
@@ -281,10 +325,12 @@ export const ChorPoliceEngine = {
 
       default: {
         if (packet.type === "RECONNECT_STATUS") {
-          console.log(`🎭 [CPEngine] 📡 Reconnect status update: ${packet.playerId} -> ${packet.status}`);
-          dispatch({ 
-            type: "session/setPlayerConnectionStatus", 
-            payload: { playerId: packet.playerId, status: packet.status } 
+          console.log(
+            `🎭 [CPEngine] 📡 Reconnect status update: ${packet.playerId} -> ${packet.status}`,
+          );
+          dispatch({
+            type: "session/setPlayerConnectionStatus",
+            payload: { playerId: packet.playerId, status: packet.status },
           });
           break;
         }
@@ -296,7 +342,9 @@ export const ChorPoliceEngine = {
           CP.POLICE_TURN_READY,
         ];
         if (UI_ONLY_PACKETS.includes(packet.type)) break;
-        console.log(`🎭 [CPEngine] ⚠️ Unhandled CP packet type: ${packet.type}`);
+        console.log(
+          `🎭 [CPEngine] ⚠️ Unhandled CP packet type: ${packet.type}`,
+        );
         break;
       }
     }
@@ -304,23 +352,39 @@ export const ChorPoliceEngine = {
 
   /* ─── Handle full state sync from Host ─── */
   handleSyncState: (packet: any): void => {
-    const { 
-      players, currentRound, totalRounds, roles, 
-      policeIndex, kingIndex, thiefIndex, advisorIndex, 
-      isRoundActive, stake, scores, gamePhase, myRole 
+    const {
+      players,
+      currentRound,
+      totalRounds,
+      roles,
+      policeIndex,
+      kingIndex,
+      thiefIndex,
+      advisorIndex,
+      isRoundActive,
+      stake,
+      scores,
+      gamePhase,
+      myRole,
     } = packet;
 
     ChorPoliceEngine.state.players = players || ChorPoliceEngine.state.players;
-    ChorPoliceEngine.state.currentRound = currentRound || ChorPoliceEngine.state.currentRound;
-    ChorPoliceEngine.state.totalRounds = totalRounds || ChorPoliceEngine.state.totalRounds;
+    ChorPoliceEngine.state.currentRound =
+      currentRound || ChorPoliceEngine.state.currentRound;
+    ChorPoliceEngine.state.totalRounds =
+      totalRounds || ChorPoliceEngine.state.totalRounds;
     ChorPoliceEngine.state.roles = roles || ChorPoliceEngine.state.roles;
-    ChorPoliceEngine.state.policeIndex = policeIndex ?? ChorPoliceEngine.state.policeIndex;
-    ChorPoliceEngine.state.kingIndex = kingIndex ?? ChorPoliceEngine.state.kingIndex;
-    ChorPoliceEngine.state.thiefIndex = thiefIndex ?? ChorPoliceEngine.state.thiefIndex;
-    ChorPoliceEngine.state.advisorIndex = advisorIndex ?? ChorPoliceEngine.state.advisorIndex;
+    ChorPoliceEngine.state.policeIndex =
+      policeIndex ?? ChorPoliceEngine.state.policeIndex;
+    ChorPoliceEngine.state.kingIndex =
+      kingIndex ?? ChorPoliceEngine.state.kingIndex;
+    ChorPoliceEngine.state.thiefIndex =
+      thiefIndex ?? ChorPoliceEngine.state.thiefIndex;
+    ChorPoliceEngine.state.advisorIndex =
+      advisorIndex ?? ChorPoliceEngine.state.advisorIndex;
     ChorPoliceEngine.state.isRoundActive = !!isRoundActive;
     ChorPoliceEngine.state.stake = stake ?? ChorPoliceEngine.state.stake;
-    
+
     // Restore investigation targets if provided
     if (packet.investigationTargets) {
       ChorPoliceEngine.state.investigationTargets = packet.investigationTargets;
@@ -335,37 +399,48 @@ export const ChorPoliceEngine = {
 
     // Derive myRole from the synced roles array
     const localId = store.getState().session.localPlayerId;
-    const myIndex = ChorPoliceEngine.state.players.findIndex(p => p.id === localId);
-    const derivedMyRole = myIndex !== -1 ? ChorPoliceEngine.state.roles[myIndex] : null;
+    const myIndex = ChorPoliceEngine.state.players.findIndex(
+      (p) => p.id === localId,
+    );
+    const derivedMyRole =
+      myIndex !== -1 ? ChorPoliceEngine.state.roles[myIndex] : null;
 
     // Update Redux
     dispatch(setStake(ChorPoliceEngine.state.stake));
     dispatch(setReduxMyRole(derivedMyRole));
     dispatch(setRoundActive(ChorPoliceEngine.state.isRoundActive));
-    dispatch(setRoundState({
-      round: ChorPoliceEngine.state.currentRound,
-      totalRounds: ChorPoliceEngine.state.totalRounds,
-      roles: ChorPoliceEngine.state.roles,
-      policeIndex: ChorPoliceEngine.state.policeIndex,
-      kingIndex: ChorPoliceEngine.state.kingIndex,
-      thiefIndex: ChorPoliceEngine.state.thiefIndex,
-      advisorIndex: ChorPoliceEngine.state.advisorIndex,
-    }));
+    dispatch(
+      setRoundState({
+        round: ChorPoliceEngine.state.currentRound,
+        totalRounds: ChorPoliceEngine.state.totalRounds,
+        roles: ChorPoliceEngine.state.roles,
+        policeIndex: ChorPoliceEngine.state.policeIndex,
+        kingIndex: ChorPoliceEngine.state.kingIndex,
+        thiefIndex: ChorPoliceEngine.state.thiefIndex,
+        advisorIndex: ChorPoliceEngine.state.advisorIndex,
+      }),
+    );
     dispatch(setGamePhase(gamePhase));
     if (ChorPoliceEngine.state.matchId) {
-      dispatch(initMatchEconomy({ 
-        matchId: ChorPoliceEngine.state.matchId, 
-        stakeAmount: ChorPoliceEngine.state.stake 
-      }));
+      dispatch(
+        initMatchEconomy({
+          matchId: ChorPoliceEngine.state.matchId,
+          stakeAmount: ChorPoliceEngine.state.stake,
+        }),
+      );
     }
   },
 
   /* ─── Replace a human player with a bot ─── */
   replacePlayerWithBot: (playerId: string): void => {
-    const player = ChorPoliceEngine.state.players.find(p => p.id === playerId);
+    const player = ChorPoliceEngine.state.players.find(
+      (p) => p.id === playerId,
+    );
     if (!player || player.isBot) return;
 
-    console.log(`🎭 [CPEngine] 🤖 Replacing player ${player.name} (${playerId}) with a BOT`);
+    console.log(
+      `🎭 [CPEngine] 🤖 Replacing player ${player.name} (${playerId}) with a BOT`,
+    );
     player.isBot = true;
     player.name = `${player.name} (Bot)`;
 
@@ -383,9 +458,9 @@ export const ChorPoliceEngine = {
     });
 
     // Sync Redux
-    dispatch({ 
-      type: "session/setPlayerConnectionStatus", 
-      payload: { playerId, status: "BOT_REPLACED" } 
+    dispatch({
+      type: "session/setPlayerConnectionStatus",
+      payload: { playerId, status: "BOT_REPLACED" },
     });
   },
 
@@ -400,20 +475,35 @@ export const ChorPoliceEngine = {
       );
     }
 
-    console.log(`🎭 [CPEngine] Initializing session — ${players.length} players, stake: ${stake}, rounds: ${totalRounds}`);
-    console.log(`🎭 [CPEngine]   Humans: ${players.filter((p) => !p.isBot).map((p) => p.name).join(', ') || 'none'}`);
-    console.log(`🎭 [CPEngine]   Bots: ${players.filter((p) => p.isBot).map((p) => p.name).join(', ') || 'none'}`);
+    console.log(
+      `🎭 [CPEngine] Initializing session — ${players.length} players, stake: ${stake}, rounds: ${totalRounds}`,
+    );
+    console.log(
+      `🎭 [CPEngine]   Humans: ${
+        players
+          .filter((p) => !p.isBot)
+          .map((p) => p.name)
+          .join(", ") || "none"
+      }`,
+    );
+    console.log(
+      `🎭 [CPEngine]   Bots: ${
+        players
+          .filter((p) => p.isBot)
+          .map((p) => p.name)
+          .join(", ") || "none"
+      }`,
+    );
 
     ChorPoliceEngine.state.players = [...players];
     ChorPoliceEngine.state.stake = stake;
     ChorPoliceEngine.state.totalPot = stake * players.length;
     ChorPoliceEngine.state.totalRounds = totalRounds;
     ChorPoliceEngine.state.currentRound = 1;
-    
+
     const matchId = `CP_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     ChorPoliceEngine.state.matchId = matchId;
     dispatch(initMatchEconomy({ matchId, stakeAmount: stake }));
-
 
     // Initialize score entries
     players.forEach((p) => {
@@ -429,22 +519,26 @@ export const ChorPoliceEngine = {
 
     // ── Redux sync ──
     dispatch(setStake(stake));
-    dispatch(setRoundState({
-      round: 1,
-      totalRounds,
-      roles: [],
-      policeIndex: null,
-      kingIndex: null,
-      thiefIndex: null,
-      advisorIndex: null,
-    }));
+    dispatch(
+      setRoundState({
+        round: 1,
+        totalRounds,
+        roles: [],
+        policeIndex: null,
+        kingIndex: null,
+        thiefIndex: null,
+        advisorIndex: null,
+      }),
+    );
     dispatch(setGamePhase("waiting"));
   },
 
   /* ─── Shuffle & assign roles for the current round ─── */
   startRound: (): void => {
     if (__DEV__) {
-      console.log(`[CP_START] startRound called. Round: ${ChorPoliceEngine.state.currentRound}`);
+      console.log(
+        `[CP_START] startRound called. Round: ${ChorPoliceEngine.state.currentRound}`,
+      );
     }
     const { players, currentRound, totalRounds } = ChorPoliceEngine.state;
 
@@ -455,14 +549,22 @@ export const ChorPoliceEngine = {
 
     // 🛡️ GUARD: Must have exactly 4 players for role assignment
     if (players.length !== 4) {
-      console.error(`🚨 [CPEngine] startRound aborted — ${players.length} players (need 4)`);
+      console.error(
+        `🚨 [CPEngine] startRound aborted — ${players.length} players (need 4)`,
+      );
       return;
     }
 
     console.log(`🎭 [CPEngine] ═══════════════════════════════════`);
-    console.log(`🎭 [CPEngine] 🚀 startRound() EXECUTING for Round ${currentRound}/${totalRounds}`);
+    console.log(
+      `🎭 [CPEngine] 🚀 startRound() EXECUTING for Round ${currentRound}/${totalRounds}`,
+    );
     console.log(`🎭 [CPEngine]   Players in engine: ${players.length}`);
-    players.forEach((p, i) => console.log(`🎭 [CPEngine]     P${i}: ${p.name} (ID: ${p.id}, Bot: ${!!p.isBot})`));
+    players.forEach((p, i) =>
+      console.log(
+        `🎭 [CPEngine]     P${i}: ${p.name} (ID: ${p.id}, Bot: ${!!p.isBot})`,
+      ),
+    );
 
     // FIX BUG-8: was a deterministic LCG — same seed = same roles every game.
     // Host is authoritative and broadcasts the result, so Math.random() is correct.
@@ -477,26 +579,41 @@ export const ChorPoliceEngine = {
     };
     let shuffled: Role[] = shuffle([...ROLES]);
     console.log(`🎭 [CPEngine]   Initial Roles: [${shuffled.join(", ")}]`);
-    
+
     // Single-player rule (1 human, 3 bots): the human is Police EXACTLY 50% of
     // the time. On the other 50%, the human gets one of King/Thief/Advisor and a
     // random bot is Police (human can never roll Police on the miss branch).
-    const humanIndices = players.reduce<number[]>((acc, p, i) => (!p.isBot ? [...acc, i] : acc), []);
+    const humanIndices = players.reduce<number[]>(
+      (acc, p, i) => (!p.isBot ? [...acc, i] : acc),
+      [],
+    );
     if (humanIndices.length === 1) {
       const humanIndex = humanIndices[0];
       const isHumanPolice = Math.random() < 0.5;
       if (isHumanPolice) {
         shuffled = shuffle([...OTHER_ROLES]);
         shuffled.splice(humanIndex, 0, "Police");
-        console.log(`🎭 [CPEngine] 🎲 Single-player: Human is Police (50% hit)`);
+        console.log(
+          `🎭 [CPEngine] 🎲 Single-player: Human is Police (50% hit)`,
+        );
       } else {
-        const humanRole = OTHER_ROLES[Math.floor(Math.random() * OTHER_ROLES.length)];
+        const humanRole =
+          OTHER_ROLES[Math.floor(Math.random() * OTHER_ROLES.length)];
         const remaining = OTHER_ROLES.filter((r) => r !== humanRole);
         shuffled = shuffle([...remaining]);
         shuffled.splice(humanIndex, 0, humanRole);
-        const botIndices = players.reduce<number[]>((acc, p, i) => (p.isBot ? [...acc, i] : acc), []);
-        shuffled.splice(botIndices[Math.floor(Math.random() * botIndices.length)], 0, "Police");
-        console.log(`🎭 [CPEngine] 🎲 Single-player: Human is ${humanRole}, Police went to a bot (50% miss)`);
+        const botIndices = players.reduce<number[]>(
+          (acc, p, i) => (p.isBot ? [...acc, i] : acc),
+          [],
+        );
+        shuffled.splice(
+          botIndices[Math.floor(Math.random() * botIndices.length)],
+          0,
+          "Police",
+        );
+        console.log(
+          `🎭 [CPEngine] 🎲 Single-player: Human is ${humanRole}, Police went to a bot (50% miss)`,
+        );
       }
     }
 
@@ -511,39 +628,51 @@ export const ChorPoliceEngine = {
       console.log("[CP_START] startRound: roles created", shuffled);
 
       // 🛡️ INDEX VALIDATION
-      if (ChorPoliceEngine.state.policeIndex === -1 || ChorPoliceEngine.state.kingIndex === -1) {
-        throw new Error(`Critical roles missing: King=${ChorPoliceEngine.state.kingIndex}, Police=${ChorPoliceEngine.state.policeIndex}`);
+      if (
+        ChorPoliceEngine.state.policeIndex === -1 ||
+        ChorPoliceEngine.state.kingIndex === -1
+      ) {
+        throw new Error(
+          `Critical roles missing: King=${ChorPoliceEngine.state.kingIndex}, Police=${ChorPoliceEngine.state.policeIndex}`,
+        );
       }
 
       ChorPoliceEngine.state.isRoundActive = true;
       ChorPoliceEngine.state.selectedTargetId = null;
 
-      console.log("[CP_START] startRound: before player loop (generating targets)");
+      console.log(
+        "[CP_START] startRound: before player loop (generating targets)",
+      );
       // 🎭 Joker Integration: Generate the 3 investigation mystery cards
       const targets = ChorPoliceEngine.generateInvestigationTargets();
       ChorPoliceEngine.state.investigationTargets = targets;
       console.log("[CP_START] startRound: after player loop");
     } catch (error) {
-      console.error("[CP_START] startRound crashed during initialization", error);
+      console.error(
+        "[CP_START] startRound crashed during initialization",
+        error,
+      );
       return;
     }
 
-
-
     // ── Redux sync ──
     dispatch(setRoundActive(true));
-    dispatch(setRoundState({
-      round: currentRound,
-      roles: [...shuffled],
-      policeIndex: ChorPoliceEngine.state.policeIndex,
-      kingIndex: ChorPoliceEngine.state.kingIndex,
-      thiefIndex: ChorPoliceEngine.state.thiefIndex,
-      advisorIndex: ChorPoliceEngine.state.advisorIndex,
-    }));
+    dispatch(
+      setRoundState({
+        round: currentRound,
+        roles: [...shuffled],
+        policeIndex: ChorPoliceEngine.state.policeIndex,
+        kingIndex: ChorPoliceEngine.state.kingIndex,
+        thiefIndex: ChorPoliceEngine.state.thiefIndex,
+        advisorIndex: ChorPoliceEngine.state.advisorIndex,
+      }),
+    );
 
     // Log role assignments
     players.forEach((p, i) => {
-      console.log(`🎭 [CPEngine]   ${p.name} → ${shuffled[i]}${p.id === "host_id" ? " (LOCAL PLAYER)" : ""}`);
+      console.log(
+        `🎭 [CPEngine]   ${p.name} → ${shuffled[i]}${p.id === "host_id" ? " (LOCAL PLAYER)" : ""}`,
+      );
     });
     console.log(`🎭 [CPEngine] ═══════════════════════════════════`);
 
@@ -565,7 +694,8 @@ export const ChorPoliceEngine = {
     const kingIdx = ChorPoliceEngine.state.kingIndex;
 
     // 1.5. Randomize deal animation preset (Host only)
-    const preset = CARD_DEAL_PRESETS[Math.floor(Math.random() * CARD_DEAL_PRESETS.length)];
+    const preset =
+      CARD_DEAL_PRESETS[Math.floor(Math.random() * CARD_DEAL_PRESETS.length)];
     dispatch(setDealAnimationPreset(preset));
 
     console.log(`[CP_START] startRound: selected preset=${preset}`);
@@ -587,12 +717,14 @@ export const ChorPoliceEngine = {
         avatarId: p.avatarId,
         isPublic: i === kingIdx || i === policeIdx,
       })),
-      investigationTargets: ChorPoliceEngine.state.investigationTargets.map(t => ({
-        id: t.id,
-        type: t.type,
-        playerIndex: t.playerIndex,
-        role: t.role,
-      })),
+      investigationTargets: ChorPoliceEngine.state.investigationTargets.map(
+        (t) => ({
+          id: t.id,
+          type: t.type,
+          playerIndex: t.playerIndex,
+          role: t.role,
+        }),
+      ),
     });
     console.log("[CP_START] startRound: PUBLIC_REVEAL emitted");
   },
@@ -604,13 +736,23 @@ export const ChorPoliceEngine = {
       return;
     }
 
-    const { investigationTargets, roles, players, currentRound, scores, policeIndex, kingIndex } = ChorPoliceEngine.state;
-    
+    const {
+      investigationTargets,
+      roles,
+      players,
+      currentRound,
+      scores,
+      policeIndex,
+      kingIndex,
+    } = ChorPoliceEngine.state;
+
     // Find target in investigationTargets (could be Thief, Advisor, or Joker)
-    const target = investigationTargets.find(t => t.id === targetId);
+    const target = investigationTargets.find((t) => t.id === targetId);
 
     if (!target) {
-      console.error(`🚨 [CPEngine] Guess failed: targetId ${targetId} not found in current investigationTargets!`);
+      console.error(
+        `🚨 [CPEngine] Guess failed: targetId ${targetId} not found in current investigationTargets!`,
+      );
       return;
     }
 
@@ -624,7 +766,9 @@ export const ChorPoliceEngine = {
     console.log(`🎭 [CPEngine] ═══════════════════════════════════`);
     console.log(`🎭 [CPEngine] POLICE GUESS EVALUATION (ID: ${targetId})`);
     console.log(`🎭 [CPEngine]   Target Role  : ${guessedRole}`);
-    console.log(`🎭 [CPEngine]   Correct      : ${correct ? "✅ YES (caught thief!)" : "❌ NO (thief escaped)"}`);
+    console.log(
+      `🎭 [CPEngine]   Correct      : ${correct ? "✅ YES (caught thief!)" : "❌ NO (thief escaped)"}`,
+    );
     console.log(`🎭 [CPEngine]   Round        : ${currentRound}`);
     console.log(`🎭 [CPEngine] ═══════════════════════════════════`);
 
@@ -642,7 +786,9 @@ export const ChorPoliceEngine = {
       if (scores[player.id]) {
         scores[player.id].totalScore += points;
         scores[player.id].roundScores.push(points);
-        console.log(`🎭 [CPEngine]   ${player.name} (${role}): +${points} → total: ${scores[player.id].totalScore}`);
+        console.log(
+          `🎭 [CPEngine]   ${player.name} (${role}): +${points} → total: ${scores[player.id].totalScore}`,
+        );
       }
     });
 
@@ -654,7 +800,9 @@ export const ChorPoliceEngine = {
       type: CP.ROUND_RESULT,
       correct,
       guessedTargetId: targetId,
-      guessedMysteryIndex: mysteryIndex ?? investigationTargets.findIndex(t => t.id === targetId),
+      guessedMysteryIndex:
+        mysteryIndex ??
+        investigationTargets.findIndex((t) => t.id === targetId),
       guessedRole,
       round: currentRound,
       allRoles: players.map((p, i) => ({
@@ -712,7 +860,10 @@ export const ChorPoliceEngine = {
     Object.values(ChorPoliceEngine.state.scores).sort(
       (a, b) => b.totalScore - a.totalScore,
     ),
-
+  getLevel2Leaderboard: (): CPScoreEntry[] =>
+    Object.values(ChorPoliceEngine.state.scores).sort(
+      (a, b) => b.level2Bonus - a.level2Bonus,
+    ),
   getLevel1Score: (playerId: string): number => {
     const entry = ChorPoliceEngine.state.scores[playerId];
     if (!entry) return 0;
@@ -721,9 +872,24 @@ export const ChorPoliceEngine = {
 
   generateInvestigationTargets: () => {
     const { thiefIndex, advisorIndex } = ChorPoliceEngine.state;
-    const targets: Array<{ id: string; type: "THIEF" | "ADVISOR" | "JOKER"; role: string; playerIndex: number | null }> = [
-      { id: "target_thief", role: "Thief", type: "THIEF", playerIndex: thiefIndex },
-      { id: "target_advisor", role: "Advisor", type: "ADVISOR", playerIndex: advisorIndex },
+    const targets: Array<{
+      id: string;
+      type: "THIEF" | "ADVISOR" | "JOKER";
+      role: string;
+      playerIndex: number | null;
+    }> = [
+      {
+        id: "target_thief",
+        role: "Thief",
+        type: "THIEF",
+        playerIndex: thiefIndex,
+      },
+      {
+        id: "target_advisor",
+        role: "Advisor",
+        type: "ADVISOR",
+        playerIndex: advisorIndex,
+      },
       { id: "target_joker", role: "Joker", type: "JOKER", playerIndex: null },
     ];
     // Shuffle the 3 targets so Thief isn't always at the same relative spot

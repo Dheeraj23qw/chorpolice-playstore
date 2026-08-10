@@ -35,7 +35,10 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   const [showDebug, setShowDebug] = React.useState(false);
 
   React.useEffect(() => {
-    if (isInviteLoading || (lobby.connectionStatus === "HOSTING" && !lobby.hostIp)) {
+    if (
+      isInviteLoading ||
+      (lobby.connectionStatus === "HOSTING" && !lobby.hostIp)
+    ) {
       const timer = setTimeout(() => setShowHotspotFix(true), 5000);
       return () => clearTimeout(timer);
     } else {
@@ -58,9 +61,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
 
   // Is the host still bootstrapping (IP not yet resolved)?
   const isHotspotInitializing =
-    lobby.connectionStatus === "HOSTING" &&
-    !lobby.hostIp &&
-    !lobby.roomCode;
+    lobby.connectionStatus === "HOSTING" && !lobby.hostIp && !lobby.roomCode;
 
   const getSubtitle = () => {
     if (lobby.players.length <= 1) return "Need at least 2 players";
@@ -83,88 +84,104 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
         className="border border-white/10"
       >
         <View className="p-6">
-        {lobby.isHost && (
-          <View className="gap-4">
-            {/* Invite / Share Section */}
-            {canShare && (
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onOpenShare();
-                }}
-                disabled={isInviteLoading}
-              >
-                {({ pressed }) => {
-                  // Show spinner when: parent is polling for IP, OR hotspot interface not yet ready
-                  const showSpinner = isInviteLoading || isHotspotInitializing;
-                  const label = isInviteLoading || isHotspotInitializing
-                    ? "Preparing local room..."
-                    : "Invite Players";
-                  return (
-                    <MotiView
-                      animate={{ scale: pressed && !showSpinner ? 0.98 : 1, opacity: showSpinner ? 0.7 : 1 }}
-                      className="rounded-2xl border border-blue-500/30 bg-blue-500/10"
-                    >
-                      <View className="flex-row items-center justify-center gap-2 py-4">
-                      {showSpinner ? (
-                        <ActivityIndicator size="small" color="#93c5fd" />
-                      ) : (
-                        <Ionicons name="share-outline" size={rf(2)} color="#93c5fd" />
-                      )}
-                      <Text
-                        style={{ fontSize: rf(1.5) }}
-                        className={`font-main-bold uppercase tracking-[2px] ${showSpinner ? "text-blue-300/60" : "text-blue-200"}`}
+          {lobby.isHost && (
+            <View className="gap-4">
+              {/* Invite / Share Section */}
+              {canShare && (
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onOpenShare();
+                  }}
+                  disabled={isInviteLoading}
+                >
+                  {({ pressed }) => {
+                    // Show spinner when: parent is polling for IP, OR hotspot interface not yet ready
+                    const showSpinner =
+                      isInviteLoading || isHotspotInitializing;
+                    const label =
+                      isInviteLoading || isHotspotInitializing
+                        ? "Preparing local room..."
+                        : "Invite Players";
+                    return (
+                      <MotiView
+                        animate={{
+                          scale: pressed && !showSpinner ? 0.98 : 1,
+                          opacity: showSpinner ? 0.7 : 1,
+                        }}
+                        className="rounded-2xl border border-blue-500/30 bg-blue-500/10"
                       >
-                        {label}
-                      </Text>
+                        <View className="flex-row items-center justify-center gap-2 py-4">
+                          {showSpinner ? (
+                            <ActivityIndicator size="small" color="#93c5fd" />
+                          ) : (
+                            <Ionicons
+                              name="share-outline"
+                              size={rf(2)}
+                              color="#93c5fd"
+                            />
+                          )}
+                          <Text
+                            style={{ fontSize: rf(1.5) }}
+                            className={`font-main-bold uppercase tracking-[2px] ${showSpinner ? "text-blue-300/60" : "text-blue-200"}`}
+                          >
+                            {label}
+                          </Text>
+                        </View>
+                      </MotiView>
+                    );
+                  }}
+                </Pressable>
+              )}
+              {/* 🚀 LAN GUIDANCE: Only shown if Invite was clicked but IP/Server not ready */}
+              {lobby.isHost &&
+                !isSolo &&
+                (isInviteLoading ||
+                  isHotspotInitializing ||
+                  (networkStatus && networkStatus !== "granted")) && (
+                  <MotiView
+                    from={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="overflow-hidden rounded-xl border border-white/5 bg-white/5"
+                  >
+                    <View className="p-3">
+                      <View className="flex-row items-center gap-2">
+                        <Ionicons
+                          name={
+                            networkStatus === "denied"
+                              ? "lock-closed-outline"
+                              : "wifi-outline"
+                          }
+                          size={rf(1.6)}
+                          color={
+                            networkStatus === "denied" ? "#ef4444" : "#93c5fd"
+                          }
+                        />
+                        <Text
+                          style={{ fontSize: rf(1.3) }}
+                          className="flex-1 font-main-md text-white/70"
+                        >
+                          {networkStatus === "denied"
+                            ? "Permission required for LAN play."
+                            : "Searching for network... Please make sure your hotspot or WiFi is ON."}
+                        </Text>
                       </View>
-                    </MotiView>
-                  );
-                }}
-              </Pressable>
-            )}
-            {/* 🚀 LAN GUIDANCE: Only shown if Invite was clicked but IP/Server not ready */}
-            {lobby.isHost && !isSolo && (isInviteLoading || isHotspotInitializing || (networkStatus && networkStatus !== "granted")) && (
-              <MotiView
-                from={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="overflow-hidden rounded-xl bg-white/5 border border-white/5"
-              >
-                <View className="p-3">
-                <View className="flex-row items-center gap-2">
-                  <Ionicons 
-                    name={networkStatus === "denied" ? "lock-closed-outline" : "wifi-outline"} 
-                    size={rf(1.6)} 
-                    color={networkStatus === "denied" ? "#ef4444" : "#93c5fd"} 
-                  />
-                  <Text style={{ fontSize: rf(1.3) }} className="font-main-md text-white/70 flex-1">
-                    {networkStatus === "denied" 
-                      ? "Permission required for LAN play." 
-                      : "Searching for network... Please make sure your hotspot or WiFi is ON."}
-                  </Text>
-                </View>
-                </View>
-              </MotiView>
-            )}
+                    </View>
+                  </MotiView>
+                )}
 
-            {/* Start Game Section */}
-            <PrimaryButton
-              title="Start Match"
-              subtitle={getSubtitle()}
-              disabled={!canStart}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                if (isSolo) {
-                  lobby.handleConfirmStake(0);
-                } else {
+              {/* Start Game Section */}
+              <PrimaryButton
+                title="Start Match"
+                subtitle={getSubtitle()}
+                disabled={!canStart}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   lobby.setIsBettingModalVisible(true);
-                }
-              }}
-            />
-
-
-          </View>
-        )}
+                }}
+              />
+            </View>
+          )}
         </View>
       </LinearGradient>
     </MotiView>

@@ -173,11 +173,13 @@ export const useLobbyLogic = (
     setApIsolationHandler(() => {
       const currentSession = store.getState().session;
       const humanCount = currentSession.players.filter((p) => !p.isBot).length;
-      
+
       // If we already have a successfully established session with peers, ignore the warning
       if (humanCount >= 2) {
         if (__DEV__) {
-          console.log("[Lobby] Ignored AP Isolation warning because session is active (players >= 2)");
+          console.log(
+            "[Lobby] Ignored AP Isolation warning because session is active (players >= 2)",
+          );
         }
         return;
       }
@@ -202,7 +204,9 @@ export const useLobbyLogic = (
 
         // 🛡️ UNMOUNT GUARD: Do not navigate if component or transport is closing
         if (!mountedRef.current || GameSessionTransport.isClosing) {
-          console.log("[Lobby] Navigation aborted: component unmounted or transport closing");
+          console.log(
+            "[Lobby] Navigation aborted: component unmounted or transport closing",
+          );
           return;
         }
 
@@ -223,7 +227,6 @@ export const useLobbyLogic = (
           },
         } as any);
       }, 100);
-
     },
     [isHost, router],
   );
@@ -231,9 +234,15 @@ export const useLobbyLogic = (
   useEffect(() => {
     // Only initialize the host lobby if we haven't bootstrapped yet
     // and we aren't already in a hosting/active state.
-    const isAlreadyActive = session.connectionStatus === "HOSTING" || session.players.length > 0;
-    
-    if (isHost && localPlayerId && !hostBootstrappedRef.current && !isAlreadyActive) {
+    const isAlreadyActive =
+      session.connectionStatus === "HOSTING" || session.players.length > 0;
+
+    if (
+      isHost &&
+      localPlayerId &&
+      !hostBootstrappedRef.current &&
+      !isAlreadyActive
+    ) {
       hostBootstrappedRef.current = true;
       void initHostLobby({
         localPlayerId,
@@ -325,7 +334,7 @@ export const useLobbyLogic = (
       if (isHost && connectionStatus === "HOSTING" && hostIp && roomCode) {
         console.log(
           `[Lobby] 📡 Host ready: IP=${hostIp}, roomCode=${roomCode}, ` +
-          `port=${GameSessionTransport.getListeningPort()}, players=${players.length}`,
+            `port=${GameSessionTransport.getListeningPort()}, players=${players.length}`,
         );
       }
       return;
@@ -333,7 +342,7 @@ export const useLobbyLogic = (
 
     console.log(
       `[Lobby] ⏳ Starting background IP monitor (hostIp=${hostIp || "null"}, ` +
-      `roomCode=${roomCode || "null"}, status=${connectionStatus})`,
+        `roomCode=${roomCode || "null"}, status=${connectionStatus})`,
     );
     let pollCount = 0;
     const startTime = Date.now();
@@ -342,28 +351,32 @@ export const useLobbyLogic = (
       pollCount++;
       const elapsed = Date.now() - startTime;
       const useFallback = elapsed > 5000;
-      
-      console.log(`[Lobby] 🔄 Background IP poll #${pollCount} (elapsed: ${elapsed}ms)...`);
+
+      console.log(
+        `[Lobby] 🔄 Background IP poll #${pollCount} (elapsed: ${elapsed}ms)...`,
+      );
       const result = await getLocalIpAddress({ useFallback });
-      
+
       if (result.ip) {
         const port = GameSessionTransport.getListeningPort();
         const code = encodeRoomCode(result.ip, port);
-        
+
         if (result.ip !== hostIp) {
           console.log(
             `[Lobby] ✅ IP resolved after ${pollCount} polls: IP=${result.ip}, ` +
-            `port=${port}, roomCode=${code}, fallback=${useFallback}`,
+              `port=${port}, roomCode=${code}, fallback=${useFallback}`,
           );
-          
-          dispatch(setSessionNetworkInfo({
-            hostIp: result.ip,
-            roomCode: code,
-          }));
-          
+
+          dispatch(
+            setSessionNetworkInfo({
+              hostIp: result.ip,
+              roomCode: code,
+            }),
+          );
+
           dispatch(setLocalSessionIdentity({ localIp: result.ip }));
         }
-        
+
         // Stop polling if we have a real (non-fallback) IP, or after many attempts
         if (!useFallback || pollCount > 60) {
           clearInterval(interval);
@@ -376,7 +389,7 @@ export const useLobbyLogic = (
 
   useEffect(() => {
     // Call instantly. The coordinator handles debouncing the network broadcast.
-    // We do NOT block by connection status here, because we want the LOCAL 
+    // We do NOT block by connection status here, because we want the LOCAL
     // player list to update visually even before the LAN server starts.
     syncLocalLobbyProfile({
       name: userName.trim() || "PLAYER",
@@ -590,7 +603,11 @@ export const useLobbyLogic = (
         return;
       }
 
-      if (!soloMode && connectionStatus !== "HOSTING" && connectionStatus !== "IDLE") {
+      if (
+        !soloMode &&
+        connectionStatus !== "HOSTING" &&
+        connectionStatus !== "IDLE"
+      ) {
         toast.error(
           "Lobby not ready",
           "Wait for the local lobby server to start, then try again.",
@@ -649,7 +666,9 @@ export const useLobbyLogic = (
           );
         }
       } else {
-        ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 3);
+        // ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 3);
+        ChorPoliceEngine.init(finalPlayers, stake, 1);
+
         ChorPoliceBotBehavior.init(botPlayers);
         if (!soloMode) {
           broadcastPacket(
@@ -752,7 +771,13 @@ export const useLobbyLogic = (
         ip: hostIp,
         port: GameSessionTransport.getListeningPort(),
         roomCode,
-        candidateIps: [hostIp, "192.168.43.1", "192.168.49.1", "172.20.10.1", "192.168.1.1"]
+        candidateIps: [
+          hostIp,
+          "192.168.43.1",
+          "192.168.49.1",
+          "172.20.10.1",
+          "192.168.1.1",
+        ],
       });
       return payload;
     }, [hostIp, roomCode]),

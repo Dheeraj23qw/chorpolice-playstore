@@ -20,12 +20,13 @@ import DealingView from "./views/DealingView";
 import PoliceTurnView from "./views/PoliceTurnView";
 import ResultView from "./views/ResultView";
 import RoundVideoView from "./views/RoundVideoView";
-import ScoreQuizView from "./views/ScoreQuizView";
+
 import FinalResultView from "./views/FinalResultView";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import { RoleRevealView } from "./views/RoleRevealView";
 import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
 import { BoostScoreModal } from "@/modal/BoostScoreModal";
+import ScoreQuizView from "./views/ScoreQuizView/ScoreQuizView";
 
 const ChorPoliceMultiplayerScreen = () => {
   const insets = useSafeAreaInsets();
@@ -97,7 +98,7 @@ const ChorPoliceMultiplayerScreen = () => {
       />
       <View className="absolute h-full w-full bg-black/75" />
       {/* Ambient gradient overlays for depth */}
-      <View className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-indigo-950/20 via-transparent to-transparent" />
+      <View className="absolute left-0 right-0 top-0 h-64 bg-gradient-to-b from-indigo-950/20 via-transparent to-transparent" />
       <View className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
       {/* Content */}
