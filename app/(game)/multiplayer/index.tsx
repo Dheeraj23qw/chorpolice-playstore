@@ -15,7 +15,7 @@ export default function MultiplayerRoute() {
       />
       <GameModeSelectScreen
         title="Multiplayer"
-        subtitle="Play with Friends Locally"
+        subtitle="Bring your gang to play with you"
         modes={multiplayerModes}
         drawerContext="multiplayer"
       />

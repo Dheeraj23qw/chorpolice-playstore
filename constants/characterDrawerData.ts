@@ -213,3 +213,35 @@ export const getRandomCharacterDrawerPick = (
     avatarSource,
   };
 };
+
+// ─── In-game role drawer (waiting for Police during the investigation) ──────
+
+export type RoleName = "King" | "Police" | "Thief" | "Advisor";
+
+const ROLE_AVATARS: Record<RoleName, ImageSourcePropType> = {
+  King: require("@/assets/images/chorsipahi/king.webp"),
+  Police: require("@/assets/images/chorsipahi/police.webp"),
+  Thief: require("@/assets/images/chorsipahi/thief.webp"),
+  Advisor: require("@/assets/images/chorsipahi/advisor.webp"),
+};
+
+const ROLE_WAITING_MESSAGES: Record<RoleName, string> = {
+  King: "Help the Police catch the real thief...",
+  Thief: "Stay hidden. The Police is investigating...",
+  Advisor: "Stay undercover. The Police is investigating...",
+  Police: "Catch the Thief, officer!",
+};
+
+/**
+ * Returns a fixed message + role avatar for the "waiting for the Police"
+ * drawer shown to non-Police players while the Police investigates.
+ */
+export const getRoleWaitingPick = (
+  role: RoleName | null | undefined,
+): CharacterDrawerPick => {
+  const resolved = role && ROLE_AVATARS[role] ? role : "Thief";
+  return {
+    message: ROLE_WAITING_MESSAGES[resolved],
+    avatarSource: ROLE_AVATARS[resolved],
+  };
+};

@@ -3,13 +3,13 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OfflineCountdownBadge } from "@/screens/OfflineGame/components/OfflineCountdownBadge";
+import PlayButton from "@/components/RajamantriGameScreen/playButton";
 
 import { useDealingStage } from "./hooks/useDealingStage";
 import { useMysteryShuffle } from "./hooks/useMysteryShuffle";
 import { GamePlaySectionProps } from "./types";
 import { CardGrid } from "./components/CardGrid";
 import { InvestigationBoard } from "./components/InvestigationBoard";
-import { PlayOrInvestigationCTA } from "./components/PlayOrInvestigationCTA";
 import { RoundBadge } from "./components/RoundBadge";
 
 export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
@@ -72,13 +72,13 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
           <RoundBadge round={round} />
 
           <View className="mb-9">
-            <PlayOrInvestigationCTA
-              isInvestigation={isInvestigation}
-              message={message}
-              isPlayButtonDisabled={isPlayButtonDisabled}
-              handlePlay={handlePlay}
-              buttonText={buttonText}
-            />
+            {!isInvestigation && (
+              <PlayButton
+                disabled={isPlayButtonDisabled}
+                onPress={handlePlay}
+                buttonText={buttonText}
+              />
+            )}
           </View>
 
           <View className="flex-col gap-y-8">

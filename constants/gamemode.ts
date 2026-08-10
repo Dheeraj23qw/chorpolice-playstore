@@ -17,7 +17,7 @@ export const optionsGameMode: GameModeType[] = [
   {
     id: "single_player",
     title: "Single Player",
-    subtitle: "Play with 3 Smart Bots",
+    subtitle: "Take on 3 Smart Bots",
     difficulty: "SOLO",
     route: "/single-player" as any,
     image: require("@/assets/images/chorsipahi/thief.webp"),
@@ -28,7 +28,7 @@ export const optionsGameMode: GameModeType[] = [
   {
     id: "multiplayer",
     title: "Multiplayer",
-    subtitle: "Play with Friends Locally",
+    subtitle: "Bring your gang to play with you",
     difficulty: "LOCAL",
     route: "/multiplayer" as any,
     image: require("@/assets/images/bg/gamemode/2.webp"),
@@ -42,7 +42,7 @@ export const singlePlayerModes: GameModeType[] = [
   {
     id: "chor_online",
     title: "CHOR POLICE",
-    subtitle: "Play with your friends locally",
+    subtitle: "Assemble your crew, rule the city",
     difficulty: "ELITE",
     route: "/lobby" as any,
     image: require("@/assets/modalImages/intro.webp"),
@@ -54,7 +54,7 @@ export const singlePlayerModes: GameModeType[] = [
   {
     id: "think_online",
     title: "THINK & COUNT",
-    subtitle: "Compete with friends locally",
+    subtitle: "Outsmart your friends, count it down",
     difficulty: "SMART",
     route: "/lobby" as any,
     image: require("@/assets/images/chorsipahi/thief.webp"),
@@ -70,7 +70,7 @@ export const multiplayerModes: GameModeType[] = [
   {
     id: "chor_offline",
     title: "Pass & Play",
-    subtitle: "No extra phones? No worry — just pass and play with friends.",
+    subtitle: "One phone — pass it and play together",
     difficulty: "LOCAL",
     route: "/offline-setup" as any,
     image: require("@/assets/images/bg/gamemode/2.webp"),

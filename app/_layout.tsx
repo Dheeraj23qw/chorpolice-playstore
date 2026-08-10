@@ -1,7 +1,7 @@
 import "../styles/global.css";
 import React, { useEffect, useCallback } from "react";
 import { Provider, useSelector } from "react-redux";
-import { SplashScreen, Stack, usePathname } from "expo-router";
+import { SplashScreen, Stack, router, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -28,6 +28,14 @@ function AppLayout() {
   const appPhase = useSelector((state: RootState) => state.appFlow.phase);
   const isSoundLoaded = useSelector((state: RootState) => state.sound.isLoaded);
   const pathname = usePathname();
+
+  // Whenever we're back on the home screen, collapse the navigation stack so
+  // the back button / hardware back exits the app instead of revisiting a game.
+  useEffect(() => {
+    if (pathname === "/" && router.canDismiss()) {
+      router.dismissAll();
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const handleAppState = (state: string) => {

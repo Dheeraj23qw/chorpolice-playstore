@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
+import { useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 
@@ -27,8 +28,15 @@ const GameModeScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const isModalOpen = useSelector(selectIsModalOpenUI);
 
-  const { message, avatarSource, shouldShow, dismiss } =
+  const { message, avatarSource, shouldShow, dismiss, show } =
     useCharacterDrawer("home");
+
+  // Re-show the character popup each time Home comes into focus (3s auto-hide)
+  useFocusEffect(
+    useCallback(() => {
+      show();
+    }, [show]),
+  );
   
   useEffect(() => {
     BotEngine.prepareEngine(10);
@@ -82,7 +90,7 @@ const GameModeScreen: React.FC = () => {
 
       <UnlockedAwardModal />
 
-      {/* Character Drawer — overlay, auto-hides, once per launch */}
+      {/* Character Drawer — overlay, auto-hides after 3s, re-shows on each Home focus */}
       {shouldShow && (
         <CharacterDrawer
           message={message}

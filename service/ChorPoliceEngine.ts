@@ -465,24 +465,36 @@ export const ChorPoliceEngine = {
     // FIX BUG-8: was a deterministic LCG — same seed = same roles every game.
     // Host is authoritative and broadcasts the result, so Math.random() is correct.
     const ROLES: Role[] = ["King", "Police", "Thief", "Advisor"];
-    let shuffled: Role[] = [...ROLES];
+    const OTHER_ROLES: Role[] = ["King", "Thief", "Advisor"];
+    const shuffle = (arr: Role[]) => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
+    let shuffled: Role[] = shuffle([...ROLES]);
     console.log(`🎭 [CPEngine]   Initial Roles: [${shuffled.join(", ")}]`);
     
-    // Custom logic: 50% chance for human to be Police if 1 human, 3 bots
+    // Single-player rule (1 human, 3 bots): the human is Police EXACTLY 50% of
+    // the time. On the other 50%, the human gets one of King/Thief/Advisor and a
+    // random bot is Police (human can never roll Police on the miss branch).
     const humanIndices = players.reduce<number[]>((acc, p, i) => (!p.isBot ? [...acc, i] : acc), []);
-    if (humanIndices.length === 1 && Math.random() < 0.50) {
+    if (humanIndices.length === 1) {
       const humanIndex = humanIndices[0];
-      shuffled = ["King", "Thief", "Advisor"];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      shuffled.splice(humanIndex, 0, "Police");
-      console.log(`🎭 [CPEngine] 🎲 Custom rule applied: Human granted Police role (50% chance hit)`);
-    } else {
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      const isHumanPolice = Math.random() < 0.5;
+      if (isHumanPolice) {
+        shuffled = shuffle([...OTHER_ROLES]);
+        shuffled.splice(humanIndex, 0, "Police");
+        console.log(`🎭 [CPEngine] 🎲 Single-player: Human is Police (50% hit)`);
+      } else {
+        const humanRole = OTHER_ROLES[Math.floor(Math.random() * OTHER_ROLES.length)];
+        const remaining = OTHER_ROLES.filter((r) => r !== humanRole);
+        shuffled = shuffle([...remaining]);
+        shuffled.splice(humanIndex, 0, humanRole);
+        const botIndices = players.reduce<number[]>((acc, p, i) => (p.isBot ? [...acc, i] : acc), []);
+        shuffled.splice(botIndices[Math.floor(Math.random() * botIndices.length)], 0, "Police");
+        console.log(`🎭 [CPEngine] 🎲 Single-player: Human is ${humanRole}, Police went to a bot (50% miss)`);
       }
     }
 

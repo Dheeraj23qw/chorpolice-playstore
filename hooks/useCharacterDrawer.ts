@@ -5,20 +5,20 @@ import {
   getRandomCharacterDrawerPick,
 } from "@/constants/characterDrawerData";
 
-// ─── Module-level flag: resets when JS runtime restarts ─────────────────────
-let hasShownHome = false;
-
 interface UseCharacterDrawerResult {
   message: string;
   avatarSource: ImageSourcePropType;
   shouldShow: boolean;
   dismiss: () => void;
+  show: () => void;
 }
 
 /**
  * Picks a random message + random character for the given context.
  *
- * • `home`            → shows once per app launch, then hides after dismiss().
+ * • `home`            → visibility is screen-controlled: call show() to
+ *                        (re)display it (e.g. on each Home focus); it auto-
+ *                        hides via the CharacterDrawer's autoHide.
  * • `single_player`   → always shows (persistent).
  * • `multiplayer`     → always shows (persistent).
  */
@@ -28,26 +28,16 @@ export function useCharacterDrawer(
   // Freeze the random picks so they don't change on re-renders
   const picksRef = useRef(getRandomCharacterDrawerPick(context));
 
-  const [visible, setVisible] = useState<boolean>(() => {
-    if (context === "home") {
-      // Only show if it hasn't been shown yet this launch
-      return !hasShownHome;
-    }
-    // Single Player / Multiplayer: always show
-    return true;
-  });
+  const [visible, setVisible] = useState<boolean>(true);
 
-  const dismiss = useCallback(() => {
-    if (context === "home") {
-      hasShownHome = true;
-    }
-    setVisible(false);
-  }, [context]);
+  const dismiss = useCallback(() => setVisible(false), []);
+  const show = useCallback(() => setVisible(true), []);
 
   return {
     message: picksRef.current.message,
     avatarSource: picksRef.current.avatarSource,
     shouldShow: visible,
     dismiss,
+    show,
   };
 }

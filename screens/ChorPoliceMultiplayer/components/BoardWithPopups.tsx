@@ -3,6 +3,9 @@ import { View } from "react-native";
 
 import OverlayPopUp from "@/modal/overlaypop";
 
+import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
+import { getRoleWaitingPick } from "@/constants/characterDrawerData";
+
 import CinematicReveal from "./CinematicReveal";
 import { GamePlaySection } from "./GamePlaySection";
 
@@ -21,6 +24,18 @@ const BoardWithPopups = ({ g }: any) => {
       />
     );
   }
+
+  // Non-Police players wait while the Police investigates — show their role
+  // avatar in a CharacterDrawer instead of the plain "Police is investigating…"
+  // banner.
+  const isWaitingForPolice =
+    (g.gamePhase === "police_turn" ||
+      g.gamePhase === "investigation_shuffle") &&
+    !g.canInteract;
+
+  const waitingPick = isWaitingForPolice
+    ? getRoleWaitingPick(g.myRole)
+    : null;
 
   return (
     <>
@@ -49,6 +64,14 @@ const BoardWithPopups = ({ g }: any) => {
       )}
 
       <View className="flex-1 bg-transparent">
+        {waitingPick && (
+          <CharacterDrawer
+            message={waitingPick.message}
+            avatarSource={waitingPick.avatarSource}
+            persistent
+          />
+        )}
+
         <GamePlaySection
           isPlayButtonDisabled={g.isPlayButtonDisabled}
           handlePlay={g.handlePlay}
@@ -63,6 +86,7 @@ const BoardWithPopups = ({ g }: any) => {
           toggleModal={g.toggleModal}
           round={g.round}
           message={(() => {
+            if (isWaitingForPolice) return null;
             if (g.gamePhase === "result") return "Round Complete!";
             if (g.gamePhase === "investigation_shuffle") {
               return g.canInteract

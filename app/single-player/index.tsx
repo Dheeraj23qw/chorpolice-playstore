@@ -7,7 +7,7 @@ export default function SinglePlayerRoute() {
   return (
     <GameModeSelectScreen
       title="Single Player"
-      subtitle="Play with 3 Smart Bots"
+      subtitle="Take on 3 Smart Bots"
       modes={singlePlayerModes}
       drawerContext="single_player"
     />
