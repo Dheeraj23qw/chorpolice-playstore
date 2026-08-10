@@ -103,6 +103,7 @@ export const MysteryCard = memo(
           disabled={gamePhase !== "police_turn" || isFlipped || isClicked}
           phase={gamePhase}
           isHighlight={
+            !isLocalPlayer &&
             !isFlipped &&
             !isClicked &&
             (gamePhase === "police_turn" ||

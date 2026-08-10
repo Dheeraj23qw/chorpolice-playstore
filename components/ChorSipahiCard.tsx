@@ -53,6 +53,7 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
   };
 
   const themeColor = highlightColor || "#6366f1";
+  const localColor = "#fbbf24";
 
   return (
     <View style={style} className="aspect-[3/4.2] w-full">
@@ -132,16 +133,36 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
             )}
 
             {isLocalPlayer && (
-              <View className="absolute right-2 top-2 z-30">
+              <MotiView
+                from={{ opacity: 0.65 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  type: "timing",
+                  duration: 900,
+                  loop: true,
+                  repeatReverse: true,
+                }}
+                style={{
+                  backgroundColor: `${localColor}24`,
+                  borderColor: localColor,
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 20,
+                }}
+                className="items-center justify-center rounded-[26px] border-[3px]"
+              >
                 <View
-                  style={{ backgroundColor: "#fbbf24", shadowColor: "#fbbf24" }}
-                  className="rounded-full px-3 py-1 shadow-lg shadow-amber-500/50"
+                  style={{ backgroundColor: localColor, shadowColor: localColor }}
+                  className="rounded-full px-4 py-1.5 shadow-xl shadow-amber-500/50"
                 >
-                  <Text className="font-main-bold text-[9px] tracking-widest text-black">
+                  <Text className="font-main-bold text-[12px] tracking-widest text-black">
                     YOU
                   </Text>
                 </View>
-              </View>
+              </MotiView>
             )}
 
             {showStatusOverlay && isClicked && !isFlipped && (
