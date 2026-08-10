@@ -46,6 +46,7 @@ interface RevealDeps {
   setInvestigationTargets: (targets: any[]) => void;
   setMessage: (msg: string) => void;
   setCountdown: React.Dispatch<React.SetStateAction<number | null>>;
+  setMysteryRevealStep: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const useCPRevealSequence = ({
@@ -61,6 +62,7 @@ export const useCPRevealSequence = ({
   setInvestigationTargets,
   setMessage,
   setCountdown,
+  setMysteryRevealStep,
 }: RevealDeps) => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -159,6 +161,7 @@ export const useCPRevealSequence = ({
 
         setPopupIndex(null);
         setMessage("Catch the Thief and stay away from Joker.");
+        setMysteryRevealStep(0);
         dispatch(setReduxGamePhase("police_turn"));
 
         if (resolvedRole === "Police") {
@@ -189,8 +192,8 @@ export const useCPRevealSequence = ({
       setInvestigationTargets,
       setMessage,
       setCountdown,
+      setMysteryRevealStep,
     ],
   );
-
   return { triggerRevealSequence };
 };

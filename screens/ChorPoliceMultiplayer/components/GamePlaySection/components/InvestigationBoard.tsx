@@ -12,6 +12,7 @@ type InvestigationBoardProps = {
   flippedStates: boolean[];
   clickedCards: boolean[];
   mysteryShuffleStep: number;
+  mysteryRevealStep?: number;
   handleCardClick: (index: number, targetId?: string) => void;
 };
 
@@ -23,6 +24,7 @@ export const InvestigationBoard = memo(
     flippedStates,
     clickedCards,
     mysteryShuffleStep,
+    mysteryRevealStep = 0,
     handleCardClick,
   }: InvestigationBoardProps) => {
     if (__DEV__) {
@@ -48,6 +50,7 @@ export const InvestigationBoard = memo(
               flippedStates={flippedStates}
               clickedCards={clickedCards}
               mysteryShuffleStep={mysteryShuffleStep}
+              mysteryRevealStep={mysteryRevealStep}
               handleCardClick={handleCardClick}
             />
           ))}

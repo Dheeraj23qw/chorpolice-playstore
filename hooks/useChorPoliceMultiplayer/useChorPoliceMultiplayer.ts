@@ -118,6 +118,7 @@ export const useChorPoliceMultiplayer = () => {
   const [invisibleIndices, setInvisibleIndices] = useState<number[]>([]);
   const [popupTable, setPopupTable] = useState(false);
   const [investigationTargets, setInvestigationTargets] = useState<any[]>([]);
+  const [mysteryRevealStep, setMysteryRevealStep] = useState(0);
 
   // ── Refs (Anti-Stale Closure) ──
   const flipAnimsRef = useRef(flipAnims);
@@ -201,6 +202,7 @@ export const useChorPoliceMultiplayer = () => {
     setInvestigationTargets,
     setMessage,
     setCountdown,
+    setMysteryRevealStep,
   });
   const scoreQuiz = useCPScoreQuiz({ isHostRef, timerRefs, currentQuizPlayerIdRef, scoreQuizStartedRef, quizOptionDisabledRef, setQuizDone, setQuizOptionDisabled, setQuizPlayerIndex, setQuizOptions, resolveScoreQuizPlayers });
 
@@ -230,6 +232,7 @@ export const useChorPoliceMultiplayer = () => {
     setMediaType,
     setPlayerData,
     setInvestigationTargets,
+    setMysteryRevealStep,
     refs: {
       isHostRef,
       localPlayerIdRef,
@@ -453,5 +456,6 @@ export const useChorPoliceMultiplayer = () => {
     setGamePhase: (phase: GamePhase) => dispatch(setReduxGamePhase(phase)),
     investigationTargets,
     dealAnimationPreset,
+    mysteryRevealStep,
   };
 };

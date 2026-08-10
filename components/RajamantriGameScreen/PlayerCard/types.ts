@@ -11,6 +11,8 @@ export interface PlayerCardProps {
   isHighlight?: boolean;
   disabled?: boolean;
   highlightColor?: string;
+  /** When true, a clicked-but-unflipped card is dimmed to 40% opacity. */
+  dimWhenClicked?: boolean;
 }
 
 export type PlayerImageData = {

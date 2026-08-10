@@ -31,4 +31,5 @@ export interface GamePlaySectionProps {
   investigationTargets?: InvestigationTarget[];
   popupIndex?: number | null;
   dealAnimationPreset?: CardDealPreset;
+  mysteryRevealStep?: number;
 }

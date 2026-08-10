@@ -28,6 +28,16 @@ export const CP_FLOW_TIMINGS = {
   /** Duration of the flip animation for the remaining 2 cards (ms). */
   POLICE_REMAINING_CARDS_FLIP_MS: 700,
 
+  // --- Police Reveal Smash-Out Sequence ---
+
+  /** Duration of the smash-out: the 2 unselected mystery cards fly off the
+   *  board in random directions while the selected card rises up (ms). */
+  MYSTERY_SMASH_OUT_MS: 900,
+
+  /** How long the selected mystery card stays raised & covered before it
+   *  flips to reveal its identity (ms). */
+  MYSTERY_SELECTED_HOLD_MS: 1600,
+
   /** Duration of the cinematic result overlay ("Police Win", etc) (ms). */
   CINEMATIC_RESULT_REVEAL_MS: 3000,
 } as const;

@@ -20,6 +20,7 @@ type MysteryCardProps = {
   flippedStates: boolean[];
   clickedCards: boolean[];
   mysteryShuffleStep: number;
+  mysteryRevealStep: number;
   handleCardClick: (index: number, targetId?: string) => void;
 };
 
@@ -32,6 +33,7 @@ export const MysteryCard = memo(
     flippedStates,
     clickedCards,
     mysteryShuffleStep,
+    mysteryRevealStep,
     handleCardClick,
   }: MysteryCardProps) => {
     const { physicalIndex, isFlipped, isClicked } = getMysteryCardState(
@@ -45,7 +47,13 @@ export const MysteryCard = memo(
       isClicked,
       gamePhase,
       mysteryShuffleStep,
+      mysteryRevealStep,
+      round,
+      target.id,
     );
+
+    const isRevealSmash =
+      gamePhase === "police_turn" && mysteryRevealStep > 0;
 
     return (
       <MotiView
@@ -63,7 +71,13 @@ export const MysteryCard = memo(
           position: "absolute",
           width: MYSTERY_CARD_WIDTH,
           height: MYSTERY_CARD_HEIGHT,
-          zIndex: gamePhase === "investigation_shuffle" ? 40 - idx : idx + 1,
+          zIndex: isRevealSmash
+            ? isClicked
+              ? 50
+              : 40 - idx
+            : gamePhase === "investigation_shuffle"
+              ? 40 - idx
+              : idx + 1,
         }}
       >
         <PlayerCard
@@ -86,6 +100,7 @@ export const MysteryCard = memo(
               gamePhase === "investigation_shuffle")
           }
           disabled={gamePhase !== "police_turn" || isFlipped || isClicked}
+          dimWhenClicked={mysteryRevealStep === 0}
         />
       </MotiView>
     );

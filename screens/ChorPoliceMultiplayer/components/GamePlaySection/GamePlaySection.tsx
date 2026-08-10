@@ -31,6 +31,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   investigationTargets = [],
   popupIndex,
   dealAnimationPreset = "classicSpin",
+  mysteryRevealStep = 0,
 }) => {
   const dealingStage = useDealingStage(gamePhase, round);
 
@@ -106,6 +107,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                 flippedStates={flippedStates}
                 clickedCards={clickedCards}
                 mysteryShuffleStep={mysteryShuffleStep}
+                mysteryRevealStep={mysteryRevealStep}
                 handleCardClick={handleCardClick}
               />
             )}

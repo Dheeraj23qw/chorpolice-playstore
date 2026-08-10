@@ -25,6 +25,7 @@ const PlayerCardComponent: React.FC<PlayerCardProps> = ({
   isHighlight = false,
   disabled = false,
   highlightColor,
+  dimWhenClicked = true,
 }) => {
   const selectedImages = useSelector(selectSelectedImages);
   const playerImages = useSelector(
@@ -60,7 +61,9 @@ const PlayerCardComponent: React.FC<PlayerCardProps> = ({
           flipped
             ? "border-white/25 bg-[#050507]"
             : "border-white/10 bg-[#0b0b12]"
-        } ${clicked && !flipped ? "opacity-40" : "opacity-100"}`}
+        } ${
+          clicked && !flipped && dimWhenClicked ? "opacity-40" : "opacity-100"
+        }`}
       >
         <View className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/40" />
         <View className="absolute inset-[1px] rounded-[28px] border border-indigo-400/20" />

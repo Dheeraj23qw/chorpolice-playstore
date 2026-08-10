@@ -32,6 +32,7 @@ export interface CPMultiplayerContext {
   setMediaType: React.Dispatch<React.SetStateAction<"image" | "video" | "gif" | null>>;
   setPlayerData: React.Dispatch<React.SetStateAction<any>>;
   setInvestigationTargets: React.Dispatch<React.SetStateAction<any[]>>;
+  setMysteryRevealStep: React.Dispatch<React.SetStateAction<number>>;
 
   // Refs (Anti-Stale)
   refs: {

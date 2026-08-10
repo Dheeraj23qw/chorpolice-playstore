@@ -11,7 +11,7 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
     dispatch, refs, reduxRoles, setFlippedStates, setClickedCards, 
     setIsDynamicPopUp, setShowTableButton, setFirstCardClicked, setMessage, 
     setInvisibleIndices, setQuizDone, setQuizOptionDisabled, setQuizPlayerIndex,
-    setFlipAnims, logic
+    setFlipAnims, logic, setMysteryRevealStep
   } = context;
 
   const D = "🎭 [CPPacket]";
@@ -42,40 +42,41 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
   // 🎭 Mystery Index is 0, 1, or 2 corresponding to mystery cards at 10, 11, 12
   const mysteryIndex = typeof packet.guessedMysteryIndex === 'number' ? packet.guessedMysteryIndex : 0;
   
-  // 1. Flip ONLY the clicked mysterious card first
-  const mysteryPhysIndex = 10 + mysteryIndex;
-  console.log(`[CP_MYSTERY] Flipping selected mystery card=${mysteryIndex}`);
-  
-  setFlippedStates(prev => {
-    const next = [...prev];
-    next[mysteryPhysIndex] = true;
-    return next;
-  });
-
   // 🔥 Mark the card as clicked so it shows green/red border on all screens
+  const mysteryPhysIndex = 10 + mysteryIndex;
+  console.log(`[CP_MYSTERY] Selected mystery card=${mysteryIndex} (smash-out reveal)`);
+  
   setClickedCards(prev => {
     const next = [...prev];
     next[mysteryPhysIndex] = true;
     return next;
   });
 
-  // 2. Flip remaining mystery cards after delay
-  const tMysteryRemaining = setTimeout(() => {
-    console.log("[CP_MYSTERY] Flipping remaining mystery cards");
+  // ── Smash-Out Reveal Sequence (synced across all players) ──
+  // 1. Immediately: smash the 2 unselected cards off the board (random
+  //    directions) while the selected card rises up — still covered.
+  setMysteryRevealStep(1);
+
+  // 2. After the smash-out, hold the selected card raised & covered.
+  const tHold = setTimeout(() => {
+    setMysteryRevealStep(2);
+  }, CP_FLOW_TIMINGS.MYSTERY_SMASH_OUT_MS);
+  refs.timerRefs.current.push(tHold);
+
+  // 3. Flip ONLY the selected mystery card after it's been raised a while.
+  const tFlip = setTimeout(() => {
+    console.log("[CP_MYSTERY] Flipping selected mystery card");
     setFlippedStates(prev => {
       const next = [...prev];
-      // Flip all 3 mystery cards (10, 11, 12) to reveal identities
-      next[10] = true;
-      next[11] = true;
-      next[12] = true;
+      next[mysteryPhysIndex] = true;
       return next;
     });
     AudioEngine.play("select", "ui");
-  }, CP_FLOW_TIMINGS.POLICE_REMAINING_CARDS_DELAY_MS);
-  refs.timerRefs.current.push(tMysteryRemaining);
+  }, CP_FLOW_TIMINGS.MYSTERY_SMASH_OUT_MS + CP_FLOW_TIMINGS.MYSTERY_SELECTED_HOLD_MS);
+  refs.timerRefs.current.push(tFlip);
 
-  // 3. Show Cinematic Reveal after mystery cards are visible
-  const T_CINEMATIC = CP_FLOW_TIMINGS.POLICE_REMAINING_CARDS_DELAY_MS + CP_FLOW_TIMINGS.POLICE_REMAINING_CARDS_FLIP_MS;
+  // 4. Show Cinematic Reveal after the selected card finishes flipping
+  const T_CINEMATIC = CP_FLOW_TIMINGS.MYSTERY_SMASH_OUT_MS + CP_FLOW_TIMINGS.MYSTERY_SELECTED_HOLD_MS + CP_FLOW_TIMINGS.CARD_FLIP_DURATION_MS;
   const tCinematic = setTimeout(() => {
     console.log("[CP_MYSTERY] Cinematic result reveal started");
     setPopupIndex(5);
@@ -115,6 +116,7 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
       setPopupIndex(null);
       setMessage("");
       setInvisibleIndices([]);
+      setMysteryRevealStep(0);
       dispatch(setReduxMyRole(null));
       setShowTableButton(false);
       refs.hasGuessedRef.current = false;
