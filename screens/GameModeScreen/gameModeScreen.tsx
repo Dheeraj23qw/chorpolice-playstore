@@ -17,6 +17,8 @@ import {
 } from "@/components/GameModeScreen";
 
 import UnlockedAwardModal from "@/modal/AwardModal";
+import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
+import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { BotEngine } from "@/service/QuizBotEngine";
 import { hp, wp } from "@/utils/responsive";
 
@@ -24,6 +26,9 @@ const GameModeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch<AppDispatch>();
   const isModalOpen = useSelector(selectIsModalOpenUI);
+
+  const { message, avatarSource, shouldShow, dismiss } =
+    useCharacterDrawer("home");
   
   useEffect(() => {
     BotEngine.prepareEngine(10);
@@ -76,6 +81,17 @@ const GameModeScreen: React.FC = () => {
       </View>
 
       <UnlockedAwardModal />
+
+      {/* Character Drawer — overlay, auto-hides, once per launch */}
+      {shouldShow && (
+        <CharacterDrawer
+          message={message}
+          avatarSource={avatarSource}
+          autoHide
+          autoHideDurationMs={3000}
+          onDismiss={dismiss}
+        />
+      )}
     </View>
   );
 };

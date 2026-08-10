@@ -17,11 +17,13 @@ import Animated, {
 } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "@/components/Text";
 import { rf, wp } from "@/utils/responsive";
 import { ONBOARDING_SLIDES } from "../data/onboardingSlides";
 import AnimatedSlideImage from "./AnimatedSlideImage";
+import { DevOnboardingToggle } from "@/components/DevOnboardingToggle";
 
 const { width, height } = Dimensions.get("window");
 
@@ -30,6 +32,7 @@ interface OnboardingSwiperProps {
 }
 
 const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
+  const insets = useSafeAreaInsets();
   const scrollX = useSharedValue(0);
   const lastIndex = ONBOARDING_SLIDES.length - 1;
 
@@ -40,6 +43,19 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
   });
 
   const paginationStyle = useAnimatedStyle(() => {
+    const input = [(lastIndex - 1) * width, lastIndex * width];
+
+    const opacity = interpolate(
+      scrollX.value,
+      input,
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+
+    return { opacity };
+  });
+
+  const skipStyle = useAnimatedStyle(() => {
     const input = [(lastIndex - 1) * width, lastIndex * width];
 
     const opacity = interpolate(
@@ -73,6 +89,12 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
   }, [isCompleting]);
 
   const handlePress = React.useCallback(() => {
+    if (isCompleting) return;
+    setIsCompleting(true);
+    onComplete();
+  }, [isCompleting, onComplete]);
+
+  const handleSkip = React.useCallback(() => {
     if (isCompleting) return;
     setIsCompleting(true);
     onComplete();
@@ -128,6 +150,32 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
           );
         }}
       />
+
+      <Animated.View
+        pointerEvents="box-none"
+        style={[
+          skipStyle,
+          {
+            position: "absolute",
+            right: 20,
+            top: insets.top + 12,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleSkip}
+          disabled={isCompleting}
+          className="rounded-full border border-white/10 bg-white/5 px-5 py-2"
+        >
+          <Text className="font-main-bold text-sm uppercase tracking-[2px] text-white/70">
+            Skip
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Dev-only: replay onboarding on every app launch (to test/catch errors) */}
+      {__DEV__ && <DevOnboardingToggle />}
 
       <AnimatedCTA
         scrollX={scrollX}

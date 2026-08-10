@@ -17,6 +17,7 @@ export default function MultiplayerRoute() {
         title="Multiplayer"
         subtitle="Play with Friends Locally"
         modes={multiplayerModes}
+        drawerContext="multiplayer"
       />
     </>
   );

@@ -10,6 +10,7 @@ import { cleanupStaleNetworkResources } from "@/service/lanGameService";
 import { LanDiscoveryService } from "@/service/network/LanDiscoveryService";
 import { clearSession } from "@/redux/reducers/sessionSlice";
 import { usePathname } from "expo-router";
+import { DevOnboardingToggle } from "@/components/DevOnboardingToggle";
 
 export default function HomeScreen() {
   const isSoundLoaded = useAppSelector((state) => state.sound.isLoaded);
@@ -59,5 +60,10 @@ export default function HomeScreen() {
     }
   }, [isSoundLoaded]);
 
-  return <GameModeScreen />;
+  return (
+    <>
+      <GameModeScreen />
+      {__DEV__ && <DevOnboardingToggle immediate />}
+    </>
+  );
 }

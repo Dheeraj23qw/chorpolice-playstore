@@ -21,7 +21,7 @@ describe("shouldPromptForNotifications", () => {
         prompted: false,
         permissionGranted: false,
         appPhase: "HOME",
-        activeModal: "BONUS_MODAL",
+        activeModal: "REWARD_MODAL",
       }),
     ).toBe(false);
   });

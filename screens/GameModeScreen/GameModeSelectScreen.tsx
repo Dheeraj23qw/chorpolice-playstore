@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Image, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { BlurView } from "expo-blur";
@@ -11,17 +11,23 @@ import { Text } from "@/components/Text";
 import { GameModeRow } from "@/components/GameModeScreen/GameModeRow";
 import { GameModeType } from "@/constants/gamemode";
 import GameModeModal from "@/modal/GameModeModal";
+import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
+import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
+import { CharacterDrawerContext } from "@/constants/characterDrawerData";
 
 interface GameModeSelectScreenProps {
   title: string;
   subtitle: string;
   modes: GameModeType[];
+  /** When provided, a persistent CharacterDrawer renders below the mode list. */
+  drawerContext?: Exclude<CharacterDrawerContext, "home">;
 }
 
 export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
   title,
   subtitle,
   modes,
+  drawerContext,
 }) => {
   const [selectedGame, setSelectedGame] = useState<GameModeType | null>(null);
 
@@ -60,9 +66,12 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
           transition={{ type: "timing", duration: 260 }}
           style={{ flex: 1 }}
         >
-          <View className="flex-1">
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+          >
           {/* HEADER */}
-          <View className="px-5 pt-2">
+          <View className="flex-row items-center px-5 pt-2">
             <TouchableOpacity
               activeOpacity={0.86}
               onPress={() => router.back()}
@@ -76,11 +85,11 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
               <Ionicons name="chevron-back" size={24} color="white" />
             </TouchableOpacity>
 
-            <View className="mt-6">
+            <View className="ml-4 flex-1">
               <Text className="font-main-bold text-3xl tracking-tight text-white">
                 {title}
               </Text>
-              <Text className="mt-2 text-[11px] uppercase tracking-widest text-white/40">
+              <Text className="mt-1 text-[11px] uppercase tracking-widest text-white/40">
                 {subtitle}
               </Text>
             </View>
@@ -97,8 +106,13 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
                 />
               ))}
             </View>
+
+            {/* Persistent Character Drawer for Single Player / Multiplayer */}
+            {drawerContext && (
+              <DrawerSection context={drawerContext} />
+            )}
           </View>
-          </View>
+          </ScrollView>
         </MotiView>
       </SafeAreaView>
 
@@ -109,6 +123,19 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
         gameType={selectedGame?.gameType || selectedGame?.id || ""}
       />
     </View>
+  );
+};
+
+// ── Extracted so the hook is only called when drawerContext exists ───────────
+const DrawerSection: React.FC<{ context: Exclude<CharacterDrawerContext, "home"> }> = ({ context }) => {
+  const { message, avatarSource } = useCharacterDrawer(context);
+
+  return (
+    <CharacterDrawer
+      message={message}
+      avatarSource={avatarSource}
+      persistent
+    />
   );
 };
 

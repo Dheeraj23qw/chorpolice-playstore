@@ -4,12 +4,21 @@ const ONBOARDING_DONE_KEY = "onboarding_done";
 const PERMISSION_REMINDER_SUPPRESSED = "permission_reminder_suppressed";
 const LOBBY_HELP_SHOWN = "lobby_help_shown";
 const JOIN_HELP_SHOWN = "join_help_shown";
+const FORCE_ONBOARDING_DEV_KEY = "force_onboarding_dev";
 
 export const getOnboardingDone = () =>
   storage.getBoolean(ONBOARDING_DONE_KEY) ?? false;
 
 export const setOnboardingDone = (value: boolean) => {
   storage.set(ONBOARDING_DONE_KEY, value);
+};
+
+/** Dev-only: replay the onboarding screen on every app launch. */
+export const getForceOnboardingEveryLaunch = () =>
+  storage.getBoolean(FORCE_ONBOARDING_DEV_KEY) ?? false;
+
+export const setForceOnboardingEveryLaunch = (value: boolean) => {
+  storage.set(FORCE_ONBOARDING_DEV_KEY, value);
 };
 
 export const getPermissionReminderSuppressed = () =>

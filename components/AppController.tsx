@@ -6,6 +6,7 @@ import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { setAppPhase } from "@/redux/reducers/appFlowReducer";
 import { enqueueModal } from "@/redux/reducers/modalQueueReducer";
+import { claimFirstLaunchBonus } from "@/features/wallet/walletSlice";
 import { loadSounds } from "@/redux/reducers/soundReducer";
 import HomeScreen from "@/screens/appFlow/HomeScreen";
 import OnboardingScreen from "@/screens/appFlow/OnboardingScreen";
@@ -18,6 +19,7 @@ import { AudioEngine } from "@/audio/audioEngine";
 import {
   getOnboardingDone,
   setOnboardingDone,
+  getForceOnboardingEveryLaunch,
   getUpdateDismissCount,
   incrementUpdateDismissCount,
 } from "@/storage/appStorage";
@@ -57,6 +59,7 @@ export default function AppController() {
   const loadingTaskRef = useRef<Promise<void> | null>(null);
   const bootstrappedRef = useRef(false);
   const rewardQueuedRef = useRef(false);
+  const firstLaunchBonusRef = useRef(false);
 
   const prepareIntroFlow = useCallback(() => {
     if (loadingTaskRef.current) return loadingTaskRef.current;
@@ -91,7 +94,9 @@ export default function AppController() {
 
     runAfterUI(() => {
       const shouldShowOnboarding =
-        runtimeConfig.forceOnboardingEveryLaunch || !getOnboardingDone();
+        runtimeConfig.forceOnboardingEveryLaunch ||
+        (__DEV__ && getForceOnboardingEveryLaunch()) ||
+        !getOnboardingDone();
 
       if (shouldShowOnboarding) {
         dispatch(setAppPhase("ONBOARDING"));
@@ -108,8 +113,10 @@ export default function AppController() {
   }, []);
 
   useEffect(() => {
-    if (phase === "HOME" && firstLaunch) {
-      dispatch(enqueueModal("BONUS_MODAL"));
+    // Auto-grant the 25k app-download bonus once, silently (no modal).
+    if (phase === "HOME" && firstLaunch && !firstLaunchBonusRef.current) {
+      firstLaunchBonusRef.current = true;
+      dispatch(claimFirstLaunchBonus());
     }
   }, [dispatch, firstLaunch, phase]);
 
