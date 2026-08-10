@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Image, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,17 +30,46 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
   drawerContext,
 }) => {
   const [selectedGame, setSelectedGame] = useState<GameModeType | null>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (__DEV__) {
+      console.log("[NAV][MODE_SELECT] mounted", {
+        pathname,
+        title,
+        drawerContext,
+      });
+    }
+  }, [pathname, title, drawerContext]);
 
   const handleOpen = (item: GameModeType) => {
     if (drawerContext === "single_player") {
       // SOLO: skip the HOST/JOIN modal → go straight to lobby setup as host.
+      if (__DEV__) {
+        console.log("[NAV][MODE_SELECT] solo game selected → /host", {
+          id: item.id,
+          gameType: item.gameType || item.id,
+        });
+      }
       router.push({
         pathname: "/host",
         params: { gameType: item.gameType || item.id, solo: "1" },
       } as any);
     } else if (item.id.endsWith("_online")) {
+      if (__DEV__) {
+        console.log("[NAV][MODE_SELECT] online game selected → host/join modal", {
+          id: item.id,
+          gameType: item.gameType || item.id,
+        });
+      }
       setSelectedGame(item);
     } else {
+      if (__DEV__) {
+        console.log("[NAV][MODE_SELECT] game selected", {
+          id: item.id,
+          target: item.route,
+        });
+      }
       router.push(item.route);
     }
   };

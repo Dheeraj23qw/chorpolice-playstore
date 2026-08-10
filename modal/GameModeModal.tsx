@@ -46,6 +46,13 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
 
   // ✅ Lifecycle + haptics + navigation hide
   useEffect(() => {
+    if (__DEV__) {
+      console.log("[NAV][MODE_MODAL] visibility changed", {
+        isVisible,
+        gameType,
+      });
+    }
+
     if (isVisible) {
       dispatch(openModalUI());
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -71,6 +78,13 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
   };
 
   const proceedWithSelection = (mode: "host" | "join") => {
+    if (__DEV__) {
+      console.log("[NAV][MODE_MODAL] user selected destination", {
+        mode,
+        gameType,
+        target: mode === "host" ? "/host" : "/join",
+      });
+    }
     router.push({
       pathname: mode === "host" ? "/host" : "/join",
       params: { gameType },

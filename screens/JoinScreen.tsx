@@ -139,6 +139,7 @@ const JoinScreen = () => {
   const [joiningRoomIp, setJoiningRoomIp] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
   const isLeavingRef = useRef(false);
+  const joinAttemptRef = useRef(false);
 
   const handleBack = useCallback(async () => {
     if (isLeavingRef.current) return;
@@ -253,6 +254,10 @@ const JoinScreen = () => {
       }
 
       toast.info("Connecting...", "Joining your friend's room.");
+      // The connection redirect belongs only to a request started by this
+      // screen. A persisted connection from an earlier flow must not take
+      // control of navigation after the user chose another mode.
+      joinAttemptRef.current = true;
       setIsSmartJoining(true);
       setJoiningRoomIp(ip);
 
@@ -279,6 +284,14 @@ const JoinScreen = () => {
   /* ── Auto-nav on connected ── */
   useEffect(() => {
     if (session.connectionStatus === "CONNECTED" || session.connectionStatus === "CONNECTING") {
+      if (__DEV__) {
+        console.log("[NAV][JOIN] connection effect → /lobby", {
+          connectionStatus: session.connectionStatus,
+          gameType,
+          isHost: session.isHost,
+          roomCode: session.roomCode,
+        });
+      }
       if (session.connectionStatus === "CONNECTED") {
         toast.success("Connected! 🎉", "You joined the lobby.");
       }

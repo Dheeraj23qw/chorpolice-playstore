@@ -1,6 +1,14 @@
 import { router } from "expo-router";
 
 function installNavAudit() {
+  const installKey = "__chorPoliceNavAuditInstalled__";
+  const auditState = globalThis as typeof globalThis & Record<string, boolean>;
+
+  // Fast Refresh evaluates this module again. Patching a router method more than
+  // once makes each navigation log recursively and obscures the real caller.
+  if (auditState[installKey]) return;
+  auditState[installKey] = true;
+
   const target = router as any;
   const methods = ["push", "replace", "navigate", "back", "dismissAll", "dismiss"];
 

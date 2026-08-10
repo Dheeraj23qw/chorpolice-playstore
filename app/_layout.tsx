@@ -1,4 +1,5 @@
 import "../styles/global.css";
+import "@/utils/navAudit";
 import React, { useEffect, useCallback } from "react";
 import { Provider, useSelector } from "react-redux";
 import { SplashScreen, Stack, router, usePathname } from "expo-router";
@@ -33,6 +34,9 @@ function AppLayout() {
   // the back button / hardware back exits the app instead of revisiting a game.
   useEffect(() => {
     if (pathname === "/" && router.canDismiss()) {
+      if (__DEV__) {
+        console.log("[NAV][ROOT] dismissing nested history after reaching Home");
+      }
       router.dismissAll();
     }
   }, [pathname]);

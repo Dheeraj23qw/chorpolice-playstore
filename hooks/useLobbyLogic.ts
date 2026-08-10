@@ -504,7 +504,16 @@ export const useLobbyLogic = (
   );
 
   const routeToLobbyStage = useCallback(
-    (nextStage: "room" | "setup") => {
+    (nextStage: "room" | "setup", source: "open_setup" | "back_to_room") => {
+      if (__DEV__) {
+        console.log("[NAV][LOBBY] stage route requested", {
+          source,
+          nextStage,
+          gameType,
+          isHost,
+          connectionStatus,
+        });
+      }
       router.replace({
         pathname: nextStage === "setup" ? "/lobby-setup" : "/lobby",
         params: {
@@ -513,7 +522,7 @@ export const useLobbyLogic = (
         },
       } as any);
     },
-    [gameType, isHost, router],
+    [connectionStatus, gameType, isHost, router],
   );
 
   const handleOpenSetup = useCallback(() => {
@@ -531,7 +540,7 @@ export const useLobbyLogic = (
 
     dispatch(setLobbyStage("setup"));
     broadcastLobbyStage("setup");
-    routeToLobbyStage("setup");
+    routeToLobbyStage("setup", "open_setup");
   }, [
     broadcastLobbyStage,
     connectionStatus,
@@ -546,7 +555,7 @@ export const useLobbyLogic = (
       broadcastLobbyStage("room");
     }
 
-    routeToLobbyStage("room");
+    routeToLobbyStage("room", "back_to_room");
   }, [broadcastLobbyStage, dispatch, isHost, routeToLobbyStage]);
 
   const handleContinueWithReadySeats = useCallback(() => {

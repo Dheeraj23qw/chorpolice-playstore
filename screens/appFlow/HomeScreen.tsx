@@ -9,7 +9,6 @@ import store from "@/redux/store";
 import { cleanupStaleNetworkResources } from "@/service/lanGameService";
 import { LanDiscoveryService } from "@/service/network/LanDiscoveryService";
 import { clearSession } from "@/redux/reducers/sessionSlice";
-import { usePathname } from "expo-router";
 import { DevOnboardingToggle } from "@/components/DevOnboardingToggle";
 
 export default function HomeScreen() {
@@ -17,31 +16,12 @@ export default function HomeScreen() {
 
   useAwardUnlocking();
 
-  const pathname = usePathname();
-
   useFocusEffect(
     useCallback(() => {
-      const state = store.getState().session;
-      const isOnJoinScreen = pathname.includes("/join");
-      const isOnHostLobbyScreen = pathname.includes("/lobby");
-      const isOnLobbySetupScreen = pathname.includes("/lobby-setup");
-      
-      const shouldSkipHomeCleanup =
-        state.connectionStatus === "HOSTING" ||
-        state.connectionStatus === "CONNECTING" ||
-        state.connectionStatus === "CONNECTED" ||
-        state.isHost ||
-        !!state.roomCode ||
-        isOnJoinScreen ||
-        isOnHostLobbyScreen ||
-        isOnLobbySetupScreen;
-
-      if (shouldSkipHomeCleanup) {
-        console.log("[LAN][CLEANUP] Home focus cleanup skipped: active LAN flow");
-        return;
-      }
-
-      console.log("[LAN][CLEANUP] Home screen focused - cleaning up stale resources");
+      // This callback only runs while the actual Home route is focused. A live
+      // LAN session is not valid at that point; retaining one lets inactive
+      // lobby effects navigate the user away from their next Home selection.
+      console.log("[LAN][CLEANUP] Home screen focused - clearing stale session");
       void cleanupStaleNetworkResources({ reason: "home_focus" });
       
       // Also stop UDP discovery if somehow left running
@@ -51,7 +31,7 @@ export default function HomeScreen() {
       // Clear session state (remove old players, reset phase)
       store.dispatch(clearSession());
       console.log("[LAN][CLEANUP] Session cleared on Home focus");
-    }, [pathname])
+    }, [])
   );
 
   useEffect(() => {
