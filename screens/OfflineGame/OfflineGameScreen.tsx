@@ -267,6 +267,7 @@ const OfflineGameScreen = () => {
                 policeIndex={g.policeIndex}
                 investigationTargets={g.investigationTargets}
                 clickedTargetId={g.clickedTargetId}
+                mysteryRevealStep={g.mysteryRevealStep}
                 countdown={countdown}
                 onInvestigationClick={handleInvestigationClick}
               />

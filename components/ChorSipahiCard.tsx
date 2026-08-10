@@ -150,7 +150,7 @@ const ChorSipahiCardComponent: React.FC<ChorSipahiCardProps> = ({
                 zIndex: isFlipped ? 1 : 0,
             }}
             className={`items-center justify-center rounded-[26px] border border-indigo-500/40 bg-[#050507] ${
-              isClicked && phase === "result"
+              isClicked && phase === "result" && !isMystery
                 ? role === "Thief"
                   ? "border-green-500 bg-green-500/10"
                   : "border-red-500 bg-red-500/10"

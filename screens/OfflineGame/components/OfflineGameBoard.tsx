@@ -32,6 +32,7 @@ interface OfflineGameBoardProps {
   policeIndex: number | null;
   investigationTargets: InvestigationTarget[];
   clickedTargetId: string | null;
+  mysteryRevealStep: number;
   countdown: number | null;
   onInvestigationClick: (targetId: string, playerIndex: number | null) => void;
 }
@@ -48,6 +49,7 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
   policeIndex,
   investigationTargets,
   clickedTargetId,
+  mysteryRevealStep,
   countdown,
   onInvestigationClick,
 }) => {
@@ -125,7 +127,15 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
   ) => {
     const targetId = target?.id;
     const isClicked = targetId !== undefined && clickedTargetId === targetId;
-    const motion = getMysteryMotion(idx, isClicked, phase, mysteryShuffleStep);
+    const isRevealSmash = mysteryRevealStep > 0;
+    const motion = getMysteryMotion(
+      idx,
+      isClicked,
+      phase,
+      mysteryShuffleStep,
+      mysteryRevealStep,
+      targetId ?? "",
+    );
 
     return (
       <MotiView
@@ -143,14 +153,20 @@ export const OfflineGameBoard: React.FC<OfflineGameBoardProps> = ({
           position: "absolute",
           width: MYSTERY_CARD_WIDTH,
           height: MYSTERY_CARD_HEIGHT,
-          zIndex: phase === "investigation_shuffle" ? 40 - idx : idx + 1,
+          zIndex: isRevealSmash
+            ? isClicked
+              ? 50
+              : 40 - idx
+            : phase === "investigation_shuffle"
+              ? 40 - idx
+              : idx + 1,
         }}
       >
         <OfflineCard
           index={target?.playerIndex ?? 10 + idx}
           player={{ name: "Mystery", avatarId: 0 }}
           role={target?.role ?? "Joker"}
-          isFlipped={isClicked}
+          isFlipped={isClicked && mysteryRevealStep >= 3}
           isClicked={isClicked}
           isDealing={false}
           isSpinning={false}

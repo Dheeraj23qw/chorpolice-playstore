@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from "react";
 import { MotiView } from "moti";
 
-import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
+import { ChorSipahiCard } from "@/components/ChorSipahiCard";
 import { hp } from "@/utils/responsive";
 
 import {
@@ -88,27 +88,25 @@ export const MysteryCard = memo(
               : idx + 1,
         }}
       >
-        <PlayerCard
+        <ChorSipahiCard
           index={physicalIndex}
+          player={{ name: "Mystery", avatarId: 0 }}
           role={target.role}
-          playerName="Mystery"
-          flipped={isFlipped}
-          clicked={isClicked}
-          isCorrect={target.role === "Thief"}
-          onClick={(index) => {
+          isFlipped={isFlipped}
+          isClicked={isClicked}
+          onPress={(index: number) => {
             if (gamePhase !== "police_turn") return;
             handleCardClick(index, target.id);
           }}
-          onBounceEffect={() => {}}
-          animatedStyle={{}}
+          disabled={gamePhase !== "police_turn" || isFlipped || isClicked}
+          phase={gamePhase}
           isHighlight={
             !isFlipped &&
             !isClicked &&
             (gamePhase === "police_turn" ||
               gamePhase === "investigation_shuffle")
           }
-          disabled={gamePhase !== "police_turn" || isFlipped || isClicked}
-          dimWhenClicked={mysteryRevealStep === 0}
+          isMystery
         />
       </MotiView>
     );

@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { OfflinePlayer } from "@/redux/reducers/offlineSessionSlice";
+import { AudioEngine } from "@/audio/audioEngine";
+import { CP_FLOW_TIMINGS } from "@/constants/cpFlowTimings";
 
 export type OfflineGamePhase = "idle" | "dealing" | "public_reveal" | "investigation_shuffle" | "police_turn" | "result";
 
@@ -27,6 +29,7 @@ export interface OfflineGameContext {
   thiefIndex: number | null;
   advisorIndex: number | null;
   investigationTargets: InvestigationTarget[];
+  mysteryRevealStep: number;
   scores: number[];
   result: RoundResult | null;
   currentRound: number;
@@ -39,7 +42,6 @@ export interface OfflineGameContext {
 }
 
 export const useOfflineChorPolice = (): OfflineGameContext => {
-  const REVEAL_RESULT_DELAY_MS = 700;
   const players = useSelector((state: RootState) => state.offlineSession.players);
   const totalRounds = useSelector((state: RootState) => state.offlineSession.totalRounds);
   
@@ -54,6 +56,7 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
   const [thiefIndex, setThiefIndex] = useState<number | null>(null);
   const [advisorIndex, setAdvisorIndex] = useState<number | null>(null);
   const [investigationTargets, setInvestigationTargets] = useState<InvestigationTarget[]>([]);
+  const [mysteryRevealStep, setMysteryRevealStep] = useState(0);
   const [result, setResult] = useState<RoundResult | null>(null);
   const revealTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -98,6 +101,7 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
     setClickedIndex(null);
     setClickedTargetId(null);
     setResult(null);
+    setMysteryRevealStep(0);
   }, []);
 
   useEffect(() => {
@@ -140,12 +144,28 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
       if (thiefIndex !== null) roundPoints[thiefIndex] = 500;
     }
 
+    // Smash-out reveal sequence — identical to multiplayer:
+    //   step 1 — board freezes; the 2 unselected cards smash off the phone.
+    //   step 2 — the selected card travels to the center.
+    //   step 3 — the selected card flips.
+    //   then the result cinematic starts.
+    setMysteryRevealStep(1);
+
+    const T_RISE = CP_FLOW_TIMINGS.MYSTERY_FREEZE_MS;
     revealTimeoutRef.current = setTimeout(() => {
-      setResult({ winner, points: roundPoints });
-      setScores(prev => prev.map((s, i) => s + roundPoints[i]));
-      setPhase("result");
-      revealTimeoutRef.current = null;
-    }, REVEAL_RESULT_DELAY_MS);
+      setMysteryRevealStep(2);
+      revealTimeoutRef.current = setTimeout(() => {
+        setMysteryRevealStep(3);
+        AudioEngine.play("select", "ui");
+        revealTimeoutRef.current = setTimeout(() => {
+          setResult({ winner, points: roundPoints });
+          setScores(prev => prev.map((s, i) => s + roundPoints[i]));
+          setMysteryRevealStep(0);
+          setPhase("result");
+          revealTimeoutRef.current = null;
+        }, CP_FLOW_TIMINGS.CARD_FLIP_DURATION_MS);
+      }, CP_FLOW_TIMINGS.MYSTERY_RISE_MS + CP_FLOW_TIMINGS.MYSTERY_CENTER_HOLD_MS);
+    }, T_RISE);
   }, [phase, investigationTargets, kingIndex, advisorIndex, policeIndex, thiefIndex]);
 
   const nextRound = useCallback(() => {
@@ -184,6 +204,7 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
     thiefIndex,
     advisorIndex,
     investigationTargets,
+    mysteryRevealStep,
     scores,
     result,
     currentRound,
@@ -195,7 +216,8 @@ export const useOfflineChorPolice = (): OfflineGameContext => {
     nextRound,
   }), [
     players, phase, roles, clickedIndex, clickedTargetId, policeIndex, kingIndex, 
-    thiefIndex, advisorIndex, investigationTargets, scores, result, currentRound, 
-    totalRounds, handlePlay, handlePoliceGuess, resetGame, nextRound
+    thiefIndex, advisorIndex, investigationTargets, mysteryRevealStep, scores, 
+    result, currentRound, totalRounds, handlePlay, handlePoliceGuess, resetGame, 
+    nextRound
   ]);
 };
