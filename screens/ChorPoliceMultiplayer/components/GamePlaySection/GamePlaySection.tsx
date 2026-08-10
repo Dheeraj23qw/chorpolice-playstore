@@ -53,14 +53,20 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
     ? message || `Round ${round}`
     : "Press me to play!";
 
+  // ── Keep the board MOUNTED during cinematic/result popups ──────────────
+  // Previously this was `if (isCinematicOrResult) return null;` which
+  // destroyed the MotiView tree mid-animation, killing smash-out / rise /
+  // flip. Now we hide it visually so the animations keep running.
   const isCinematicOrResult =
     popupIndex === 5 || popupIndex === 4 || popupIndex === 3;
 
-  if (isCinematicOrResult) return null;
-
   const shouldShowCountdown = typeof countdown === "number" && countdown > 0;
   return (
-    <SafeAreaView className="flex-1 bg-transparent">
+    <SafeAreaView
+      className="flex-1 bg-transparent"
+      style={isCinematicOrResult ? styles.hiddenButMounted : undefined}
+      pointerEvents={isCinematicOrResult ? "none" : "auto"}
+    >
       <View className="relative flex-1">
         <ScrollView
           contentContainerStyle={{
@@ -129,5 +135,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     zIndex: 9999,
     elevation: 9999,
+  },
+  hiddenButMounted: {
+    opacity: 0,
+    position: "absolute",
+    width: 1,
+    height: 1,
+    overflow: "hidden",
   },
 });

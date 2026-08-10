@@ -34,9 +34,15 @@ export const CP_FLOW_TIMINGS = {
    *  board in random directions while the selected card rises up (ms). */
   MYSTERY_SMASH_OUT_MS: 900,
 
-  /** How long the selected mystery card stays raised & covered before it
-   *  flips to reveal its identity (ms). */
-  MYSTERY_SELECTED_HOLD_MS: 1600,
+  /** Full board freeze after the Police taps a card: the 2 unselected cards
+   *  smash out during this window, while the selected card stays put (ms). */
+  MYSTERY_FREEZE_MS: 1200,
+
+  /** How long the selected card takes to travel to the center of the board (ms). */
+  MYSTERY_RISE_MS: 800,
+
+  /** Pause the selected card at the center of the board before it flips (ms). */
+  MYSTERY_CENTER_HOLD_MS: 2000,
 
   /** Duration of the cinematic result overlay ("Police Win", etc) (ms). */
   CINEMATIC_RESULT_REVEAL_MS: 3000,

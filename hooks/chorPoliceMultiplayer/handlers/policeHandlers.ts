@@ -53,32 +53,36 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
   });
 
   // ── Smash-Out Reveal Sequence (synced across all players) ──
-  // 1. Immediately: smash the 2 unselected cards off the board (random
-  //    directions) while the selected card rises up — still covered.
+  // Stage 1 (t = 0): board freezes; the 2 unselected cards smash out of the
+  // phone in random directions while the selected card stays in its slot.
   setMysteryRevealStep(1);
 
-  // 2. After the smash-out, hold the selected card raised & covered.
-  const tHold = setTimeout(() => {
+  // Stage 2 (t = FREEZE): after the freeze window the selected card travels
+  // to the center of the board — still covered.
+  const T_RISE = CP_FLOW_TIMINGS.MYSTERY_FREEZE_MS;
+  const tRise = setTimeout(() => {
     setMysteryRevealStep(2);
-  }, CP_FLOW_TIMINGS.MYSTERY_SMASH_OUT_MS);
-  refs.timerRefs.current.push(tHold);
+  }, T_RISE);
+  refs.timerRefs.current.push(tRise);
 
-  // 3. Flip ONLY the selected mystery card after it's been raised a while.
+  // Stage 3: Flip ONLY the selected mystery card after it settles at center.
+  const T_FLIP =
+    T_RISE +
+    CP_FLOW_TIMINGS.MYSTERY_RISE_MS +
+    CP_FLOW_TIMINGS.MYSTERY_CENTER_HOLD_MS;
   const tFlip = setTimeout(() => {
-    console.log("[CP_MYSTERY] Flipping selected mystery card");
     setFlippedStates(prev => {
       const next = [...prev];
       next[mysteryPhysIndex] = true;
       return next;
     });
     AudioEngine.play("select", "ui");
-  }, CP_FLOW_TIMINGS.MYSTERY_SMASH_OUT_MS + CP_FLOW_TIMINGS.MYSTERY_SELECTED_HOLD_MS);
+  }, T_FLIP);
   refs.timerRefs.current.push(tFlip);
 
   // 4. Show Cinematic Reveal after the selected card finishes flipping
-  const T_CINEMATIC = CP_FLOW_TIMINGS.MYSTERY_SMASH_OUT_MS + CP_FLOW_TIMINGS.MYSTERY_SELECTED_HOLD_MS + CP_FLOW_TIMINGS.CARD_FLIP_DURATION_MS;
+  const T_CINEMATIC = T_FLIP + CP_FLOW_TIMINGS.CARD_FLIP_DURATION_MS;
   const tCinematic = setTimeout(() => {
-    console.log("[CP_MYSTERY] Cinematic result reveal started");
     setPopupIndex(5);
     setRevealData({ role: pickedRole, isCorrect: packet.correct, index: mysteryIndex });
     AudioEngine.play(packet.correct ? "win" : "lose", "gameplay");
@@ -88,7 +92,6 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
   // 4. Show Final Result Popup after cinematic duration
   const T_RESULT = T_CINEMATIC + CP_FLOW_TIMINGS.CINEMATIC_RESULT_REVEAL_MS;
   const tResult = setTimeout(() => {
-    console.log("[CP_MYSTERY] Cinematic result reveal ended");
     setPopupIndex(packet.correct ? 4 : 3);
   }, T_RESULT); 
   refs.timerRefs.current.push(tResult);

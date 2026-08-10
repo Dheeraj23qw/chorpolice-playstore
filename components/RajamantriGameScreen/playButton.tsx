@@ -25,7 +25,10 @@ const PlayButton: React.FC<PlayButtonProps> = ({
       style={{ opacity: disabled ? 0.6 : 1 }}
     >
       {/* 🔥 OUTER DEPTH */}
-      <View className="absolute -inset-2 rounded-[36px] bg-black/30" />
+      <View
+        className="absolute -inset-2 bg-black/30"
+        style={{ borderRadius: 999 }}
+      />
 
       {/* 💠 MAIN BUTTON */}
       <LinearGradient
@@ -34,8 +37,10 @@ const PlayButton: React.FC<PlayButtonProps> = ({
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        className="overflow-hidden rounded-[34px] border border-white/10"
+        className="overflow-hidden"
         style={{
+          borderRadius: 999,
+          backgroundColor: disabled ? "#050507" : "#1e1b4b",
           shadowColor: "#000",
           shadowOpacity: 0.45,
           shadowRadius: 12,
@@ -80,7 +85,10 @@ const PlayButton: React.FC<PlayButtonProps> = ({
       </LinearGradient>
 
       {/* 🔻 BOTTOM DEPTH SHADOW */}
-      <View className="mx-8 h-3 rounded-b-[30px] bg-black/50" />
+      <View
+        className="mx-8 h-3 bg-black/50"
+        style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}
+      />
     </Pressable>
   );
 };

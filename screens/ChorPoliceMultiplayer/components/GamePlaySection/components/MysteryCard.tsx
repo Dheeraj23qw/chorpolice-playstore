@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { MotiView } from "moti";
 
 import PlayerCard from "@/components/RajamantriGameScreen/cardComponent";
@@ -48,23 +48,31 @@ export const MysteryCard = memo(
       gamePhase,
       mysteryShuffleStep,
       mysteryRevealStep,
-      round,
       target.id,
     );
 
-    const isRevealSmash =
-      gamePhase === "police_turn" && mysteryRevealStep > 0;
+    const isRevealSmash = mysteryRevealStep > 0;
+
+    // Referentially stable `from` — only used on the very first mount. All
+    // later movement (shuffle, smash-out, rise-to-center) is driven by
+    // `animate` changes on this SAME mounted view, exactly like the shuffle
+    // and the card flip, which both animate reliably.
+    const slot = MYSTERY_SLOTS[idx] ?? MYSTERY_SLOTS[0];
+    const dealFrom = useMemo(
+      () => ({
+        opacity: 0,
+        scale: 0.76,
+        left: slot.left,
+        top: slot.top + hp(3),
+        rotateZ: idx === 1 ? "8deg" : "-8deg",
+      }),
+      [slot, idx],
+    );
 
     return (
       <MotiView
         key={`${round}-${target.id}`}
-        from={{
-          opacity: 0,
-          scale: 0.76,
-          left: (MYSTERY_SLOTS[idx] ?? MYSTERY_SLOTS[0]).left,
-          top: (MYSTERY_SLOTS[idx] ?? MYSTERY_SLOTS[0]).top + hp(3),
-          rotateZ: idx === 1 ? "8deg" : "-8deg",
-        }}
+        from={dealFrom}
         animate={motion.animate}
         transition={motion.transition}
         style={{

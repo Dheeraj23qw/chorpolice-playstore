@@ -52,12 +52,8 @@ const hashString = (s: string) => {
  * card. Seeded by round + card index + target id so ALL players compute the
  * exact same "random" direction (needed for the synced smash-out animation).
  */
-export const getSmashTarget = (
-  idx: number,
-  round: number,
-  targetId: string,
-) => {
-  const seed = hashString(`${round}-${idx}-${targetId}`);
+export const getSmashTarget = (idx: number, targetId: string) => {
+  const seed = hashString(`${idx}-${targetId}`);
   const dir = SMASH_DIRECTIONS[seed % SMASH_DIRECTIONS.length];
   return {
     left: dir.dx * MYSTERY_BOARD_WIDTH,
@@ -74,31 +70,51 @@ export const getMysteryMotion = (
   gamePhase: string,
   mysteryShuffleStep: number,
   mysteryRevealStep = 0,
-  round = 1,
   targetId = "",
 ) => {
-  // Police-reveal sequence: smash out the 2 unselected cards + rise the pick.
-  if (gamePhase === "police_turn" && mysteryRevealStep > 0) {
+  // Police-reveal sequence (staged):
+  //   step 1 — board freezes; the 2 unselected cards smash out of the phone.
+  //   step 2 — the selected card travels to the center, then flips later.
+  //
+  // NOTE: gated on mysteryRevealStep alone — at reveal time gamePhase is
+  // already "result", NOT "police_turn".
+  if (mysteryRevealStep > 0) {
     if (isClicked) {
-      // Selected card rises up toward the viewer — still covered until flip.
+      if (mysteryRevealStep >= 2) {
+        // Selected card rises to the center — still covered until the flip.
+        return {
+          animate: {
+            left: (MYSTERY_BOARD_WIDTH - MYSTERY_CARD_WIDTH) / 2,
+            top: (MYSTERY_BOARD_HEIGHT - MYSTERY_CARD_HEIGHT) / 2 - 6,
+            opacity: 1,
+            scale: 1.35,
+            rotateZ: "0deg",
+          },
+          transition: {
+            type: "timing" as const,
+            duration: CP_FLOW_TIMINGS.MYSTERY_RISE_MS,
+          },
+        };
+      }
+      // Step 1: the selected card stays frozen in its slot ("stop everything").
+      const slot = MYSTERY_SLOTS[idx] ?? MYSTERY_SLOTS[0];
       return {
         animate: {
-          left: (MYSTERY_BOARD_WIDTH - MYSTERY_CARD_WIDTH) / 2,
-          top: (MYSTERY_BOARD_HEIGHT - MYSTERY_CARD_HEIGHT) / 2 - 6,
+          left: slot.left,
+          top: slot.top,
           opacity: 1,
-          scale: 1.35,
+          scale: 1,
           rotateZ: "0deg",
         },
         transition: {
-          type: "spring" as const,
-          damping: 12,
-          stiffness: 140,
+          type: "timing" as const,
+          duration: 120,
         },
       };
     }
 
     // Non-selected cards get smashed off the board in a synced random direction.
-    const smash = getSmashTarget(idx, round, targetId);
+    const smash = getSmashTarget(idx, targetId);
     return {
       animate: {
         left: smash.left,
