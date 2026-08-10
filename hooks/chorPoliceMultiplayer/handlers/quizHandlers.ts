@@ -1,89 +1,66 @@
 import { CPMultiplayerContext } from "./types";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { AudioEngine } from "@/audio/audioEngine";
-import { broadcastPacket } from "@/service/lanGameService";
-import { MODES } from "@/constants/Networking";
 
 export const handleScoreQuizTurn = (packet: any, context: CPMultiplayerContext) => {
   context.logic.scoreQuiz.handleScoreQuizTurnPacket(packet);
 };
 
+/**
+ * HOST-ONLY: A player submitted their guess.
+ * In the new simultaneous model, we collect it and let the hook decide when to evaluate.
+ */
 export const handleScoreGuess = (packet: any, context: CPMultiplayerContext) => {
   const { refs, logic } = context;
-  const CP = MODES.CHOR_POLICE;
 
-  if (refs.currentQuizPlayerIdRef.current !== packet.playerId) return;
-
-  const players = logic.resolveScoreQuizPlayers();
-  const playerIndex = players.findIndex((p) => p.id === packet.playerId);
-  const player = players[playerIndex];
-  const correctScore = ChorPoliceEngine.state.scores[player.id]?.totalScore ?? 0;
-  const isCorrect = Number(packet.guessedScore) === correctScore;
-  const bonus = isCorrect ? 2000 : -2000;
-
-  ChorPoliceEngine.applyQuizBonus(player.id, bonus);
-
-  broadcastPacket({
-    type: CP.SCORE_GUESS_RESULT,
-    playerId: player.id,
-    playerIndex,
-    guessedScore: packet.guessedScore,
-    correctScore,
-    isCorrect,
-    bonus,
-    leaderboard: ChorPoliceEngine.getLeaderboard(),
-  });
-
-  const nextTurnTimer = setTimeout(() => {
-    logic.scoreQuiz.queueScoreQuizTurn(playerIndex + 1);
-  }, 3800);
-  refs.timerRefs.current.push(nextTurnTimer);
+  // Forward to the hook's collectGuess with roundId for stale packet protection
+  logic.scoreQuiz.collectGuess(packet.playerId, packet.guessedScore, packet.roundId);
 };
 
+/**
+ * ALL CLIENTS: The host evaluated the question and sent results.
+ * In the new model, playerResults is an array with per-player outcomes.
+ */
 export const handleScoreGuessResult = (packet: any, context: CPMultiplayerContext) => {
-  const { 
-    refs, setQuizOptionDisabled, logic, setQuizPlayerIndex, setPlayerScores, 
-    setMediaId, setMediaType, setPlayerData, setIsDynamicPopUp 
+  const {
+    refs, setQuizOptionDisabled, setPlayerScores, setShowQuizLeaderboard
   } = context;
 
-  if (refs.currentQuizPlayerIdRef.current !== packet.playerId) return;
+  // Sync engine scores
+  ChorPoliceEngine.syncScores(packet.leaderboard ?? []);
 
-  refs.currentQuizPlayerIdRef.current = null;
+  // Disable further guessing for this question
   refs.quizOptionDisabledRef.current = true;
   setQuizOptionDisabled(true);
 
-  const players = logic.resolveScoreQuizPlayers();
-  const pIdx = players.findIndex((p) => p.id === packet.playerId);
-  setQuizPlayerIndex(pIdx >= 0 ? pIdx : packet.playerIndex);
-
-  ChorPoliceEngine.syncScores(packet.leaderboard ?? []);
+  // Update local player scores display
+  const playerResults: Array<{
+    playerId: string;
+    bonus: number;
+  }> = packet.playerResults ?? [];
 
   setPlayerScores((prev) =>
-    prev.map((entry) =>
-      entry.playerId === packet.playerId
-        ? { ...entry, scores: [...entry.scores, packet.bonus] }
-        : entry
-    )
+    prev.map((entry) => {
+      const result = playerResults.find(r => r.playerId === entry.playerId);
+      if (result) {
+        return { ...entry, scores: [...entry.scores, result.bonus] };
+      }
+      return entry;
+    })
   );
 
-  const player = pIdx >= 0 ? players[pIdx] : undefined;
-  const playerImage = refs.playerImagesRef.current[player?.avatarId ?? 1];
+  // Find the LOCAL player's result for audio/visual feedback
+  const localPlayerId = refs.localPlayerIdRef.current;
+  const localResult = playerResults.find(r => r.playerId === localPlayerId);
 
-  AudioEngine.play(packet.isCorrect ? "win" : "lose", "gameplay");
-  setMediaId(packet.isCorrect ? 2 : 1);
-  setMediaType("gif");
-  setPlayerData({
-    image: playerImage?.src ?? null,
-    message: packet.isCorrect ? "guessed correctly! +2000" : "guessed wrong! -2000",
-    name: player?.name ?? "",
-    imageType: playerImage?.type ?? null,
-  });
-  setIsDynamicPopUp(true);
+  if (localResult) {
+    AudioEngine.play(localResult.isCorrect ? "win" : "lose", "gameplay");
+  }
 
-  const pTimer = setTimeout(() => {
-    if (pIdx < players.length - 1) {
-      setIsDynamicPopUp(false);
-    }
-  }, 3800);
-  refs.timerRefs.current.push(pTimer);
+  // Show the per-round leaderboard overlay between questions
+  if (setShowQuizLeaderboard) {
+    setShowQuizLeaderboard(true);
+  }
+
+  refs.currentQuizPlayerIdRef.current = null;
 };

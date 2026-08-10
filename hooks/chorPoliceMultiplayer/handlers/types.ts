@@ -33,6 +33,12 @@ export interface CPMultiplayerContext {
   setPlayerData: React.Dispatch<React.SetStateAction<any>>;
   setInvestigationTargets: React.Dispatch<React.SetStateAction<any[]>>;
   setMysteryRevealStep: React.Dispatch<React.SetStateAction<number>>;
+  // Level 2 Quiz
+  setQuizCountdown: React.Dispatch<React.SetStateAction<number | null>>;
+  setShowQuizLeaderboard: React.Dispatch<React.SetStateAction<boolean>>;
+  setQuizResultData: React.Dispatch<React.SetStateAction<any>>;
+  setLocalL2Bonus: React.Dispatch<React.SetStateAction<number>>;
+  setHasGuessedThisRound: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Refs (Anti-Stale)
   refs: {

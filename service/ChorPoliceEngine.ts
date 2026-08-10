@@ -53,6 +53,7 @@ interface CPScoreEntry {
   avatarId: number;
   totalScore: number;
   roundScores: number[];
+  level2Bonus: number;
 }
 
 // ── Redux dispatch helper (fail-safe) ──
@@ -422,6 +423,7 @@ export const ChorPoliceEngine = {
         avatarId: p.avatarId,
         totalScore: 0,
         roundScores: [],
+        level2Bonus: 0,
       };
     });
 
@@ -690,6 +692,7 @@ export const ChorPoliceEngine = {
       return;
     }
 
+    entry.level2Bonus += bonus;
     entry.totalScore += bonus;
   },
 
@@ -709,6 +712,12 @@ export const ChorPoliceEngine = {
     Object.values(ChorPoliceEngine.state.scores).sort(
       (a, b) => b.totalScore - a.totalScore,
     ),
+
+  getLevel1Score: (playerId: string): number => {
+    const entry = ChorPoliceEngine.state.scores[playerId];
+    if (!entry) return 0;
+    return entry.totalScore - entry.level2Bonus;
+  },
 
   generateInvestigationTargets: () => {
     const { thiefIndex, advisorIndex } = ChorPoliceEngine.state;

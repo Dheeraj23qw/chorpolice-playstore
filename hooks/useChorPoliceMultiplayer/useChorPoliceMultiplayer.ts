@@ -119,6 +119,12 @@ export const useChorPoliceMultiplayer = () => {
   const [popupTable, setPopupTable] = useState(false);
   const [investigationTargets, setInvestigationTargets] = useState<any[]>([]);
   const [mysteryRevealStep, setMysteryRevealStep] = useState(0);
+  // ── Level 2 Quiz State ──
+  const [quizCountdown, setQuizCountdown] = useState<number | null>(null);
+  const [showQuizLeaderboard, setShowQuizLeaderboard] = useState(false);
+  const [quizResultData, setQuizResultData] = useState<any>(null);
+  const [localL2Bonus, setLocalL2Bonus] = useState(0);
+  const [hasGuessedThisRound, setHasGuessedThisRound] = useState(false);
 
   // ── Refs (Anti-Stale Closure) ──
   const flipAnimsRef = useRef(flipAnims);
@@ -239,7 +245,21 @@ export const useChorPoliceMultiplayer = () => {
     setCountdown,
     setMysteryRevealStep,
   });
-  const scoreQuiz = useCPScoreQuiz({ isHostRef, timerRefs, currentQuizPlayerIdRef, scoreQuizStartedRef, quizOptionDisabledRef, setQuizDone, setQuizOptionDisabled, setQuizPlayerIndex, setQuizOptions, resolveScoreQuizPlayers });
+  const scoreQuiz = useCPScoreQuiz({
+    isHostRef,
+    timerRefs,
+    currentQuizPlayerIdRef,
+    scoreQuizStartedRef,
+    quizOptionDisabledRef,
+    setQuizDone,
+    setQuizOptionDisabled,
+    setQuizPlayerIndex,
+    setQuizOptions,
+    resolveScoreQuizPlayers,
+    setQuizCountdown,
+    setShowQuizLeaderboard,
+    setHasGuessedThisRound,
+  });
 
   // ── Packet Router Context ──
   const context: CPMultiplayerContext = {
@@ -268,6 +288,11 @@ export const useChorPoliceMultiplayer = () => {
     setPlayerData,
     setInvestigationTargets,
     setMysteryRevealStep,
+    setQuizCountdown,
+    setShowQuizLeaderboard,
+    setQuizResultData,
+    setLocalL2Bonus,
+    setHasGuessedThisRound,
     refs: {
       isHostRef,
       localPlayerIdRef,
@@ -311,6 +336,24 @@ export const useChorPoliceMultiplayer = () => {
     }
   }, [reduxGamePhase, isHost, scoreQuiz]);
 
+  // ── Level 2: 7-second countdown timer ──
+  useEffect(() => {
+    if (reduxGamePhase !== "score_quiz" || quizCountdown === null || showQuizLeaderboard) return;
+    if (quizCountdown <= 0) return;
+
+    const intervalId = setInterval(() => {
+      setQuizCountdown(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [reduxGamePhase, quizCountdown, showQuizLeaderboard]);
+
   useEffect(() => {
     economyLogic.handleStakeDebit(economy);
   }, [economyLogic, economy]);
@@ -334,12 +377,11 @@ export const useChorPoliceMultiplayer = () => {
       unsubscribe();
       cleanup.clearAllTimers();
     };
-  }, [cleanup]); // Only depend on cleanup since everything else is stable or in refs
+  }, [cleanup]);
 
   const [bounceAnims] = useState(() => Array(20).fill(null).map(() => new Animated.Value(1)));
   const canSeeBoard = reduxMyRole === "Police" || reduxMyRole === "King" || reduxGamePhase === "police_turn" || reduxGamePhase === "investigation_shuffle" || reduxMyRole === null;
   const canInteract = reduxMyRole === "Police";
-
   // Handlers
   const handlePlay = useCallback(() => {
     console.log(`🎭 [CPHook] handlePlay() triggered. Phase: ${gamePhaseRef.current}, Pending: ${roundStartPendingRef.current}, Active: ${ChorPoliceEngine.state.isRoundActive}`);
@@ -441,10 +483,22 @@ export const useChorPoliceMultiplayer = () => {
       console.log("[LAN][MATCH] CP action blocked during reconnect");
       return;
     }
-    if (quizOptionDisabledRef.current || gamePhaseRef.current !== "score_quiz" || currentQuizPlayerIdRef.current !== localPlayerId) return;
+    // In the new model: any player can guess (not just the target)
+    // Guard: phase must be score_quiz, player must not have guessed already
+    if (quizOptionDisabledRef.current || gamePhaseRef.current !== "score_quiz") return;
+    // Don't let the target player guess their own score
+    const targetPlayerId = currentQuizPlayerIdRef.current;
+    if (targetPlayerId === localPlayerId) return;
+    
     quizOptionDisabledRef.current = true;
     setQuizOptionDisabled(true);
-    const guessPacket = { type: MODES.CHOR_POLICE.SCORE_GUESS, playerId: localPlayerId, guessedScore: selectedScore };
+    setHasGuessedThisRound(true);
+    const guessPacket = {
+      type: MODES.CHOR_POLICE.SCORE_GUESS,
+      playerId: localPlayerId,
+      targetPlayerId: targetPlayerId,
+      guessedScore: selectedScore,
+    };
     if (isHost) { handleIncomingPacket(guessPacket); return; }
     sendPacketToHost(guessPacket);
   }, [isHost, localPlayerId]);
@@ -493,5 +547,11 @@ export const useChorPoliceMultiplayer = () => {
     localPlayerIndex,
     dealAnimationPreset,
     mysteryRevealStep,
+    // Level 2 Quiz
+    quizCountdown, setQuizCountdown,
+    showQuizLeaderboard, setShowQuizLeaderboard,
+    quizResultData, setQuizResultData,
+    localL2Bonus, setLocalL2Bonus,
+    hasGuessedThisRound, setHasGuessedThisRound,
   };
 };

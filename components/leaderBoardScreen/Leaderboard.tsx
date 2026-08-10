@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { rf, wp } from "@/utils/responsive";
 import { Text } from "../Text";
+import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 
 interface PlayerScore {
   playerId?: string;
@@ -33,6 +34,12 @@ const PlayerItem: React.FC<{
   const playerImage = playerImages?.[playerAvatarId]?.src ?? null;
   const isTopRank = rank <= 3;
 
+  // L1 score and L2 bonus breakdown from engine if available
+  const scoreEntry = player.playerId ? ChorPoliceEngine.state.scores[player.playerId] : null;
+  const l2Bonus = scoreEntry?.level2Bonus ?? 0;
+  const l1Score = scoreEntry ? (scoreEntry.totalScore - l2Bonus) : (player.totalScore ?? 0);
+  const formattedL2Bonus = l2Bonus >= 0 ? `+${l2Bonus.toLocaleString()}` : l2Bonus.toLocaleString();
+
   return (
     <View
       className={`mb-4 flex-row items-center rounded-[24px] px-4 py-3 border 
@@ -44,7 +51,7 @@ const PlayerItem: React.FC<{
     >
       {/* Rank */}
       <View
-        className={`w-10 h-10 items-center justify-center rounded-xl mr-4 
+        className={`w-10 h-10 items-center justify-center rounded-xl mr-3 
           ${
             rank === 1
               ? "bg-indigo-500 shadow-lg shadow-indigo-500/50"
@@ -53,7 +60,6 @@ const PlayerItem: React.FC<{
       >
         <Text
           style={{ fontSize: rf(1.6) }}
-          // 1. font-black -> font-main-bold
           className={`font-main-bold ${
             rank === 1 ? "text-white" : "text-white/40"
           }`}
@@ -71,39 +77,42 @@ const PlayerItem: React.FC<{
                 ? { uri: playerImage }
                 : playerImage
             }
-            style={{ width: wp(12), height: wp(12) }}
+            style={{ width: wp(11), height: wp(11) }}
             className="rounded-full border border-white/20"
             resizeMode="cover"
           />
         )}
       </View>
 
-      {/* Name */}
-      <View className="flex-1 ml-4">
+      {/* Name + Score breakdown */}
+      <View className="flex-1 ml-3">
         <Text
-          style={{ fontSize: rf(1.8) }}
-          // 2. font-bold -> font-main-bold
+          style={{ fontSize: rf(1.7) }}
           className="text-white font-main-bold tracking-tight"
         >
           {player.playerName || "Unknown Player"}
         </Text>
         <Text
           style={{ fontSize: rf(0.9) }}
-          // 3. font-black -> font-main-bold
-          className="text-white/30 font-main-bold uppercase tracking-[2px]"
+          className="text-indigo-300/60 font-main-bold uppercase tracking-[1px]"
         >
-          {rank === 1 ? "MVP Status" : "Operative"}
+          L1: {l1Score.toLocaleString()}  |  L2: {formattedL2Bonus}
         </Text>
       </View>
 
-      {/* Score */}
-      <View className="bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-400/20">
+      {/* Final Score */}
+      <View className="bg-indigo-500/10 px-3 py-1.5 rounded-xl border border-indigo-400/20 items-end">
         <Text
           style={{ fontSize: rf(1.8) }}
-          // 4. font-black -> font-main-bold
           className="text-indigo-300 font-main-bold"
         >
-          {player.totalScore ?? 0}
+          {(player.totalScore ?? 0).toLocaleString()}
+        </Text>
+        <Text
+          style={{ fontSize: rf(0.7) }}
+          className="text-indigo-400/50 font-main-bold uppercase tracking-[1px]"
+        >
+          Final
         </Text>
       </View>
     </View>
