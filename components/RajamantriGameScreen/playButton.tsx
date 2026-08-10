@@ -24,12 +24,6 @@ const PlayButton: React.FC<PlayButtonProps> = ({
       className="w-full px-2 pt-8"
       style={{ opacity: disabled ? 0.6 : 1 }}
     >
-      {/* 🔥 OUTER DEPTH */}
-      <View
-        className="absolute -inset-2 bg-black/30"
-        style={{ borderRadius: 999 }}
-      />
-
       {/* 💠 MAIN BUTTON */}
       <LinearGradient
         colors={
@@ -47,12 +41,6 @@ const PlayButton: React.FC<PlayButtonProps> = ({
           elevation: 10,
         }}
       >
-        {/* 🌌 INNER GLOW LAYER (NEW) */}
-        <View className="absolute inset-0 bg-indigo-400/10" />
-
-        {/* 💡 CENTER LIGHT FOCUS */}
-        <View className="absolute inset-0 bg-white/5" />
-
         {/* 🎯 CONTENT */}
         <View className="items-center justify-center py-6 px-4">
           <Text
@@ -83,12 +71,6 @@ const PlayButton: React.FC<PlayButtonProps> = ({
           )}
         </View>
       </LinearGradient>
-
-      {/* 🔻 BOTTOM DEPTH SHADOW */}
-      <View
-        className="mx-8 h-3 bg-black/50"
-        style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}
-      />
     </Pressable>
   );
 };
