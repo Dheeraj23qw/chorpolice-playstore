@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Animated } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -143,6 +143,10 @@ export const useChorPoliceMultiplayer = () => {
   const playerScoresRef = useRef(playerScores);
   const lastHostSignalAtRef = useRef(Date.now());
 
+  const reduxPlayerList = useSelector(
+    (state: RootState) => state.player.playerNames,
+  );
+
   const playerImages = useSelector((state: RootState) => state.playerImages.images);
   const selectedImages = useSelector((state: RootState) => state.player.selectedImages);
   const selectedImagesRef = useRef(selectedImages);
@@ -162,6 +166,37 @@ export const useChorPoliceMultiplayer = () => {
   stakeRef.current = reduxStake;
   playerScoresRef.current = playerScores;
   scoreQuizPlayersRef.current = scoreQuizPlayers;
+
+  // Enrich investigation targets with the suspect's name + avatar so the
+  // reveal UI can show the player's identity below the centered mystery card.
+  const enrichedInvestigationTargets = useMemo(
+    () =>
+      investigationTargets.map((target: any) => {
+        if (target.playerIndex == null) {
+          return { ...target, playerName: null, playerAvatarId: null };
+        }
+        const meta = reduxPlayerList[target.playerIndex];
+        return {
+          ...target,
+          playerName: meta?.name ?? null,
+          playerAvatarId: meta?.avatarId ?? 1,
+        };
+      }),
+    [investigationTargets, reduxPlayerList],
+  );
+
+  // Which grid card belongs to THIS device? Used to highlight the local
+  // player's card with a special colour + "YOU" badge (rendered only on
+  // this device, so nobody else sees it).
+  const localPlayerIndex = useMemo(() => {
+    const engineIdx = ChorPoliceEngine.state.players.findIndex(
+      (p) => p.id === localPlayerId,
+    );
+    if (engineIdx >= 0) return engineIdx;
+    return reduxPlayerList.findIndex(
+      (p) => String(p.id) === String(localPlayerId),
+    );
+  }, [localPlayerId, reduxPlayerList]);
 
   // Helpers
   const playTransition = useCallback((afterPhase: GamePhase) => {
@@ -454,7 +489,8 @@ export const useChorPoliceMultiplayer = () => {
     quizPlayerIndex, quizOptions, quizOptionDisabled, quizDone, handleQuizOption, handleFinalExit: cleanup.handleFinalExit, handleBackPress,
     isHost, localPlayerId, localPlayerName, nextPhase, playTransition, invisibleIndices,
     setGamePhase: (phase: GamePhase) => dispatch(setReduxGamePhase(phase)),
-    investigationTargets,
+    investigationTargets: enrichedInvestigationTargets,
+    localPlayerIndex,
     dealAnimationPreset,
     mysteryRevealStep,
   };

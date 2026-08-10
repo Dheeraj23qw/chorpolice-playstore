@@ -6,6 +6,8 @@ export type InvestigationTarget = {
   id: string;
   playerIndex: number | null;
   role: string;
+  playerName?: string | null;
+  playerAvatarId?: number | null;
 };
 
 export interface GamePlaySectionProps {
@@ -26,6 +28,7 @@ export interface GamePlaySectionProps {
   isHighlight?: boolean;
   invisibleIndices?: number[];
   localPlayerName?: string;
+  localPlayerIndex?: number;
   myRole?: string | null;
   gamePhase?: string;
   investigationTargets?: InvestigationTarget[];

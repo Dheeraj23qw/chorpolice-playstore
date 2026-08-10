@@ -32,7 +32,13 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
   const [selectedGame, setSelectedGame] = useState<GameModeType | null>(null);
 
   const handleOpen = (item: GameModeType) => {
-    if (item.id.endsWith("_online")) {
+    if (drawerContext === "single_player") {
+      // SOLO: skip the HOST/JOIN modal → go straight to lobby setup as host.
+      router.push({
+        pathname: "/host",
+        params: { gameType: item.gameType || item.id, solo: "1" },
+      } as any);
+    } else if (item.id.endsWith("_online")) {
       setSelectedGame(item);
     } else {
       router.push(item.route);

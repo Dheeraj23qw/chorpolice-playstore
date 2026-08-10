@@ -9,6 +9,7 @@ export interface PlayerCardProps {
   animatedStyle: any;
   onBounceEffect: (index: number) => void;
   isHighlight?: boolean;
+  isLocalPlayer?: boolean;
   disabled?: boolean;
   highlightColor?: string;
   /** When true, a clicked-but-unflipped card is dimmed to 40% opacity. */

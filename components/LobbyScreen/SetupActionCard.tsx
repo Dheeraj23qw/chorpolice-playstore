@@ -19,6 +19,7 @@ interface SetupActionCardProps {
   networkStatus?: string;
   networkContext?: string;
   networkErrorMessage?: string | null;
+  isSolo?: boolean;
 }
 
 export const SetupActionCard: React.FC<SetupActionCardProps> = ({
@@ -28,6 +29,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   networkStatus,
   networkContext,
   networkErrorMessage,
+  isSolo = false,
 }) => {
   const [showHotspotFix, setShowHotspotFix] = React.useState(false);
   const [showDebug, setShowDebug] = React.useState(false);
@@ -48,7 +50,9 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
 
   const isBlockedByDuplicates = hasDuplicateNames || hasDuplicateAvatars;
   const canStart =
-    (lobby.connectionStatus === "HOSTING" || lobby.connectionStatus === "IDLE") &&
+    (isSolo ||
+      lobby.connectionStatus === "HOSTING" ||
+      lobby.connectionStatus === "IDLE") &&
     !isBlockedByDuplicates &&
     lobby.players.length > 1;
 
@@ -65,7 +69,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
     return "Ready to play";
   };
 
-  const canShare = lobby.isHost;
+  const canShare = lobby.isHost && !isSolo;
 
   return (
     <MotiView
@@ -120,7 +124,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
               </Pressable>
             )}
             {/* 🚀 LAN GUIDANCE: Only shown if Invite was clicked but IP/Server not ready */}
-            {lobby.isHost && (isInviteLoading || isHotspotInitializing || (networkStatus && networkStatus !== "granted")) && (
+            {lobby.isHost && !isSolo && (isInviteLoading || isHotspotInitializing || (networkStatus && networkStatus !== "granted")) && (
               <MotiView
                 from={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
@@ -150,7 +154,11 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
               disabled={!canStart}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                lobby.setIsBettingModalVisible(true);
+                if (isSolo) {
+                  lobby.handleConfirmStake(0);
+                } else {
+                  lobby.setIsBettingModalVisible(true);
+                }
               }}
             />
 

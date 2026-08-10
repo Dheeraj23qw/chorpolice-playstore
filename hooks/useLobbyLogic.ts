@@ -50,6 +50,7 @@ export const useLobbyLogic = (
   gameParams: Record<string, any>,
   forcedMode?: "host" | "client",
   lanReady = true,
+  soloMode = false,
 ) => {
   const dispatch = useDispatch<AppDispatch>();
   const session = useSelector((state: RootState) => state.session);
@@ -239,6 +240,7 @@ export const useLobbyLogic = (
         avatarId: currentAvatarId,
         coins: userCoins,
         gameType,
+        silent: soloMode,
       });
     }
   }, [isHost, localPlayerId, session.connectionStatus, session.players.length]); // Removed dynamic profile deps to prevent resets during typing
@@ -578,7 +580,7 @@ export const useLobbyLogic = (
         return;
       }
 
-      if (connectionStatus !== "HOSTING" && connectionStatus !== "IDLE") {
+      if (!soloMode && connectionStatus !== "HOSTING" && connectionStatus !== "IDLE") {
         toast.error(
           "Lobby not ready",
           "Wait for the local lobby server to start, then try again.",
@@ -620,35 +622,39 @@ export const useLobbyLogic = (
         // which is for ChorPolice). selectedRounds defaults to 1 in Redux
         // which would limit the quiz to a single question.
         QuizEngine.init(finalPlayers, difficulty, stake, NUM_QUESTIONS);
-        broadcastPacket(
-          {
-            type: MODES.THINK_AND_COUNT.GAME_START,
-            hostName: userName.trim() || "PLAYER_1",
-            timestamp: Date.now(),
-            difficulty,
-            betAmount: stake,
-            playerCount: finalPlayers.length,
-            players: finalPlayers,
-            totalRounds: QuizEngine.state.totalRounds,
-            table: finalTable,
-          },
-          { processLocally: false },
-        );
+        if (!soloMode) {
+          broadcastPacket(
+            {
+              type: MODES.THINK_AND_COUNT.GAME_START,
+              hostName: userName.trim() || "PLAYER_1",
+              timestamp: Date.now(),
+              difficulty,
+              betAmount: stake,
+              playerCount: finalPlayers.length,
+              players: finalPlayers,
+              totalRounds: QuizEngine.state.totalRounds,
+              table: finalTable,
+            },
+            { processLocally: false },
+          );
+        }
       } else {
         ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 3);
         ChorPoliceBotBehavior.init(botPlayers);
-        broadcastPacket(
-          {
-            type: MODES.CHOR_POLICE.GAME_START,
-            hostName: userName.trim() || "PLAYER_1",
-            timestamp: Date.now(),
-            betAmount: stake,
-            playerCount: finalPlayers.length,
-            totalRounds: selectedRounds || 3,
-            players: finalPlayers,
-          },
-          { processLocally: false },
-        );
+        if (!soloMode) {
+          broadcastPacket(
+            {
+              type: MODES.CHOR_POLICE.GAME_START,
+              hostName: userName.trim() || "PLAYER_1",
+              timestamp: Date.now(),
+              betAmount: stake,
+              playerCount: finalPlayers.length,
+              totalRounds: selectedRounds || 3,
+              players: finalPlayers,
+            },
+            { processLocally: false },
+          );
+        }
       }
 
       setIsTransitioning(true);
@@ -665,6 +671,7 @@ export const useLobbyLogic = (
       players,
       queueGameStartNavigation,
       selectedRounds,
+      soloMode,
       userName,
     ],
   );

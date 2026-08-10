@@ -11,6 +11,7 @@ type GridCardProps = {
   flipped: boolean;
   clicked: boolean;
   isHighlight?: boolean;
+  isLocalPlayer?: boolean;
   startStyle: any;
   motion: {
     animate: any;
@@ -31,6 +32,7 @@ export const GridCard = memo(
     flipped,
     clicked,
     isHighlight,
+    isLocalPlayer,
     startStyle,
     motion,
     handleCardClick,
@@ -57,6 +59,7 @@ export const GridCard = memo(
           onBounceEffect={() => handleCardClickWithBounce(index)}
           animatedStyle={getCardStyle(index)}
           isHighlight={isHighlight && !flipped && !clicked}
+          isLocalPlayer={isLocalPlayer && !flipped && !clicked}
           disabled
         />
       </MotiView>

@@ -3,6 +3,7 @@ import { storage } from "@/storage/mmkv";
 const ONBOARDING_DONE_KEY = "onboarding_done";
 const PERMISSION_REMINDER_SUPPRESSED = "permission_reminder_suppressed";
 const LOBBY_HELP_SHOWN = "lobby_help_shown";
+const SOLO_TUTORIAL_SHOWN = "solo_tutorial_shown";
 const JOIN_HELP_SHOWN = "join_help_shown";
 const FORCE_ONBOARDING_DEV_KEY = "force_onboarding_dev";
 
@@ -33,6 +34,13 @@ export const getLobbyHelpShown = () =>
 
 export const setLobbyHelpShown = (value: boolean) => {
   storage.set(LOBBY_HELP_SHOWN, value);
+};
+
+export const getSoloTutorialShown = () =>
+  storage.getBoolean(SOLO_TUTORIAL_SHOWN) ?? false;
+
+export const setSoloTutorialShown = (value: boolean) => {
+  storage.set(SOLO_TUTORIAL_SHOWN, value);
 };
 
 export const getJoinHelpShown = () =>

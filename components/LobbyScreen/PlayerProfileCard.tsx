@@ -90,19 +90,24 @@ export const PlayerProfileCard = ({
           <View className="p-6">
           {/* HEADER */}
           <View className="mb-8 flex-row items-center justify-between">
-            <View className="flex-1 pr-4">
-              <Text className="text-[10px] uppercase tracking-[3px] text-indigo-300">
-                Identity Profile
-              </Text>
+              <View className="flex-1 pr-4">
+                <Text className="text-[10px] uppercase tracking-[3px] text-indigo-300">
+                  Identity Profile
+                </Text>
 
-              <TextInput
-                value={localName}
-                onChangeText={handleTextChange}
-                placeholder="Enter Name..."
-                placeholderTextColor="rgba(255,255,255,0.2)"
-                className="mt-2 font-main-bold text-3xl text-white"
-              />
-            </View>
+                <View className="mt-2 flex-row items-center gap-x-2">
+                  <View className="h-9 w-9 items-center justify-center rounded-xl border border-indigo-300/25 bg-indigo-500/15 shadow-lg shadow-indigo-500/40">
+                    <Ionicons name="pencil" size={16} color="#C7D2FE" />
+                  </View>
+                  <TextInput
+                    value={localName}
+                    onChangeText={handleTextChange}
+                    placeholder="Enter Name..."
+                    placeholderTextColor="rgba(255,255,255,0.2)"
+                    className="font-main-bold text-3xl text-white"
+                  />
+                </View>
+              </View>
 
             {/* AVATAR */}
             <Pressable onPress={handleAvatarPress}>

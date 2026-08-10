@@ -84,6 +84,7 @@ const BoardWithPopups = ({ g }: any) => {
           invisibleIndices={g.invisibleIndices}
           countdown={g.countdown}
           localPlayerName={g.localPlayerName}
+          localPlayerIndex={g.localPlayerIndex}
           myRole={g.myRole}
           gamePhase={g.gamePhase}
           investigationTargets={g.investigationTargets}

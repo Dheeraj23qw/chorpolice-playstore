@@ -52,12 +52,12 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
                 animate={{ opacity: 1, scale: 1, translateY: 0 }}
                 exit={{ opacity: 0, scale: 0.94, translateY: 12 }}
                 transition={{ type: "spring", damping: 17, stiffness: 140 }}
-                className="overflow-hidden rounded-[36px]"
+                className="w-full max-w-md overflow-hidden rounded-[36px]"
                 style={{
                   maxHeight: SCREEN_HEIGHT - (insets.top + insets.bottom + 40),
                 }}
               >
-                <View className="w-full max-w-md">
+                <View className="w-full">
                 <BlurView
                   intensity={70}
                   tint="dark"

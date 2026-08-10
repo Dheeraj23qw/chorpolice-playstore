@@ -185,12 +185,15 @@ export const initHostLobby = async ({
   avatarId,
   coins,
   gameType,
+  silent = false,
 }: {
   localPlayerId: string;
   name: string;
   avatarId: number;
   coins: number;
   gameType: string;
+  /** Skip the "X joined the room" bot toasts (used for solo lobbies). */
+  silent?: boolean;
 }) => {
   const current = store.getState().session;
   // GUARD: Do not re-init if we are already connected as a client
@@ -226,7 +229,7 @@ export const initHostLobby = async ({
   store.dispatch(setSessionError(null));
 
   const botNames = players.filter((p) => p.isBot).map((p) => p.name);
-  if (botNames.length > 0) {
+  if (botNames.length > 0 && !silent) {
     const list =
       botNames.length > 2
         ? `${botNames.slice(0, 2).join(", ")}, and ${botNames.length - 2} other`

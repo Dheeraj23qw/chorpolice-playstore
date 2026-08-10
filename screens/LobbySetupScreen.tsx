@@ -25,6 +25,7 @@ import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import { EntryModal } from "@/modal/EntryModal";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
+import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
 import { PermissionGuardian } from "@/components/PermissionGuardian";
 import { checkAppUpdate } from "@/utils/versionCheck";
 import { UpdateAppModal } from "@/modal/UpdateAppModal";
@@ -33,6 +34,8 @@ import {
   incrementUpdateDismissCount,
   getLobbyHelpShown,
   setLobbyHelpShown,
+  getSoloTutorialShown,
+  setSoloTutorialShown,
 } from "@/storage/appStorage";
 import { rf } from "@/utils/responsive";
 import { NetworkStatusBanner } from "@/components/LobbyScreen/NetworkStatusBanner";
@@ -48,11 +51,14 @@ const LobbySetupScreen = ({
   const router = useRouter();
   const params = useLocalSearchParams();
 
+  // SOLO: entered from single-player → hide all multiplayer UI/permissions.
+  const isSolo = params.solo === "1" || params.solo === "true";
+
   const [isLanModeRequested, setIsLanModeRequested] = useState(false);
 
   const { step, status, retry, errorMessage, openSettings, networkContext } =
     useNetworkPermissions({ 
-      enabled: isLanModeRequested,
+      enabled: isLanModeRequested && !isSolo,
       requireWifiIpAddress: true,
       requireAndroidWifiPermissions: true
     });
@@ -87,6 +93,7 @@ const LobbySetupScreen = ({
     },
     forcedMode,
     isLanModeRequested, // Only start LAN logic if requested
+    isSolo, // Solo mode: no LAN broadcasts, no betting, silent bot joins
   ) as LobbyState;
 
   const [uiState, setUiState] = useState<UIState>("normal");
@@ -111,12 +118,16 @@ const LobbySetupScreen = ({
     if (lobby.showApIsolation) setUiState("apIsolation");
   }, [lobby.showApIsolation]);
   
-  // ✨ FIRST TIME HELP: Auto-show help if not shown before
+  // ✨ FIRST TIME HELP: Auto-show help (solo tutorial) if not shown before
   useEffect(() => {
-    if (!getLobbyHelpShown()) {
+    if (isSolo) {
+      if (!getSoloTutorialShown()) {
+        setUiState("help");
+      }
+    } else if (!getLobbyHelpShown()) {
       setUiState("help");
     }
-  }, []);
+  }, [isSolo]);
 
 
   // ── Toast messages for every network state transition ──────────────────
@@ -349,8 +360,9 @@ const LobbySetupScreen = ({
                   >
                     <LobbyHeader
                       onBack={lobby.handleBack}
-                      onReportPress={() => router.push("/report-bug")}
-                      rightIcon="help-buoy-outline"
+                      onReportPress={isSolo ? undefined : () => router.push("/report-bug")}
+                      rightIcon={isSolo ? "book-outline" : "help-buoy-outline"}
+                      rightLabel={isSolo ? "Rules" : undefined}
                       onRightPress={() => setUiState("help")}
                     />
                   </MotiView>
@@ -362,7 +374,7 @@ const LobbySetupScreen = ({
               <ScrollView
                 className="flex-1"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingTop: 10, paddingBottom: 20 }}
+                contentContainerStyle={{ paddingTop: 28, paddingBottom: 20 }}
               >
                 {/* 🚀 NETWORK BANNER — shown only when LAN is active */}
                 {isLanModeRequested && (
@@ -433,6 +445,7 @@ const LobbySetupScreen = ({
                     networkStatus={isLanModeRequested ? status : undefined}
                     networkContext={networkContext}
                     networkErrorMessage={errorMessage}
+                    isSolo={isSolo}
                   />
                 </View>
               )}
@@ -488,13 +501,23 @@ const LobbySetupScreen = ({
         isHost={lobby.isHost}
       />
 
-      <MultiplayerHelpModal
-        visible={uiState === "help"}
-        onClose={() => {
-          setLobbyHelpShown(true);
-          setUiState("normal");
-        }}
-      />
+      {isSolo ? (
+        <OfflineRulesModal
+          visible={uiState === "help"}
+          onClose={() => {
+            setSoloTutorialShown(true);
+            setUiState("normal");
+          }}
+        />
+      ) : (
+        <MultiplayerHelpModal
+          visible={uiState === "help"}
+          onClose={() => {
+            setLobbyHelpShown(true);
+            setUiState("normal");
+          }}
+        />
+      )}
 
 
       <UpdateAppModal

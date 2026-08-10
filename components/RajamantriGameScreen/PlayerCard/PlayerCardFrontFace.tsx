@@ -12,6 +12,7 @@ interface PlayerCardFrontFaceProps {
   index: number;
   playerName: string;
   isHighlight: boolean;
+  isLocalPlayer?: boolean;
   highlightColor?: string;
   selectedImages: any;
   playerImages: any;
@@ -21,6 +22,7 @@ const PlayerCardFrontFaceComponent: React.FC<PlayerCardFrontFaceProps> = ({
   index,
   playerName,
   isHighlight,
+  isLocalPlayer = false,
   highlightColor,
   selectedImages,
   playerImages,
@@ -28,6 +30,11 @@ const PlayerCardFrontFaceComponent: React.FC<PlayerCardFrontFaceProps> = ({
   const imageIndex = selectedImages[index] ?? index + 1;
   const playerImage = getImageSource(playerImages[imageIndex]);
   const themeColor = highlightColor || "#6366f1";
+
+  // This device's own card — highlighted with a special colour + a centered
+  // "YOU" badge. Only rendered here, so only the owner ever sees it.
+  const isLocalCard = isLocalPlayer && !isHighlight;
+  const localColor = "#fbbf24";
 
   return (
     <ImageBackground
@@ -83,6 +90,39 @@ const PlayerCardFrontFaceComponent: React.FC<PlayerCardFrontFaceProps> = ({
           </View>
         )}
       </View>
+
+      {isLocalCard && (
+        <MotiView
+          from={{ opacity: 0.65 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            type: "timing",
+            duration: 900,
+            loop: true,
+            repeatReverse: true,
+          }}
+          style={{
+            backgroundColor: `${localColor}24`,
+            borderColor: localColor,
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9,
+          }}
+          className="items-center justify-center rounded-[26px] border-[3px]"
+        >
+          <View
+            style={{ backgroundColor: localColor, shadowColor: localColor }}
+            className="rounded-full px-4 py-1.5 shadow-xl shadow-amber-500/50"
+          >
+            <Text className="font-main-bold text-[12px] tracking-widest text-black">
+              YOU
+            </Text>
+          </View>
+        </MotiView>
+      )}
     </ImageBackground>
   );
 };

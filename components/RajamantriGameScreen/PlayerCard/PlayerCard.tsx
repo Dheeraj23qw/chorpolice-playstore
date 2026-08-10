@@ -23,6 +23,7 @@ const PlayerCardComponent: React.FC<PlayerCardProps> = ({
   animatedStyle,
   onBounceEffect,
   isHighlight = false,
+  isLocalPlayer = false,
   disabled = false,
   highlightColor,
   dimWhenClicked = true,
@@ -95,6 +96,7 @@ const PlayerCardComponent: React.FC<PlayerCardProps> = ({
               index={index}
               playerName={playerName}
               isHighlight={isHighlight}
+              isLocalPlayer={isLocalPlayer}
               highlightColor={highlightColor}
               selectedImages={selectedImages}
               playerImages={playerImages}

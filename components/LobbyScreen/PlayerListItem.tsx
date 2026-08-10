@@ -72,7 +72,19 @@ export const PlayerListItem: React.FC<PlayerListItemProps> = ({
 
             {/* INFO */}
             <View className="flex-1">
-              <Text className="font-main-bold text-white">{item.name}</Text>
+              <View className="flex-row items-baseline">
+                <Text className="font-main-bold text-white">{item.name}</Text>
+                {isLocalPlayer && (
+                  <Text className="ml-1 font-main-bold text-[11px] text-white/35">
+                    (You)
+                  </Text>
+                )}
+                {isBot && (
+                  <Text className="ml-1 font-main-bold text-[11px] text-white/35">
+                    (BOT)
+                  </Text>
+                )}
+              </View>
 
               <Text className="mt-1 text-[11px] text-white/45">{subtitle}</Text>
             </View>

@@ -13,12 +13,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import { Text } from "@/components/Text";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface LobbyHeaderProps {
   onBack: () => void;
   rightIcon?: keyof typeof Ionicons.glyphMap;
+  rightLabel?: string;
   onRightPress?: () => void;
   onReportPress?: () => void;
 }
@@ -109,9 +111,77 @@ const GlassButton = ({
   );
 };
 
+/**
+ * Labeled Pill Button — used for the solo "Rules" shortcut.
+ * Glass pill with a tinted icon chip + label, own press animation + haptics.
+ */
+const GlassLabelButton = ({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: any;
+  label: string;
+  onPress?: () => void;
+}) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.94, { damping: 12, stiffness: 200 });
+    if (Platform.OS !== "web")
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={animatedStyle}
+      className="overflow-hidden rounded-full"
+    >
+      <LinearGradient
+        colors={[
+          "rgba(129,140,248,0.28)",
+          "rgba(99,102,241,0.12)",
+          "rgba(255,255,255,0.03)",
+        ]}
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: "rgba(129,140,248,0.3)",
+          },
+        ]}
+      />
+      <View className="flex-row items-center gap-x-2 py-2 pl-2.5 pr-4">
+        <View className="h-8 w-8 items-center justify-center rounded-full border border-indigo-300/25 bg-indigo-500/25">
+          <Ionicons name={icon} size={rf(1.8)} color="#C7D2FE" />
+        </View>
+        <Text
+          style={{ fontSize: rf(1.35) }}
+          className="font-main-bold uppercase tracking-[1.5px] text-white"
+        >
+          {label}
+        </Text>
+      </View>
+    </AnimatedPressable>
+  );
+};
+
 export const LobbyHeader = ({
   onBack,
   rightIcon,
+  rightLabel,
   onRightPress,
   onReportPress,
 }: LobbyHeaderProps) => {
@@ -136,13 +206,19 @@ export const LobbyHeader = ({
           />
         )}
 
-        {rightIcon && (
+        {rightLabel && rightIcon ? (
+          <GlassLabelButton
+            icon={rightIcon}
+            label={rightLabel}
+            onPress={onRightPress}
+          />
+        ) : rightIcon ? (
           <GlassButton
             icon={rightIcon as any}
             onPress={onRightPress}
             size={2.4}
           />
-        )}
+        ) : null}
       </View>
     </View>
   );

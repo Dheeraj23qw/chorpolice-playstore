@@ -18,6 +18,7 @@ type CardGridProps = {
   clickedCards: boolean[];
   isHighlight?: boolean;
   invisibleIndices: number[];
+  localPlayerIndex?: number;
   gamePhase: string;
   dealingStage: DealingStage;
   dealAnimationPreset: CardDealPreset;
@@ -35,6 +36,7 @@ export const CardGrid = memo(
     clickedCards,
     isHighlight,
     invisibleIndices,
+    localPlayerIndex,
     gamePhase,
     dealingStage,
     dealAnimationPreset,
@@ -63,6 +65,7 @@ export const CardGrid = memo(
           flipped={flippedStates[index] ?? false}
           clicked={clickedCards[index] ?? false}
           isHighlight={isHighlight}
+          isLocalPlayer={localPlayerIndex === index}
           startStyle={startStyle}
           motion={motion}
           handleCardClick={handleCardClick}

@@ -27,6 +27,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
   getCardStyle,
   isHighlight,
   invisibleIndices = [],
+  localPlayerIndex,
   gamePhase = "waiting",
   investigationTargets = [],
   popupIndex,
@@ -101,6 +102,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
                 gamePhase={gamePhase}
                 dealingStage={dealingStage}
                 dealAnimationPreset={dealAnimationPreset}
+                localPlayerIndex={localPlayerIndex}
                 handleCardClick={handleCardClick}
                 handleCardClickWithBounce={handleCardClickWithBounce}
                 getCardStyle={getCardStyle}
