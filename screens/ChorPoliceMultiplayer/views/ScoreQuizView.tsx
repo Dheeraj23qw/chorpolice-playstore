@@ -1,15 +1,16 @@
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { MotiView } from "moti";
 
 import DynamicOverlayPopUp from "@/modal/DynamicPopUpModal";
 import QuizOptions from "@/components/chorPoliceQuiz/option";
 import Timer from "@/components/thinkAndCountScreen/Timer";
-
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { playerImages } from "@/constants/playerData";
 import { Text } from "@/components/Text";
-import { hp, rf } from "@/utils/responsive";
+import { rf } from "@/utils/responsive";
 
 const ScoreQuizView = ({ g }: any) => {
   const players = g.scoreQuizPlayers?.length
@@ -36,156 +37,128 @@ const ScoreQuizView = ({ g }: any) => {
 
   if (g.showQuizLeaderboard) {
     const leaderboard = ChorPoliceEngine.getLeaderboard();
+
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-        <View style={styles.leaderboardContainer}>
-          <Text style={styles.leaderboardTitle}>ROUND RESULTS</Text>
-          <View style={styles.leaderboardCard}>
-            {leaderboard.map((entry, index) => (
-              <View
-                key={entry.id || index}
-                style={[
-                  styles.leaderboardRow,
-                  index < leaderboard.length - 1 && styles.leaderboardRowBorder,
-                ]}
-              >
-                <View style={styles.rankBadge}>
-                  <Text style={styles.rankText}>{index + 1}</Text>
-                </View>
-                <Text style={styles.nameText} numberOfLines={1}>
-                  {entry.name}
+      <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+        <View className="flex-1 justify-center px-5">
+          <MotiView
+            from={{ opacity: 0, translateY: 18 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: "timing", duration: 320 }}
+          >
+            <View className="mb-5 flex-row items-center justify-center">
+              <View className="mr-3 h-10 w-10 items-center justify-center rounded-2xl border border-amber-300/30 bg-amber-400/15">
+                <Ionicons name="trophy" size={rf(2.4)} color="#FACC15" />
+              </View>
+              <View>
+                <Text
+                  style={{ fontSize: rf(1.05) }}
+                  className="font-main-bold tracking-[2px] text-amber-300"
+                >
+                  ROUND COMPLETE
                 </Text>
-                <Text style={styles.scoreText}>
-                  {entry.totalScore.toLocaleString()}
+                <Text
+                  style={{ fontSize: rf(2.55) }}
+                  className="font-main-bold text-white"
+                >
+                  Live rankings
                 </Text>
               </View>
-            ))}
-          </View>
+            </View>
+
+            <View className="overflow-hidden rounded-[28px] border border-white/10 bg-[#111329] px-4">
+              {leaderboard.map((entry, index) => (
+                <MotiView
+                  key={entry.id || index}
+                  from={{ opacity: 0, translateX: -12 }}
+                  animate={{ opacity: 1, translateX: 0 }}
+                  transition={{ type: "timing", duration: 260, delay: 80 + index * 70 }}
+                  className={`min-h-[68px] flex-row items-center ${
+                    index < leaderboard.length - 1 ? "border-b border-white/10" : ""
+                  }`}
+                >
+                  <View
+                    className={`mr-3 h-9 w-9 items-center justify-center rounded-xl ${
+                      index === 0
+                        ? "bg-amber-400/20"
+                        : index === 1
+                          ? "bg-slate-300/15"
+                          : "bg-indigo-400/15"
+                    }`}
+                  >
+                    <Text
+                      style={{ fontSize: rf(1.4) }}
+                      className="font-main-bold text-white"
+                    >
+                      {index + 1}
+                    </Text>
+                  </View>
+                  <Text
+                    numberOfLines={1}
+                    style={{ fontSize: rf(1.75) }}
+                    className="mr-3 flex-1 font-main-bold text-white"
+                  >
+                    {entry.name}
+                  </Text>
+                  <Text
+                    style={{ fontSize: rf(1.7) }}
+                    className="font-main-bold text-indigo-200"
+                  >
+                    {entry.totalScore.toLocaleString()}
+                  </Text>
+                </MotiView>
+              ))}
+            </View>
+          </MotiView>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerClassName="flex-grow px-5 pb-6 pt-2"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.container}>
-          <View style={styles.quizHeader}>
-            <View>
-              <Text style={styles.eyebrow}>LEVEL 2 · SCORE BOOST</Text>
-              <Text style={styles.headerTitle}>Guess the score</Text>
-            </View>
-            <Timer countdown={g.quizCountdown ?? 7} variant="compact" />
+        <MotiView
+          from={{ opacity: 0, translateY: -12 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: "timing", duration: 280 }}
+          className="mb-2 flex-row items-center justify-between"
+        >
+          <View>
+            <Text
+              style={{ fontSize: rf(1) }}
+              className="font-main-bold tracking-[2px] text-indigo-300"
+            >
+              LEVEL 2 • SCORE BOOST
+            </Text>
+            <Text
+              style={{ fontSize: rf(2.35) }}
+              className="mt-0.5 font-main-bold text-white"
+            >
+              Read the room
+            </Text>
           </View>
+          <Timer countdown={g.quizCountdown ?? 7} variant="compact" />
+        </MotiView>
 
-          <QuizOptions
-            playerName={currentPlayer.name}
-            playerImage={playerImage}
-            questionNumber={g.quizPlayerIndex + 1}
-            totalQuestions={players.length}
-            options={g.quizOptions}
-            onOptionPress={g.handleQuizOption}
-            isActivePlayer={!g.quizOptionDisabled}
-            hasGuessed={g.hasGuessedThisRound}
-            isTargetPlayer={isTargetPlayer}
-          />
-        </View>
+        <QuizOptions
+          playerName={currentPlayer.name}
+          playerImage={playerImage}
+          questionNumber={g.quizPlayerIndex + 1}
+          totalQuestions={players.length}
+          options={g.quizOptions}
+          onOptionPress={g.handleQuizOption}
+          isActivePlayer={!g.quizOptionDisabled}
+          hasGuessed={g.hasGuessedThisRound}
+          isTargetPlayer={isTargetPlayer}
+        />
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: hp(3),
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  quizHeader: {
-    minHeight: hp(10),
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  eyebrow: {
-    fontSize: rf(1.05),
-    fontFamily: "main-bold",
-    color: "#A5B4FC",
-    letterSpacing: 1.5,
-  },
-  headerTitle: {
-    marginTop: 2,
-    fontSize: rf(2.5),
-    fontFamily: "main-bold",
-    color: "#FFFFFF",
-  },
-  leaderboardContainer: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-  },
-  leaderboardTitle: {
-    marginBottom: 18,
-    textAlign: "center",
-    fontSize: rf(2.5),
-    fontFamily: "main-bold",
-    color: "#FACC15",
-    letterSpacing: 2,
-  },
-  leaderboardCard: {
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#30335A",
-    borderRadius: 24,
-    backgroundColor: "#121424",
-    paddingHorizontal: 16,
-  },
-  leaderboardRow: {
-    minHeight: 64,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  leaderboardRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#282A46",
-  },
-  rankBadge: {
-    width: 34,
-    height: 34,
-    marginRight: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 17,
-    backgroundColor: "#2E3261",
-  },
-  rankText: {
-    fontSize: rf(1.6),
-    fontFamily: "main-bold",
-    color: "#FFFFFF",
-  },
-  nameText: {
-    flex: 1,
-    marginRight: 12,
-    fontSize: rf(1.75),
-    fontFamily: "main-bold",
-    color: "#FFFFFF",
-  },
-  scoreText: {
-    fontSize: rf(1.8),
-    fontFamily: "main-bold",
-    color: "#A5B4FC",
-  },
-});
 
 export default ScoreQuizView;

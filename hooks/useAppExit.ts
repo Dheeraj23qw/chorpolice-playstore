@@ -1,23 +1,18 @@
 import { useEffect, useState } from "react";
 import { BackHandler, Platform } from "react-native";
-import { useRouter } from "expo-router";
+import { usePathname } from "expo-router";
 
 export const useAppExit = () => {
-  const router = useRouter();
+  const pathname = usePathname();
 
   const [exitVisible, setExitVisible] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS !== "android") return;
+    // Navigation owns Android Back away from every nested route. This hook is
+    // only responsible for confirming an app exit at the actual Home route.
+    if (Platform.OS !== "android" || pathname !== "/") return;
 
     const onBackPress = () => {
-      // 1. Normal navigation back
-      if (router.canGoBack()) {
-        router.back();
-        return true;
-      }
-
-      // 2. Show premium exit modal
       setExitVisible(true);
       return true;
     };
@@ -28,7 +23,7 @@ export const useAppExit = () => {
     );
 
     return () => subscription.remove();
-  }, [router]);
+  }, [pathname]);
 
   const hideExitModal = () => setExitVisible(false);
 

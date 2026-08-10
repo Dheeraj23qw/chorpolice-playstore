@@ -78,6 +78,7 @@ export const useLobbyLogic = (
   const startNavigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const isLeavingLobbyRef = useRef(false);
 
   const localPlayerId = session.localPlayerId;
   const gameType =
@@ -706,10 +707,18 @@ export const useLobbyLogic = (
   );
 
   const handleBack = useCallback(() => {
+    if (isLeavingLobbyRef.current) return;
+    isLeavingLobbyRef.current = true;
+
     void (async () => {
-      await leaveLanLobby();
-      router.dismissAll();
-      router.replace("/mode-select" as any);
+      try {
+        await leaveLanLobby();
+      } catch (error) {
+        console.warn("[Lobby] Cleanup failed while leaving:", error);
+      } finally {
+        router.dismissAll();
+        router.replace("/mode-select" as any);
+      }
     })();
   }, [router]);
 

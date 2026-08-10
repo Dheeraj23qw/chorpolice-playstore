@@ -756,8 +756,13 @@ export const leaveLanLobby = async () => {
       console.warn("[TCP_DEBUG] LEAVE_PACKET_FAILED", e);
     }
   }
-  await stopCoordinator();
-  store.dispatch(clearSession());
+  try {
+    await stopCoordinator();
+  } finally {
+    // Navigation must never retain a live lobby session if native transport
+    // shutdown fails or is interrupted.
+    store.dispatch(clearSession());
+  }
 };
 
 export { getCandidateIpsForRoomCode } from "@/utils/roomCode";
