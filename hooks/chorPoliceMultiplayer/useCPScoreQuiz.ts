@@ -20,6 +20,7 @@ interface ScoreQuizDeps {
   setQuizCountdown?: React.Dispatch<React.SetStateAction<number | null>>;
   setShowQuizLeaderboard?: React.Dispatch<React.SetStateAction<boolean>>;
   setHasGuessedThisRound?: React.Dispatch<React.SetStateAction<boolean>>;
+  setBoostScoreModalVisible?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /**
@@ -48,6 +49,7 @@ export const useCPScoreQuiz = ({
   setQuizCountdown,
   setShowQuizLeaderboard,
   setHasGuessedThisRound,
+  setBoostScoreModalVisible,
 }: ScoreQuizDeps) => {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -58,6 +60,7 @@ export const useCPScoreQuiz = ({
   const currentRoundIdRef = useRef<number>(0);
   const deadlineRef = useRef<number>(0);
   const scoredRoundsRef = useRef<Set<number>>(new Set());
+  const completionBonusAppliedRef = useRef(false);
 
   const buildQuizOptions = useCallback((baseScore: number) => {
     const variations = [500, 800];
@@ -205,7 +208,18 @@ export const useCPScoreQuiz = ({
     const CP = MODES.CHOR_POLICE;
     const players = resolveScoreQuizPlayers();
 
+    if (playerIndex === 0) {
+      completionBonusAppliedRef.current = false;
+    }
+
     if (playerIndex >= players.length) {
+      // Three correct predictions can earn 6,000 points. Completing Level 2
+      // adds 2,000 more, which makes the advertised maximum 8,000 points.
+      if (!completionBonusAppliedRef.current) {
+        completionBonusAppliedRef.current = true;
+        players.forEach((player) => ChorPoliceEngine.applyQuizBonus(player.id, 2000));
+      }
+
       setQuizDone(true);
       setQuizOptionDisabled(true);
       quizOptionDisabledRef.current = true;
@@ -294,7 +308,8 @@ export const useCPScoreQuiz = ({
     if (setQuizCountdown) setQuizCountdown(remainingSecs);
     if (setShowQuizLeaderboard) setShowQuizLeaderboard(false);
     if (setHasGuessedThisRound) setHasGuessedThisRound(false);
-  }, [dispatch, resolveScoreQuizPlayers, scoreQuizStartedRef, currentQuizPlayerIdRef, setQuizDone, setQuizPlayerIndex, setQuizOptions, setQuizOptionDisabled, quizOptionDisabledRef, setQuizCountdown, setShowQuizLeaderboard, setHasGuessedThisRound]);
+    if (setBoostScoreModalVisible) setBoostScoreModalVisible(false);
+  }, [dispatch, resolveScoreQuizPlayers, scoreQuizStartedRef, currentQuizPlayerIdRef, setQuizDone, setQuizPlayerIndex, setQuizOptions, setQuizOptionDisabled, quizOptionDisabledRef, setQuizCountdown, setShowQuizLeaderboard, setHasGuessedThisRound, setBoostScoreModalVisible]);
 
   return {
     queueScoreQuizTurn,

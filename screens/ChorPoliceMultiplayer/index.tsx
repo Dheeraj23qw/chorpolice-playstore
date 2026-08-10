@@ -25,12 +25,15 @@ import FinalResultView from "./views/FinalResultView";
 import VideoPlayerComponent from "@/components/IntroVideo";
 import { RoleRevealView } from "./views/RoleRevealView";
 import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
+import { BoostScoreModal } from "@/modal/BoostScoreModal";
+import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 
 const ChorPoliceMultiplayerScreen = () => {
   const insets = useSafeAreaInsets();
   const g = useChorPoliceMultiplayer();
 
   const [isRulesVisible, setIsRulesVisible] = useState(false);
+  const currentScore = ChorPoliceEngine.state.scores[g.localPlayerId]?.totalScore ?? 0;
 
   /* ───────── HANDLE BACK PRESS ───────── */
   useEffect(() => {
@@ -94,7 +97,10 @@ const ChorPoliceMultiplayerScreen = () => {
         className="absolute h-full w-full"
         resizeMode="cover"
       />
-      <View className="absolute h-full w-full bg-black/70" />
+      <View className="absolute h-full w-full bg-black/75" />
+      {/* Ambient gradient overlays for depth */}
+      <View className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-indigo-950/20 via-transparent to-transparent" />
+      <View className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
       {/* Content */}
       <View className="flex-1">{renderView()}</View>
@@ -147,6 +153,13 @@ const ChorPoliceMultiplayerScreen = () => {
       <OfflineRulesModal
         visible={isRulesVisible}
         onClose={() => setIsRulesVisible(false)}
+      />
+
+      <BoostScoreModal
+        visible={g.isBoostScoreModalVisible}
+        currentScore={currentScore}
+        onAccept={g.handleBoostScoreAccept}
+        onDecline={g.handleBoostScoreDecline}
       />
 
       {/* Score Table Global */}

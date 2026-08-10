@@ -125,6 +125,7 @@ export const useChorPoliceMultiplayer = () => {
   const [quizResultData, setQuizResultData] = useState<any>(null);
   const [localL2Bonus, setLocalL2Bonus] = useState(0);
   const [hasGuessedThisRound, setHasGuessedThisRound] = useState(false);
+  const [isBoostScoreModalVisible, setBoostScoreModalVisible] = useState(false);
 
   // ── Refs (Anti-Stale Closure) ──
   const flipAnimsRef = useRef(flipAnims);
@@ -259,6 +260,7 @@ export const useChorPoliceMultiplayer = () => {
     setQuizCountdown,
     setShowQuizLeaderboard,
     setHasGuessedThisRound,
+    setBoostScoreModalVisible,
   });
 
   // ── Packet Router Context ──
@@ -293,6 +295,7 @@ export const useChorPoliceMultiplayer = () => {
     setQuizResultData,
     setLocalL2Bonus,
     setHasGuessedThisRound,
+    setBoostScoreModalVisible,
     refs: {
       isHostRef,
       localPlayerIdRef,
@@ -503,6 +506,28 @@ export const useChorPoliceMultiplayer = () => {
     sendPacketToHost(guessPacket);
   }, [isHost, localPlayerId]);
 
+  const handleBoostScoreAccept = useCallback(() => {
+    if (!isHost) {
+      toast.info("Ready to boost", "Waiting for the host to start the Level 2 quiz.");
+      return;
+    }
+
+    setBoostScoreModalVisible(false);
+    scoreQuizStartedRef.current = false;
+    playTransition("score_quiz");
+  }, [isHost, playTransition]);
+
+  const handleBoostScoreDecline = useCallback(() => {
+    setBoostScoreModalVisible(false);
+
+    if (isHost) {
+      ChorPoliceEngine.endGame();
+      return;
+    }
+
+    toast.info("Level 2 skipped", "The host can still start the score quiz for the room.");
+  }, [isHost]);
+
   const handleQuitInMiddle = useCallback(() => setIsExitModalVisible(true), []);
   const handleCancelExit = useCallback(() => setIsExitModalVisible(false), []);
 
@@ -553,5 +578,6 @@ export const useChorPoliceMultiplayer = () => {
     quizResultData, setQuizResultData,
     localL2Bonus, setLocalL2Bonus,
     hasGuessedThisRound, setHasGuessedThisRound,
+    isBoostScoreModalVisible, handleBoostScoreAccept, handleBoostScoreDecline,
   };
 };

@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View, AppState } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, View, AppState } from "react-native";
 import { AnimatePresence, MotiView } from "moti";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -95,6 +95,23 @@ const LobbySetupScreen = ({
     isLanModeRequested, // Only start LAN logic if requested
     isSolo, // Solo mode: no LAN broadcasts, no betting, silent bot joins
   ) as LobbyState;
+
+  // Keep Android/device back semantically identical to the visible lobby Back
+  // button. Without this listener, the root handler only called router.back(),
+  // leaving the active LAN session in Redux and the network layer alive.
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          lobby.handleBack();
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, [lobby.handleBack]),
+  );
 
   const [uiState, setUiState] = useState<UIState>("normal");
   const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);

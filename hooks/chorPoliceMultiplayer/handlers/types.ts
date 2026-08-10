@@ -39,6 +39,7 @@ export interface CPMultiplayerContext {
   setQuizResultData: React.Dispatch<React.SetStateAction<any>>;
   setLocalL2Bonus: React.Dispatch<React.SetStateAction<number>>;
   setHasGuessedThisRound: React.Dispatch<React.SetStateAction<boolean>>;
+  setBoostScoreModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Refs (Anti-Stale)
   refs: {

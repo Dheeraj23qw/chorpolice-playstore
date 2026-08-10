@@ -37,6 +37,7 @@ export const handleScoreGuessResult = (packet: any, context: CPMultiplayerContex
   const playerResults: Array<{
     playerId: string;
     bonus: number;
+    isCorrect: boolean;
   }> = packet.playerResults ?? [];
 
   setPlayerScores((prev) =>

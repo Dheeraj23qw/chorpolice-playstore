@@ -6,9 +6,10 @@ import { Text } from "../Text";
 interface TimerProps {
   countdown: number;
   containerStyle?: object;
+  variant?: "default" | "compact";
 }
 
-const Timer: React.FC<TimerProps> = ({ countdown, containerStyle }) => {
+const Timer: React.FC<TimerProps> = ({ countdown, containerStyle, variant = "default" }) => {
   const isDanger = countdown <= 5;
   const isWarning = countdown <= 10 && countdown > 5;
 
@@ -47,43 +48,47 @@ const Timer: React.FC<TimerProps> = ({ countdown, containerStyle }) => {
   }, [isDanger, isWarning]);
 
   const formattedTime = countdown < 10 && countdown >= 0 ? `0${countdown}` : countdown;
+  const isCompact = variant === "compact";
+  const shellSize = isCompact ? wp(17) : wp(28);
+  const ringSize = isCompact ? wp(13.5) : wp(23);
+  const glowSize = isCompact ? wp(24) : wp(40);
 
   return (
     <View 
-      style={[{ height: hp(18) }, containerStyle]} 
+      style={[{ height: isCompact ? hp(9) : hp(18), width: isCompact ? wp(19) : undefined }, containerStyle]}
       className="items-center justify-center"
       accessible={true}
       accessibilityRole="timer"
     >
       {/* 1. Ambient Glow - Provides the "emergency" lighting feel */}
       <View 
-        style={[{ width: wp(40), height: wp(40) }]}
+        style={[{ width: glowSize, height: glowSize }]}
         className={`absolute rounded-full blur-3xl ${theme.bg} ${theme.glowOpacity}`}
       />
 
       {/* 2. Main Outer Shell */}
       <View 
-        style={{ width: wp(28), height: wp(28) }}
+        style={{ width: shellSize, height: shellSize }}
         className="items-center justify-center rounded-full bg-[#0d0d0f] border border-white/10 shadow-2xl"
       >
         
         {/* 3. The Tech Ring (Dashed border adds a mechanical vibe) */}
         <View 
-          style={{ width: wp(23), height: wp(23) }}
+          style={{ width: ringSize, height: ringSize }}
           className={`rounded-full items-center justify-center border-2 border-dashed ${theme.border} opacity-80`}
         >
           
           <View className="items-center justify-center">
             <Text
-              style={{ fontSize: rf(1.1) }} 
+              style={{ fontSize: isCompact ? rf(0.7) : rf(1.1) }}
               // Shielded typography for the secondary label
               className={`font-main-bold uppercase tracking-[2px] mb-[-4px] ${theme.text}`}
             >
               Remaining
             </Text>
             
-            <Text 
-              style={styles.timerText} 
+            <Text
+              style={[styles.timerText, isCompact && styles.compactTimerText]}
               // Large display for the actual countdown
               className="font-main-bold text-white"
             >
@@ -95,7 +100,7 @@ const Timer: React.FC<TimerProps> = ({ countdown, containerStyle }) => {
 
       {/* 4. Warning Label - Only appears when time is low */}
       <View className="absolute -bottom-1 items-center justify-center w-full h-8">
-        {(isDanger || isWarning) && (
+        {!isCompact && (isDanger || isWarning) && (
           <View className={`px-4 py-1 rounded-full border border-white/5 ${theme.badge}`}>
             <Text 
               style={{ fontSize: rf(1) }} 
@@ -127,6 +132,10 @@ const styles = StyleSheet.create({
         elevation: 4,
       },
     }),
+  },
+  compactTimerText: {
+    fontSize: rf(3.1),
+    lineHeight: rf(3.5),
   },
 });
 

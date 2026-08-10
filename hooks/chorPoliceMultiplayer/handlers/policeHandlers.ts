@@ -11,7 +11,7 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
     dispatch, refs, reduxRoles, setFlippedStates, setClickedCards, 
     setIsDynamicPopUp, setShowTableButton, setFirstCardClicked, setMessage, 
     setInvisibleIndices, setQuizDone, setQuizOptionDisabled, setQuizPlayerIndex,
-    setFlipAnims, logic, setMysteryRevealStep
+    setFlipAnims, logic, setMysteryRevealStep, setBoostScoreModalVisible
   } = context;
 
   const D = "🎭 [CPPacket]";
@@ -109,7 +109,8 @@ export const handleRoundResult = (packet: any, context: CPMultiplayerContext) =>
       setQuizOptionDisabled(false);
       refs.quizOptionDisabledRef.current = false;
       logic.resolveScoreQuizPlayers();
-      logic.playTransition("score_quiz");
+      // Level 2 is opt-in: show the score boost terms before the host starts it.
+      setBoostScoreModalVisible(true);
     } else {
       setFlipAnims(Array(20).fill(null).map(() => new Animated.Value(0)));
       setFlippedStates(Array(20).fill(false));

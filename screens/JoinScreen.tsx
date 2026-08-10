@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
@@ -138,6 +138,32 @@ const JoinScreen = () => {
   const [isSmartJoining, setIsSmartJoining] = useState(false);
   const [joiningRoomIp, setJoiningRoomIp] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
+  const isLeavingRef = useRef(false);
+
+  const handleBack = useCallback(async () => {
+    if (isLeavingRef.current) return;
+
+    isLeavingRef.current = true;
+    await leaveLanLobby();
+    router.back();
+  }, [router]);
+
+  // The header already performs lobby cleanup before navigating. Intercept the
+  // Android/device back event so it follows that same path instead of falling
+  // through to the root router.back() handler with a live join session.
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          void handleBack();
+          return true;
+        },
+      );
+
+      return () => subscription.remove();
+    }, [handleBack]),
+  );
 
   // ✨ FIRST TIME HELP: Auto-show help if not shown before
   useEffect(() => {
@@ -151,7 +177,7 @@ const JoinScreen = () => {
       const s = store.getState().session;
       // 🔥 FIX: DO NOT leave if we are transitioning to the lobby!
       // Only cleanup if we are NOT connected or connecting.
-      if (s.connectionStatus !== "CONNECTED" && s.connectionStatus !== "CONNECTING") {
+      if (!isLeavingRef.current && s.connectionStatus !== "CONNECTED" && s.connectionStatus !== "CONNECTING") {
         console.log("[JoinScreen] Exiting Screen - triggering cleanup (status=" + s.connectionStatus + ")");
         leaveLanLobby();
       } else {
@@ -287,10 +313,7 @@ const JoinScreen = () => {
       <LobbyBackdrop />
 
       <LobbyHeader
-        onBack={async () => {
-          await leaveLanLobby();
-          router.back();
-        }}
+        onBack={() => void handleBack()}
         onReportPress={() => router.push("/report-bug")}
         rightIcon="help-buoy-outline"
         onRightPress={() => setShowHelp(true)}
