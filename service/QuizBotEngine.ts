@@ -119,7 +119,7 @@ export const BotEngine = {
           }
 
           BotEngine.activeBots.forEach((bot) => {
-            const delay = Math.floor(Math.random() * 3500 + 2000);
+            const delay = Math.floor(Math.random() * 1000 + 2000);
 
             const timer = setTimeout(() => {
               // RE-CHECK: Ensure bot still active, match hasn't changed, and questionId matches

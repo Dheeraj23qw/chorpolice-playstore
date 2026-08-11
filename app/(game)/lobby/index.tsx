@@ -7,6 +7,7 @@ import LobbySetupScreen from "@/screens/LobbySetupScreen";
  * WHY: Expo Router requires an entry point in the 'app' directory to map paths.
  */
 export default function LobbyRoute() {
+  console.log("[LOBBY_TRACE] LobbyRoute mounted (app/(game)/lobby/index.tsx)");
   return (
     <>
       <Stack.Screen

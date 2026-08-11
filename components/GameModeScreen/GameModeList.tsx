@@ -7,12 +7,7 @@ import { GameModeRow } from "./GameModeRow";
 
 const GameModeList: React.FC = () => {
   const handleOpen = (item: (typeof optionsGameMode)[number]) => {
-    if (__DEV__) {
-      console.log("[NAV][HOME] card pressed", {
-        id: item.id,
-        target: item.route,
-      });
-    }
+    console.log(`[NAV_DEBUG] [HOME] Card pressed: id="${item.id}", destination="${item.route}"`);
     router.push(item.route);
   };
 

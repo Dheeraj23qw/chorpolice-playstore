@@ -30,17 +30,6 @@ function AppLayout() {
   const isSoundLoaded = useSelector((state: RootState) => state.sound.isLoaded);
   const pathname = usePathname();
 
-  // Whenever we're back on the home screen, collapse the navigation stack so
-  // the back button / hardware back exits the app instead of revisiting a game.
-  useEffect(() => {
-    if (pathname === "/" && router.canDismiss()) {
-      if (__DEV__) {
-        console.log("[NAV][ROOT] dismissing nested history after reaching Home");
-      }
-      router.dismissAll();
-    }
-  }, [pathname]);
-
   useEffect(() => {
     const handleAppState = (state: string) => {
       if (

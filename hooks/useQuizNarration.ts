@@ -42,23 +42,20 @@ export const useQuizNarration = ({
   }, [narrationEnabled]);
 
   // Memoized speech trigger
-  const startNarration = useCallback(async (isAutoTrigger = true) => {
+  const startNarration = useCallback((isAutoTrigger = true) => {
     // 1. Safety Checks
     if (!narrationEnabled || !question || !isQuizActive || isRevealPhase) {
       return;
     }
 
-    // 2. Build and Speak
+    // 2. Build and Speak (Synchronous trigger for zero latency)
     try {
       const speechText = QuizNarrationService.buildQuizSpeechText(question, options);
       const normalizedText = QuizNarrationService.normalizeQuizSpeechText(speechText);
       const lang = QuizNarrationService.detectSpeechLanguage(normalizedText);
 
-      // Resolve voice: use stored voice or find best fallback
-      let voiceId = quizNarrationVoiceId;
-      if (!voiceId) {
-        voiceId = await QuizNarrationService.getBestQuizVoice(lang);
-      }
+      // Resolve voice synchronously from cached voices or Redux
+      const voiceId = quizNarrationVoiceId || QuizNarrationService.getBestQuizVoiceSync(lang);
 
       QuizNarrationService.speakQuizQuestion(normalizedText, lang, {
         voice: voiceId,

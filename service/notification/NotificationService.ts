@@ -587,36 +587,6 @@ class NotificationService {
     }
   }
 
-  async triggerTestNotification(): Promise<{ status: 'scheduled' | 'blocked', seconds?: number, reason?: string }> {
-    if (!this.canRequestPermissions()) {
-      return { status: "blocked", reason: "unsupported-device" };
-    }
-
-    const hasPermission = await this.checkPermission();
-    if (!hasPermission) {
-      const granted = await this.registerPermissions();
-      if (!granted) {
-        return { status: "blocked", reason: "permission-denied" };
-      }
-    }
-
-    const seconds = runtimeConfig.debugNotificationLeadSeconds;
-    const notificationId = await this.schedule({
-      id: "debug_test",
-      title: "Notifications Ready",
-      body: "Local notification pipeline is working.",
-      seconds,
-      color: "#22c55e",
-      data: { screen: "/mode-select" },
-    });
-
-    if (!notificationId) {
-      return { status: "blocked", reason: "schedule-failed" };
-    }
-
-    return { status: "scheduled", seconds };
-  }
-
   cleanup(): void {
     this.responseListener?.remove();
     this.receivedListener?.remove();

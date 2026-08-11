@@ -74,7 +74,7 @@ const ScoreQuizRound = ({ g }: any) => {
           }}
           className="mt-6 items-center"
         >
-          <Timer countdown={g.quizCountdown ?? 7} variant="default" />
+          <Timer countdown={g.quizCountdown ?? 15} variant="default" />
         </MotiView>
 
         {/* Quiz */}

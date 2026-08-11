@@ -33,43 +33,22 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (__DEV__) {
-      console.log("[NAV][MODE_SELECT] mounted", {
-        pathname,
-        title,
-        drawerContext,
-      });
-    }
+    console.log(`[NAV_DEBUG] [MODE SELECT] mounted: title="${title}", drawerContext="${drawerContext}", pathname="${pathname}"`);
   }, [pathname, title, drawerContext]);
 
   const handleOpen = (item: GameModeType) => {
+    console.log(`[LOBBY_TRACE] GameModeSelectScreen handleOpen called: id="${item.id}", drawerContext="${drawerContext}", route="${item.route}"`);
     if (drawerContext === "single_player") {
-      // SOLO: skip the HOST/JOIN modal → go straight to lobby setup as host.
-      if (__DEV__) {
-        console.log("[NAV][MODE_SELECT] solo game selected → /host", {
-          id: item.id,
-          gameType: item.gameType || item.id,
-        });
-      }
+      console.log(`[LOBBY_TRACE] drawerContext is single_player → calling router.push({ pathname: "/host", params: { gameType: "${item.gameType || item.id}", solo: "1" } })`);
       router.push({
         pathname: "/host",
         params: { gameType: item.gameType || item.id, solo: "1" },
       } as any);
     } else if (item.id.endsWith("_online")) {
-      if (__DEV__) {
-        console.log("[NAV][MODE_SELECT] online game selected → host/join modal", {
-          id: item.id,
-          gameType: item.gameType || item.id,
-        });
-      }
+      console.log(`[LOBBY_TRACE] online game selected → opening GameModeModal`);
       setSelectedGame(item);
     } else {
-      if (__DEV__) {
-        console.log("[NAV][MODE_SELECT] game selected", {
-          id: item.id,
-          target: item.route,
-        });
-      }
+      console.log(`[LOBBY_TRACE] standard game selected → calling router.push("${item.route}")`);
       router.push(item.route);
     }
   };

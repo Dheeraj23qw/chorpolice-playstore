@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import LobbySetupScreen from "@/screens/LobbySetupScreen";
 
 export default function HostRoute() {
+  console.log("[LOBBY_TRACE] HostRoute mounted (app/(game)/host/index.tsx)");
   return (
     <>
       <Stack.Screen

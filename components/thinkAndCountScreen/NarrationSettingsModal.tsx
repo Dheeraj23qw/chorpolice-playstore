@@ -272,8 +272,8 @@ export const NarrationSettingsModal = ({
                     <Pressable
                       onPress={() => {
                         dispatch(setQuizNarrationVoiceId("hi-in-x-hie-network"));
-                        dispatch(setQuizNarrationRate(0.80));
-                        dispatch(setQuizNarrationPitch(0.80));
+                        dispatch(setQuizNarrationRate(1.15));
+                        dispatch(setQuizNarrationPitch(1.0));
                       }}
                       className="mb-4 flex-row items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 py-3 active:bg-amber-500/20"
                     >

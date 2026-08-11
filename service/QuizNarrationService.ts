@@ -114,70 +114,73 @@ export const stopQuizNarration = async () => {
 let cachedVoices: Speech.Voice[] | null = null;
 
 /**
+ * Preloads available voices in the background for zero-lag speech triggers.
+ */
+export const preloadVoices = () => {
+  if (!cachedVoices) {
+    Speech.getAvailableVoicesAsync()
+      .then((voices) => {
+        cachedVoices = voices;
+      })
+      .catch(() => {});
+  }
+};
+
+// Immediately trigger background preload on module load
+preloadVoices();
+
+/**
+ * Synchronous voice resolution from cached voices.
+ */
+export const getBestQuizVoiceSync = (language: string): string | undefined => {
+  if (!cachedVoices || cachedVoices.length === 0) return undefined;
+
+  const langLower = language.toLowerCase();
+  const matchingVoices = cachedVoices.filter((v) => {
+    const vLang = v.language.toLowerCase();
+    const vName = (v.name + v.identifier).toLowerCase();
+    const isCorrectLang =
+      vLang.startsWith(langLower) ||
+      (langLower === "en-in" && vLang.startsWith("en")) ||
+      (langLower === "hi-in" && vLang.startsWith("hi"));
+
+    const isFemale =
+      vName.includes("female") ||
+      vName.includes("woman") ||
+      vName.includes("lady") ||
+      vName.includes("girl");
+
+    return isCorrectLang && !isFemale;
+  });
+
+  if (matchingVoices.length === 0) return undefined;
+
+  if (langLower.startsWith("hi")) {
+    const hieNetwork = matchingVoices.find(
+      (v) => v.identifier === "hi-in-x-hie-network",
+    );
+    if (hieNetwork) return hieNetwork.identifier;
+  }
+
+  return matchingVoices[0].identifier;
+};
+
+/**
  * Loads available voices and finds the best match for the given language.
  * Prefers en-IN for English/Hinglish and hi-IN for Hindi.
  * Prefers bold male voices if available.
  * Prefers 'enhanced' or high-quality voices.
  */
 export const getBestQuizVoice = async (language: string): Promise<string | undefined> => {
+  const syncVoice = getBestQuizVoiceSync(language);
+  if (syncVoice) return syncVoice;
+
   try {
     if (!cachedVoices) {
       cachedVoices = await Speech.getAvailableVoicesAsync();
     }
 
-    if (!cachedVoices || cachedVoices.length === 0) return undefined;
-
-    // Filter by language first AND enforce male-only voices
-    const langLower = language.toLowerCase();
-    const matchingVoices = cachedVoices.filter(v => {
-      const vLang = v.language.toLowerCase();
-      const vName = (v.name + v.identifier).toLowerCase();
-      const isCorrectLang = vLang.startsWith(langLower) || 
-                           (langLower === "en-in" && vLang.startsWith("en")) ||
-                           (langLower === "hi-in" && vLang.startsWith("hi"));
-      
-      const isFemale = vName.includes("female") || vName.includes("woman") || 
-                       vName.includes("lady") || vName.includes("girl");
-      
-      return isCorrectLang && !isFemale;
-    });
-
-    if (matchingVoices.length === 0) return undefined;
-
-    // Helper to check if voice is definitely male
-    const isMale = (v: Speech.Voice) => {
-      const lower = (v.identifier + v.name).toLowerCase();
-      return lower.includes("male") || lower.includes("man") || lower.includes("guy");
-    };
-
-
-    // Special case: check for specific high-quality Hindi voice requested
-    if (langLower.startsWith("hi")) {
-        const hieNetwork = matchingVoices.find(v => v.identifier === "hi-in-x-hie-network");
-        if (hieNetwork) return hieNetwork.identifier;
-    }
-
-    // Preference 1: Male + Exact region + Enhanced
-    const maleEnhanced = matchingVoices.find(v => 
-      v.language.toLowerCase() === langLower && 
-      isMale(v) &&
-      (v.quality === Speech.VoiceQuality.Enhanced || (v as any).enhanced)
-    );
-    if (maleEnhanced) return maleEnhanced.identifier;
-
-    // Preference 2: Male + Exact region
-    const maleExact = matchingVoices.find(v => v.language.toLowerCase() === langLower && isMale(v));
-    if (maleExact) return maleExact.identifier;
-
-    // Preference 3: Exact match for region + enhanced
-    const bestMatch = matchingVoices.find(v => 
-      v.language.toLowerCase() === langLower && 
-      (v.quality === Speech.VoiceQuality.Enhanced || (v as any).enhanced)
-    );
-    if (bestMatch) return bestMatch.identifier;
-
-    // Fallback: First matching voice
-    return matchingVoices[0].identifier;
+    return getBestQuizVoiceSync(language);
   } catch (error) {
     console.error("[Speech] Failed to get best voice:", error);
     return undefined;
@@ -208,11 +211,10 @@ export const speakQuizQuestion = async (
 
     if (!text || !text.trim()) return;
 
-
     const {
       voice,
-      rate = 0.80,
-      pitch = 0.80,
+      rate = 1.15,
+      pitch = 1.0,
       volume = 1.0,
       onStart,
       onDone,

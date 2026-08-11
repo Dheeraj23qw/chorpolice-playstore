@@ -48,7 +48,9 @@ export const saveQuizNarrationRate = (rate: number) => {
 
 export const loadQuizNarrationRate = (): number => {
   const val = storage.getNumber(QUIZ_NARRATION_RATE_KEY);
-  return val === undefined ? 0.80 : val;
+  // Default to fast 1.15 rate; upgrade legacy 0.80 rate
+  if (val === undefined || val <= 0.85) return 1.15;
+  return val;
 };
 
 export const saveQuizNarrationPitch = (pitch: number) => {
@@ -57,7 +59,8 @@ export const saveQuizNarrationPitch = (pitch: number) => {
 
 export const loadQuizNarrationPitch = (): number => {
   const val = storage.getNumber(QUIZ_NARRATION_PITCH_KEY);
-  return val === undefined ? 0.80 : val;
+  if (val === undefined || val <= 0.85) return 1.0;
+  return val;
 };
 
 

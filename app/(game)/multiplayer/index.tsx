@@ -5,6 +5,7 @@ import { GameModeSelectScreen } from "@/screens/GameModeScreen/GameModeSelectScr
 import { multiplayerModes } from "@/constants/gamemode";
 
 export default function MultiplayerRoute() {
+  console.log("[NAV_DEBUG] [MULTIPLAYER] mounted route");
   return (
     <>
       <Stack.Screen

@@ -14,8 +14,6 @@
     "build:prod": "eas build --platform android --profile production",
     "build:dev": "eas build --platform android --profile development",
     "preview": "eas build --platform android --profile preview",
-    "test": "jest --runInBand",
-    "test:watch": "jest --watchAll",
     "update:prod": "eas update --branch production --message 'Quick fix'",
     "update:preview": "eas update --branch preview",
     "check:fingerprint": "expo-fingerprint",

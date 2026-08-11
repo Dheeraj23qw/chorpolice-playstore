@@ -8,7 +8,7 @@ import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { broadcastPacket } from "@/service/lanGameService";
 
 const TOTAL_QUESTIONS = 4;
-const QUESTION_DURATION_MS = 7_000;
+const QUESTION_DURATION_MS = 15_000;
 
 type ScoreQuizRoundState = "idle" | "answering" | "complete" | "finished";
 
@@ -142,11 +142,6 @@ export const useCPScoreQuiz = ({
           isTarget: false,
         };
       });
-
-      if (questionIndex === TOTAL_QUESTIONS - 1 && !completionBonusAppliedRef.current) {
-        completionBonusAppliedRef.current = true;
-        players.forEach((player) => ChorPoliceEngine.applyQuizBonus(player.id, 2000));
-      }
 
       // This packet is the single shared completion record for the question.
       // Clients do not infer completion from their own answer or local timer.
@@ -367,7 +362,7 @@ export const useCPScoreQuiz = ({
                     (option) => option !== correctScoreRef.current,
                   ) ?? correctScoreRef.current;
             collectGuess(player.id, guessedScore, roundId, packet.targetPlayerId);
-          }, 2_500 + Math.floor(Math.random() * 1_000));
+          }, 2_000 + Math.floor(Math.random() * 1_000));
           timerRefs.current.push(botTimer);
         });
       }

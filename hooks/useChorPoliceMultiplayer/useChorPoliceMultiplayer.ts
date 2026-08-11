@@ -346,7 +346,7 @@ export const useChorPoliceMultiplayer = () => {
     }
   }, [reduxGamePhase, isHost, scoreQuiz]);
 
-  // ── Level 2: 7-second countdown timer ──
+  // ── Level 2: 15-second countdown timer ──
   useEffect(() => {
     if (reduxGamePhase !== "score_quiz" || quizCountdown === null || showQuizLeaderboard || isDynamicPopUp) return;
     if (quizCountdown <= 0) {
