@@ -1,6 +1,5 @@
 import { CPMultiplayerContext } from "./types";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
-import { AudioEngine } from "@/audio/audioEngine";
 
 export const handleScoreQuizTurn = (packet: any, context: CPMultiplayerContext) => {
   context.logic.scoreQuiz.handleScoreQuizTurnPacket(packet);
@@ -11,10 +10,12 @@ export const handleScoreQuizTurn = (packet: any, context: CPMultiplayerContext) 
  * In the new simultaneous model, we collect it and let the hook decide when to evaluate.
  */
 export const handleScoreGuess = (packet: any, context: CPMultiplayerContext) => {
-  const { refs, logic } = context;
-
-  // Forward to the hook's collectGuess with roundId for stale packet protection
-  logic.scoreQuiz.collectGuess(packet.playerId, packet.guessedScore, packet.roundId);
+  context.logic.scoreQuiz.collectGuess(
+    packet.playerId,
+    packet.guessedScore,
+    packet.roundId,
+    packet.targetPlayerId,
+  );
 };
 
 /**
@@ -22,16 +23,14 @@ export const handleScoreGuess = (packet: any, context: CPMultiplayerContext) => 
  * In the new model, playerResults is an array with per-player outcomes.
  */
 export const handleScoreGuessResult = (packet: any, context: CPMultiplayerContext) => {
-  const {
-    refs, setQuizOptionDisabled, setPlayerScores, setShowQuizLeaderboard
-  } = context;
+  const { logic, setPlayerScores } = context;
+
+  // Ignore duplicates, stale results, and results for a question that this
+  // client has not entered. The hook owns the current shared-round identity.
+  if (!logic.scoreQuiz.handleScoreQuizResultPacket(packet)) return;
 
   // Sync engine scores
   ChorPoliceEngine.syncScores(packet.leaderboard ?? []);
-
-  // Disable further guessing for this question
-  refs.quizOptionDisabledRef.current = true;
-  setQuizOptionDisabled(true);
 
   // Update local player scores display
   const playerResults: Array<{
@@ -50,18 +49,4 @@ export const handleScoreGuessResult = (packet: any, context: CPMultiplayerContex
     })
   );
 
-  // Find the LOCAL player's result for audio/visual feedback
-  const localPlayerId = refs.localPlayerIdRef.current;
-  const localResult = playerResults.find(r => r.playerId === localPlayerId);
-
-  if (localResult) {
-    AudioEngine.play(localResult.isCorrect ? "win" : "lose", "gameplay");
-  }
-
-  // Show the per-round leaderboard overlay between questions
-  if (setShowQuizLeaderboard) {
-    setShowQuizLeaderboard(true);
-  }
-
-  refs.currentQuizPlayerIdRef.current = null;
 };

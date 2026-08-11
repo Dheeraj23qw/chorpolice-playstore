@@ -122,6 +122,7 @@ export const useChorPoliceMultiplayer = () => {
   // ── Level 2 Quiz State ──
   const [quizCountdown, setQuizCountdown] = useState<number | null>(null);
   const [showQuizLeaderboard, setShowQuizLeaderboard] = useState(false);
+  const [isQuizRoundComplete, setIsQuizRoundComplete] = useState(false);
   const [quizResultData, setQuizResultData] = useState<any>(null);
   const [localL2Bonus, setLocalL2Bonus] = useState(0);
   const [hasGuessedThisRound, setHasGuessedThisRound] = useState(false);
@@ -133,6 +134,8 @@ export const useChorPoliceMultiplayer = () => {
   const hasGuessedRef = useRef(false);
   const isQuittingRef = useRef(false);
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const correctScoreRef = useRef<number>(0);
+  const quizResponseSubmittedRef = useRef(false);
   const roundStartPendingRef = useRef(false);
   const scoreQuizStartedRef = useRef(false);
   const currentQuizPlayerIdRef = useRef<string | null>(null);
@@ -252,6 +255,8 @@ export const useChorPoliceMultiplayer = () => {
     currentQuizPlayerIdRef,
     scoreQuizStartedRef,
     quizOptionDisabledRef,
+    quizResponseSubmittedRef,
+    correctScoreRef,
     setQuizDone,
     setQuizOptionDisabled,
     setQuizPlayerIndex,
@@ -259,6 +264,7 @@ export const useChorPoliceMultiplayer = () => {
     resolveScoreQuizPlayers,
     setQuizCountdown,
     setShowQuizLeaderboard,
+    setIsQuizRoundComplete,
     setHasGuessedThisRound,
     setBoostScoreModalVisible,
   });
@@ -292,6 +298,7 @@ export const useChorPoliceMultiplayer = () => {
     setMysteryRevealStep,
     setQuizCountdown,
     setShowQuizLeaderboard,
+    setIsQuizRoundComplete,
     setQuizResultData,
     setLocalL2Bonus,
     setHasGuessedThisRound,
@@ -341,8 +348,46 @@ export const useChorPoliceMultiplayer = () => {
 
   // ── Level 2: 7-second countdown timer ──
   useEffect(() => {
-    if (reduxGamePhase !== "score_quiz" || quizCountdown === null || showQuizLeaderboard) return;
-    if (quizCountdown <= 0) return;
+    if (reduxGamePhase !== "score_quiz" || quizCountdown === null || showQuizLeaderboard || isDynamicPopUp) return;
+    if (quizCountdown <= 0) {
+      const targetPlayerId = currentQuizPlayerIdRef.current;
+
+      if (!quizResponseSubmittedRef.current && !quizOptionDisabledRef.current && targetPlayerId !== localPlayerId) {
+        quizResponseSubmittedRef.current = true;
+        quizOptionDisabledRef.current = true;
+        setQuizOptionDisabled(true);
+        setHasGuessedThisRound(true);
+
+        setMediaId(8); // MEDIA.TIMEUP
+        setMediaType("gif");
+        setPlayerData({ message: "Time's Up! -2000 Points" });
+        AudioEngine.play("lose", "gameplay");
+        setIsDynamicPopUp(true);
+
+        const guessPacket = {
+          type: MODES.CHOR_POLICE.SCORE_GUESS,
+          playerId: localPlayerId,
+          targetPlayerId,
+          guessedScore: -1,
+          roundId: scoreQuiz.getCurrentRoundId(),
+        };
+
+        if (isHost) {
+          handleIncomingPacket(guessPacket);
+        } else {
+          sendPacketToHost(guessPacket);
+        }
+
+        const popupTimer = setTimeout(() => {
+          setIsDynamicPopUp(false);
+          setShowQuizLeaderboard(true);
+        }, 3000);
+        timerRefs.current.push(popupTimer);
+      } else if (targetPlayerId === localPlayerId && !showQuizLeaderboard) {
+        setShowQuizLeaderboard(true);
+      }
+      return;
+    }
 
     const intervalId = setInterval(() => {
       setQuizCountdown(prev => {
@@ -355,7 +400,7 @@ export const useChorPoliceMultiplayer = () => {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [reduxGamePhase, quizCountdown, showQuizLeaderboard]);
+  }, [reduxGamePhase, quizCountdown, showQuizLeaderboard, isDynamicPopUp, localPlayerId, isHost, scoreQuiz]);
 
   useEffect(() => {
     economyLogic.handleStakeDebit(economy);
@@ -486,25 +531,60 @@ export const useChorPoliceMultiplayer = () => {
       console.log("[LAN][MATCH] CP action blocked during reconnect");
       return;
     }
-    // In the new model: any player can guess (not just the target)
-    // Guard: phase must be score_quiz, player must not have guessed already
-    if (quizOptionDisabledRef.current || gamePhaseRef.current !== "score_quiz") return;
-    // Don't let the target player guess their own score
+    if (
+      quizResponseSubmittedRef.current ||
+      quizOptionDisabledRef.current ||
+      gamePhaseRef.current !== "score_quiz"
+    ) {
+      return;
+    }
     const targetPlayerId = currentQuizPlayerIdRef.current;
-    if (targetPlayerId === localPlayerId) return;
-    
+    if (!targetPlayerId || targetPlayerId === localPlayerId) return;
+
+    quizResponseSubmittedRef.current = true;
     quizOptionDisabledRef.current = true;
     setQuizOptionDisabled(true);
     setHasGuessedThisRound(true);
+
+    const isCorrect = selectedScore === correctScoreRef.current;
+    if (isCorrect) {
+      setMediaId(7); // MEDIA.CORRECT
+      setMediaType("gif");
+      setPlayerData({ message: "Correct! +2000 Points" });
+      AudioEngine.play("win", "gameplay");
+    } else {
+      setMediaId(6); // MEDIA.WRONG
+      setMediaType("gif");
+      setPlayerData({ message: "Wrong! -2000 Points" });
+      AudioEngine.play("lose", "gameplay");
+    }
+
+    setIsDynamicPopUp(true);
+
     const guessPacket = {
       type: MODES.CHOR_POLICE.SCORE_GUESS,
       playerId: localPlayerId,
       targetPlayerId: targetPlayerId,
       guessedScore: selectedScore,
+      roundId: scoreQuiz.getCurrentRoundId(),
     };
-    if (isHost) { handleIncomingPacket(guessPacket); return; }
-    sendPacketToHost(guessPacket);
-  }, [isHost, localPlayerId]);
+    if (isHost) {
+      handleIncomingPacket(guessPacket);
+    } else {
+      sendPacketToHost(guessPacket);
+    }
+
+    const popupTimer = setTimeout(() => {
+      setIsDynamicPopUp(false);
+      setShowQuizLeaderboard(true);
+    }, 3000);
+    timerRefs.current.push(popupTimer);
+  }, [isHost, localPlayerId, scoreQuiz, timerRefs]);
+
+  const handleNextQuizRound = useCallback(() => {
+    if (!isHostRef.current) return;
+    scoreQuiz.advanceScoreQuiz();
+  }, [scoreQuiz]);
 
   const handleBoostScoreAccept = useCallback(() => {
     if (!isHost) {
@@ -575,6 +655,8 @@ export const useChorPoliceMultiplayer = () => {
     // Level 2 Quiz
     quizCountdown, setQuizCountdown,
     showQuizLeaderboard, setShowQuizLeaderboard,
+    isQuizRoundComplete, setIsQuizRoundComplete,
+    handleNextQuizRound,
     quizResultData, setQuizResultData,
     localL2Bonus, setLocalL2Bonus,
     hasGuessedThisRound, setHasGuessedThisRound,

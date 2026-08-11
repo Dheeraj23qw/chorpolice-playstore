@@ -140,6 +140,7 @@ const JoinScreen = () => {
   const [showDebug, setShowDebug] = useState(false);
   const isLeavingRef = useRef(false);
   const joinAttemptRef = useRef(false);
+  const isJoinScreenFocusedRef = useRef(false);
 
   const handleBack = useCallback(async () => {
     if (isLeavingRef.current) return;
@@ -154,6 +155,7 @@ const JoinScreen = () => {
   // through to the root router.back() handler with a live join session.
   useFocusEffect(
     useCallback(() => {
+      isJoinScreenFocusedRef.current = true;
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
         () => {
@@ -162,7 +164,10 @@ const JoinScreen = () => {
         },
       );
 
-      return () => subscription.remove();
+      return () => {
+        isJoinScreenFocusedRef.current = false;
+        subscription.remove();
+      };
     }, [handleBack]),
   );
 
@@ -283,7 +288,12 @@ const JoinScreen = () => {
 
   /* ── Auto-nav on connected ── */
   useEffect(() => {
-    if (session.connectionStatus === "CONNECTED" || session.connectionStatus === "CONNECTING") {
+    if (
+      isJoinScreenFocusedRef.current &&
+      joinAttemptRef.current &&
+      (session.connectionStatus === "CONNECTED" ||
+        session.connectionStatus === "CONNECTING")
+    ) {
       if (__DEV__) {
         console.log("[NAV][JOIN] connection effect → /lobby", {
           connectionStatus: session.connectionStatus,

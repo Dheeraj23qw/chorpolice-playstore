@@ -853,6 +853,7 @@ export const ChorPoliceEngine = {
 
       localEntry.totalScore = entry.totalScore;
       localEntry.roundScores = [...entry.roundScores];
+      localEntry.level2Bonus = entry.level2Bonus;
     });
   },
 

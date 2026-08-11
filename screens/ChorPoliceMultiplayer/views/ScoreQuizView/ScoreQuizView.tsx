@@ -18,7 +18,14 @@ const ScoreQuizView = ({ g }: any) => {
   }
 
   if (g.showQuizLeaderboard) {
-    return <ScoreQuizLeaderboard onNextRound={() => {}} />;
+    return (
+      <ScoreQuizLeaderboard
+        onNextRound={g.handleNextQuizRound}
+        isHost={g.isHost}
+        isRoundComplete={g.isQuizRoundComplete}
+        isLastQuestion={g.quizPlayerIndex >= 3}
+      />
+    );
   }
 
   return <ScoreQuizRound g={g} />;

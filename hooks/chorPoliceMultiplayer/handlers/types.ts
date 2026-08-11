@@ -36,6 +36,7 @@ export interface CPMultiplayerContext {
   // Level 2 Quiz
   setQuizCountdown: React.Dispatch<React.SetStateAction<number | null>>;
   setShowQuizLeaderboard: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsQuizRoundComplete: React.Dispatch<React.SetStateAction<boolean>>;
   setQuizResultData: React.Dispatch<React.SetStateAction<any>>;
   setLocalL2Bonus: React.Dispatch<React.SetStateAction<number>>;
   setHasGuessedThisRound: React.Dispatch<React.SetStateAction<boolean>>;

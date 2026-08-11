@@ -47,7 +47,7 @@ const ScoreQuizRound = ({ g }: any) => {
             type: "timing",
             duration: 300,
           }}
-          className="items-center"
+          className="mb-7 items-center"
         >
           <Text
             style={{ fontSize: rf(2.8) }}
@@ -74,7 +74,7 @@ const ScoreQuizRound = ({ g }: any) => {
           }}
           className="mt-6 items-center"
         >
-          <Timer countdown={g.quizCountdown ?? 7} variant="compact" />
+          <Timer countdown={g.quizCountdown ?? 7} variant="default" />
         </MotiView>
 
         {/* Quiz */}
@@ -83,10 +83,10 @@ const ScoreQuizRound = ({ g }: any) => {
             playerName={currentPlayer.name}
             playerImage={playerImage}
             questionNumber={g.quizPlayerIndex + 1}
-            totalQuestions={players.length}
+            totalQuestions={4}
             options={g.quizOptions}
             onOptionPress={g.handleQuizOption}
-            isActivePlayer={!g.quizOptionDisabled}
+            isActivePlayer={!g.quizOptionDisabled && !isTargetPlayer}
             hasGuessed={g.hasGuessedThisRound}
             isTargetPlayer={isTargetPlayer}
           />

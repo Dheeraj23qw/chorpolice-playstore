@@ -11,14 +11,21 @@ import { rf } from "@/utils/responsive";
 
 interface ScoreQuizLeaderboardProps {
   onNextRound: () => void;
+  isHost?: boolean;
+  isRoundComplete?: boolean;
+  isLastQuestion?: boolean;
 }
 
 const ScoreQuizLeaderboard: React.FC<ScoreQuizLeaderboardProps> = ({
   onNextRound,
+  isHost = false,
+  isRoundComplete = false,
+  isLastQuestion = false,
 }) => {
   const leaderboard = ChorPoliceEngine.getLevel2Leaderboard();
 
   const handleNextRound = () => {
+    if (!isHost) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onNextRound();
   };
@@ -207,27 +214,44 @@ const ScoreQuizLeaderboard: React.FC<ScoreQuizLeaderboardProps> = ({
           </View>
         </MotiView>
 
-        {/* BOTTOM ACTION BUTTON */}
-        <MotiView
-          from={{ opacity: 0, translateY: 30 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "spring", delay: 600 }}
-          className="mb-4 mt-6"
-        >
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handleNextRound}
-            className="h-16 w-full flex-row items-center justify-center rounded-2xl bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/40"
+        {/* BOTTOM ACTION AREA */}
+        {isHost && isRoundComplete ? (
+          <MotiView
+            from={{ opacity: 0, translateY: 30 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: "spring", delay: 600 }}
+            className="mb-4 mt-6"
+          >
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleNextRound}
+              className="h-16 w-full flex-row items-center justify-center rounded-2xl bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/40"
+            >
+              <Text
+                style={{ fontSize: rf(1.5) }}
+                className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+              >
+                {isLastQuestion ? "Final Result" : "Next Round"}
+              </Text>
+              <Ionicons name="arrow-forward" size={rf(2.2)} color="#000000" />
+            </TouchableOpacity>
+          </MotiView>
+        ) : (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-4 mt-6 items-center justify-center py-4"
           >
             <Text
-              style={{ fontSize: rf(1.5) }}
-              className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+              style={{ fontSize: rf(1.4) }}
+              className="font-main-bold text-center tracking-wider text-white/70"
             >
-              Next Round
+              {!isRoundComplete
+                ? "Waiting for all players to finish..."
+                : "Waiting for host to start next round..."}
             </Text>
-            <Ionicons name="arrow-forward" size={rf(2.2)} color="#000000" />
-          </TouchableOpacity>
-        </MotiView>
+          </MotiView>
+        )}
       </View>
     </SafeAreaView>
   );

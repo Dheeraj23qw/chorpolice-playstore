@@ -7,84 +7,94 @@ import { rf } from "@/utils/responsive";
 
 const ScoringRules = () => {
   return (
-    <View className="mt-8 overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.035]">
-      {/* Header */}
-      <View className="border-b border-white/[0.08] px-4 py-3">
-        <Text
-          style={{ fontSize: rf(0.9) }}
-          className="font-main-bold tracking-[1.8px] text-white/40"
-        >
-          SCORING RULES
-        </Text>
-      </View>
+    <View className="mt-6 w-full">
+      {/* Section Title */}
+      <Text
+        style={{ fontSize: rf(0.9) }}
+        className="mb-2 text-center font-main-bold uppercase tracking-[2px] text-white/40"
+      >
+        Scoring Rules
+      </Text>
 
-      {/* Correct */}
-      <View className="flex-row items-center justify-between px-4 py-3">
-        <View className="flex-row items-center">
-          <View className="mr-3 h-8 w-8 items-center justify-center rounded-xl bg-emerald-400/10">
-            <Ionicons name="checkmark" size={rf(1.5)} color="#34D399" />
+      {/* 3-Column Compact Grid */}
+      <View className="overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-sm shadow-black">
+        {/* ROW 1: HEADINGS */}
+        <View className="flex-row border-b border-white/10 bg-white/5">
+          <View className="flex-1 items-center justify-center border-r border-white/10 py-2">
+            <Text
+              style={{ fontSize: rf(0.9) }}
+              className="font-main-bold uppercase tracking-wider text-white/60"
+            >
+              Correct
+            </Text>
           </View>
 
-          <Text
-            style={{ fontSize: rf(1.15) }}
-            className="font-main-bold text-white/75"
-          >
-            Correct
-          </Text>
-        </View>
-
-        <Text
-          style={{ fontSize: rf(1.2) }}
-          className="font-main-bold text-emerald-400"
-        >
-          +2,000
-        </Text>
-      </View>
-
-      {/* Wrong */}
-      <View className="flex-row items-center justify-between border-t border-white/[0.06] px-4 py-3">
-        <View className="flex-row items-center">
-          <View className="mr-3 h-8 w-8 items-center justify-center rounded-xl bg-red-400/10">
-            <Ionicons name="close" size={rf(1.5)} color="#F87171" />
+          <View className="flex-1 items-center justify-center border-r border-white/10 py-2">
+            <Text
+              style={{ fontSize: rf(0.9) }}
+              className="font-main-bold uppercase tracking-wider text-white/60"
+            >
+              Wrong
+            </Text>
           </View>
 
-          <Text
-            style={{ fontSize: rf(1.15) }}
-            className="font-main-bold text-white/75"
-          >
-            Wrong
-          </Text>
+          <View className="flex-1 items-center justify-center py-2">
+            <Text
+              style={{ fontSize: rf(0.9) }}
+              className="font-main-bold uppercase tracking-wider text-white/60"
+            >
+              No Answer
+            </Text>
+          </View>
         </View>
 
-        <Text
-          style={{ fontSize: rf(1.2) }}
-          className="font-main-bold text-red-400"
-        >
-          −2,000
-        </Text>
-      </View>
-
-      {/* No Answer */}
-      <View className="flex-row items-center justify-between border-t border-white/[0.06] px-4 py-3">
-        <View className="flex-row items-center">
-          <View className="mr-3 h-8 w-8 items-center justify-center rounded-xl bg-white/[0.06]">
-            <Ionicons name="remove" size={rf(1.4)} color="#9CA3AF" />
+        {/* ROW 2: VALUES & ICONS */}
+        <View className="flex-row">
+          <View className="flex-1 flex-row items-center justify-center border-r border-white/10 py-2.5">
+            <Ionicons
+              name="checkmark"
+              size={rf(1.3)}
+              color="#34D399"
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={{ fontSize: rf(1.15) }}
+              className="font-main-bold text-emerald-400"
+            >
+              +2,000
+            </Text>
           </View>
 
-          <Text
-            style={{ fontSize: rf(1.15) }}
-            className="font-main-bold text-white/75"
-          >
-            No Answer
-          </Text>
-        </View>
+          <View className="flex-1 flex-row items-center justify-center border-r border-white/10 py-2.5">
+            <Ionicons
+              name="close"
+              size={rf(1.3)}
+              color="#F87171"
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={{ fontSize: rf(1.15) }}
+              className="font-main-bold text-red-400"
+            >
+              −2,000
+            </Text>
+          </View>
 
-        <Text
-          style={{ fontSize: rf(1.2) }}
-          className="font-main-bold text-red-400"
-        >
-          −2,000
-        </Text>
+          <View className="flex-1 flex-row items-center justify-center py-2.5">
+            <Ionicons
+              name="remove"
+              size={rf(1.3)}
+              color="#9CA3AF"
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={{ fontSize: rf(1.15) }}
+              className="font-main-bold text-red-400"
+            >
+              −2,000
+            </Text>
+          </View>
+        </View>
       </View>
     </View>
   );
