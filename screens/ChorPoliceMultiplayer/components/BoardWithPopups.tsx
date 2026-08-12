@@ -6,7 +6,7 @@ import OverlayPopUp from "@/modal/overlaypop";
 import CinematicReveal from "./CinematicReveal";
 import { GamePlaySection } from "./GamePlaySection";
 
-const BoardWithPopups = ({ g }: any) => {
+const BoardWithPopups = ({ g, setIsRulesVisible }: any) => {
   if (g.isDynamicPopUp && g.mediaId != null) {
     return (
       <OverlayPopUp
@@ -61,6 +61,7 @@ const BoardWithPopups = ({ g }: any) => {
             g.canInteract ? g.handleCardClickWithBounce : () => {}
           }
           toggleModal={g.toggleModal}
+          setIsRulesVisible={setIsRulesVisible}
           round={g.round}
           message={(() => {
             if (g.gamePhase === "result") return "Round Complete!";

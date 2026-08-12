@@ -19,14 +19,14 @@ const WAITING_MESSAGES: Record<string, string> = {
  * Every player gets a bottom role drawer (role icon + message) while the
  * Police investigates — Police sees "Catch the Thief!", others wait.
  */
-const PoliceTurnView = ({ g }: any) => {
+const PoliceTurnView = ({ g, setIsRulesVisible }: any) => {
   const role = g.myRole;
   const showWaitingDrawer =
     role === "Thief" || role === "Advisor" || role === "King" || role === "Police";
 
   return (
     <View className="flex-1">
-      <BoardWithPopups g={g} />
+      <BoardWithPopups g={g} setIsRulesVisible={setIsRulesVisible} />
       {showWaitingDrawer && (
         <RoleWaitingDrawer
           role={role}

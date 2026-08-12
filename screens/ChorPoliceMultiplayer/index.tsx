@@ -152,20 +152,20 @@ const ChorPoliceMultiplayerScreen = () => {
 
     switch (g.gamePhase) {
       case "waiting":
-        return <WaitingView g={g} />;
+        return <WaitingView g={g} setIsRulesVisible={setIsRulesVisible} />;
 
       case "dealing":
-        return <DealingView g={g} />;
+        return <DealingView g={g} setIsRulesVisible={setIsRulesVisible} />;
 
       case "police_turn":
       case "investigation_shuffle":
-        return <PoliceTurnView g={g} />;
+        return <PoliceTurnView g={g} setIsRulesVisible={setIsRulesVisible} />;
 
       case "private_reveal":
         return <RoleRevealView role={g.myRole} round={g.round} />;
 
       case "result":
-        return <ResultView g={g} />;
+        return <ResultView g={g} setIsRulesVisible={setIsRulesVisible} />;
 
       case "round_video":
         return <RoundVideoView g={g} />;
@@ -175,7 +175,13 @@ const ChorPoliceMultiplayerScreen = () => {
 
       case "final_result":
       case "finished":
-        return <FinalResultView onExit={g.handleFinalExit} />;
+        return (
+          <FinalResultView
+            onExit={g.handleFinalExit}
+            toggleModal={g.toggleModal}
+            setIsRulesVisible={setIsRulesVisible}
+          />
+        );
 
       default:
         return null;
@@ -197,56 +203,6 @@ const ChorPoliceMultiplayerScreen = () => {
 
       {/* Content */}
       <View className="flex-1">{renderView()}</View>
-
-      {/* TOP ACTION BAR */}
-      <View
-        className="absolute left-0 right-0 z-[1000] flex-row items-center justify-between px-6"
-        style={{ top: insets.top + 10 }}
-      >
-        {/* COINS */}
-        <CoinBox />
-
-        {/* RIGHT ACTIONS */}
-        <View className="flex-row items-center">
-        {/* RULES BUTTON */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => setIsRulesVisible(true)}
-          className="mr-3 h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
-        >
-          <BlurView
-            intensity={10}
-            style={StyleSheet.absoluteFill}
-            tint="dark"
-          />
-
-          <View className="h-full w-full items-center justify-center">
-            <Ionicons name="book-outline" size={20} color="#C7D2FE" />
-          </View>
-
-          <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-cyan-400" />
-        </TouchableOpacity>
-
-        {/* 🏆 PERSISTENT RANKING BUTTON */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={g.toggleModal}
-          className="h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
-        >
-          <BlurView
-            intensity={10}
-            style={StyleSheet.absoluteFill}
-            tint="dark"
-          />
-
-          <View className="h-full w-full items-center justify-center">
-            <Ionicons name="trophy-outline" size={20} color="#FACC15" />
-          </View>
-
-          <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-indigo-500" />
-          </TouchableOpacity>
-        </View>
-      </View>
 
       {/* Online Rules Modal */}
       <OfflineRulesModal

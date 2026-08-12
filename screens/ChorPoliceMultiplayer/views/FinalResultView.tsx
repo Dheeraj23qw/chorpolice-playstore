@@ -1,5 +1,8 @@
 import React, { useMemo, memo, useEffect, useRef } from "react";
-import { View, ScrollView, Image } from "react-native";
+import { View, ScrollView, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,7 +12,6 @@ import Animated, {
   withSpring,
   Easing,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
 import { RootState } from "@/redux/store";
@@ -21,11 +23,19 @@ import { Text } from "@/components/Text";
 import { selectLocalPlayerId } from "@/redux/selectors/sessionSelectors";
 import { ActionButtons } from "@/screens/QuizScreen/components/renderButtons";
 import { cleanupAfterMatchCompleted } from "@/service/lanGameService";
+import { useAppSelector } from "@/hooks/useAppRedux";
 
 const MemoizedLeaderboard = memo(Leaderboard);
 const MemoizedWinnerSection = memo(WinnerSection);
 
-const FinalResultView = ({ onExit }: any) => {
+interface FinalResultViewProps {
+  onExit: (route: string) => void;
+  toggleModal: () => void;
+  setIsRulesVisible: (visible: boolean) => void;
+}
+
+const FinalResultView = ({ onExit, toggleModal, setIsRulesVisible }: FinalResultViewProps) => {
+  const insets = useSafeAreaInsets();
   // 🔥 BACKUP: Ensure sockets are cleaned up when result screen mounts/unmounts
   useEffect(() => {
     // Mount: Backup cleanup in case economyHandlers path was missed
@@ -215,6 +225,56 @@ const FinalResultView = ({ onExit }: any) => {
         resizeMode="cover"
       />
       <View className="absolute h-full w-full bg-black/70" />
+
+      {/* TOP ACTION BAR */}
+      <View
+        className="absolute left-0 right-0 z-[1000] flex-row items-center justify-between px-6"
+        style={{ top: insets.top + 10 }}
+      >
+        {/* COINS */}
+        <CoinBox />
+
+        {/* RIGHT ACTIONS */}
+        <View className="flex-row items-center">
+          {/* RULES BUTTON */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setIsRulesVisible(true)}
+            className="mr-3 h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
+          >
+            <BlurView
+              intensity={10}
+              style={StyleSheet.absoluteFill}
+              tint="dark"
+            />
+
+            <View className="h-full w-full items-center justify-center">
+              <Ionicons name="book-outline" size={20} color="#C7D2FE" />
+            </View>
+
+            <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-cyan-400" />
+          </TouchableOpacity>
+
+          {/* 🏆 RANKING BUTTON */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={toggleModal}
+            className="h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black"
+          >
+            <BlurView
+              intensity={10}
+              style={StyleSheet.absoluteFill}
+              tint="dark"
+            />
+
+            <View className="h-full w-full items-center justify-center">
+              <Ionicons name="trophy-outline" size={20} color="#FACC15" />
+            </View>
+
+            <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black bg-indigo-500" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Content */}
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>

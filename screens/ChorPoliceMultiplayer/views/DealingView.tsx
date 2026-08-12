@@ -5,8 +5,8 @@ import BoardWithPopups from "../components/BoardWithPopups";
  * Dealing Phase:
  * Everyone sees same board animations
  */
-const DealingView = ({ g }: any) => {
-  return <BoardWithPopups g={g} />;
+const DealingView = ({ g, setIsRulesVisible }: any) => {
+  return <BoardWithPopups g={g} setIsRulesVisible={setIsRulesVisible} />;
 };
 
 export default DealingView;

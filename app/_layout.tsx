@@ -69,8 +69,6 @@ function AppLayout() {
         screenLayout={screenLayout}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="(social)" />
-        <Stack.Screen name="(info)" />
       </Stack>
 
       <AppExitModal

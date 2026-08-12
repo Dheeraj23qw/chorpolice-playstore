@@ -7,7 +7,7 @@ import { GamePlaySection } from "../components/GamePlaySection";
  * Waiting Phase:
  * All players see board + Play button
  */
-const WaitingView = ({ g }: any) => {
+const WaitingView = ({ g, setIsRulesVisible }: any) => {
   const insets = useSafeAreaInsets();
   const isWaitingForHost = !g.isHost;
 
@@ -26,6 +26,7 @@ const WaitingView = ({ g }: any) => {
         handleCardClick={() => {}}
         handleCardClickWithBounce={() => {}}
         toggleModal={g.toggleModal}
+        setIsRulesVisible={setIsRulesVisible}
         round={g.round}
         message={isWaitingForHost ? "Waiting for host..." : g.message || null}
         getCardStyle={g.getCardStyle}

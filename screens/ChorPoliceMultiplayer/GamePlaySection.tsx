@@ -81,7 +81,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
         showsVerticalScrollIndicator={false}
         className="px-6"
       >
-        <View className="mb-10 mt-8 items-center">
+        <View className="items-center">
           <RoundBadge round={round} />
         </View>
 

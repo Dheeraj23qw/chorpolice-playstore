@@ -20,6 +20,7 @@ export interface GamePlaySectionProps {
   handleCardClick: (index: number, targetId?: string) => void;
   handleCardClickWithBounce: (index: number) => void;
   toggleModal: () => void;
+  setIsRulesVisible: (visible: boolean) => void;
   round: number;
   message: string | null;
   countdown?: number | null;
