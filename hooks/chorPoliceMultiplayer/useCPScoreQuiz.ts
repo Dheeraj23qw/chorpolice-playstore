@@ -59,6 +59,7 @@ export const useCPScoreQuiz = ({
   const pendingAnswersRef = useRef<Map<string, number>>(new Map());
   const currentQuestionIndexRef = useRef(-1);
   const currentRoundIdRef = useRef(0);
+  const level1SnapshotRef = useRef<Map<string, number>>(new Map());
   const currentOptionsRef = useRef<number[]>([]);
   const deadlineRef = useRef(0);
   const roundStateRef = useRef<ScoreQuizRoundState>("idle");
@@ -121,6 +122,13 @@ export const useCPScoreQuiz = ({
         const bonus = isCorrect ? 2000 : -2000;
 
         ChorPoliceEngine.applyQuizBonus(player.id, bonus);
+
+        // Log per-player outcome for Level 2
+        console.log(
+          `[CP_QUIZ] Player ${player.name} (${player.id}) ${isCorrect ? "correct" : timedOut ? "timed out" : "wrong"} -> L2 bonus ${
+            bonus > 0 ? "+" + bonus : String(bonus)
+          }`,
+        );
 
         return {
           playerId: player.id,
@@ -218,10 +226,26 @@ export const useCPScoreQuiz = ({
         return false;
       }
 
+      // Snapshot Level 1 scores at the start of Level 2 (host only).
+      if (isHostRef.current && questionIndex === 0) {
+        const snap = new Map<string, number>();
+        players.forEach((p) => {
+          snap.set(p.id, ChorPoliceEngine.getLevel1Score(p.id));
+        });
+        level1SnapshotRef.current = snap;
+
+        const snapshotLog = players
+          .map((p) => `${p.name}=${level1SnapshotRef.current.get(p.id) ?? 0}`)
+          .join(", ");
+        console.log(`[CP_QUIZ] L2 source scores snapshot: ${snapshotLog}`);
+      }
+
       transitionInFlightRef.current = true;
       const targetPlayer = players[questionIndex];
       const correctScore =
-        ChorPoliceEngine.state.scores[targetPlayer.id]?.totalScore ?? 0;
+        level1SnapshotRef.current.get(targetPlayer.id) ??
+        ChorPoliceEngine.getLevel1Score(targetPlayer.id) ??
+        0;
       const options = buildQuizOptions(correctScore);
 
       console.log(

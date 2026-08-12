@@ -1,13 +1,10 @@
 import React from "react";
 import { Stack } from "expo-router";
+
 import LobbySetupScreen from "@/screens/LobbySetupScreen";
 
-/**
- * --- LOBBY ROUTE ENTRY ---
- * WHY: Expo Router requires an entry point in the 'app' directory to map paths.
- */
-export default function LobbyRoute() {
-  console.log("[LOBBY_TRACE] LobbyRoute mounted (app/(game)/lobby/index.tsx)");
+export default function HostRoute() {
+  console.log("[LOBBY_TRACE] HostRoute mounted (app/host/index.tsx)");
   return (
     <>
       <Stack.Screen
@@ -16,8 +13,7 @@ export default function LobbyRoute() {
           gestureEnabled: false,
         }}
       />
-
-      <LobbySetupScreen />
+      <LobbySetupScreen forcedMode="host" requireLanReady={true} />
     </>
   );
 }
