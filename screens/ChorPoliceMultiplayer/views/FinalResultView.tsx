@@ -1,5 +1,14 @@
-import React, { useMemo, memo, useEffect } from "react";
+import React, { useMemo, memo, useEffect, useRef } from "react";
 import { View, ScrollView, Image } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withSpring,
+  Easing,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
@@ -20,11 +29,17 @@ const FinalResultView = ({ onExit }: any) => {
   // 🔥 BACKUP: Ensure sockets are cleaned up when result screen mounts/unmounts
   useEffect(() => {
     // Mount: Backup cleanup in case economyHandlers path was missed
-    cleanupAfterMatchCompleted({ reason: "final_result_mount_backup", preserveResult: true });
-    
+    cleanupAfterMatchCompleted({
+      reason: "final_result_mount_backup",
+      preserveResult: true,
+    });
+
     return () => {
       // Unmount: Final safety net (e.g. hardware back, swipe, forced navigation)
-      cleanupAfterMatchCompleted({ reason: "final_result_unmount_backup", preserveResult: true });
+      cleanupAfterMatchCompleted({
+        reason: "final_result_unmount_backup",
+        preserveResult: true,
+      });
     };
   }, []);
   const playerScoresRedux = useSelector(
@@ -63,11 +78,133 @@ const FinalResultView = ({ onExit }: any) => {
 
   const winnerImage = playerImages[winnerAvatarId]?.src ?? playerImages[1]?.src;
 
+  const localPlayerId = useSelector(selectLocalPlayerId);
+  const isLocalWinner = winner?.playerId === localPlayerId;
+
+  const stakeAmount = useSelector(
+    (state: RootState) => state.session?.economy?.stakeAmount ?? 0,
+  );
+
   const totalPot =
     ChorPoliceEngine.state.totalPot || ChorPoliceEngine.state.stake * 4;
 
-  const localPlayerId = useSelector(selectLocalPlayerId);
-  const isLocalWinner = winner?.playerId === localPlayerId;
+  const winners = useMemo(() => {
+    if (!sortedScores.length) return [];
+    const maxScore = sortedScores[0].totalScore ?? 0;
+    return sortedScores.filter((p) => (p.totalScore ?? 0) === maxScore);
+  }, [sortedScores]);
+
+  const splitPot =
+    winners.length > 0 ? Math.floor(totalPot / winners.length) : 0;
+
+  const coinChanges = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const p of sortedScores) {
+      const key = p.playerId ?? p.playerName;
+      if (!key) continue;
+      if ((p.totalScore ?? 0) === (sortedScores[0]?.totalScore ?? 0)) {
+        map[key] = splitPot - stakeAmount;
+      } else {
+        map[key] = -stakeAmount;
+      }
+    }
+    return map;
+  }, [sortedScores, splitPot, stakeAmount]);
+
+  const localKey =
+    localPlayerId ?? playerNamesList.find((p) => p.id === localPlayerId)?.name;
+  const localCoinChange = localKey ? coinChanges[localKey] : 0;
+
+  const coins = useSelector((state: RootState) => state.wallet.coins);
+
+  const CoinBox = () => {
+    const pulse = useSharedValue(1);
+    const coinBob = useSharedValue(0);
+    const pop = useSharedValue(1);
+    const displayCoins = useSharedValue(coins);
+    const prevCoins = useRef(coins);
+
+    useEffect(() => {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(0.4, { duration: 1000 }),
+          withTiming(1, { duration: 1000 }),
+        ),
+        -1,
+        true,
+      );
+      coinBob.value = withRepeat(
+        withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true,
+      );
+    }, []);
+
+    useEffect(() => {
+      pop.value = withSequence(
+        withSpring(1.25, { damping: 9, stiffness: 300 }),
+        withSpring(1, { damping: 12, stiffness: 200 }),
+      );
+    }, [coins]);
+
+    useEffect(() => {
+      if (prevCoins.current !== coins) {
+        displayCoins.value = withSequence(
+          withTiming(coins + Math.floor(Math.random() * 80 + 40), {
+            duration: 220,
+          }),
+          withTiming(coins - Math.floor(Math.random() * 30 + 10), {
+            duration: 180,
+          }),
+          withSpring(coins, { damping: 6, stiffness: 180 }),
+        );
+        prevCoins.current = coins;
+      }
+    }, [coins]);
+
+    const containerStyle = useAnimatedStyle(() => ({
+      opacity: 0.7 + 0.3 * pulse.value,
+      transform: [
+        { translateY: -2 * coinBob.value },
+        { scale: 1 + 0.02 * coinBob.value },
+      ],
+    }));
+
+    const coinStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: 0.9 + 0.1 * coinBob.value }],
+    }));
+
+    const popStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: pop.value }],
+    }));
+
+    const numberStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: pop.value }],
+    }));
+
+    return (
+      <Animated.View style={[containerStyle]} className="mt-2 items-center">
+        <View className="flex-row items-center justify-center overflow-hidden rounded-2xl border border-yellow-400/40 bg-yellow-500/10 px-3 py-2 shadow-[0_0_16px_rgba(250,204,21,0.3)]">
+          <Animated.View
+            style={coinStyle}
+            className="mr-2 h-8 w-8 items-center justify-center rounded-full border border-yellow-400/80 bg-yellow-400/20"
+          >
+            <Text className="text-base">🪙</Text>
+          </Animated.View>
+          <View>
+            <Text className="font-main-bold text-[8px] uppercase tracking-wider text-yellow-400/70">
+              Coins
+            </Text>
+            <Animated.View style={numberStyle}>
+              <Text className="font-main-bold text-base tracking-tight text-yellow-300">
+                {displayCoins.value.toLocaleString()}
+              </Text>
+            </Animated.View>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  };
 
   return (
     <View className="flex-1 bg-black">
@@ -83,27 +220,12 @@ const FinalResultView = ({ onExit }: any) => {
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
         {/* Winner */}
         {winner && (
-          <View className="pt-4">
+          <View className="items-center pt-4">
             <MemoizedWinnerSection
               winnerName={winner.playerName}
               winnerImage={winnerImage}
               winner={winner}
             />
-          </View>
-        )}
-
-        {/* Pot */}
-        {totalPot > 0 && (
-          <View className="mb-3 items-center">
-            <View className="w-[92%] flex-row items-center justify-center rounded-full border border-indigo-400/30 bg-indigo-950/40 py-3">
-              <Text className="text-base font-main-md text-indigo-100">
-                {isLocalWinner ? "You won" : "Winner takes"}
-              </Text>
-              <Text className="mx-2 text-base font-main-bold text-white">
-                + {Number(totalPot || 0).toLocaleString()} coins
-              </Text>
-              <Text className="text-base">💰⚡</Text>
-            </View>
           </View>
         )}
 
@@ -117,6 +239,7 @@ const FinalResultView = ({ onExit }: any) => {
               sortedScores={sortedScores}
               playerNames={playerNamesList}
               selectedImages={selectedImages}
+              coinChanges={coinChanges}
             />
           </View>
 

@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { AudioEngine } from "@/audio/audioEngine";
 import { Text } from "../Text";
 
@@ -81,6 +82,8 @@ const ActionButton = memo(function ActionButton({
 
   const current = themes[variant];
 
+  const isAccent = variant === "accent";
+
   return (
     <Animated.View style={[{ flex: 1, height: 56 }, animatedStyle]}>
       <Pressable
@@ -91,14 +94,34 @@ const ActionButton = memo(function ActionButton({
             opacity: pressed ? 0.9 : 1,
           },
         ]}
-        className={`flex-1 flex-row items-center justify-center rounded-2xl border ${current.bg} ${current.border}`}
+        className={`flex-1 flex-row items-center justify-center rounded-2xl border ${
+          isAccent ? "border-[#B8860B]" : `${current.bg} ${current.border}`
+        } ${isAccent ? "shadow-lg shadow-amber-500/40" : ""}`}
       >
-        {Icon && <Icon size={18} color={current.icon} strokeWidth={2.5} />}
-        <Text
-          className={`ml-2 font-main-bold text-[11px] uppercase tracking-[2px] ${current.text}`}
-        >
-          {label}
-        </Text>
+        {isAccent ? (
+          <LinearGradient
+            colors={["#FDE68A", "#F59E0B", "#B45309"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            className="h-full w-full flex-row items-center justify-center rounded-2xl"
+          >
+            {Icon && <Icon size={18} color="#000000" strokeWidth={2.5} />}
+            <Text
+              className="ml-2 font-main-bold text-[11px] uppercase tracking-[2px] text-black"
+            >
+              {label}
+            </Text>
+          </LinearGradient>
+        ) : (
+          <>
+            {Icon && <Icon size={18} color={current.icon} strokeWidth={2.5} />}
+            <Text
+              className={`ml-2 font-main-bold text-[11px] uppercase tracking-[2px] ${current.text}`}
+            >
+              {label}
+            </Text>
+          </>
+        )}
       </Pressable>
     </Animated.View>
   );

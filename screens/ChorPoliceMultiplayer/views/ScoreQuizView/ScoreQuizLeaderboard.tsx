@@ -1,5 +1,6 @@
 import React from "react";
 import { View, ScrollView, TouchableOpacity } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { MotiView } from "moti";
@@ -315,18 +316,25 @@ const ScoreQuizLeaderboard: React.FC<ScoreQuizLeaderboardProps> = ({
             className="mb-2 mt-3"
           >
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               onPress={handleNextRound}
-              className="h-14 w-full flex-row items-center justify-center rounded-2xl bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/40"
+              className="h-14 w-full overflow-hidden rounded-2xl border border-[#B8860B] shadow-lg shadow-[#D4AF37]/50"
             >
-              <Text
-                style={{ fontSize: rf(1.4) }}
-                className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+              <LinearGradient
+                colors={["#F9D86C", "#D4AF37", "#B8860B"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                className="h-full w-full flex-row items-center justify-center"
               >
-                Next Question
-              </Text>
+                <Text
+                  style={{ fontSize: rf(1.4) }}
+                  className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+                >
+                  Next Question
+                </Text>
 
-              <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
+                <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
+              </LinearGradient>
             </TouchableOpacity>
           </MotiView>
         ) : isLastQuestion ? (
@@ -350,18 +358,25 @@ const ScoreQuizLeaderboard: React.FC<ScoreQuizLeaderboardProps> = ({
             className="mb-2 mt-3"
           >
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               onPress={handleNextRound}
-              className="h-14 w-full flex-row items-center justify-center rounded-2xl bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/40"
+              className="h-14 w-full overflow-hidden rounded-2xl border border-[#B8860B] shadow-lg shadow-[#D4AF37]/50"
             >
-              <Text
-                style={{ fontSize: rf(1.4) }}
-                className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+              <LinearGradient
+                colors={["#F9D86C", "#D4AF37", "#B8860B"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                className="h-full w-full flex-row items-center justify-center"
               >
-                See Result
-              </Text>
+                <Text
+                  style={{ fontSize: rf(1.4) }}
+                  className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+                >
+                  See Result
+                </Text>
 
-              <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
+                <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
+              </LinearGradient>
             </TouchableOpacity>
           </MotiView>
         ) : (

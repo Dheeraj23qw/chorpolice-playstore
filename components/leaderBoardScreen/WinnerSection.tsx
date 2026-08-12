@@ -17,7 +17,7 @@ export const WinnerSection: React.FC<WinnerSectionProps> = ({
     typeof winnerImage === "string" ? { uri: winnerImage } : winnerImage;
 
   return (
-    <View className="items-center justify-center py-6">
+    <View className="items-center justify-center pb-2 pt-14">
       {/* 2. Layered Avatar Glass Stack */}
       <View className="mb-6 items-center justify-center">
         <View

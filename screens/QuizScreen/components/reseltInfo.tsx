@@ -1,6 +1,5 @@
 import React, { memo } from "react";
 import { View, Image, useWindowDimensions } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { wp, rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 
@@ -8,7 +7,6 @@ interface ResultInfoProps {
   Correct: number;
   Total: number;
   Message: string;
-  coinsMessage: string;
   isWinner: boolean;
   accuracy?: number;
   avatarSource: any;
@@ -19,7 +17,6 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
     Correct,
     Total,
     Message,
-    coinsMessage,
     isWinner,
     accuracy = 0,
     avatarSource,
@@ -131,26 +128,6 @@ export const ResultInfo: React.FC<ResultInfoProps> = memo(
             </Text>
           </View>
         </View>
-
-        {/* REWARD */}
-        {!!coinsMessage && (
-          <View
-            className="mt-5 flex-row items-center px-5 py-3"
-            style={{ width: wp(92) }}
-          >
-            <MaterialCommunityIcons
-              name="poker-chip"
-              size={rf(2.4) * scale}
-              color={isWinner ? "#f59e0b" : "#6b7280"}
-            />
-
-            <View className="ml-3 flex-1">
-              <Text className="font-main-bold text-[13px] uppercase tracking-[1px] text-white">
-                {coinsMessage}
-              </Text>
-            </View>
-          </View>
-        )}
 
         {/* MESSAGE */}
         <View className="mt-7 items-center px-4 opacity-40">
