@@ -15,6 +15,7 @@ import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
 import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { CharacterDrawerContext } from "@/constants/characterDrawerData";
 import AppUpdateBanner from "@/components/GameModeScreen/AppUpdateBanner";
+import { NotificationPermissionBanner } from "@/components/GameModeScreen/NotificationPermissionBanner";
 
 interface GameModeSelectScreenProps {
   title: string;
@@ -142,9 +143,10 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
             )}
           </View>
 
-          {/* Bottom App Update Banner */}
+          {/* Bottom Banners */}
           <View className="mt-auto pt-4">
             <AppUpdateBanner />
+            <NotificationPermissionBanner />
           </View>
           </ScrollView>
         </MotiView>
