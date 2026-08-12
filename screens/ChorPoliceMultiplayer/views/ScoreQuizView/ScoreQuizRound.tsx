@@ -24,8 +24,6 @@ const ScoreQuizRound = ({ g }: any) => {
 
   const playerImage = playerImages[currentPlayer.avatarId] || playerImages[1];
 
-  const isTargetPlayer = currentPlayer.id === g.localPlayerId;
-
   return (
     <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
       <ScrollView
@@ -86,9 +84,8 @@ const ScoreQuizRound = ({ g }: any) => {
             totalQuestions={4}
             options={g.quizOptions}
             onOptionPress={g.handleQuizOption}
-            isActivePlayer={!g.quizOptionDisabled && !isTargetPlayer}
+            isActivePlayer={!g.quizOptionDisabled}
             hasGuessed={g.hasGuessedThisRound}
-            isTargetPlayer={isTargetPlayer}
           />
         </View>
         <ScoringRules />

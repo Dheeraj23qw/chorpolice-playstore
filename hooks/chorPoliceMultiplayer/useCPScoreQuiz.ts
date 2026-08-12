@@ -15,7 +15,6 @@ type ScoreQuizRoundState = "idle" | "answering" | "complete" | "finished";
 interface ScoreQuizDeps {
   isHostRef: React.MutableRefObject<boolean>;
   timerRefs: React.MutableRefObject<ReturnType<typeof setTimeout>[]>;
-  currentQuizPlayerIdRef: React.MutableRefObject<string | null>;
   scoreQuizStartedRef: React.MutableRefObject<boolean>;
   quizOptionDisabledRef: React.MutableRefObject<boolean>;
   quizResponseSubmittedRef: React.MutableRefObject<boolean>;
@@ -40,7 +39,6 @@ interface ScoreQuizDeps {
 export const useCPScoreQuiz = ({
   isHostRef,
   timerRefs,
-  currentQuizPlayerIdRef,
   scoreQuizStartedRef,
   quizOptionDisabledRef,
   quizResponseSubmittedRef,
@@ -58,8 +56,7 @@ export const useCPScoreQuiz = ({
 }: ScoreQuizDeps) => {
   const dispatch = useDispatch<AppDispatch>();
 
-  const pendingGuessesRef = useRef<Map<string, number>>(new Map());
-  const currentTargetPlayerIdRef = useRef<string | null>(null);
+  const pendingAnswersRef = useRef<Map<string, number>>(new Map());
   const currentQuestionIndexRef = useRef(-1);
   const currentRoundIdRef = useRef(0);
   const currentOptionsRef = useRef<number[]>([]);
@@ -76,7 +73,8 @@ export const useCPScoreQuiz = ({
     const options = new Set<number>([baseScore]);
 
     while (options.size < 3) {
-      const variation = variations[Math.floor(Math.random() * variations.length)];
+      const variation =
+        variations[Math.floor(Math.random() * variations.length)];
       const candidate = Math.max(
         0,
         baseScore + (Math.random() < 0.5 ? -variation : variation),
@@ -89,21 +87,23 @@ export const useCPScoreQuiz = ({
 
   const evaluateGuesses = useCallback(
     (questionIndex: number) => {
+      console.log(
+        `[CP_QUIZ] evaluateGuesses called for qIdx=${questionIndex}. isHost=${isHostRef.current}, roundState=${roundStateRef.current}, currentQIdx=${currentQuestionIndexRef.current}, alreadyScored=${scoredRoundsRef.current.has(questionIndex)}`,
+      );
+
       if (
         !isHostRef.current ||
         roundStateRef.current !== "answering" ||
         currentQuestionIndexRef.current !== questionIndex ||
         scoredRoundsRef.current.has(questionIndex)
       ) {
+        console.warn(
+          `[CP_QUIZ] evaluateGuesses SKIPPED for qIdx=${questionIndex}`,
+        );
         return;
       }
 
       const players = resolveScoreQuizPlayers();
-      const targetPlayer = players[questionIndex];
-      if (!targetPlayer || currentTargetPlayerIdRef.current !== targetPlayer.id) {
-        return;
-      }
-
       scoredRoundsRef.current.add(questionIndex);
       if (guessTimerRef.current) {
         clearTimeout(guessTimerRef.current);
@@ -111,22 +111,12 @@ export const useCPScoreQuiz = ({
       }
 
       const correctScore = correctScoreRef.current;
-      const guesses = pendingGuessesRef.current;
+      const guesses = pendingAnswersRef.current;
       const playerResults = players.map((player) => {
-        if (player.id === targetPlayer.id) {
-          return {
-            playerId: player.id,
-            playerName: player.name,
-            guessedScore: null,
-            isCorrect: false,
-            bonus: 0,
-            timedOut: false,
-            isTarget: true,
-          };
-        }
-
-        const guessedScore = guesses.get(player.id) ?? null;
-        const timedOut = guessedScore === null || guessedScore === -1;
+        const guessedScore = guesses.has(player.id)
+          ? (guesses.get(player.id) ?? -1)
+          : -1;
+        const timedOut = guessedScore === -1;
         const isCorrect = !timedOut && guessedScore === correctScore;
         const bonus = isCorrect ? 2000 : -2000;
 
@@ -135,11 +125,10 @@ export const useCPScoreQuiz = ({
         return {
           playerId: player.id,
           playerName: player.name,
-          guessedScore,
+          guessedScore: timedOut ? null : guessedScore,
           isCorrect,
           bonus,
           timedOut,
-          isTarget: false,
         };
       });
 
@@ -149,8 +138,6 @@ export const useCPScoreQuiz = ({
         type: MODES.CHOR_POLICE.SCORE_GUESS_RESULT,
         roundId: questionIndex + 1,
         questionIndex,
-        targetPlayerId: targetPlayer.id,
-        targetPlayerName: targetPlayer.name,
         correctScore,
         playerResults,
         completedPlayerIds: players.map((player) => player.id),
@@ -166,13 +153,13 @@ export const useCPScoreQuiz = ({
       guessingPlayerId: string,
       guessedScore: number,
       roundId?: number,
-      targetPlayerId?: string,
+      questionIndex?: number,
     ) => {
       if (
         !isHostRef.current ||
         roundStateRef.current !== "answering" ||
         roundId !== currentRoundIdRef.current ||
-        targetPlayerId !== currentTargetPlayerIdRef.current
+        questionIndex !== currentQuestionIndexRef.current
       ) {
         return;
       }
@@ -183,9 +170,8 @@ export const useCPScoreQuiz = ({
       }
 
       const players = resolveScoreQuizPlayers();
-      const targetId = currentTargetPlayerIdRef.current;
       const isEligiblePlayer = players.some(
-        (player) => player.id === guessingPlayerId && player.id !== targetId,
+        (player) => player.id === guessingPlayerId,
       );
       const isAllowedGuess =
         guessedScore === -1 || currentOptionsRef.current.includes(guessedScore);
@@ -193,15 +179,13 @@ export const useCPScoreQuiz = ({
       if (
         !isEligiblePlayer ||
         !isAllowedGuess ||
-        pendingGuessesRef.current.has(guessingPlayerId)
+        pendingAnswersRef.current.has(guessingPlayerId)
       ) {
         return;
       }
 
-      pendingGuessesRef.current.set(guessingPlayerId, guessedScore);
-
-      const eligiblePlayers = players.filter((player) => player.id !== targetId);
-      if (eligiblePlayers.every((player) => pendingGuessesRef.current.has(player.id))) {
+      pendingAnswersRef.current.set(guessingPlayerId, guessedScore);
+      if (pendingAnswersRef.current.size >= players.length) {
         evaluateGuesses(currentQuestionIndexRef.current);
       }
     },
@@ -210,40 +194,44 @@ export const useCPScoreQuiz = ({
 
   const queueScoreQuizTurn = useCallback(
     (questionIndex: number) => {
-      if (!isHostRef.current || !Number.isInteger(questionIndex)) return false;
+      console.log(
+        `[CP_QUIZ] queueScoreQuizTurn called for index ${questionIndex}. isHost: ${isHostRef.current}, currentQuestionIndex: ${currentQuestionIndexRef.current}, roundState: ${roundStateRef.current}`,
+      );
 
-      const isInitialQuestion =
-        questionIndex === 0 &&
-        currentQuestionIndexRef.current === -1 &&
-        roundStateRef.current === "idle";
-      const isNextCompletedQuestion =
-        questionIndex === currentQuestionIndexRef.current + 1 &&
-        roundStateRef.current === "complete";
+      if (!isHostRef.current || !Number.isInteger(questionIndex)) {
+        console.warn(
+          "[CP_QUIZ] queueScoreQuizTurn aborted: not host or invalid index.",
+        );
+        return false;
+      }
 
-      if (
-        questionIndex < 0 ||
-        questionIndex >= TOTAL_QUESTIONS ||
-        transitionInFlightRef.current ||
-        (!isInitialQuestion && !isNextCompletedQuestion)
-      ) {
+      if (questionIndex < 0 || questionIndex >= TOTAL_QUESTIONS) {
+        console.warn(`[CP_QUIZ] Invalid questionIndex ${questionIndex}`);
         return false;
       }
 
       const players = resolveScoreQuizPlayers();
-      const targetPlayer = players[questionIndex];
-      if (!targetPlayer || players.length !== TOTAL_QUESTIONS) return false;
+      if (!players.length) {
+        console.warn(
+          "[CP_QUIZ] queueScoreQuizTurn aborted: no eligible players found.",
+        );
+        return false;
+      }
 
       transitionInFlightRef.current = true;
+      const targetPlayer = players[questionIndex];
       const correctScore =
         ChorPoliceEngine.state.scores[targetPlayer.id]?.totalScore ?? 0;
       const options = buildQuizOptions(correctScore);
+
+      console.log(
+        `[CP_QUIZ] Broadcasting SCORE_QUIZ_TURN for question ${questionIndex + 1}`,
+      );
 
       broadcastPacket({
         type: MODES.CHOR_POLICE.SCORE_QUIZ_TURN,
         roundId: questionIndex + 1,
         questionIndex,
-        targetPlayerId: targetPlayer.id,
-        targetPlayerName: targetPlayer.name,
         options,
         correctScore,
         deadline: Date.now() + QUESTION_DURATION_MS,
@@ -255,22 +243,30 @@ export const useCPScoreQuiz = ({
   );
 
   const advanceScoreQuiz = useCallback(() => {
-    if (
-      !isHostRef.current ||
-      roundStateRef.current !== "complete" ||
-      transitionInFlightRef.current
-    ) {
+    console.log(
+      `[CP_QUIZ] advanceScoreQuiz called. isHost: ${isHostRef.current}, roundState: ${roundStateRef.current}, transitionInFlight: ${transitionInFlightRef.current}, questionIndex: ${currentQuestionIndexRef.current}`,
+    );
+
+    if (!isHostRef.current) {
+      console.warn("[CP_QUIZ] advanceScoreQuiz ignored: not host.");
       return false;
     }
 
-    if (currentQuestionIndexRef.current === TOTAL_QUESTIONS - 1) {
+    // Reset transition guards so explicit host navigation always works
+    transitionInFlightRef.current = false;
+    roundStateRef.current = "complete";
+
+    if (currentQuestionIndexRef.current >= TOTAL_QUESTIONS - 1) {
+      console.log("[CP_QUIZ] Reached question 4 completion -> endGame()");
       transitionInFlightRef.current = true;
       roundStateRef.current = "finished";
       ChorPoliceEngine.endGame();
       return true;
     }
 
-    return queueScoreQuizTurn(currentQuestionIndexRef.current + 1);
+    const nextIndex = currentQuestionIndexRef.current + 1;
+    console.log(`[CP_QUIZ] Advancing to question index ${nextIndex}`);
+    return queueScoreQuizTurn(nextIndex);
   }, [isHostRef, queueScoreQuizTurn]);
 
   const handleScoreQuizTurnPacket = useCallback(
@@ -282,39 +278,46 @@ export const useCPScoreQuiz = ({
           : -1;
       const roundId = questionIndex + 1;
       const players = resolveScoreQuizPlayers();
-      const targetPlayer = players[questionIndex];
+
+      console.log(
+        `[CP_QUIZ] handleScoreQuizTurnPacket: qIdx=${questionIndex}, roundId=${roundId}, currentQIdx=${currentQuestionIndexRef.current}, roundState=${roundStateRef.current}, isHost=${isHostRef.current}`,
+      );
 
       const isInitialQuestion =
         questionIndex === 0 &&
         currentQuestionIndexRef.current === -1 &&
-        roundStateRef.current === "idle";
+        (roundStateRef.current === "idle" ||
+          roundStateRef.current === "complete");
       const isExpectedNextQuestion =
         questionIndex === currentQuestionIndexRef.current + 1 &&
-        roundStateRef.current === "complete";
+        (roundStateRef.current === "complete" ||
+          roundStateRef.current === "answering");
 
       if (
         questionIndex < 0 ||
         questionIndex >= TOTAL_QUESTIONS ||
         packet.roundId !== roundId ||
-        !targetPlayer ||
-        targetPlayer.id !== packet.targetPlayerId ||
+        !Array.isArray(packet.options) ||
         (!isInitialQuestion && !isExpectedNextQuestion)
       ) {
+        console.warn(
+          `[CP_QUIZ] handleScoreQuizTurnPacket REJECTED. isInitial=${isInitialQuestion}, isExpectedNext=${isExpectedNextQuestion}`,
+        );
         return false;
       }
 
       currentQuestionIndexRef.current = questionIndex;
       currentRoundIdRef.current = roundId;
-      currentTargetPlayerIdRef.current = packet.targetPlayerId;
-      currentQuizPlayerIdRef.current = packet.targetPlayerId;
-      currentOptionsRef.current = Array.isArray(packet.options) ? packet.options : [];
+      currentOptionsRef.current = Array.isArray(packet.options)
+        ? packet.options
+        : [];
       correctScoreRef.current =
         typeof packet.correctScore === "number" ? packet.correctScore : 0;
       deadlineRef.current =
         typeof packet.deadline === "number"
           ? packet.deadline
           : Date.now() + QUESTION_DURATION_MS;
-      pendingGuessesRef.current = new Map();
+      pendingAnswersRef.current = new Map();
       roundStateRef.current = "answering";
       transitionInFlightRef.current = false;
       scoreQuizStartedRef.current = true;
@@ -344,25 +347,27 @@ export const useCPScoreQuiz = ({
         timerRefs.current.push(guessTimerRef.current);
 
         players.forEach((player) => {
-          if (!player.isBot || player.id === packet.targetPlayerId) return;
+          if (!player.isBot) return;
 
-          const botTimer = setTimeout(() => {
-            if (
-              roundStateRef.current !== "answering" ||
-              currentRoundIdRef.current !== roundId ||
-              currentTargetPlayerIdRef.current !== packet.targetPlayerId
-            ) {
-              return;
-            }
+          const botTimer = setTimeout(
+            () => {
+              if (
+                roundStateRef.current !== "answering" ||
+                currentRoundIdRef.current !== roundId
+              ) {
+                return;
+              }
 
-            const guessedScore =
-              Math.random() < 0.5
-                ? correctScoreRef.current
-                : currentOptionsRef.current.find(
-                    (option) => option !== correctScoreRef.current,
-                  ) ?? correctScoreRef.current;
-            collectGuess(player.id, guessedScore, roundId, packet.targetPlayerId);
-          }, 2_000 + Math.floor(Math.random() * 1_000));
+              const guessedScore =
+                Math.random() < 0.5
+                  ? correctScoreRef.current
+                  : (currentOptionsRef.current.find(
+                      (option) => option !== correctScoreRef.current,
+                    ) ?? correctScoreRef.current);
+              collectGuess(player.id, guessedScore, roundId, questionIndex);
+            },
+            2_000 + Math.floor(Math.random() * 1_000),
+          );
           timerRefs.current.push(botTimer);
         });
       }
@@ -372,7 +377,6 @@ export const useCPScoreQuiz = ({
     [
       collectGuess,
       correctScoreRef,
-      currentQuizPlayerIdRef,
       dispatch,
       evaluateGuesses,
       isHostRef,
@@ -401,6 +405,10 @@ export const useCPScoreQuiz = ({
           ? packet.roundId - 1
           : -1;
 
+      console.log(
+        `[CP_QUIZ] handleScoreQuizResultPacket: qIdx=${questionIndex}, roundId=${packet.roundId}, currentQIdx=${currentQuestionIndexRef.current}, currentRoundId=${currentRoundIdRef.current}, roundState=${roundStateRef.current}, isRoundComplete=${packet.isRoundComplete}`,
+      );
+
       if (
         packet.isRoundComplete !== true ||
         questionIndex !== currentQuestionIndexRef.current ||
@@ -408,14 +416,15 @@ export const useCPScoreQuiz = ({
         roundStateRef.current !== "answering" ||
         completedRoundsRef.current.has(questionIndex)
       ) {
+        console.warn(
+          `[CP_QUIZ] handleScoreQuizResultPacket REJECTED. matchQIdx=${questionIndex === currentQuestionIndexRef.current}, matchRoundId=${packet.roundId === currentRoundIdRef.current}, stateIsAnswering=${roundStateRef.current === "answering"}, alreadyCompleted=${completedRoundsRef.current.has(questionIndex)}`,
+        );
         return false;
       }
 
       completedRoundsRef.current.add(questionIndex);
       roundStateRef.current = "complete";
       deadlineRef.current = 0;
-      currentTargetPlayerIdRef.current = null;
-      currentQuizPlayerIdRef.current = null;
       quizOptionDisabledRef.current = true;
       transitionInFlightRef.current = false;
 
@@ -431,7 +440,6 @@ export const useCPScoreQuiz = ({
       return true;
     },
     [
-      currentQuizPlayerIdRef,
       quizOptionDisabledRef,
       setIsQuizRoundComplete,
       setQuizCountdown,

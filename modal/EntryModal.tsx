@@ -51,6 +51,8 @@ const formatCoins = (val: number) => {
   return val.toString();
 };
 
+const DEFAULT_STAKE = SECTIONS[0]?.values[0] ?? 100;
+
 export const EntryModal: React.FC<EntryModalProps> = ({
   isVisible,
   onConfirm,
@@ -60,20 +62,20 @@ export const EntryModal: React.FC<EntryModalProps> = ({
 }) => {
   const userCoins = useSelector((state: RootState) => state.wallet.coins);
   const othersCoins = minPlayerCoins ?? userCoins;
-  const [selected, setSelected] = useState(10);
+  const [selected, setSelected] = useState(DEFAULT_STAKE);
 
   const [displayedCoins, setDisplayedCoins] = useState(
-    Math.max(0, userCoins - 10),
+    Math.max(0, userCoins - DEFAULT_STAKE),
   );
 
   const animatedCoins = useRef(
-    new Animated.Value(Math.max(0, userCoins - 10)),
+    new Animated.Value(Math.max(0, userCoins - DEFAULT_STAKE)),
   ).current;
 
   useEffect(() => {
     if (!isVisible) return;
-    setSelected(10);
-    const startingBalance = Math.max(0, userCoins - 10);
+    setSelected(DEFAULT_STAKE);
+    const startingBalance = Math.max(0, userCoins - DEFAULT_STAKE);
     animatedCoins.stopAnimation();
     animatedCoins.setValue(startingBalance);
     setDisplayedCoins(startingBalance);

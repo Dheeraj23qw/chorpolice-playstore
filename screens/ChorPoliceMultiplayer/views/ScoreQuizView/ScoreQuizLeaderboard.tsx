@@ -25,230 +25,362 @@ const ScoreQuizLeaderboard: React.FC<ScoreQuizLeaderboardProps> = ({
   const leaderboard = ChorPoliceEngine.getLevel2Leaderboard();
 
   const handleNextRound = () => {
-    if (!isHost) return;
+    if (!isHost && !isLastQuestion) return;
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
     onNextRound();
   };
 
   return (
-    // Kept transparent so your app's main background remains fully visible
     <SafeAreaView className="flex-1 bg-transparent" edges={["top", "bottom"]}>
-      <View className="flex-1 px-6 pt-10">
+      <View className="flex-1 px-5 pb-2 pt-3">
+        {/* ========================================================= */}
+        {/* HEADER */}
+        {/* ========================================================= */}
+
         <MotiView
           from={{ opacity: 0, translateY: 20 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 400 }}
-          className="flex-1"
+          transition={{
+            type: "timing",
+            duration: 400,
+          }}
+          className="mb-3 items-center"
         >
-          {/* HEADER */}
-          <View className="mb-10 items-center">
-            <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl border-2 border-[#D4AF37] bg-[#D4AF37]/10 shadow-lg shadow-[#D4AF37]/20">
-              <Ionicons name="trophy" size={rf(3)} color="#D4AF37" />
-            </View>
+          {/* Trophy */}
+          <View className="mb-2 h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#D4AF37] bg-[#D4AF37]/10 shadow-lg shadow-[#D4AF37]/20">
+            <Ionicons name="trophy" size={rf(2.4)} color="#D4AF37" />
+          </View>
 
+          {/* Eyebrow */}
+          <Text
+            style={{ fontSize: rf(1.1) }}
+            className="font-main-bold uppercase tracking-[4px] text-[#D4AF37]"
+          >
+            ROUND COMPLETE
+          </Text>
+
+          {/* Title */}
+          <Text
+            style={{ fontSize: rf(2.6) }}
+            className="mt-0.5 font-main-bold tracking-wide text-white"
+          >
+            Live Rankings
+          </Text>
+
+          {/* Subtitle */}
+          <Text
+            style={{ fontSize: rf(1.2) }}
+            className="mt-0.5 text-center tracking-wider text-white/50"
+          >
+            Here's how everyone performed
+          </Text>
+        </MotiView>
+
+        {/* ========================================================= */}
+        {/* LEADERBOARD */}
+        {/* ========================================================= */}
+
+        <MotiView
+          from={{ opacity: 0, translateY: 15 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{
+            type: "timing",
+            duration: 400,
+            delay: 100,
+          }}
+          /*
+           * IMPORTANT:
+           * flex-1 gives the leaderboard a real bounded height.
+           * This allows the ScrollView below to actually scroll.
+           */
+          className="flex-1 overflow-hidden rounded-[28px] border border-[#D4AF37]/20 bg-black/50"
+        >
+          {/* ======================================================= */}
+          {/* TABLE HEADER */}
+          {/* ======================================================= */}
+
+          <View className="h-12 flex-row items-center border-b border-[#D4AF37]/20 bg-[#D4AF37]/5 px-5">
+            {/* Rank */}
             <Text
-              style={{ fontSize: rf(1.2) }}
-              className="font-main-bold uppercase tracking-[4px] text-[#D4AF37]"
+              style={{ fontSize: rf(1.1) }}
+              className="w-12 font-main-bold uppercase tracking-[2px] text-[#D4AF37]/60"
             >
-              ROUND COMPLETE
+              Rank
             </Text>
 
+            {/* Player */}
             <Text
-              style={{ fontSize: rf(3.2) }}
-              className="mt-2 font-main-bold tracking-wide text-white"
+              style={{ fontSize: rf(1.1) }}
+              className="flex-1 font-main-bold uppercase tracking-[2px] text-[#D4AF37]/60"
             >
-              Live Rankings
+              Player
             </Text>
 
+            {/* Bonus */}
             <Text
-              style={{ fontSize: rf(1.4) }}
-              className="mt-2 text-center tracking-wider text-white/50"
+              style={{ fontSize: rf(1.1) }}
+              className="w-24 text-right font-main-bold uppercase tracking-[2px] text-[#D4AF37]/60"
             >
-              Here’s how everyone performed
+              Bonus
             </Text>
           </View>
 
-          {/* WELL-SPACED LEADERBOARD TABLE */}
-          <View className="flex-1 overflow-hidden rounded-[32px] border border-[#D4AF37]/20 bg-black/50 pb-2">
-            {/* Table Heading */}
-            <View className="h-14 flex-row items-center border-b border-[#D4AF37]/20 bg-[#D4AF37]/5 px-5">
-              <Text
-                style={{ fontSize: rf(1.1) }}
-                className="w-12 font-main-bold uppercase tracking-[2px] text-[#D4AF37]/60"
-              >
-                Rank
-              </Text>
+          {/* ======================================================= */}
+          {/* SCROLLABLE PLAYER LIST */}
+          {/* ======================================================= */}
 
-              <Text
-                style={{ fontSize: rf(1.1) }}
-                className="flex-1 font-main-bold uppercase tracking-[2px] text-[#D4AF37]/60"
-              >
-                Player
-              </Text>
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={true}
+            indicatorStyle="white"
+            contentContainerStyle={{
+              paddingVertical: 6,
+              paddingBottom: 12,
+            }}
+            bounces={true}
+            nestedScrollEnabled={true}
+          >
+            {leaderboard.map((entry, index) => {
+              const isWinner = index === 0;
+              const isSecond = index === 1;
+              const isThird = index === 2;
 
-              <Text
-                style={{ fontSize: rf(1.1) }}
-                className="w-24 text-right font-main-bold uppercase tracking-[2px] text-[#D4AF37]/60"
-              >
-                Bonus
-              </Text>
-            </View>
+              // -----------------------------------------------------
+              // Rank colors
+              // -----------------------------------------------------
 
-            {/* Scrollable Rows (in case of many players) */}
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingVertical: 8 }}
-            >
-              {leaderboard.map((entry, index) => {
-                const isWinner = index === 0;
-                const isSecond = index === 1;
-                const isThird = index === 2;
+              let rankColor = "#FFFFFF";
+              let rankBg = "bg-white/5";
+              let rankBorder = "border-transparent";
 
-                // Assign metallic colors based on rank
-                let rankColor = "#FFFFFF"; // Default
-                let rankBg = "bg-white/5";
-                let rankBorder = "border-transparent";
+              if (isWinner) {
+                rankColor = "#D4AF37";
+                rankBg = "bg-[#D4AF37]/10";
+                rankBorder = "border-[#D4AF37]/40";
+              } else if (isSecond) {
+                rankColor = "#E2E8F0";
+                rankBg = "bg-[#E2E8F0]/10";
+                rankBorder = "border-[#E2E8F0]/30";
+              } else if (isThird) {
+                rankColor = "#CD7F32";
+                rankBg = "bg-[#CD7F32]/10";
+                rankBorder = "border-[#CD7F32]/30";
+              }
 
-                if (isWinner) {
-                  rankColor = "#D4AF37"; // Gold
-                  rankBg = "bg-[#D4AF37]/10";
-                  rankBorder = "border-[#D4AF37]/40";
-                } else if (isSecond) {
-                  rankColor = "#E2E8F0"; // Silver
-                  rankBg = "bg-[#E2E8F0]/10";
-                  rankBorder = "border-[#E2E8F0]/30";
-                } else if (isThird) {
-                  rankColor = "#CD7F32"; // Bronze
-                  rankBg = "bg-[#CD7F32]/10";
-                  rankBorder = "border-[#CD7F32]/30";
-                }
+              // -----------------------------------------------------
+              // Score
+              // -----------------------------------------------------
 
-                const scoreEntry = entry.id
-                  ? ChorPoliceEngine.state.scores[entry.id]
-                  : null;
+              const scoreEntry = entry.id
+                ? ChorPoliceEngine.state.scores[entry.id]
+                : null;
 
-                const level2Bonus = scoreEntry?.level2Bonus ?? 0;
-                const formattedBonus =
-                  level2Bonus > 0
-                    ? `+${level2Bonus.toLocaleString()}`
-                    : level2Bonus.toLocaleString();
+              const level2Bonus = scoreEntry?.level2Bonus ?? 0;
 
-                return (
-                  <MotiView
-                    key={entry.id || index}
-                    from={{ opacity: 0, translateX: -20 }}
-                    animate={{ opacity: 1, translateX: 0 }}
-                    transition={{
-                      type: "spring",
-                      damping: 18,
-                      delay: 150 + index * 100,
-                    }}
-                    className={`mx-3 my-1.5 min-h-[76px] flex-row items-center rounded-2xl border px-4 ${rankBg} ${rankBorder}`}
-                  >
-                    {/* Rank Badge */}
-                    <View className="w-12">
-                      <View className="h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-black/40">
-                        {isWinner ? (
-                          <Ionicons
-                            name="trophy"
-                            size={rf(1.8)}
-                            color={rankColor}
-                          />
-                        ) : (
-                          <Text
-                            style={{ fontSize: rf(1.5), color: rankColor }}
-                            className="font-main-bold"
-                          >
-                            {index + 1}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
+              const formattedBonus =
+                level2Bonus > 0
+                  ? `+${level2Bonus.toLocaleString()}`
+                  : level2Bonus.toLocaleString();
 
-                    {/* Player Info */}
-                    <View className="flex-1 pr-3">
-                      <Text
-                        numberOfLines={1}
-                        style={{
-                          fontSize: rf(1.8),
-                          color: isWinner ? rankColor : "#F3F4F6",
-                        }}
-                        className="font-main-bold tracking-wide"
-                      >
-                        {entry.name}
-                      </Text>
+              return (
+                <MotiView
+                  key={entry.id || index}
+                  from={{
+                    opacity: 0,
+                    translateX: -20,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateX: 0,
+                  }}
+                  transition={{
+                    type: "spring",
+                    damping: 18,
+                    delay: 150 + index * 100,
+                  }}
+                  className={`mx-3 my-1.5 min-h-[76px] flex-row items-center rounded-2xl border px-4 ${rankBg} ${rankBorder}`}
+                >
+                  {/* ================================================= */}
+                  {/* RANK */}
+                  {/* ================================================= */}
 
-                      {(isWinner || isSecond || isThird) && (
+                  <View className="w-12">
+                    <View className="h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-black/40">
+                      {isWinner ? (
+                        <Ionicons
+                          name="trophy"
+                          size={rf(1.8)}
+                          color={rankColor}
+                        />
+                      ) : (
                         <Text
-                          style={{ fontSize: rf(1), color: rankColor }}
-                          className="mt-1 font-main-bold uppercase tracking-widest opacity-80"
+                          style={{
+                            fontSize: rf(1.5),
+                            color: rankColor,
+                          }}
+                          className="font-main-bold"
                         >
-                          {isWinner
-                            ? "Champion"
-                            : isSecond
-                              ? "Runner Up"
-                              : "Third Place"}
+                          {index + 1}
                         </Text>
                       )}
                     </View>
+                  </View>
 
-                    {/* Bonus Score */}
-                    <View className="w-24 items-end justify-center">
+                  {/* ================================================= */}
+                  {/* PLAYER INFO */}
+                  {/* ================================================= */}
+
+                  <View className="flex-1 pr-3">
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: rf(1.8),
+                        color: isWinner ? rankColor : "#F3F4F6",
+                      }}
+                      className="font-main-bold tracking-wide"
+                    >
+                      {entry.name}
+                    </Text>
+
+                    {/* Medal description */}
+                    {(isWinner || isSecond || isThird) && (
                       <Text
-                        style={{ fontSize: rf(1.8), color: rankColor }}
-                        className="font-main-bold"
+                        style={{
+                          fontSize: rf(1),
+                          color: rankColor,
+                        }}
+                        className="mt-1 font-main-bold uppercase tracking-widest opacity-80"
                       >
-                        {formattedBonus}
+                        {isWinner
+                          ? "Champion"
+                          : isSecond
+                            ? "Runner Up"
+                            : "Third Place"}
                       </Text>
-                      <Text
-                        style={{ fontSize: rf(1) }}
-                        className="mt-1 uppercase tracking-widest text-white/40"
-                      >
-                        Points
-                      </Text>
-                    </View>
-                  </MotiView>
-                );
-              })}
-            </ScrollView>
-          </View>
+                    )}
+                  </View>
+
+                  {/* ================================================= */}
+                  {/* BONUS */}
+                  {/* ================================================= */}
+
+                  <View className="w-24 items-end justify-center">
+                    <Text
+                      style={{
+                        fontSize: rf(1.8),
+                        color: rankColor,
+                      }}
+                      className="font-main-bold"
+                    >
+                      {formattedBonus}
+                    </Text>
+
+                    <Text
+                      style={{ fontSize: rf(1) }}
+                      className="mt-1 uppercase tracking-widest text-white/40"
+                    >
+                      Points
+                    </Text>
+                  </View>
+                </MotiView>
+              );
+            })}
+          </ScrollView>
         </MotiView>
 
-        {/* BOTTOM ACTION AREA */}
-        {isHost && isRoundComplete ? (
+        {/* ========================================================= */}
+        {/* BOTTOM ACTION */}
+        {/* ========================================================= */}
+
+        {isHost && !isLastQuestion ? (
+          /* ------------------------------------------------------- */
+          /* HOST → NEXT QUESTION */
+          /* ------------------------------------------------------- */
+
           <MotiView
-            from={{ opacity: 0, translateY: 30 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "spring", delay: 600 }}
-            className="mb-4 mt-6"
+            from={{
+              opacity: 0,
+              translateY: 30,
+            }}
+            animate={{
+              opacity: 1,
+              translateY: 0,
+            }}
+            transition={{
+              type: "spring",
+              delay: 600,
+            }}
+            className="mb-2 mt-3"
           >
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleNextRound}
-              className="h-16 w-full flex-row items-center justify-center rounded-2xl bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/40"
+              className="h-14 w-full flex-row items-center justify-center rounded-2xl bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/40"
             >
               <Text
-                style={{ fontSize: rf(1.5) }}
+                style={{ fontSize: rf(1.4) }}
                 className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
               >
-                {isLastQuestion ? "Final Result" : "Next Round"}
+                Next Question
               </Text>
-              <Ionicons name="arrow-forward" size={rf(2.2)} color="#000000" />
+
+              <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
+            </TouchableOpacity>
+          </MotiView>
+        ) : isLastQuestion ? (
+          /* ------------------------------------------------------- */
+          /* LAST QUESTION → SEE RESULT */
+          /* ------------------------------------------------------- */
+
+          <MotiView
+            from={{
+              opacity: 0,
+              translateY: 30,
+            }}
+            animate={{
+              opacity: 1,
+              translateY: 0,
+            }}
+            transition={{
+              type: "spring",
+              delay: 600,
+            }}
+            className="mb-2 mt-3"
+          >
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleNextRound}
+              className="h-14 w-full flex-row items-center justify-center rounded-2xl bg-[#D4AF37] shadow-lg shadow-[#D4AF37]/40"
+            >
+              <Text
+                style={{ fontSize: rf(1.4) }}
+                className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+              >
+                See Result
+              </Text>
+
+              <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
             </TouchableOpacity>
           </MotiView>
         ) : (
+          /* ------------------------------------------------------- */
+          /* NON-HOST → WAITING */
+          /* ------------------------------------------------------- */
+
           <MotiView
             from={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mb-4 mt-6 items-center justify-center py-4"
+            className="mb-2 mt-3 items-center justify-center py-2"
           >
             <Text
-              style={{ fontSize: rf(1.4) }}
-              className="font-main-bold text-center tracking-wider text-white/70"
+              style={{ fontSize: rf(1.3) }}
+              className="text-center font-main-bold tracking-wider text-white/70"
             >
               {!isRoundComplete
                 ? "Waiting for all players to finish..."
-                : "Waiting for host to start next round..."}
+                : "Waiting for host to start next question..."}
             </Text>
           </MotiView>
         )}

@@ -138,7 +138,6 @@ export const useChorPoliceMultiplayer = () => {
   const quizResponseSubmittedRef = useRef(false);
   const roundStartPendingRef = useRef(false);
   const scoreQuizStartedRef = useRef(false);
-  const currentQuizPlayerIdRef = useRef<string | null>(null);
   const isHostRef = useRef(isHost);
   const localPlayerIdRef = useRef(localPlayerId);
   const gamePhaseRef = useRef<GamePhase>(reduxGamePhase);
@@ -232,7 +231,7 @@ export const useChorPoliceMultiplayer = () => {
   }, [setScoreQuizPlayersSnapshot]);
 
   // ── Logic Hooks ──
-  const cleanup = useCPCleanup({ timerRefs, isQuittingRef, currentQuizPlayerIdRef, scoreQuizStartedRef, roundStartPendingRef });
+  const cleanup = useCPCleanup({ timerRefs, isQuittingRef, scoreQuizStartedRef, roundStartPendingRef });
   const economyLogic = useCPEconomy({ localPlayerId, reduxStake });
   const revealSequence = useCPRevealSequence({ 
     flipAnimsRef, 
@@ -252,7 +251,6 @@ export const useChorPoliceMultiplayer = () => {
   const scoreQuiz = useCPScoreQuiz({
     isHostRef,
     timerRefs,
-    currentQuizPlayerIdRef,
     scoreQuizStartedRef,
     quizOptionDisabledRef,
     quizResponseSubmittedRef,
@@ -315,7 +313,6 @@ export const useChorPoliceMultiplayer = () => {
       clickedCardsRef,
       flipAnimsRef,
       timerRefs,
-      currentQuizPlayerIdRef,
       scoreQuizStartedRef,
       roundStartPendingRef,
       quizOptionDisabledRef,
@@ -348,11 +345,9 @@ export const useChorPoliceMultiplayer = () => {
 
   // ── Level 2: 15-second countdown timer ──
   useEffect(() => {
-    if (reduxGamePhase !== "score_quiz" || quizCountdown === null || showQuizLeaderboard || isDynamicPopUp) return;
+    if (reduxGamePhase !== "score_quiz" || quizCountdown === null || showQuizLeaderboard) return;
     if (quizCountdown <= 0) {
-      const targetPlayerId = currentQuizPlayerIdRef.current;
-
-      if (!quizResponseSubmittedRef.current && !quizOptionDisabledRef.current && targetPlayerId !== localPlayerId) {
+      if (!quizResponseSubmittedRef.current && !quizOptionDisabledRef.current) {
         quizResponseSubmittedRef.current = true;
         quizOptionDisabledRef.current = true;
         setQuizOptionDisabled(true);
@@ -367,7 +362,6 @@ export const useChorPoliceMultiplayer = () => {
         const guessPacket = {
           type: MODES.CHOR_POLICE.SCORE_GUESS,
           playerId: localPlayerId,
-          targetPlayerId,
           guessedScore: -1,
           roundId: scoreQuiz.getCurrentRoundId(),
         };
@@ -383,7 +377,7 @@ export const useChorPoliceMultiplayer = () => {
           setShowQuizLeaderboard(true);
         }, 3000);
         timerRefs.current.push(popupTimer);
-      } else if (targetPlayerId === localPlayerId && !showQuizLeaderboard) {
+      } else if (!isDynamicPopUp) {
         setShowQuizLeaderboard(true);
       }
       return;
@@ -527,8 +521,12 @@ export const useChorPoliceMultiplayer = () => {
   }, [dispatch]);
 
   const handleQuizOption = useCallback((selectedScore: number) => {
+    console.log(
+      `[CP_QUIZ] handleQuizOption called. score=${selectedScore}, responseSubmitted=${quizResponseSubmittedRef.current}, optionDisabled=${quizOptionDisabledRef.current}, gamePhase=${gamePhaseRef.current}, localPlayer=${localPlayerId}`,
+    );
+
     if (selectIsReconnectActive(store.getState())) {
-      console.log("[LAN][MATCH] CP action blocked during reconnect");
+      console.log("[CP_QUIZ] handleQuizOption blocked: reconnect active");
       return;
     }
     if (
@@ -536,11 +534,13 @@ export const useChorPoliceMultiplayer = () => {
       quizOptionDisabledRef.current ||
       gamePhaseRef.current !== "score_quiz"
     ) {
+      console.warn(
+        `[CP_QUIZ] handleQuizOption BLOCKED: submitted=${quizResponseSubmittedRef.current}, disabled=${quizOptionDisabledRef.current}, phase=${gamePhaseRef.current}`,
+      );
       return;
     }
-    const targetPlayerId = currentQuizPlayerIdRef.current;
-    if (!targetPlayerId || targetPlayerId === localPlayerId) return;
 
+    console.log(`[CP_QUIZ] handleQuizOption ACCEPTED. Submitting guess ${selectedScore}`);
     quizResponseSubmittedRef.current = true;
     quizOptionDisabledRef.current = true;
     setQuizOptionDisabled(true);
@@ -564,7 +564,6 @@ export const useChorPoliceMultiplayer = () => {
     const guessPacket = {
       type: MODES.CHOR_POLICE.SCORE_GUESS,
       playerId: localPlayerId,
-      targetPlayerId: targetPlayerId,
       guessedScore: selectedScore,
       roundId: scoreQuiz.getCurrentRoundId(),
     };
@@ -576,14 +575,17 @@ export const useChorPoliceMultiplayer = () => {
 
     const popupTimer = setTimeout(() => {
       setIsDynamicPopUp(false);
-      setShowQuizLeaderboard(true);
     }, 3000);
     timerRefs.current.push(popupTimer);
   }, [isHost, localPlayerId, scoreQuiz, timerRefs]);
 
   const handleNextQuizRound = useCallback(() => {
-    if (!isHostRef.current) return;
-    scoreQuiz.advanceScoreQuiz();
+    console.log(`[CP_QUIZ] handleNextQuizRound called. isHost=${isHostRef.current}`);
+    if (isHostRef.current) {
+      scoreQuiz.advanceScoreQuiz();
+    } else {
+      sendPacketToHost({ type: MODES.CHOR_POLICE.SCORE_QUIZ_NEXT });
+    }
   }, [scoreQuiz]);
 
   const handleBoostScoreAccept = useCallback(() => {

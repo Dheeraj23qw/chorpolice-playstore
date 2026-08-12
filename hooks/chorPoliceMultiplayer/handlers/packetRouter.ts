@@ -2,7 +2,7 @@ import { MODES, NETWORK } from "@/constants/Networking";
 import { CPMultiplayerContext } from "./types";
 import { handlePublicReveal } from "./revealHandlers";
 import { handleRoundResult } from "./policeHandlers";
-import { handleScoreQuizTurn, handleScoreGuess, handleScoreGuessResult } from "./quizHandlers";
+import { handleScoreQuizTurn, handleScoreGuess, handleScoreGuessResult, handleScoreQuizNext } from "./quizHandlers";
 import { handleGameEndCompleted } from "./economyHandlers";
 import { handleGameEndExit, handlePlayerLeave } from "./sessionHandlers";
 
@@ -45,6 +45,10 @@ export const routePacket = (packet: any, sourceIp: string | undefined, context: 
 
     case CP.SCORE_GUESS_RESULT:
       handleScoreGuessResult(packet, context);
+      break;
+
+    case CP.SCORE_QUIZ_NEXT:
+      if (_isHost) handleScoreQuizNext(packet, context);
       break;
 
     case CP.GAME_END:

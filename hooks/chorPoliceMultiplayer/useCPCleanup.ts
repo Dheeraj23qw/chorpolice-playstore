@@ -3,11 +3,11 @@ import { useDispatch } from "react-redux";
 import { useRouter } from "expo-router";
 import { AppDispatch } from "@/redux/store";
 import { resetDifficulty } from "@/redux/reducers/quiz";
+import { clearSession, resetGameState } from "@/redux/reducers/sessionSlice";
 import {
-  clearSession,
-  resetGameState,
-} from "@/redux/reducers/sessionSlice";
-import { stopSession, cleanupAfterMatchCompleted } from "@/service/lanGameService";
+  stopSession,
+  cleanupAfterMatchCompleted,
+} from "@/service/lanGameService";
 import { leaveLanLobby } from "@/service/lanLobbyCoordinator";
 import { ChorPoliceEngine } from "@/service/ChorPoliceEngine";
 import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
@@ -15,7 +15,6 @@ import { ChorPoliceBotBehavior } from "@/service/ChorPoliceBotBehavior";
 interface CleanupDeps {
   timerRefs: React.RefObject<ReturnType<typeof setTimeout>[]>;
   isQuittingRef: React.RefObject<boolean>;
-  currentQuizPlayerIdRef: React.RefObject<string | null>;
   scoreQuizStartedRef: React.RefObject<boolean>;
   roundStartPendingRef: React.RefObject<boolean>;
 }
@@ -23,7 +22,6 @@ interface CleanupDeps {
 export const useCPCleanup = ({
   timerRefs,
   isQuittingRef,
-  currentQuizPlayerIdRef,
   scoreQuizStartedRef,
   roundStartPendingRef,
 }: CleanupDeps) => {
@@ -36,7 +34,6 @@ export const useCPCleanup = ({
   }, [timerRefs]);
 
   const performFullCleanup = useCallback(async () => {
-    currentQuizPlayerIdRef.current = null;
     scoreQuizStartedRef.current = false;
     roundStartPendingRef.current = false;
 
@@ -47,39 +44,42 @@ export const useCPCleanup = ({
     // Idempotent transport cleanup — safe even if already called
     await cleanupAfterMatchCompleted({ reason: "full_cleanup" });
     await leaveLanLobby();
-  }, [clearAllTimers, currentQuizPlayerIdRef, scoreQuizStartedRef, roundStartPendingRef]);
+  }, [clearAllTimers, scoreQuizStartedRef, roundStartPendingRef]);
 
-  const handleFinalExit = useCallback(async (target?: string) => {
-    if (isQuittingRef.current) return;
-    isQuittingRef.current = true;
+  const handleFinalExit = useCallback(
+    async (target?: string) => {
+      if (isQuittingRef.current) return;
+      isQuittingRef.current = true;
 
-    await performFullCleanup();
+      await performFullCleanup();
 
-    dispatch(resetGameState());
-    dispatch(resetDifficulty());
+      dispatch(resetGameState());
+      dispatch(resetDifficulty());
 
-    requestAnimationFrame(() => {
-      router.dismissAll();
+      requestAnimationFrame(() => {
+        router.dismissAll();
 
-      switch (target) {
-        case "stats":
-          router.replace("/stats" as any);
-          break;
-        case "report-bug":
-          router.replace("/report-bug" as any);
-          break;
-        case "earn":
-          router.replace("/earn" as any);
-          break;
-        default:
-          router.replace("/mode-select" as any);
-      }
+        switch (target) {
+          case "stats":
+            router.replace("/stats" as any);
+            break;
+          case "report-bug":
+            router.replace("/report-bug" as any);
+            break;
+          case "earn":
+            router.replace("/earn" as any);
+            break;
+          default:
+            router.replace("/mode-select" as any);
+        }
 
-      setTimeout(() => {
-        isQuittingRef.current = false;
-      }, 500);
-    });
-  }, [dispatch, isQuittingRef, performFullCleanup, router]);
+        setTimeout(() => {
+          isQuittingRef.current = false;
+        }, 500);
+      });
+    },
+    [dispatch, isQuittingRef, performFullCleanup, router],
+  );
 
   const navigateToHome = useCallback(() => {
     router.dismissAll();
@@ -87,10 +87,13 @@ export const useCPCleanup = ({
     setTimeout(() => dispatch(resetGameState()), 100);
   }, [dispatch, router]);
 
-  return useMemo(() => ({
-    clearAllTimers,
-    performFullCleanup,
-    handleFinalExit,
-    navigateToHome,
-  }), [clearAllTimers, performFullCleanup, handleFinalExit, navigateToHome]);
+  return useMemo(
+    () => ({
+      clearAllTimers,
+      performFullCleanup,
+      handleFinalExit,
+      navigateToHome,
+    }),
+    [clearAllTimers, performFullCleanup, handleFinalExit, navigateToHome],
+  );
 };

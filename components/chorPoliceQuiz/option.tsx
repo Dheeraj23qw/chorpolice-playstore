@@ -22,7 +22,6 @@ type QuizOptionsProps = {
   onOptionPress: (score: number) => void;
   isActivePlayer: boolean;
   hasGuessed?: boolean;
-  isTargetPlayer?: boolean;
 };
 
 type ScoreOptionCardProps = {
@@ -121,15 +120,12 @@ const QuizOptions: React.FC<QuizOptionsProps> = ({
   onOptionPress,
   isActivePlayer,
   hasGuessed = false,
-  isTargetPlayer = false,
 }) => {
   const imageSource = getImageSource(playerImage);
-  const canChoose = isActivePlayer && !hasGuessed && !isTargetPlayer;
-  const status = isTargetPlayer
-    ? { icon: "eye-outline" as const, text: "Your score is being guessed" }
-    : hasGuessed
-      ? { icon: "checkmark-circle" as const, text: "Guess locked — waiting for results" }
-      : { icon: "flash" as const, text: "Pick the score before time runs out" };
+  const canChoose = isActivePlayer && !hasGuessed;
+  const status = hasGuessed
+    ? { icon: "checkmark-circle" as const, text: "Guess locked — waiting for results" }
+    : { icon: "flash" as const, text: "Pick the score before time runs out" };
 
   return (
     <View className="w-full">

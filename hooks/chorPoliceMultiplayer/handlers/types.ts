@@ -5,10 +5,10 @@ import { GamePhase } from "@/redux/reducers/sessionSlice";
 export interface CPMultiplayerContext {
   // Redux
   dispatch: AppDispatch;
-  
+
   // Navigation
   router: any;
-  
+
   // States (Setters)
   setPlayerNames: React.Dispatch<React.SetStateAction<string[]>>;
   setPlayerScores: React.Dispatch<React.SetStateAction<any[]>>;
@@ -29,7 +29,9 @@ export interface CPMultiplayerContext {
   setQuizOptions: React.Dispatch<React.SetStateAction<number[]>>;
   setQuizOptionDisabled: React.Dispatch<React.SetStateAction<boolean>>;
   setMediaId: React.Dispatch<React.SetStateAction<number | null>>;
-  setMediaType: React.Dispatch<React.SetStateAction<"image" | "video" | "gif" | null>>;
+  setMediaType: React.Dispatch<
+    React.SetStateAction<"image" | "video" | "gif" | null>
+  >;
   setPlayerData: React.Dispatch<React.SetStateAction<any>>;
   setInvestigationTargets: React.Dispatch<React.SetStateAction<any[]>>;
   setMysteryRevealStep: React.Dispatch<React.SetStateAction<number>>;
@@ -55,7 +57,6 @@ export interface CPMultiplayerContext {
     clickedCardsRef: React.RefObject<boolean[]>;
     flipAnimsRef: React.RefObject<Animated.Value[]>;
     timerRefs: React.RefObject<ReturnType<typeof setTimeout>[]>;
-    currentQuizPlayerIdRef: React.RefObject<string | null>;
     scoreQuizStartedRef: React.RefObject<boolean>;
     roundStartPendingRef: React.RefObject<boolean>;
     quizOptionDisabledRef: React.RefObject<boolean>;
@@ -65,7 +66,7 @@ export interface CPMultiplayerContext {
 
   // Selectors/Computed (values that don't change within a packet cycle or are passed as snapshots)
   reduxRoles: string[];
-  
+
   // Logic Helpers
   logic: {
     cleanup: any;
