@@ -1,9 +1,9 @@
-import * as Application from "expo-application"; 
+import * as Application from "expo-application";
 import { Share } from "react-native";
 
 export const handleShare = async (referralCode?: string) => {
   try {
-    const androidPackageName = "com.dheeraj.chorpolice"; 
+    const androidPackageName = "com.dheeraj.chorpolice";
     const appStoreLink = `https://play.google.com/store/apps/details?id=${androidPackageName}`;
 
     // Get app metadata
@@ -12,7 +12,7 @@ export const handleShare = async (referralCode?: string) => {
     let message = `Check out this awesome app, ${appName}! A Modern twist of classical childhood game Raja Mantri Chor Sipahi\nDownload it now: ${appStoreLink}\n`;
 
     if (referralCode) {
-      message += `\nUse my referral code: ${referralCode} to get 25,000 bonus coins! 🎁`;
+      message += `\nUse my referral code: ${referralCode} to get 1,00,000 bonus coins! 🎁`;
     }
 
     await Share.share({

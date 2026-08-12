@@ -40,11 +40,16 @@ const lockSlice = createSlice({
       state.rate_us.hasRated = true;
     },
 
+    resetSpinLock: (state) => {
+      state.spin.lastUsedTimestamp = null;
+      state.spin.countToday = 0;
+    },
+
     resetLocks: () => initialState, // ✅ renamed action
   },
 });
 
-export const { recordSpin, claimDailyBonus, markRated, resetLocks } =
+export const { recordSpin, claimDailyBonus, markRated, resetSpinLock, resetLocks } =
   lockSlice.actions;
 
 export default lockSlice.reducer;

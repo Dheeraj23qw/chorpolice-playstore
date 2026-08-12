@@ -14,6 +14,7 @@ import GameModeModal from "@/modal/GameModeModal";
 import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
 import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { CharacterDrawerContext } from "@/constants/characterDrawerData";
+import AppUpdateBanner from "@/components/GameModeScreen/AppUpdateBanner";
 
 interface GameModeSelectScreenProps {
   title: string;
@@ -107,6 +108,20 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
                 {subtitle}
               </Text>
             </View>
+
+            {/* Suggest Icon */}
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => router.push("/suggest")}
+              className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10"
+            >
+              <BlurView
+                intensity={18}
+                tint="dark"
+                style={StyleSheet.absoluteFill}
+              />
+              <Ionicons name="bulb-outline" size={22} color="#FBBF24" />
+            </TouchableOpacity>
           </View>
 
           {/* MODES LIST */}
@@ -125,6 +140,11 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
             {drawerContext && (
               <DrawerSection context={drawerContext} />
             )}
+          </View>
+
+          {/* Bottom App Update Banner */}
+          <View className="mt-auto pt-4">
+            <AppUpdateBanner />
           </View>
           </ScrollView>
         </MotiView>

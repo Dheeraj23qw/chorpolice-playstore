@@ -30,13 +30,20 @@ import {
   ChevronDown,
   Star,
   Share2,
-  Book,
+  Bell,
+  BellOff,
   Volume2,
   VolumeX,
+  Lightbulb,
 } from "lucide-react-native";
 
 import { rf } from "@/utils/responsive";
 import { Text } from "./Text";
+import {
+  isNotificationsEnabled,
+  setNotificationsEnabled,
+} from "@/storage/notificationStorage";
+import { toast } from "@/components/feedback/toast";
 
 export const FullScreenMenu = ({
   visible,
@@ -49,6 +56,25 @@ export const FullScreenMenu = ({
 }: any) => {
   const { width, height } = useWindowDimensions();
   const [canScroll, setCanScroll] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(isNotificationsEnabled());
+
+  useEffect(() => {
+    if (visible) {
+      setNotifEnabled(isNotificationsEnabled());
+    }
+  }, [visible]);
+
+  const toggleNotifications = () => {
+    const nextState = !notifEnabled;
+    setNotificationsEnabled(nextState);
+    setNotifEnabled(nextState);
+    toast.info(
+      "Notification Settings",
+      nextState
+        ? "App notifications enabled."
+        : "App notifications disabled.",
+    );
+  };
 
   const isTablet = width > 768;
   const CARD_WIDTH = isTablet ? 550 : width * 0.92;
@@ -86,6 +112,12 @@ export const FullScreenMenu = ({
       icon: isMuted ? VolumeX : Volume2,
       action: onSoundToggle,
     },
+    {
+      label: notifEnabled ? "Notify On" : "Notify Off",
+      icon: notifEnabled ? Bell : BellOff,
+      action: toggleNotifications,
+    },
+    { label: "Suggest", icon: Lightbulb, path: "/suggest" },
     { label: "Rate Us", icon: Star, action: onRatePress },
     { label: "Bugs", icon: Bug, path: "/report-bug" },
   ];

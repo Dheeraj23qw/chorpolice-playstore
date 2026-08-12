@@ -7,10 +7,6 @@ export default function EarnScreen() {
   const {
     coins,
     cardWidth,
-    isLocked,
-    formattedTime,
-    isSpinModalVisible,
-    toggleSpinModal,
     handleClaim,
   } = useEarnLogic();
 
@@ -23,10 +19,6 @@ export default function EarnScreen() {
       <EarnContent
         coins={coins}
         cardWidth={cardWidth}
-        isLocked={isLocked}
-        formattedTime={formattedTime}
-        isSpinModalVisible={isSpinModalVisible}
-        toggleSpinModal={toggleSpinModal}
         handleClaim={handleClaim}
       />
     </ScreenWrapper>

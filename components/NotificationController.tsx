@@ -27,10 +27,12 @@ import { AppRoute } from "@/service/notification/types";
 import {
   hasScheduledWelcomeNotification,
   markWelcomeNotificationScheduled,
+  canScheduleDailySpinNotification,
+  markSpinNotificationScheduledToday,
+  isNotificationsEnabled,
 } from "@/storage/notificationStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
-
-const SPIN_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+import { SPIN_COOLDOWN_MS } from "@/constants/spinwheel";
 
 export default function NotificationController() {
   const dispatch = useAppDispatch();
@@ -79,6 +81,9 @@ export default function NotificationController() {
   // to fire on every modal open/close, dropping in-flight notification events.
   useEffect(() => {
     const init = async () => {
+      // If user has disabled notifications in Home settings, exit early
+      if (!isNotificationsEnabled()) return;
+
       // 1. Ensure notification channels exist (safe to call repeatedly)
       await notificationService.ensureChannelsExist();
 
@@ -134,7 +139,7 @@ export default function NotificationController() {
 
   // --- PHASE/MODAL CHANGE: smart permission prompt only ---
   useEffect(() => {
-    if (appPhase !== "HOME" || activeModal) return;
+    if (appPhase !== "HOME" || activeModal || !isNotificationsEnabled()) return;
 
     // Zomato-style: only ask if not yet granted, and not too recently denied
     notificationService.smartRequestPermissions().then((granted) => {
@@ -149,8 +154,14 @@ export default function NotificationController() {
   }, [appPhase, dispatch]);
 
   useEffect(() => {
-    if (!permissionGranted) {
+    if (!permissionGranted || !isNotificationsEnabled()) {
       void cancelSpinNotification();
+      return;
+    }
+
+    // 🚀 STRICT 1 TIME PER DAY CHECK: User is notified max ONCE per calendar day
+    if (!canScheduleDailySpinNotification()) {
+      console.log("[Notifications] Daily spin notification already scheduled/sent today - skipping to avoid user irritation.");
       return;
     }
 
@@ -164,11 +175,12 @@ export default function NotificationController() {
       return;
     }
 
+    markSpinNotificationScheduledToday();
     void scheduleSpinUnlock(remainingSeconds);
   }, [permissionGranted, spinLastUsedTimestamp]);
 
   useEffect(() => {
-    if (!permissionGranted) {
+    if (!permissionGranted || !isNotificationsEnabled()) {
       void cancelDailyStreakReminder();
       void cancelDormantPlayerReminder();
       return;
@@ -184,7 +196,7 @@ export default function NotificationController() {
   }, [currentStreak, lastActiveDate, permissionGranted]);
 
   useEffect(() => {
-    if (!permissionGranted || welcomeScheduled || appPhase !== "HOME") {
+    if (!permissionGranted || !isNotificationsEnabled() || welcomeScheduled || appPhase !== "HOME") {
       return;
     }
 

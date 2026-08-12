@@ -21,43 +21,18 @@ const SpinWheelView: React.FC<SpinWheelViewProps> = ({
       {/* Glow */}
       <View className="absolute h-[320px] w-[320px] rounded-full bg-indigo-500/10" />
 
-      {/* WHEEL */}
+      {/* WHEEL IMAGE */}
       <Animated.View
         style={wheelStyle}
-        className="h-[300px] w-[300px] overflow-hidden rounded-full border-[10px] border-zinc-950 bg-zinc-900"
+        className="h-[300px] w-[300px] items-center justify-center overflow-hidden rounded-full shadow-2xl"
       >
-        {/* GRID WRAPPER */}
-        <View className="flex-1 flex-row flex-wrap">
-          {segments.map((seg, i) => (
-            <View
-              key={i}
-              className="h-1/2 w-1/2 items-center justify-center"
-              style={{ backgroundColor: seg.bg }}
-            >
-              {/* Inner circle */}
-              <View
-                className="h-16 w-16 items-center justify-center rounded-full border-2 bg-white/5"
-                style={{ borderColor: seg.color }}
-              >
-                <Image
-                  source={seg.img}
-                  className="h-11 w-11 rounded-full"
-                  resizeMode="cover"
-                />
-              </View>
-
-              <Text className="mt-2 font-main-bold text-[10px] uppercase tracking-[2px] text-white">
-                {seg.label}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <Image
+          source={require("@/assets/modalImages/spin_wheel.webp")}
+          style={{ width: 300, height: 300 }}
+          className="rounded-full"
+          resizeMode="contain"
+        />
       </Animated.View>
-
-      {/* CENTER HUB */}
-      <View className="absolute z-20 h-16 w-16 items-center justify-center rounded-full border-2 border-indigo-500 bg-zinc-950">
-        <Trophy size={rf(3.5)} color="#818cf8" />
-      </View>
 
       {/* POINTER */}
       <View className="pointer-events-none absolute -top-5 z-30 items-center">

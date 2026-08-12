@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { SpinSegment, SpinStatus } from "./types";
-import { segments } from "@/constants/spinwheel";
+import { segments, SPIN_COOLDOWN_MS } from "@/constants/spinwheel";
 import { AudioEngine } from "@/audio/audioEngine";
 import { useTimeoutManager } from "@/hooks/useTimeOutManager";
 import { AppDispatch, RootState } from "@/redux/store";
@@ -31,7 +31,7 @@ export const useSpinWheel = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const spinLock = useSelector((state: RootState) => state.lock.spin);
-  const COOLDOWN = 12 * 60 * 60 * 1000;
+  const COOLDOWN = SPIN_COOLDOWN_MS;
 
   const isLocked = remainingTime > 0;
 

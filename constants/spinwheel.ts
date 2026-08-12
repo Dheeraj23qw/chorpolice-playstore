@@ -30,3 +30,4 @@ export const segments: SpinSegment[] = [
     img: require("@/assets/images/chorsipahi/police.webp"),
   },
 ];
+export const SPIN_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours

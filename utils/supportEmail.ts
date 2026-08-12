@@ -7,13 +7,14 @@ const SUPPORT_EMAIL = "chorpolice.app@gmail.com";
 interface SupportEmailProps {
   message: string;
   title?: string;
+  type?: "bug" | "suggestion";
 }
 
 /**
  * Advanced Support Email Utility
- * Handles dynamic subjects, system info gathering, and copy-to-clipboard fallback.
+ * Handles dynamic subjects (bug report or feature suggestion), system info gathering, and copy-to-clipboard fallback.
  */
-export async function sendSupportEmail({ message, title }: SupportEmailProps) {
+export async function sendSupportEmail({ message, title, type = "bug" }: SupportEmailProps) {
   const appName = Constants.expoConfig?.name ?? "Chor Police";
   const appVersion = Constants.expoConfig?.version ?? "1.0.0";
   const buildNumber =
@@ -21,13 +22,14 @@ export async function sendSupportEmail({ message, title }: SupportEmailProps) {
       ? Constants.expoConfig?.ios?.buildNumber
       : Constants.expoConfig?.android?.versionCode;
 
-  // Use the specific bug title in the subject line for better sorting in your inbox
-  const subject = title ? `Bug: ${title}` : `${appName} Support Request`;
+  const prefix = type === "suggestion" ? "💡 Suggestion" : "🐛 Bug";
+  const subject = title ? `${prefix}: ${title}` : `${appName} Support Request`;
 
   const structuredBody = `
-ISSUE TITLE: ${title || "General Support"}
+TYPE: ${type === "suggestion" ? "Feature Suggestion / Idea" : "Bug Report"}
+TITLE: ${title || "General Feedback"}
 
-DESCRIPTION:
+DETAILS:
 ${message.trim() || "No message provided."}
 
 -- System Info --

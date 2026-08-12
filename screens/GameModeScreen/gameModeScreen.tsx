@@ -17,6 +17,8 @@ import {
   GameModeList,
 } from "@/components/GameModeScreen";
 
+import SpinLiveBanner from "@/components/GameModeScreen/SpinLiveBanner";
+
 import UnlockedAwardModal from "@/modal/AwardModal";
 import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
 import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
@@ -83,9 +85,12 @@ const GameModeScreen: React.FC = () => {
         </View>
 
         {/* Game List */}
-        <View className="flex-1 pb-6">
+        <View className="flex-1 pb-2">
             <GameModeList />
         </View>
+
+        {/* Bottom Live Spin Banner */}
+        <SpinLiveBanner />
       </View>
 
       <UnlockedAwardModal />

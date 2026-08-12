@@ -128,21 +128,21 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
               <View className="w-full overflow-hidden rounded-[40px] border border-white/10">
                 <BlurView intensity={25} tint="dark">
                   <View className="p-8 py-12">
-                  <View className="items-center">
-                    <AnimatedSlideImage
-                      index={index}
-                      scrollX={scrollX}
-                      image={item.image}
-                    />
+                    <View className="items-center">
+                      <AnimatedSlideImage
+                        index={index}
+                        scrollX={scrollX}
+                        image={item.image}
+                      />
 
-                    <Text className="mt-10 text-center font-main-bold text-3xl tracking-tight text-white">
-                      {item.title}
-                    </Text>
+                      <Text className="mt-10 text-center font-main-bold text-3xl tracking-tight text-white">
+                        {item.title}
+                      </Text>
 
-                    <Text className="mt-4 text-center text-base leading-6 text-white/50">
-                      {item.description}
-                    </Text>
-                  </View>
+                      <Text className="mt-4 text-center text-base leading-6 text-white/50">
+                        {item.description}
+                      </Text>
+                    </View>
                   </View>
                 </BlurView>
               </View>
@@ -151,13 +151,14 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
         }}
       />
 
+      {/* 🚀 LARGE SKIP BUTTON (ABOVE PAGINATION DOTS) */}
       <Animated.View
         pointerEvents="box-none"
         style={[
           skipStyle,
           {
             position: "absolute",
-            bottom: 24 + insets.bottom,
+            bottom: 72 + insets.bottom,
             width: "100%",
             alignItems: "center",
           },
@@ -167,12 +168,12 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
           activeOpacity={0.8}
           onPress={handleSkip}
           disabled={isCompleting}
-          className="rounded-full border border-white/10 bg-white/5 px-8 py-3"
+          className="w-64 items-center justify-center rounded-full border border-white/20 bg-white/10 py-4 shadow-lg active:opacity-80"
         >
           {isCompleting ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
-            <Text className="font-main-bold text-sm uppercase tracking-[2px] text-white/70">
+            <Text className="font-main-bold text-base uppercase tracking-[3px] text-white">
               Skip
             </Text>
           )}
@@ -190,9 +191,19 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
         loadingMessage={loadingMessages[loadingMessageIndex]}
       />
 
+      {/* ⚪ PAGINATION DOTS (BELOW SKIP BUTTON) */}
       <Animated.View
-        style={[paginationStyle]}
-        className="absolute bottom-16 w-full flex-row justify-center space-x-2"
+        style={[
+          paginationStyle,
+          {
+            position: "absolute",
+            bottom: 28 + insets.bottom,
+            width: "100%",
+            flexDirection: "row",
+            justifyContent: "center",
+          },
+        ]}
+        className="space-x-2"
       >
         {ONBOARDING_SLIDES.map((_, i) => (
           <PaginationDot key={i} index={i} scrollX={scrollX} />
@@ -341,51 +352,51 @@ const AnimatedCTA = ({
             className="rounded-full"
           >
             <View className="items-center justify-center px-10 py-5">
-            {isLoading && (
-              <ActivityIndicator
-                color="white"
-                size="small"
-                style={{ marginBottom: 8 }}
-              />
-            )}
+              {isLoading && (
+                <ActivityIndicator
+                  color="white"
+                  size="small"
+                  style={{ marginBottom: 8 }}
+                />
+              )}
 
-            <View
-              style={{
-                minWidth: wp(58),
-                minHeight: rf(3),
-                overflow: "hidden",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <AnimatePresence exitBeforeEnter>
-                <MotiView
-                  key={isLoading ? loadingMessage : "start"}
-                  from={{ opacity: 0, translateY: 16 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  exit={{ opacity: 0, translateY: -16 }}
-                  transition={{
-                    type: "timing",
-                    duration: 420,
-                  }}
-                  style={{
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: rf(1.8),
-                      textAlign: "center",
+              <View
+                style={{
+                  minWidth: wp(58),
+                  minHeight: rf(3),
+                  overflow: "hidden",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AnimatePresence exitBeforeEnter>
+                  <MotiView
+                    key={isLoading ? loadingMessage : "start"}
+                    from={{ opacity: 0, translateY: 16 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    exit={{ opacity: 0, translateY: -16 }}
+                    transition={{
+                      type: "timing",
+                      duration: 420,
                     }}
-                    className="font-main-bold uppercase tracking-[2px] text-white"
-                    numberOfLines={2}
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
-                    {isLoading ? loadingMessage : "Let's Get Started"}
-                  </Text>
-                </MotiView>
-              </AnimatePresence>
-            </View>
+                    <Text
+                      style={{
+                        fontSize: rf(1.8),
+                        textAlign: "center",
+                      }}
+                      className="font-main-bold uppercase tracking-[2px] text-white"
+                      numberOfLines={2}
+                    >
+                      {isLoading ? loadingMessage : "Let's Get Started"}
+                    </Text>
+                  </MotiView>
+                </AnimatePresence>
+              </View>
             </View>
           </LinearGradient>
         </MotiView>
