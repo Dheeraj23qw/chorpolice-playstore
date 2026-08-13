@@ -292,113 +292,115 @@ const ScoreQuizLeaderboard: React.FC<ScoreQuizLeaderboardProps> = ({
         </MotiView>
 
         {/* ========================================================= */}
-        {/* BOTTOM ACTION */}
+        {/* BOTTOM ACTION — FIXED */}
         {/* ========================================================= */}
 
-        {isHost && !isLastQuestion ? (
-          /* ------------------------------------------------------- */
-          /* HOST → NEXT QUESTION */
-          /* ------------------------------------------------------- */
-
-          <MotiView
-            from={{
-              opacity: 0,
-              translateY: 30,
-            }}
-            animate={{
-              opacity: 1,
-              translateY: 0,
-            }}
-            transition={{
-              type: "spring",
-              delay: 600,
-            }}
-            className="mb-2 mt-3"
-          >
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleNextRound}
-              className="h-14 w-full overflow-hidden rounded-2xl border border-[#B8860B] shadow-lg shadow-[#D4AF37]/50"
+        <View className="mt-3 w-full shrink-0">
+          {isHost && !isLastQuestion ? (
+            <MotiView
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{
+                type: "timing",
+                duration: 350,
+              }}
             >
-              <LinearGradient
-                colors={["#F9D86C", "#D4AF37", "#B8860B"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                className="h-full w-full flex-row items-center justify-center"
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleNextRound}
+                className="h-14 w-full overflow-hidden rounded-2xl border border-[#B8860B] bg-[#D4AF37]"
               >
-                <Text
-                  style={{ fontSize: rf(1.4) }}
-                  className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+                <LinearGradient
+                  colors={["#FFE58A", "#D4AF37", "#B8860B"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "row",
+                  }}
                 >
-                  Next Question
-                </Text>
+                  <Text
+                    style={{ fontSize: rf(1.45) }}
+                    className="font-main-bold uppercase tracking-[2.5px] text-black"
+                  >
+                    Next Question
+                  </Text>
 
-                <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
-              </LinearGradient>
-            </TouchableOpacity>
-          </MotiView>
-        ) : isLastQuestion ? (
-          /* ------------------------------------------------------- */
-          /* LAST QUESTION → SEE RESULT */
-          /* ------------------------------------------------------- */
-
-          <MotiView
-            from={{
-              opacity: 0,
-              translateY: 30,
-            }}
-            animate={{
-              opacity: 1,
-              translateY: 0,
-            }}
-            transition={{
-              type: "spring",
-              delay: 600,
-            }}
-            className="mb-2 mt-3"
-          >
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleNextRound}
-              className="h-14 w-full overflow-hidden rounded-2xl border border-[#B8860B] shadow-lg shadow-[#D4AF37]/50"
+                  <View className="ml-3 h-8 w-8 items-center justify-center rounded-full bg-black/10">
+                    <Ionicons
+                      name="arrow-forward"
+                      size={rf(1.9)}
+                      color="#000000"
+                    />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </MotiView>
+          ) : isLastQuestion ? (
+            <MotiView
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{
+                type: "timing",
+                duration: 350,
+              }}
             >
-              <LinearGradient
-                colors={["#F9D86C", "#D4AF37", "#B8860B"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                className="h-full w-full flex-row items-center justify-center"
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleNextRound}
+                className="h-14 w-full overflow-hidden rounded-2xl border border-[#B8860B] bg-[#D4AF37]"
               >
-                <Text
-                  style={{ fontSize: rf(1.4) }}
-                  className="mr-2 font-main-bold uppercase tracking-[3px] text-black"
+                <LinearGradient
+                  colors={["#FFE58A", "#D4AF37", "#B8860B"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "row",
+                  }}
                 >
-                  See Result
-                </Text>
+                  <Text
+                    style={{ fontSize: rf(1.45) }}
+                    className="font-main-bold uppercase tracking-[2.5px] text-black"
+                  >
+                    See Result
+                  </Text>
 
-                <Ionicons name="arrow-forward" size={rf(2)} color="#000000" />
-              </LinearGradient>
-            </TouchableOpacity>
-          </MotiView>
-        ) : (
-          /* ------------------------------------------------------- */
-          /* NON-HOST → WAITING */
-          /* ------------------------------------------------------- */
-
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-2 mt-3 items-center justify-center py-2"
-          >
-            <Text
-              style={{ fontSize: rf(1.3) }}
-              className="text-center font-main-bold tracking-wider text-white/70"
+                  <View className="ml-3 h-8 w-8 items-center justify-center rounded-full bg-black/10">
+                    <Ionicons
+                      name="arrow-forward"
+                      size={rf(1.9)}
+                      color="#000000"
+                    />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </MotiView>
+          ) : (
+            <MotiView
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                type: "timing",
+                duration: 300,
+              }}
+              className="items-center justify-center py-2"
             >
-              {!isRoundComplete
-                ? "Waiting for all players to finish..."
-                : "Waiting for host to start next question..."}
-            </Text>
-          </MotiView>
-        )}
+              <Text
+                style={{ fontSize: rf(1.3) }}
+                className="text-center font-main-bold tracking-wider text-white/70"
+              >
+                {!isRoundComplete
+                  ? "Waiting for all players to finish..."
+                  : "Waiting for host to start next question..."}
+              </Text>
+            </MotiView>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );

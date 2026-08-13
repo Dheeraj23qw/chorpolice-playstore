@@ -1,24 +1,28 @@
 import React, { useEffect, useState, useCallback } from "react";
-import * as Notifications from "expo-notifications";
+import * as Location from "expo-location";
 import { MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Text } from "@/components/Text";
 import { AppBannerCard } from "./AppBannerCard";
-import { hasPromptedForNotifications, markNotificationsPrompted } from "@/storage/notificationStorage";
 
-export const NotificationPermissionBanner: React.FC<{ forceVisible?: boolean }> = ({ forceVisible }) => {
+export const NetworkPermissionBanner: React.FC<{ forceVisible?: boolean }> = ({ forceVisible }) => {
   const [permissionStatus, setPermissionStatus] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const [servicesEnabled, setServicesEnabled] = useState<boolean | null>(null);
 
   const checkPermission = useCallback(async () => {
     setIsChecking(true);
     try {
-      const { status } = await Notifications.getPermissionsAsync();
+      const { status } = await Location.getForegroundPermissionsAsync();
       setPermissionStatus(status);
+
+      const enabled = await Location.hasServicesEnabledAsync();
+      setServicesEnabled(enabled);
     } catch (err) {
-      console.error("[NotificationBanner] Permission check failed:", err);
+      console.error("[NetworkPermissionBanner] Permission check failed:", err);
       setPermissionStatus("denied");
+      setServicesEnabled(false);
     } finally {
       setIsChecking(false);
     }
@@ -30,18 +34,21 @@ export const NotificationPermissionBanner: React.FC<{ forceVisible?: boolean }> 
 
   const handleEnable = async () => {
     try {
-      const { status } = await Notifications.requestPermissionsAsync();
+      const { status } = await Location.requestForegroundPermissionsAsync();
       setPermissionStatus(status);
-      markNotificationsPrompted();
+
+      if (status === "granted") {
+        const enabled = await Location.hasServicesEnabledAsync();
+        setServicesEnabled(enabled);
+      }
     } catch (err) {
-      console.error("[NotificationBanner] Permission request failed:", err);
+      console.error("[NetworkPermissionBanner] Permission request failed:", err);
     }
   };
 
   if (!forceVisible) {
     if (isChecking) return null;
-    if (permissionStatus === "granted") return null;
-    if (hasPromptedForNotifications()) return null;
+    if (permissionStatus === "granted" && servicesEnabled) return null;
   }
 
   return (
@@ -53,11 +60,11 @@ export const NotificationPermissionBanner: React.FC<{ forceVisible?: boolean }> 
     >
       <AppBannerCard
         onPress={handleEnable}
-        icon={<Ionicons name="notifications" size={22} color="#FBBF24" />}
+        icon={<Ionicons name="location" size={22} color="#FBBF24" />}
         iconGlowClassName="absolute -inset-1.5 rounded-2xl bg-amber-400/15"
         iconContainerClassName="h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/50 bg-amber-500/20"
-        title="STAY UPDATED"
-        description="Enable notifications to stay informed about important updates."
+        title="LOCATION ACCESS"
+        description="Enable location to find nearby players and rooms."
         ctaContent={
           <Text className="font-main-bold text-xs tracking-wider text-black">
             ENABLE
@@ -69,4 +76,4 @@ export const NotificationPermissionBanner: React.FC<{ forceVisible?: boolean }> 
   );
 };
 
-export default React.memo(NotificationPermissionBanner);
+export default React.memo(NetworkPermissionBanner);

@@ -22,9 +22,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { incrementShares } from "@/storage/referralStatsStorage";
 
-const HAS_REDEEMED_KEY = "HAS_REDEEMED_REFERRAL";
 const REFERRAL_BONUS_COINS = 100000;
-const MAX_ATTEMPTS = 5;
 const CODE_LENGTH = 5;
 
 interface Props {
@@ -42,9 +40,11 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
 
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const inputRef = useRef<TextInput>(null);
+
+  const canRedeem = localPlayerId != null;
 
   /*
    * RESPONSIVE MODAL
@@ -66,7 +66,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
   const isReady =
     code.length === CODE_LENGTH &&
     !isSubmitting &&
-    failedAttempts < MAX_ATTEMPTS;
+    canRedeem;
 
   /*
    * AUTO FOCUS
@@ -80,8 +80,20 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
       return () => clearTimeout(timer);
     } else {
       setCode("");
+      setShowSuccess(false);
     }
   }, [visible]);
+
+  useEffect(() => {
+    if (!showSuccess) return;
+
+    const timer = setTimeout(() => {
+      setShowSuccess(false);
+      onClose();
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [showSuccess, onClose]);
 
   /*
    * REDEEM
@@ -93,10 +105,10 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
 
     Keyboard.dismiss();
 
-    if (failedAttempts >= MAX_ATTEMPTS) {
+    if (!canRedeem) {
       toast.warning(
-        "Too many attempts",
-        "Please wait a moment before trying again.",
+        "Profile Required",
+        "Please set up your profile before redeeming a code.",
       );
       return;
     }
@@ -104,19 +116,6 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
     setIsSubmitting(true);
 
     await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const alreadyRedeemed = storage.getBoolean(HAS_REDEEMED_KEY);
-
-    if (alreadyRedeemed) {
-      toast.error(
-        "Already Claimed",
-        "A referral bonus has already been added to this account.",
-      );
-
-      setIsSubmitting(false);
-      onClose();
-      return;
-    }
 
     /*
      * SELF REFERRAL
@@ -147,17 +146,13 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
 
       incrementShares(REFERRAL_BONUS_COINS);
 
-      storage.set(HAS_REDEEMED_KEY, true);
-
       toast.success(
         "Bonus Received!",
         "100,000 coins have been added to your bag.",
       );
 
-      onClose();
+      setShowSuccess(true);
     } else {
-      setFailedAttempts((prev) => prev + 1);
-
       toast.error(
         "Invalid Code",
         "This code doesn't match our records. Check for typos!",
@@ -221,6 +216,31 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
             {/* SOFT TOP ACCENT */}
             <View className="h-1 w-full bg-indigo-400/70" />
 
+            {/* SUCCESS BANNER */}
+            {showSuccess && (
+              <MotiView
+                from={{ opacity: 0, translateY: -10, scale: 0.95 }}
+                animate={{ opacity: 1, translateY: 0, scale: 1 }}
+                transition={{ type: "spring", damping: 16, stiffness: 180 }}
+                className="mx-5 mt-4 flex-row items-center rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3"
+              >
+                <View className="mr-3 h-8 w-8 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/20">
+                  <Ionicons name="checkmark" size={18} color="#34D399" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-main-bold text-sm text-emerald-300">
+                    Code Redeemed!
+                  </Text>
+                  <Text className="font-main text-[10px] text-emerald-200/70">
+                    +100,000 coins added to your bag
+                  </Text>
+                </View>
+                <View className="h-8 w-8 items-center justify-center rounded-full border border-amber-400/40 bg-amber-500/15">
+                  <Text className="text-sm">🪙</Text>
+                </View>
+              </MotiView>
+            )}
+
             {/* HEADER */}
             <View className="px-5 pb-4 pt-5">
               <View className="flex-row items-start justify-between">
@@ -283,9 +303,9 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
               </View>
 
               {/* INPUT LABEL */}
-              <Text className="mb-3 font-main-bold text-[10px] uppercase tracking-[1.5px] text-white/45">
-                Enter friend's 5-digit referral code
-              </Text>
+               <Text className="mb-3 font-main-bold text-[10px] uppercase tracking-[1.5px] text-white/45">
+                 Enter friend's 5-digit referral code
+               </Text>
 
               {/* 5 DIGIT INPUT */}
               <Pressable
@@ -403,7 +423,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
                       isReady ? "text-white" : "text-white/35"
                     }`}
                   >
-                    {isSubmitting ? "Verifying..." : "Claim 100,000 Coins"}
+                    {isSubmitting ? "Verifying..." : canRedeem ? "Claim 100,000 Coins" : "Profile Required"}
                   </Text>
                 </View>
               </TouchableOpacity>

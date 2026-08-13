@@ -44,6 +44,7 @@ import {
   setNotificationsEnabled,
 } from "@/storage/notificationStorage";
 import { toast } from "@/components/feedback/toast";
+import { hasRatingCompleted } from "@/hooks/useRatingPrompt";
 
 export const FullScreenMenu = ({
   visible,
@@ -70,9 +71,7 @@ export const FullScreenMenu = ({
     setNotifEnabled(nextState);
     toast.info(
       "Notification Settings",
-      nextState
-        ? "App notifications enabled."
-        : "App notifications disabled.",
+      nextState ? "App notifications enabled." : "App notifications disabled.",
     );
   };
 
@@ -106,7 +105,6 @@ export const FullScreenMenu = ({
     { label: "Earn", icon: Flashlight, path: "/earn" },
     { label: "Stats", icon: BarChart3, path: "/stats" },
     { label: "Profile", icon: User, path: "/profile" },
-    { label: "Awards", icon: Medal, path: "/awards" },
     {
       label: isMuted ? "Sound Off" : "Sound On",
       icon: isMuted ? VolumeX : Volume2,
@@ -118,11 +116,11 @@ export const FullScreenMenu = ({
       action: toggleNotifications,
     },
     { label: "Suggest", icon: Lightbulb, path: "/suggest" },
-    { label: "Rate Us", icon: Star, action: onRatePress },
+    hasRatingCompleted()
+      ? { label: "share", icon: Share2, action: onSharePress }
+      : { label: "Rate Us", icon: Star, action: onRatePress },
     { label: "Bugs", icon: Bug, path: "/report-bug" },
   ];
-
-
 
   return (
     <Modal transparent visible={visible} animationType="none">

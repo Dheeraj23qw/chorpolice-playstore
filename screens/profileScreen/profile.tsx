@@ -1,18 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, ScrollView, FlatList, TouchableOpacity } from "react-native";
-import { Coins, Trophy, Users, Target, ShieldCheck, Zap, Network, Medal, Lock } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import { View, ScrollView } from "react-native";
+import { Coins, Trophy, Users, Target, ShieldCheck, Zap, Network } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import ScreenWrapper from "@/components/screenwrapper";
 import { useSelector } from "react-redux";
 import { usePlayerLevel } from "@/service/usePlayerLevel";
 import { RootState } from "@/redux/store";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
-import { selectEarnedAwards } from "@/features/awards/awardsSlice";
-import { ACHIEVEMENT_DATA, Achievement } from "@/constants/achievements";
 import AvatarWithLevel from "@/components/ProfileScreen/AvatarWithLevel";
 import LevelProgressBar from "@/components/ProfileScreen/LevelProgressBar";
 import StatCard from "@/components/ProfileScreen/StatCard";
-import AchievementCard from "@/components/ProfileScreen/AchievementCard";
 import { loadAvatar, saveAvatar, loadUsername, loadAvatarId } from "@/storage/userStorage";
 import { loadReferralStats } from "@/storage/referralStatsStorage";
 import { BlurView } from "expo-blur";
@@ -21,7 +18,6 @@ import { rf } from "@/utils/responsive";
 export default function UserProfile() {
   const quizStats = useSelector((state: RootState) => state.quizStats);
   const coins = useSelector((state: RootState) => state.wallet.coins);
-  const earnedAwardIds = useSelector(selectEarnedAwards);
 
   const { level, xp, nextLevelXp } = usePlayerLevel();
   const { pickImage } = useGalleryPicker();
@@ -46,11 +42,6 @@ export default function UserProfile() {
       saveAvatar(uri);
     }
   };
-
-  const myAwards = useMemo((): Achievement[] => {
-    const idSet = new Set(earnedAwardIds);
-    return ACHIEVEMENT_DATA.filter((a) => idSet.has(a.id));
-  }, [earnedAwardIds]);
 
   const statsList: {
     label: string;
@@ -179,34 +170,6 @@ export default function UserProfile() {
               </View>
             </BlurView>
           </View>
-        </View>
-
-        {/* Achievements Section */}
-        <View className="mt-10 px-6">
-          <View className="mb-6 flex-row items-center justify-between">
-            <Text className="font-main-bold text-[11px] uppercase tracking-[4px] text-slate-500">
-              Medals Case ({myAwards.length})
-            </Text>
-            <Medal size={14} color="#fbbf24" />
-          </View>
-
-          {myAwards.length > 0 ? (
-            <FlatList
-              data={myAwards}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingRight: 20 }}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => <AchievementCard achievement={item} />}
-            />
-          ) : (
-            <View className="h-32 w-full items-center justify-center rounded-[32px] border-2 border-dashed border-white/5 bg-white/5">
-              <Lock size={24} color="rgba(255,255,255,0.1)" />
-              <Text className="mt-3 font-main-bold text-[10px] uppercase tracking-widest text-slate-600">
-                Play games to win medals
-              </Text>
-            </View>
-          )}
         </View>
       </ScrollView>
     </ScreenWrapper>

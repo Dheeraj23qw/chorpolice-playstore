@@ -5,7 +5,6 @@ import { Linking, View, TouchableOpacity, StyleSheet } from "react-native";
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
 import { setAppPhase } from "@/redux/reducers/appFlowReducer";
-import { enqueueModal } from "@/redux/reducers/modalQueueReducer";
 import { claimFirstLaunchBonus } from "@/features/wallet/walletSlice";
 import { loadSounds } from "@/redux/reducers/soundReducer";
 import HomeScreen from "@/screens/appFlow/HomeScreen";
@@ -28,10 +27,13 @@ import { runAfterUI } from "@/utils/runAfterUI";
 
 
 import { useOTAUpdate } from "@/hooks/useOTAUpdate";
+import { warmupSpeech } from "@/service/QuizNarrationService";
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
 import { ReconnectOverlay } from "./ReconnectOverlay";
+
+let hasWarmupFired = false;
 
 export default function AppController() {
   const {
@@ -50,15 +52,11 @@ export default function AppController() {
   const coins = useAppSelector((state) => state.wallet.coins);
   const firstLaunch = useAppSelector((state) => state.wallet.firstLaunch);
   const isSoundLoaded = useAppSelector((state) => state.sound.isLoaded);
-  const unlockedAwardsCount = useAppSelector(
-    (state) => state.awards.unlocked.length,
-  );
   const connectionStatus = useAppSelector(
     (state) => state.session.connectionStatus,
   );
   const loadingTaskRef = useRef<Promise<void> | null>(null);
   const bootstrappedRef = useRef(false);
-  const rewardQueuedRef = useRef(false);
   const firstLaunchBonusRef = useRef(false);
 
   const prepareIntroFlow = useCallback(() => {
@@ -121,24 +119,17 @@ export default function AppController() {
   }, [dispatch, firstLaunch, phase]);
 
   useEffect(() => {
-    if (
-      phase === "HOME" &&
-      unlockedAwardsCount > 0 &&
-      !rewardQueuedRef.current
-    ) {
-      rewardQueuedRef.current = true;
-      dispatch(enqueueModal("REWARD_MODAL"));
-    }
-    if (unlockedAwardsCount === 0) {
-      rewardQueuedRef.current = false;
-    }
-  }, [dispatch, phase, unlockedAwardsCount]);
-
-  useEffect(() => {
     if (connectionStatus !== "IDLE") {
       syncLocalLobbyProfile({ coins });
     }
   }, [coins, connectionStatus]);
+
+  useEffect(() => {
+    if (phase === "HOME" && !hasWarmupFired) {
+      hasWarmupFired = true;
+      void warmupSpeech();
+    }
+  }, [phase]);
 
 
 

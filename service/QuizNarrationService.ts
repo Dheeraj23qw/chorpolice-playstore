@@ -111,6 +111,35 @@ export const stopQuizNarration = async () => {
   }
 };
 
+/**
+ * Speaks a short welcome message to warm up the TTS engine on app startup.
+ * Uses the same expo-speech configuration as quiz narration.
+ * Does not interfere with quiz narration because quiz always calls Speech.stop() first.
+ */
+export const warmupSpeech = () => {
+  try {
+    Speech.stop();
+    const voice = getBestQuizVoiceSync("hi-IN");
+    Speech.speak("Welcome to Chor Police! Get ready to catch the Chor!", {
+      language: "en-IN",
+      voice,
+      rate: 0.85,
+      pitch: 1.0,
+      volume: 1.0,
+      onDone: () => {
+        if (__DEV__) console.log("[Speech] Warmup complete");
+      },
+      onError: (error) => {
+        if (__DEV__) console.warn("[Speech] Warmup error:", error);
+      },
+    });
+  } catch (error) {
+    if (__DEV__) {
+      console.warn("[Speech] Warmup failed:", error);
+    }
+  }
+};
+
 let cachedVoices: Speech.Voice[] | null = null;
 
 /**
@@ -171,7 +200,9 @@ export const getBestQuizVoiceSync = (language: string): string | undefined => {
  * Prefers bold male voices if available.
  * Prefers 'enhanced' or high-quality voices.
  */
-export const getBestQuizVoice = async (language: string): Promise<string | undefined> => {
+export const getBestQuizVoice = async (
+  language: string,
+): Promise<string | undefined> => {
   const syncVoice = getBestQuizVoiceSync(language);
   if (syncVoice) return syncVoice;
 
@@ -203,7 +234,7 @@ export interface SpeakOptions {
 export const speakQuizQuestion = async (
   text: string,
   language: string,
-  options: SpeakOptions = {}
+  options: SpeakOptions = {},
 ) => {
   try {
     // Instant interrupt for maximum responsiveness
@@ -213,14 +244,12 @@ export const speakQuizQuestion = async (
 
     const {
       voice,
-      rate = 1.15,
+      rate = 1.02,
       pitch = 1.0,
       volume = 1.0,
       onStart,
       onDone,
     } = options;
-
-
 
     Speech.speak(text, {
       language,
@@ -242,4 +271,3 @@ export const speakQuizQuestion = async (
     }
   }
 };
-

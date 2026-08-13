@@ -52,6 +52,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
   onClose,
   title = "Enjoying the game?",
   description = "Your feedback helps us create a better experience!",
+  onSuccess,
 }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -88,6 +89,7 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
         rating,
         comment,
         onComplete: () => {
+          onSuccess?.();
           setIsSubmitting(false);
           onClose();
         },

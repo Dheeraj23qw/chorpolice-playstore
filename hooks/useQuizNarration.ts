@@ -52,12 +52,10 @@ export const useQuizNarration = ({
     try {
       const speechText = QuizNarrationService.buildQuizSpeechText(question, options);
       const normalizedText = QuizNarrationService.normalizeQuizSpeechText(speechText);
-      const lang = QuizNarrationService.detectSpeechLanguage(normalizedText);
 
-      // Resolve voice synchronously from cached voices or Redux
-      const voiceId = quizNarrationVoiceId || QuizNarrationService.getBestQuizVoiceSync(lang);
+      const voiceId = quizNarrationVoiceId || QuizNarrationService.getBestQuizVoiceSync("hi-IN");
 
-      QuizNarrationService.speakQuizQuestion(normalizedText, lang, {
+      QuizNarrationService.speakQuizQuestion(normalizedText, "hi-IN", {
         voice: voiceId,
         rate: quizNarrationRate,
         pitch: quizNarrationPitch,

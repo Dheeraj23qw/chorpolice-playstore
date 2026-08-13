@@ -31,6 +31,9 @@ import {
   markSpinNotificationScheduledToday,
   isNotificationsEnabled,
 } from "@/storage/notificationStorage";
+import {
+  getOnboardingDone,
+} from "@/storage/appStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
 import { SPIN_COOLDOWN_MS } from "@/constants/spinwheel";
 
@@ -60,6 +63,7 @@ export default function NotificationController() {
   );
   const [pendingRoute, setPendingRoute] = useState<AppRoute | null>(null);
   const appPhaseRef = useRef(appPhase);
+  const onboardingDoneRef = useRef(getOnboardingDone());
 
   useEffect(() => {
     appPhaseRef.current = appPhase;
@@ -140,6 +144,10 @@ export default function NotificationController() {
   // --- PHASE/MODAL CHANGE: smart permission prompt only ---
   useEffect(() => {
     if (appPhase !== "HOME" || activeModal || !isNotificationsEnabled()) return;
+
+    // Skip notification permission request if onboarding just ran this session.
+    // The in-app NotificationPermissionBanner will still allow the user to enable notifications later.
+    if (!onboardingDoneRef.current) return;
 
     // Zomato-style: only ask if not yet granted, and not too recently denied
     notificationService.smartRequestPermissions().then((granted) => {

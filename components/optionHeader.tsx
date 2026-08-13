@@ -1,6 +1,6 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { View } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import {
   responsiveWidth,
   responsiveHeight,
@@ -22,13 +22,13 @@ const ICON_COLOR = "#FFFFFF";
 const OptionHeader = memo(function OptionHeader() {
   const {
     isMuted,
-    modalVisible,
-    setModalVisible,
     menuOpen,
     setMenuOpen,
     router,
     toggleSound,
   } = useHeaderActions();
+
+  const [isRatingVisible, setIsRatingVisible] = useState(false);
 
   const [narrationModalVisible, setNarrationModalVisible] = React.useState(false);
 
@@ -60,7 +60,6 @@ const OptionHeader = memo(function OptionHeader() {
         />
       </CircleBtn>
 
-
       <CircleBtn
         btnDim={btnDim}
         marginBetween={marginBetween}
@@ -68,15 +67,6 @@ const OptionHeader = memo(function OptionHeader() {
         onPress={() => router.push("/earn")}
       >
         <Ionicons name="flash" size={iconSize} color={ICON_COLOR} />
-      </CircleBtn>
-
-      <CircleBtn
-        btnDim={btnDim}
-        marginBetween={marginBetween}
-        backgroundColor={SLATE_TRANSPARENT}
-        onPress={() => setModalVisible(true)}
-      >
-        <MaterialIcons name="star" size={iconSize} color={ICON_COLOR} />
       </CircleBtn>
 
       <CircleBtn
@@ -99,20 +89,19 @@ const OptionHeader = memo(function OptionHeader() {
 
       <CustomRatingModal
         title="Rate Chor Police"
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        visible={isRatingVisible}
+        onClose={() => setIsRatingVisible(false)}
       />
 
       <FullScreenMenu
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         router={router}
-        onRatePress={() => setModalVisible(true)}
-        onSharePress={() => handleShare(referralCode)}
+        onRatePress={() => setIsRatingVisible(true)}
+        onSharePress={referralCode ? () => handleShare(referralCode) : undefined}
         onSoundToggle={toggleSound}
         isMuted={isMuted}
       />
-
 
       <NarrationSettingsModal
         visible={narrationModalVisible}

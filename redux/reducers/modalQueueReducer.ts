@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export type ModalType = "LOW_COIN_MODAL" | "REWARD_MODAL";
+export type ModalType = "LOW_COIN_MODAL";
 
 export interface ModalQueueState {
   queue: ModalType[];

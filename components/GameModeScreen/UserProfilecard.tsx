@@ -373,30 +373,32 @@ const UserProfileCard = () => {
           </View>
 
           {/* REFERRAL CARD */}
-          <Pressable
-            onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              handleShare(referralCode);
-            }}
-            className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/5"
-          >
-            <BlurView intensity={15} tint="dark">
-              <View className="flex-row items-center p-5">
-                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/20">
-                  <Ionicons name="qr-code" size={20} color="#818cf8" />
+          {referralCode ? (
+            <Pressable
+              onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                handleShare(referralCode);
+              }}
+              className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/5"
+            >
+              <BlurView intensity={15} tint="dark">
+                <View className="flex-row items-center p-5">
+                  <View className="h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/20">
+                    <Ionicons name="qr-code" size={20} color="#818cf8" />
+                  </View>
+                  <View className="ml-4 flex-1">
+                    <Text className="font-main-medium text-[9px] uppercase tracking-[2px] text-white/40">
+                      Personal Referral ID
+                    </Text>
+                    <Text className="font-main-bold text-xl tracking-[5px] text-indigo-400">
+                      {referralCode}
+                    </Text>
+                  </View>
+                  <Ionicons name="share-outline" size={20} color="#818cf8" />
                 </View>
-                <View className="ml-4 flex-1">
-                  <Text className="font-main-medium text-[9px] uppercase tracking-[2px] text-white/40">
-                    Personal Referral ID
-                  </Text>
-                  <Text className="font-main-bold text-xl tracking-[5px] text-indigo-400">
-                    {referralCode}
-                  </Text>
-                </View>
-                <Ionicons name="share-outline" size={20} color="#818cf8" />
-              </View>
-            </BlurView>
-          </Pressable>
+              </BlurView>
+            </Pressable>
+          ) : null}
         </>
       )}
 

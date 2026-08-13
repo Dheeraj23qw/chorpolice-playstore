@@ -3,18 +3,18 @@ import { useFocusEffect } from "expo-router";
 
 import { AudioEngine } from "@/audio/audioEngine";
 import { useAppSelector } from "@/hooks/useAppRedux";
-import { useAwardUnlocking } from "@/hooks/useAwardUnlocking";
+import { useRatingPrompt } from "@/hooks/useRatingPrompt";
 import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import store from "@/redux/store";
 import { cleanupStaleNetworkResources } from "@/service/lanGameService";
 import { LanDiscoveryService } from "@/service/network/LanDiscoveryService";
 import { clearSession } from "@/redux/reducers/sessionSlice";
 import { DevOnboardingToggle } from "@/components/DevOnboardingToggle";
+import CustomRatingModal from "@/modal/RatingModal";
 
 export default function HomeScreen() {
   const isSoundLoaded = useAppSelector((state) => state.sound.isLoaded);
-
-  useAwardUnlocking();
+  const { modalVisible: ratingModalVisible, handleClose: handleRatingClose, handleSuccess: handleRatingSuccess } = useRatingPrompt();
 
   useFocusEffect(
     useCallback(() => {
@@ -43,6 +43,12 @@ export default function HomeScreen() {
   return (
     <>
       <GameModeScreen />
+      <CustomRatingModal
+        visible={ratingModalVisible}
+        onClose={handleRatingClose}
+        onSuccess={handleRatingSuccess}
+        title="Rate Chor Police"
+      />
       {__DEV__ && <DevOnboardingToggle immediate />}
     </>
   );

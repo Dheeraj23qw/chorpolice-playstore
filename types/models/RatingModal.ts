@@ -1,6 +1,7 @@
 export interface CustomRatingModalProps {
     visible: boolean;
     onClose: () => void;
-    title: string;
+    title?: string;
     description?: string;
+    onSuccess?: () => void;
   }

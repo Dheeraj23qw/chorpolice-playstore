@@ -16,6 +16,9 @@ import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { CharacterDrawerContext } from "@/constants/characterDrawerData";
 import AppUpdateBanner from "@/components/GameModeScreen/AppUpdateBanner";
 import { NotificationPermissionBanner } from "@/components/GameModeScreen/NotificationPermissionBanner";
+import { NetworkPermissionBanner } from "@/components/GameModeScreen/NetworkPermissionBanner";
+import { useOTAUpdate } from "@/hooks/useOTAUpdate";
+import { toast } from "@/components/feedback/toast";
 
 interface GameModeSelectScreenProps {
   title: string;
@@ -33,6 +36,23 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
 }) => {
   const [selectedGame, setSelectedGame] = useState<GameModeType | null>(null);
   const pathname = usePathname();
+  const { nativeUpdate, otaAvailable } = useOTAUpdate();
+  const hasUpdateBanner = __DEV__ || !!nativeUpdate?.isAvailable || otaAvailable;
+
+  const [devBannerIndex, setDevBannerIndex] = useState(0);
+  const devBanners = [
+    "update",
+    "network",
+    "notification",
+    "none",
+  ] as const;
+  const cycleDevBanner = () => {
+    setDevBannerIndex((prev) => (prev + 1) % devBanners.length);
+    toast.info(
+      "Dev Banner",
+      `Showing: ${devBanners[devBannerIndex] === "none" ? "hidden" : devBanners[devBannerIndex]}`,
+    );
+  };
 
   useEffect(() => {
     console.log(`[NAV_DEBUG] [MODE SELECT] mounted: title="${title}", drawerContext="${drawerContext}", pathname="${pathname}"`);
@@ -76,80 +96,95 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
       />
 
       <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
-        <MotiView
-          from={{ opacity: 0, translateY: 12 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 260 }}
-          style={{ flex: 1 }}
-        >
-          <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
+        {!selectedGame && (
+          <MotiView
+            from={{ opacity: 0, translateY: 12 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: "timing", duration: 260 }}
+            style={{ flex: 1 }}
           >
-          {/* HEADER */}
-          <View className="flex-row items-center px-5 pt-2">
-            <TouchableOpacity
-              activeOpacity={0.86}
-              onPress={() => router.back()}
-              className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10"
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
             >
-              <BlurView
-                intensity={18}
-                tint="dark"
-                style={StyleSheet.absoluteFill}
-              />
-              <Ionicons name="chevron-back" size={24} color="white" />
-            </TouchableOpacity>
-
-            <View className="ml-4 flex-1">
-              <Text className="font-main-bold text-3xl tracking-tight text-white">
-                {title}
-              </Text>
-              <Text className="mt-1 text-[11px] uppercase tracking-widest text-white/40">
-                {subtitle}
-              </Text>
-            </View>
-
-            {/* Suggest Icon */}
-            <TouchableOpacity
-              activeOpacity={0.86}
-              onPress={() => router.push("/suggest")}
-              className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10"
-            >
-              <BlurView
-                intensity={18}
-                tint="dark"
-                style={StyleSheet.absoluteFill}
-              />
-              <Ionicons name="bulb-outline" size={22} color="#FBBF24" />
-            </TouchableOpacity>
-          </View>
-
-          {/* MODES LIST */}
-          <View className="flex-1 px-5 pt-8">
-            <View className="gap-y-4">
-              {modes.map((item) => (
-                <GameModeRow
-                  key={item.id}
-                  item={item}
-                  onPress={() => handleOpen(item)}
+            {/* HEADER */}
+            <View className="flex-row items-center px-5 pt-2">
+              <TouchableOpacity
+                activeOpacity={0.86}
+                onPress={() => router.back()}
+                className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10"
+              >
+                <BlurView
+                  intensity={18}
+                  tint="dark"
+                  style={StyleSheet.absoluteFill}
                 />
-              ))}
+                <Ionicons name="chevron-back" size={24} color="white" />
+              </TouchableOpacity>
+
+              <View className="ml-4 flex-1">
+                <Text className="font-main-bold text-3xl tracking-tight text-white">
+                  {title}
+                </Text>
+                <Text className="mt-1 text-[11px] uppercase tracking-widest text-white/40">
+                  {subtitle}
+                </Text>
+              </View>
+
+              {/* Suggest Icon */}
+              <TouchableOpacity
+                activeOpacity={0.86}
+                onPress={() => router.push("/suggest")}
+                className="h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/10"
+              >
+                <BlurView
+                  intensity={18}
+                  tint="dark"
+                  style={StyleSheet.absoluteFill}
+                />
+                <Ionicons name="bulb-outline" size={22} color="#FBBF24" />
+              </TouchableOpacity>
             </View>
 
-            {/* Persistent Character Drawer for Single Player / Multiplayer */}
-            {drawerContext && (
-              <DrawerSection context={drawerContext} />
-            )}
-          </View>
+            {/* MODES LIST */}
+            <View className="flex-1 px-5 pt-8">
+              <View className="gap-y-4">
+                {modes.map((item) => (
+                  <GameModeRow
+                    key={item.id}
+                    item={item}
+                    onPress={() => handleOpen(item)}
+                  />
+                ))}
+              </View>
 
-          {/* Bottom Banners */}
-          <View className="mt-auto pt-4">
-            <AppUpdateBanner />
-            <NotificationPermissionBanner />
-          </View>
-          </ScrollView>
-        </MotiView>
+              {/* Persistent Character Drawer for Single Player / Multiplayer */}
+              {drawerContext && (
+                <DrawerSection context={drawerContext} />
+              )}
+            </View>
+
+            {/* Bottom Banners */}
+            <View className="mt-auto pt-4 gap-y-3">
+              {__DEV__ && devBannerIndex === 0 ? (
+                <AppUpdateBanner forceVisible />
+              ) : __DEV__ && devBannerIndex === 1 && drawerContext === "multiplayer" ? (
+                <NetworkPermissionBanner forceVisible />
+              ) : __DEV__ && devBannerIndex === 2 ? (
+                <NotificationPermissionBanner forceVisible />
+              ) : __DEV__ && devBannerIndex === 3 ? (
+                <></>
+              ) : !__DEV__ && hasUpdateBanner ? (
+                <AppUpdateBanner />
+              ) : !__DEV__ && drawerContext === "multiplayer" ? (
+                <NetworkPermissionBanner />
+              ) : (
+                <NotificationPermissionBanner />
+              )}
+            </View>
+            </ScrollView>
+          </MotiView>
+        )}
       </SafeAreaView>
 
       {/* HOST / JOIN CHOICE FOR ONLINE MODES */}
@@ -158,6 +193,18 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
         onClose={() => setSelectedGame(null)}
         gameType={selectedGame?.gameType || selectedGame?.id || ""}
       />
+
+      {__DEV__ && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={cycleDevBanner}
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-5 py-3"
+        >
+          <Text className="font-main-bold text-xs uppercase tracking-wider text-white">
+            Dev Banner: {devBanners[devBannerIndex]}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

@@ -615,6 +615,15 @@ export const useLobbyLogic = (
         return;
       }
 
+      const humanCount = players.filter((p) => !p.isBot).length;
+      if (!soloMode && humanCount < 2) {
+        toast.warning(
+          "Need 2 humans",
+          "Add at least 1 more human player to start the match.",
+        );
+        return;
+      }
+
       setIsStarting(true);
       setIsBettingModalVisible(false);
 

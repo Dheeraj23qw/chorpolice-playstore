@@ -504,6 +504,7 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
                       networkContext={networkContext}
                       networkErrorMessage={errorMessage}
                       isSolo={isSolo}
+                      isLanModeRequested={isLanModeRequested}
                     />
                   </View>
                 )}

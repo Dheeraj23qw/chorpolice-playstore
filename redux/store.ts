@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
 
-import awardsReducer from "@/features/awards/awardsSlice";
 import gameStreakReducer, {
   initialGameStreakState,
 } from "@/features/gameStreakSlice";
@@ -43,7 +42,6 @@ const store = configureStore({
     popup: popupReducer,
     wallet: walletReducer,
     quizStats: quizStatsReducer,
-    awards: awardsReducer,
     lock: lockReducer,
     gameStreak: gameStreakReducer,
     appFlow: appFlowReducer,

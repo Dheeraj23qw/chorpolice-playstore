@@ -1,6 +1,15 @@
-import React, { useMemo, memo, useEffect, useRef } from "react";
-import { View, ScrollView, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
+import React, { useMemo, memo, useEffect, useRef, useState } from "react";
+import {
+  View,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import Animated, {
@@ -24,6 +33,9 @@ import { selectLocalPlayerId } from "@/redux/selectors/sessionSelectors";
 import { ActionButtons } from "@/screens/QuizScreen/components/renderButtons";
 import { cleanupAfterMatchCompleted } from "@/service/lanGameService";
 import { useAppSelector } from "@/hooks/useAppRedux";
+import CustomRatingModal from "@/modal/RatingModal";
+import { hasRatingCompleted, markRatingCompleted } from "@/hooks/useRatingPrompt";
+import { handleShare } from "@/utils/share";
 
 const MemoizedLeaderboard = memo(Leaderboard);
 const MemoizedWinnerSection = memo(WinnerSection);
@@ -34,8 +46,19 @@ interface FinalResultViewProps {
   setIsRulesVisible: (visible: boolean) => void;
 }
 
-const FinalResultView = ({ onExit, toggleModal, setIsRulesVisible }: FinalResultViewProps) => {
+const FinalResultView = ({
+  onExit,
+  toggleModal,
+  setIsRulesVisible,
+}: FinalResultViewProps) => {
   const insets = useSafeAreaInsets();
+  const [isRatingModalVisible, setIsRatingModalVisible] = useState(false);
+
+  const handleRatingSuccess = () => {
+    markRatingCompleted();
+    setIsRatingModalVisible(false);
+  };
+
   // 🔥 BACKUP: Ensure sockets are cleaned up when result screen mounts/unmounts
   useEffect(() => {
     // Mount: Backup cleanup in case economyHandlers path was missed
@@ -307,12 +330,19 @@ const FinalResultView = ({ onExit, toggleModal, setIsRulesVisible }: FinalResult
           <View className="mt-2 px-4">
             <ActionButtons
               onReportBugPress={() => onExit("report-bug")}
-              onEarnPress={() => onExit("earn")}
+              onRatePress={hasRatingCompleted() ? undefined : () => setIsRatingModalVisible(true)}
+              onSharePress={hasRatingCompleted() ? () => handleShare() : undefined}
               onHomePress={() => onExit("home")}
             />
           </View>
         </ScrollView>
       </SafeAreaView>
+      <CustomRatingModal
+        visible={isRatingModalVisible}
+        onClose={() => setIsRatingModalVisible(false)}
+        onSuccess={handleRatingSuccess}
+        title="Rate Chor Police"
+      />
     </View>
   );
 };

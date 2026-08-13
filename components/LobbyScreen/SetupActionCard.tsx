@@ -20,6 +20,7 @@ interface SetupActionCardProps {
   networkContext?: string;
   networkErrorMessage?: string | null;
   isSolo?: boolean;
+  isLanModeRequested?: boolean;
 }
 
 export const SetupActionCard: React.FC<SetupActionCardProps> = ({
@@ -30,6 +31,7 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   networkContext,
   networkErrorMessage,
   isSolo = false,
+  isLanModeRequested = false,
 }) => {
   const [showHotspotFix, setShowHotspotFix] = React.useState(false);
   const [showDebug, setShowDebug] = React.useState(false);
@@ -51,22 +53,31 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   const hasDuplicateAvatars =
     new Set(playerAvatars).size !== playerAvatars.length;
 
+  const humanCount = lobby.players.filter((p) => !p.isBot).length;
+  const permissionsOk =
+    isSolo || networkStatus === "granted" || !isLanModeRequested;
+  const connectionOk =
+    isSolo ||
+    lobby.connectionStatus === "HOSTING" ||
+    lobby.connectionStatus === "IDLE";
+
   const isBlockedByDuplicates = hasDuplicateNames || hasDuplicateAvatars;
   const canStart =
-    (isSolo ||
-      lobby.connectionStatus === "HOSTING" ||
-      lobby.connectionStatus === "IDLE") &&
+    connectionOk &&
     !isBlockedByDuplicates &&
-    lobby.players.length > 1;
+    (isSolo || humanCount >= 2) &&
+    permissionsOk;
 
   // Is the host still bootstrapping (IP not yet resolved)?
   const isHotspotInitializing =
     lobby.connectionStatus === "HOSTING" && !lobby.hostIp && !lobby.roomCode;
 
   const getSubtitle = () => {
-    if (lobby.players.length <= 1) return "Need at least 2 players";
+    if (!isSolo && humanCount < 2) return "add 1 more human..";
     if (hasDuplicateNames) return "All players must have unique names";
     if (hasDuplicateAvatars) return "All players must have unique avatars";
+    if (!isSolo && isLanModeRequested && networkStatus !== "granted")
+      return "Grant all permissions to start";
     return "Ready to play";
   };
 

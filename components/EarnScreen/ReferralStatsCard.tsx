@@ -17,6 +17,8 @@ export const ReferralStatsCard = () => {
 
   const referralCode = generateNumericCode(localPlayerId);
 
+  if (!referralCode) return null;
+
   const onCardPress = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -47,7 +49,7 @@ export const ReferralStatsCard = () => {
             <View className="mr-2 h-2 w-2 rounded-full bg-indigo-400" />
 
             <Text className="font-main-bold text-[10px] tracking-[2px] text-indigo-200">
-              Earn up to 25K Coins
+              Earn 100K Coins
             </Text>
           </View>
         </View>

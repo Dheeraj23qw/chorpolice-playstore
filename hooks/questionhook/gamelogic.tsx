@@ -115,7 +115,7 @@ export const useQuizGameLogic = () => {
   const [leaderboardData, setLeaderboardData] = useState<any>(null);
   const [isWaitingForOthers, setIsWaitingForOthers] = useState(false);
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
-  const [isHindi, setIsHindi] = useState(false);
+  const [isHindi, setIsHindi] = useState(true);
   const [matchHistory, setMatchHistory] = useState<any[]>([]);
   const [isPersonalSummaryVisible, setIsPersonalSummaryVisible] = useState(false);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(

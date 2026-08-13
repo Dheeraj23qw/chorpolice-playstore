@@ -8,11 +8,11 @@ import { useOTAUpdate } from "@/hooks/useOTAUpdate";
 import { toast } from "@/components/feedback/toast";
 import { AppBannerCard } from "./AppBannerCard";
 
-export const AppUpdateBanner: React.FC = () => {
+export const AppUpdateBanner: React.FC<{ forceVisible?: boolean }> = ({ forceVisible }) => {
   const { nativeUpdate, otaAvailable, applyUpdate } = useOTAUpdate();
 
   const isAvailable = nativeUpdate?.isAvailable || otaAvailable || __DEV__;
-  if (!isAvailable) return null;
+  if (!forceVisible && !isAvailable) return null;
 
   const versionText = nativeUpdate?.latestVersion
     ? `v${nativeUpdate.latestVersion}`

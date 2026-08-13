@@ -9,6 +9,8 @@ interface StandingsDropdownProps {
   getAvatarSource: (id: number) => any;
   isOpen: boolean;
   onToggle: (value: boolean) => void;
+  betAmount: number;
+  winnerId: string | null;
 }
 
 export const StandingsDropdown = ({
@@ -16,6 +18,8 @@ export const StandingsDropdown = ({
   getAvatarSource,
   isOpen,
   onToggle,
+  betAmount,
+  winnerId,
 }: StandingsDropdownProps) => {
   if (!standings || standings.length === 0) return null;
 
@@ -53,16 +57,19 @@ export const StandingsDropdown = ({
                     ? "🥉"
                     : null;
 
+            const rawMatchEarning = item.playerId === winnerId ? betAmount * 3 : -betAmount;
+            const matchEarning = Object.is(rawMatchEarning, -0) ? 0 : rawMatchEarning;
+
             return (
               <View
                 key={item.playerId}
-                className={`mb-3 flex-row items-center justify-between rounded-2xl border p-4 ${
+                className={`mb-3 flex-row items-center justify-between rounded-2xl border p-3 ${
                   isTop
                     ? "border-indigo-500/30 bg-indigo-500/10"
                     : "border-white/5 bg-white/5"
                 }`}
               >
-                {/* LEFT */}
+                {/* LEFT — rank + circular avatar + name */}
                 <View className="flex-1 flex-row items-center">
                   <View className="w-8 items-center">
                     {medal ? (
@@ -76,12 +83,12 @@ export const StandingsDropdown = ({
 
                   <View
                     style={{ width: wp(10), height: wp(10) }}
-                    className="ml-2 items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-white/10"
+                    className="ml-2 items-center justify-center overflow-hidden rounded-full border border-white/5 bg-white/10"
                   >
                     <Image
                       source={getAvatarSource(item.avatarId)}
-                      style={{ width: wp(8), height: wp(8) }}
-                      resizeMode="contain"
+                      style={{ width: wp(10), height: wp(10) }}
+                      resizeMode="cover"
                     />
                   </View>
 
@@ -90,25 +97,46 @@ export const StandingsDropdown = ({
                       className={`font-main-bold text-sm ${
                         isTop ? "text-indigo-400" : "text-white"
                       }`}
+                      numberOfLines={1}
                     >
                       {item.name}
                     </Text>
-
                     <Text className="text-[8px] uppercase tracking-widest text-white/20">
                       {index === 0 ? "Grand Champion" : `Rank #${index + 1}`}
                     </Text>
                   </View>
                 </View>
 
-                {/* RIGHT */}
-                <View className="items-end">
-                  <Text className="font-main-bold text-lg text-white">
+                {/* CORRECT COLUMN */}
+                <View className="items-center px-2">
+                  <Text className="font-main-bold text-base text-white">
                     {item.correctCount}
                   </Text>
                   <Text className="text-[8px] uppercase text-white/20">
                     Correct
                   </Text>
                 </View>
+
+                {/* MATCH EARNING COLUMN */}
+                {betAmount > 0 && (
+                  <View className="items-center pl-2 ml-2 border-l border-white/10">
+                    <Text
+                      className={`font-main-bold text-base ${
+                        matchEarning > 0
+                          ? "text-emerald-400"
+                          : matchEarning < 0
+                            ? "text-red-400"
+                            : "text-white/50"
+                      }`}
+                    >
+                      {matchEarning > 0 ? "+" : ""}
+                      {matchEarning.toLocaleString()}
+                    </Text>
+                    <Text className="text-[8px] uppercase text-white/20">
+                      Match
+                    </Text>
+                  </View>
+                )}
               </View>
             );
           })}

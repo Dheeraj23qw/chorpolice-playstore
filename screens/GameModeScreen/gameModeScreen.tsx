@@ -18,8 +18,6 @@ import {
 } from "@/components/GameModeScreen";
 
 import SpinLiveBanner from "@/components/GameModeScreen/SpinLiveBanner";
-
-import UnlockedAwardModal from "@/modal/AwardModal";
 import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
 import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { BotEngine } from "@/service/QuizBotEngine";
@@ -92,8 +90,6 @@ const GameModeScreen: React.FC = () => {
         {/* Bottom Live Spin Banner */}
         <SpinLiveBanner />
       </View>
-
-      <UnlockedAwardModal />
 
       {/* Character Drawer — overlay, auto-hides after 3s, re-shows on each Home focus */}
       {shouldShow && (
