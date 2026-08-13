@@ -291,6 +291,7 @@ export const useQuizGameLogic = () => {
     (leaderboard?: Array<{ id: string; correctCount?: number }>) => {
       if (!isMultiplayer) {
         dispatch(setCorrectAnswers(correctAnswer));
+        dispatch(setWinner(true));
         return;
       }
 

@@ -20,7 +20,7 @@ import CoinBalanceRow from "./components/CoinBalanceRow";
 
 import { QuizEngine } from "@/service/QuizEngine";
 import { BotEngine } from "@/service/QuizBotEngine";
-import { getSessionContext, stopSession } from "@/service/lanGameService";
+import { stopSession } from "@/service/lanGameService";
 
 import CustomRatingModal from "@/modal/RatingModal";
 import {
@@ -45,11 +45,15 @@ export default function QuizResult() {
     isWinner,
   } = useSelector((state: RootState) => state.difficulty);
 
+  console.log("[QUIZ_RESULT] Correct:", Correct, "Total:", Total, "isWinner:", isWinner);
+
   const selectedImages = useSelector(
     (state: RootState) => state.player.selectedImages,
   );
 
   const coins = useSelector((state: RootState) => state.wallet.coins);
+
+  const sessionState = useSelector((state: RootState) => state.session);
 
   const Motivational_Message = useRandomMessage(isWinner ? "winner" : "loser");
 
@@ -101,13 +105,9 @@ export default function QuizResult() {
 
   useEffect(() => {
     if (standings.length > 0) {
-      const MY_PLAYER_ID = getSessionContext().localPlayerId || "host_id";
-
-      const winnerId = standings[0].playerId;
-
-      dispatch(setWinner(MY_PLAYER_ID === winnerId));
+      dispatch(setWinner(sessionState.localPlayerId === standings[0].playerId));
     }
-  }, [standings, dispatch]);
+  }, [standings, dispatch, sessionState.localPlayerId]);
 
   const handleNavigation = useCallback(
     (targetRoute: string) => {
