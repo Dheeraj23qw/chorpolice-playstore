@@ -29,6 +29,7 @@ import { playerImages } from "@/constants/playerData";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { EntryModal } from "@/modal/EntryModal";
 import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
+import { ThinkAndCountRulesModal } from "@/modal/ThinkAndCountRulesModal";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 import {
   getLobbyHelpShown,
@@ -365,21 +366,41 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
       />
 
       {isSolo ? (
-        <OfflineRulesModal
-          visible={uiState === "help"}
-          onClose={() => {
-            setSoloTutorialShown(true);
-            setUiState("normal");
-          }}
-        />
+        (routeGameType || params.gameType) === "QUIZ" ? (
+          <ThinkAndCountRulesModal
+            visible={uiState === "help"}
+            onClose={() => {
+              setSoloTutorialShown(true);
+              setUiState("normal");
+            }}
+          />
+        ) : (
+          <OfflineRulesModal
+            visible={uiState === "help"}
+            onClose={() => {
+              setSoloTutorialShown(true);
+              setUiState("normal");
+            }}
+          />
+        )
       ) : (
-        <OfflineRulesModal
-          visible={uiState === "help"}
-          onClose={() => {
-            setLobbyHelpShown(true);
-            setUiState("normal");
-          }}
-        />
+        (routeGameType || params.gameType) === "QUIZ" ? (
+          <ThinkAndCountRulesModal
+            visible={uiState === "help"}
+            onClose={() => {
+              setLobbyHelpShown(true);
+              setUiState("normal");
+            }}
+          />
+        ) : (
+          <OfflineRulesModal
+            visible={uiState === "help"}
+            onClose={() => {
+              setLobbyHelpShown(true);
+              setUiState("normal");
+            }}
+          />
+        )
       )}
 
       <MultiplayerHelpModal
