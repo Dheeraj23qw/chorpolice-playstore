@@ -622,8 +622,7 @@ export const useLobbyLogic = (
           );
         }
       } else {
-        // ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 3);
-        ChorPoliceEngine.init(finalPlayers, stake, 1, matchId);
+        ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 3, matchId);
 
         ChorPoliceBotBehavior.init(botPlayers);
         if (!soloMode) {
