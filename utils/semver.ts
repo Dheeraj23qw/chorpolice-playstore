@@ -35,5 +35,10 @@ export function compareVersions(v1: string, v2: string): number {
 }
 
 export function isNewerVersion(current: string, latest: string): boolean {
-  return compareVersions(current, latest) < 0;
+  try {
+    return compareVersions(current, latest) < 0;
+  } catch {
+    // Malformed version strings — treat as not-newer to avoid crashing
+    return false;
+  }
 }

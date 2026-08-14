@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { View } from "react-native";
 
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
@@ -22,26 +21,11 @@ import {
 } from "@/storage/appStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
 
-import { useOTAUpdate } from "@/hooks/useOTAUpdate";
 import { warmupSpeech } from "@/service/QuizNarrationService";
-import { Text } from "@/components/Text";
-import { rf } from "@/utils/responsive";
-import { UpdateAppModal } from "@/modal/UpdateAppModal";
 
 let hasWarmupFired = false;
 
 export default function AppController() {
-  const {
-    updateState,
-    isUpdating,
-    latestVersion,
-    updateUrl,
-    isMandatory,
-    applyUpdate,
-  } = useOTAUpdate();
-
-  const [skippedUpdate, setSkippedUpdate] = React.useState(false);
-
   const dispatch = useAppDispatch();
   const phase = useAppSelector((state) => state.appFlow.phase);
   const coins = useAppSelector((state) => state.wallet.coins);
@@ -144,49 +128,7 @@ export default function AppController() {
     </Animated.View>
   );
 
-  const isInitialFlow = phase === "SPLASH" || phase === "VIDEO" || phase === "ONBOARDING";
-
-  const showUpdateModal =
-    (updateState.status === "native-update" || updateState.status === "ota-ready") &&
-    (!skippedUpdate || isMandatory) &&
-    (isInitialFlow || isMandatory);
-
   const renderedPhase = (() => {
-    if (isUpdating) {
-      return wrapPhase(
-        "applyingUpdate",
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "#050508",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <PremiumSplashCard
-            source={require("@/assets/modalImages/intro.webp")}
-          />
-          <View style={{ position: "absolute", bottom: 100, alignItems: "center" }}>
-            <Text
-              style={{ fontSize: rf(2), color: "#fff" }}
-              className="font-main-bold uppercase tracking-widest"
-            >
-              Applying Update...
-            </Text>
-            <Text
-              style={{
-                fontSize: rf(1.4),
-                color: "rgba(255,255,255,0.5)",
-                marginTop: 8,
-              }}
-            >
-              The app will reload in a moment.
-            </Text>
-          </View>
-        </View>,
-      );
-    }
-
     switch (phase) {
       case "ONBOARDING":
         return wrapPhase(
@@ -211,18 +153,5 @@ export default function AppController() {
     }
   })();
 
-  return (
-    <>
-      {renderedPhase}
-      <UpdateAppModal
-        isVisible={showUpdateModal}
-        onClose={() => setSkippedUpdate(true)}
-        updateUrl={updateUrl}
-        latestVersion={latestVersion}
-        isMandatory={isMandatory}
-        isOta={updateState.status === "ota-ready"}
-        onApplyOta={applyUpdate}
-      />
-    </>
-  );
+  return renderedPhase;
 }

@@ -11,7 +11,6 @@ const ANDROID_LOCATION = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
 const ANDROID_NEARBY = "android.permission.NEARBY_WIFI_DEVICES";
 
 export default function MultiplayerRoute() {
-  console.log("[NAV_DEBUG] [MULTIPLAYER] mounted route");
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 

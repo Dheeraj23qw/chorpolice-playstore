@@ -5,7 +5,6 @@ import { GameModeSelectScreen } from "@/screens/GameModeScreen/GameModeSelectScr
 import { singlePlayerModes } from "@/constants/gamemode";
 
 export default function SinglePlayerRoute() {
-  console.log("[NAV_DEBUG] [SINGLE PLAYER] mounted route");
   return (
     <>
       <Stack.Screen

@@ -67,7 +67,7 @@ export const GamePlaySection: React.FC<GamePlaySectionProps> = ({
 
   const buttonText = isPlayButtonDisabled
     ? message || `Round ${round}`
-    : "Press me to play!";
+    : "Start Game";
 
   // ── Keep the board MOUNTED during cinematic/result popups ──────────────
   // Previously this was `if (isCinematicOrResult) return null;` which

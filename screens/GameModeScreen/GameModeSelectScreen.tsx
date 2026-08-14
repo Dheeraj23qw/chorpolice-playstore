@@ -14,8 +14,8 @@ import GameModeModal from "@/modal/GameModeModal";
 import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
 import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { CharacterDrawerContext } from "@/constants/characterDrawerData";
-import AppUpdateBanner from "@/components/GameModeScreen/AppUpdateBanner";
-import { useOTAUpdate } from "@/hooks/useOTAUpdate";
+import { UpdateAppModal } from "@/modal/UpdateAppModal";
+import { useUpdateState } from "@/hooks/useOTAUpdate";
 
 interface GameModeSelectScreenProps {
   title: string;
@@ -33,29 +33,33 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
 }) => {
   const [selectedGame, setSelectedGame] = useState<GameModeType | null>(null);
   const pathname = usePathname();
-  const { isNativeUpdate, otaAvailable } = useOTAUpdate();
-  const hasUpdateBanner = __DEV__ || isNativeUpdate || otaAvailable;
-
-  useEffect(() => {
-    console.log(`[NAV_DEBUG] [MODE SELECT] mounted: title="${title}", drawerContext="${drawerContext}", pathname="${pathname}"`);
-  }, [pathname, title, drawerContext]);
+  const {
+    isNativeUpdate,
+    otaReady,
+    latestVersion,
+    updateUrl,
+    isMandatory,
+    skippedUpdate,
+    setSkippedUpdate,
+    applyUpdate,
+    isGameActive,
+  } = useUpdateState();
 
   const handleOpen = (item: GameModeType) => {
-    console.log(`[LOBBY_TRACE] GameModeSelectScreen handleOpen called: id="${item.id}", drawerContext="${drawerContext}", route="${item.route}"`);
     if (drawerContext === "single_player") {
-      console.log(`[LOBBY_TRACE] drawerContext is single_player → calling router.push({ pathname: "/host", params: { gameType: "${item.gameType || item.id}", solo: "1" } })`);
       router.push({
         pathname: "/host",
         params: { gameType: item.gameType || item.id, solo: "1" },
       } as any);
     } else if (item.id.endsWith("_online")) {
-      console.log(`[LOBBY_TRACE] online game selected → opening GameModeModal`);
       setSelectedGame(item);
     } else {
-      console.log(`[LOBBY_TRACE] standard game selected → calling router.push("${item.route}")`);
       router.push(item.route);
     }
   };
+
+  const showUpdateModal =
+    (isNativeUpdate || otaReady) && (!skippedUpdate || isMandatory) && !isGameActive;
 
   return (
     <View className="flex-1 bg-black">
@@ -145,13 +149,6 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
                 <DrawerSection context={drawerContext} />
               )}
             </View>
-
-            {/* Bottom Banners */}
-            <View className="mt-auto pt-4 gap-y-3">
-              {!__DEV__ && hasUpdateBanner ? (
-                <AppUpdateBanner />
-              ) : null}
-            </View>
             </ScrollView>
           </MotiView>
         )}
@@ -162,6 +159,16 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
         isVisible={!!selectedGame}
         onClose={() => setSelectedGame(null)}
         gameType={selectedGame?.gameType || selectedGame?.id || ""}
+      />
+
+      <UpdateAppModal
+        isVisible={showUpdateModal}
+        onClose={() => setSkippedUpdate(true)}
+        updateUrl={updateUrl}
+        latestVersion={latestVersion}
+        isMandatory={isMandatory}
+        isOta={!isNativeUpdate && otaReady}
+        onApplyOta={applyUpdate}
       />
     </View>
   );

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, createContext, useContext } from "react";
 import * as Updates from "expo-updates";
 import { useAppSelector } from "@/hooks/useAppRedux";
 import { checkAppUpdate } from "@/utils/versionCheck";
@@ -13,6 +13,7 @@ type UpdateCheckState =
       mandatory: boolean;
       url: string;
     }
+  | { status: "ota-pending" }
   | { status: "ota-downloading" }
   | { status: "ota-ready" }
   | { status: "error"; message: string };
@@ -30,16 +31,39 @@ const GAME_PHASES_REQUIRING_DEFERRED_RESTART: GamePhase[] = [
 ];
 
 let globalUpdateLock = false;
+let lastCheckTimestamp = 0;
+const CHECK_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
-export const useOTAUpdate = () => {
-  const [updateState, setUpdateState] = useState<UpdateCheckState>({ status: "idle" });
+interface UpdateContextValue {
+  updateState: UpdateCheckState;
+  isUpdating: boolean;
+  isNativeUpdate: boolean;
+  otaReady: boolean;
+  latestVersion: string;
+  updateUrl: string;
+  isMandatory: boolean;
+  isGameActive: boolean;
+  skippedUpdate: boolean;
+  setSkippedUpdate: (value: boolean) => void;
+  checkForUpdate: () => Promise<void>;
+  downloadUpdate: () => Promise<void>;
+  applyUpdate: () => Promise<void>;
+}
+
+const UpdateContext = createContext<UpdateContextValue | null>(null);
+
+export const UpdateProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [updateState, setUpdateState] =
+    useState<UpdateCheckState>({ status: "idle" });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [skippedUpdate, setSkippedUpdate] = useState(false);
 
   const gamePhase = useAppSelector((state) => state.session.gamePhase);
   const isGameActive = GAME_PHASES_REQUIRING_DEFERRED_RESTART.includes(gamePhase);
 
   const checkIdRef = useRef(0);
-  const hasRunRef = useRef(false);
   const isGameActiveRef = useRef(isGameActive);
   const updateStateRef = useRef(updateState);
 
@@ -48,23 +72,28 @@ export const useOTAUpdate = () => {
     updateStateRef.current = updateState;
   }, [isGameActive, updateState]);
 
-  const checkAndApplyUpdate = useCallback(async () => {
+  const checkForUpdate = useCallback(async () => {
     if (globalUpdateLock) return;
-    if (hasRunRef.current) return;
     if (__DEV__ || !Updates.isEnabled) {
       return;
     }
 
-    hasRunRef.current = true;
+    // Allow immediate retry on error, otherwise enforce cooldown
+    const now = Date.now();
+    const isError = updateStateRef.current.status === "error";
+    if (!isError && now - lastCheckTimestamp < CHECK_COOLDOWN_MS) return;
+
     globalUpdateLock = true;
+    lastCheckTimestamp = now;
     const thisCheckId = ++checkIdRef.current;
 
     try {
       setUpdateState({ status: "checking" });
 
       const nativeResult = await checkAppUpdate();
+      if (thisCheckId !== checkIdRef.current) return;
+
       if (nativeResult.isAvailable) {
-        if (thisCheckId !== checkIdRef.current) return;
         setUpdateState({
           status: "native-update",
           version: nativeResult.latestVersion,
@@ -84,6 +113,12 @@ export const useOTAUpdate = () => {
       if (!update.isAvailable) {
         if (thisCheckId !== checkIdRef.current) return;
         setUpdateState({ status: "idle" });
+        return;
+      }
+
+      if (isGameActiveRef.current) {
+        if (thisCheckId !== checkIdRef.current) return;
+        setUpdateState({ status: "ota-pending" });
         return;
       }
 
@@ -108,6 +143,30 @@ export const useOTAUpdate = () => {
       setUpdateState({ status: "error", message: error?.message || "Update check failed" });
     } finally {
       globalUpdateLock = false;
+    }
+  }, []);
+
+  const downloadUpdate = useCallback(async () => {
+    const current = updateStateRef.current;
+    if (current.status !== "ota-pending") return;
+
+    setUpdateState({ status: "ota-downloading" });
+
+    try {
+      const fetchTask = Updates.fetchUpdateAsync();
+      const fetchTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("OTA download timed out")), 60000),
+      );
+
+      const result = await Promise.race([fetchTask, fetchTimeout]) as Updates.UpdateFetchResult;
+
+      if (result.isNew) {
+        setUpdateState({ status: "ota-ready" });
+      } else {
+        setUpdateState({ status: "idle" });
+      }
+    } catch (error: any) {
+      setUpdateState({ status: "error", message: error?.message || "OTA download failed" });
     }
   }, []);
 
@@ -148,28 +207,62 @@ export const useOTAUpdate = () => {
     const run = async () => {
       await Promise.resolve();
       if (!cancelled) {
-        checkAndApplyUpdate();
+        await checkForUpdate();
       }
     };
     run();
     return () => {
       cancelled = true;
     };
-  }, [checkAndApplyUpdate]);
+  }, [checkForUpdate]);
+
+  useEffect(() => {
+    if (!isGameActive && updateState.status === "ota-pending") {
+      const timer = setTimeout(() => {
+        downloadUpdate();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isGameActive, updateState.status, downloadUpdate]);
 
   const isNativeUpdate = updateState.status === "native-update";
-  const otaAvailable = updateState.status === "ota-ready";
+  const otaReady = updateState.status === "ota-ready";
+  const latestVersion =
+    updateState.status === "native-update" ? updateState.version : "";
+  const updateUrl =
+    updateState.status === "native-update" ? updateState.url : "";
+  const isMandatory =
+    updateState.status === "native-update" ? updateState.mandatory : false;
 
-  return {
-    updateState,
-    isUpdating,
-    isNativeUpdate,
-    otaAvailable,
-    latestVersion: updateState.status === "native-update" ? updateState.version : "",
-    updateUrl: updateState.status === "native-update" ? updateState.url : "",
-    isMandatory: updateState.status === "native-update" ? updateState.mandatory : false,
-    checkAndApplyUpdate,
-    applyUpdate,
-    isGameActive,
-  };
+  return (
+    <UpdateContext.Provider
+      value={{
+        updateState,
+        isUpdating,
+        isNativeUpdate,
+        otaReady,
+        latestVersion,
+        updateUrl,
+        isMandatory,
+        isGameActive,
+        skippedUpdate,
+        setSkippedUpdate,
+        checkForUpdate,
+        downloadUpdate,
+        applyUpdate,
+      }}
+    >
+      {children}
+    </UpdateContext.Provider>
+  );
 };
+
+export const useUpdateState = () => {
+  const ctx = useContext(UpdateContext);
+  if (!ctx) {
+    throw new Error("useUpdateState must be used within UpdateProvider");
+  }
+  return ctx;
+};
+
+export const useOTAUpdate = useUpdateState;

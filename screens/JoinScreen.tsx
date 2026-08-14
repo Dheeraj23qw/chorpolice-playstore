@@ -87,10 +87,7 @@ const JoinScreen = () => {
     return () => {
       const s = store.getState().session;
       if (!isLeavingRef.current && s.connectionStatus !== "CONNECTED" && s.connectionStatus !== "CONNECTING") {
-        console.log("[JoinScreen] Exiting Screen - triggering cleanup (status=" + s.connectionStatus + ")");
         leaveLanLobby();
-      } else {
-        console.log("[JoinScreen] Exiting Screen - navigation safe (keeping connection alive)");
       }
     };
   }, []);
@@ -160,13 +157,6 @@ const JoinScreen = () => {
       (session.connectionStatus === "CONNECTED" ||
         session.connectionStatus === "CONNECTING")
     ) {
-      if (__DEV__) {
-        console.log("[NAV][JOIN] connection effect → /lobby", {
-          connectionStatus: session.connectionStatus,
-          gameType: params.gameType,
-          isHost: session.isHost,
-        });
-      }
       if (session.connectionStatus === "CONNECTED") {
         toast.success("Connected! 🎉", "You joined the lobby.");
       }

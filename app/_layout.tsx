@@ -21,6 +21,7 @@ import { GlobalReconnectOverlay } from "@/components/multiplayer/GlobalReconnect
 
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { PremiumSplashCard } from "@/components/PremiumSplashCard";
+import { UpdateProvider } from "@/hooks/useOTAUpdate";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -122,8 +123,10 @@ export default function RootLayout() {
         <GlobalErrorBoundary>
           <View className="flex-1 bg-black" onLayout={onLayoutRootView}>
             <StatusBar hidden />
-            <AppLayout />
-            <ToastProvider />
+            <UpdateProvider>
+              <AppLayout />
+              <ToastProvider />
+            </UpdateProvider>
           </View>
         </GlobalErrorBoundary>
       </SafeAreaProvider>

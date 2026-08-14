@@ -462,15 +462,6 @@ export const useLobbyLogic = (
 
   const routeToLobbyStage = useCallback(
     (nextStage: "room" | "setup", source: "open_setup" | "back_to_room") => {
-      if (__DEV__) {
-        console.log("[NAV][LOBBY] stage route requested", {
-          source,
-          nextStage,
-          gameType,
-          isHost,
-          connectionStatus,
-        });
-      }
       router.replace({
         pathname: nextStage === "setup" ? "/lobby-setup" : "/lobby",
         params: {

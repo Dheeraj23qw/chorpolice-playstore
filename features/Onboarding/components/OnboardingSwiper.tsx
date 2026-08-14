@@ -23,7 +23,6 @@ import { Text } from "@/components/Text";
 import { rf, wp } from "@/utils/responsive";
 import { ONBOARDING_SLIDES } from "../data/onboardingSlides";
 import AnimatedSlideImage from "./AnimatedSlideImage";
-import { DevOnboardingToggle } from "@/components/DevOnboardingToggle";
 
 const { width, height } = Dimensions.get("window");
 
@@ -179,9 +178,6 @@ const OnboardingSwiper = ({ onComplete }: OnboardingSwiperProps) => {
           )}
         </TouchableOpacity>
       </Animated.View>
-
-      {/* Dev-only: replay onboarding on every app launch (to test/catch errors) */}
-      {__DEV__ && <DevOnboardingToggle />}
 
       <AnimatedCTA
         scrollX={scrollX}

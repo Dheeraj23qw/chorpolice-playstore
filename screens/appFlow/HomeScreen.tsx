@@ -8,7 +8,6 @@ import GameModeScreen from "@/screens/GameModeScreen/gameModeScreen";
 import store from "@/redux/store";
 import { cleanupStaleNetworkResources } from "@/service/lanGameService";
 import { clearSession } from "@/redux/reducers/sessionSlice";
-import { DevOnboardingToggle } from "@/components/DevOnboardingToggle";
 import CustomRatingModal from "@/modal/RatingModal";
 
 export default function HomeScreen() {
@@ -20,7 +19,6 @@ export default function HomeScreen() {
       console.log("[LAN][CLEANUP] Home screen focused - clearing stale session");
       void cleanupStaleNetworkResources({ reason: "home_focus" });
 
-      // Clear session state (remove old players, reset phase)
       store.dispatch(clearSession());
       console.log("[LAN][CLEANUP] Session cleared on Home focus");
     }, [])
@@ -41,7 +39,6 @@ export default function HomeScreen() {
         onSuccess={handleRatingSuccess}
         title="Rate Chor Police"
       />
-      {__DEV__ && <DevOnboardingToggle immediate />}
     </>
   );
 }

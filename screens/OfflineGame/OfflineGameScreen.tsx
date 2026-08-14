@@ -185,7 +185,7 @@ const OfflineGameScreen = () => {
   }, [g.handlePlay]);
 
   const buttonText = useMemo(() => {
-    if (g.phase === "idle") return "Press me to play!";
+    if (g.phase === "idle") return "Start Game";
     if (g.phase === "dealing") return "Dealing roles...";
     if (g.phase === "public_reveal") return "King & Police Revealed!";
     if (g.phase === "investigation_shuffle") return "Shuffling targets...";

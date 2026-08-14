@@ -51,7 +51,6 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
   const isSolo = params.solo === "1" || params.solo === "true";
 
   useEffect(() => {
-    console.log(`[LOBBY_TRACE] LobbySetupScreen component rendering/mounting: forcedMode=${forcedMode}, routeGameType=${routeGameType}, isSolo=${isSolo}, params=${JSON.stringify(params)}`);
   }, [forcedMode, routeGameType, isSolo, params]);
 
   const [isLanModeRequested, setIsLanModeRequested] = useState(false);
