@@ -121,7 +121,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             "-keep class com.google.android.gms.nearby.** { *; }\n" +
             "-keep class com.google.firebase.** { *; }\n" +
             "-keep class expo.modules.notifications.** { *; }\n" +
-            "-keep class com.dieam.reactnativepushnotification.** { *; }",
+            "-keep class com.dieam.reactnativepushnotification.** { *; }\n" +
+            "-dontwarn com.google.firebase.ktx.**\n" +
+            "-dontwarn com.google.firebase.installations.ktx.**",
           packagingOptions: {
             pickFirst: ["**/libc++_shared.so"],
             exclude: [
