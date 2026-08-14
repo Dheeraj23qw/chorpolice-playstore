@@ -9,15 +9,19 @@ import {
   Platform,
   Keyboard,
   useWindowDimensions,
+  ScrollView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { MotiView } from "moti";
+import { LinearGradient } from "expo-linear-gradient";
+import { Gift, Sparkles, AlertCircle } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import { Text } from "@/components/Text";
 import { useAppDispatch } from "@/hooks/useAppRedux";
 import { updateCoins } from "@/features/wallet/walletSlice";
-import { toast } from "@/components/feedback/toast";
-import { storage } from "@/storage/mmkv";
 import { verifyReferralCode, generateNumericCode } from "@/utils/referral";
+import { isCodeRedeemed, markCodeAsRedeemed } from "@/storage/redeemedCodesStorage";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { incrementShares } from "@/storage/referralStatsStorage";
@@ -33,6 +37,7 @@ interface Props {
 export const RedeemModal = ({ visible, onClose }: Props) => {
   const dispatch = useAppDispatch();
   const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const localPlayerId = useSelector((s: RootState) => s.session.localPlayerId);
 
@@ -41,6 +46,8 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const inputRef = useRef<TextInput>(null);
 
@@ -89,11 +96,18 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
 
     const timer = setTimeout(() => {
       setShowSuccess(false);
+      setSuccessMessage("");
       onClose();
-    }, 1800);
+    }, 2200);
 
     return () => clearTimeout(timer);
   }, [showSuccess, onClose]);
+
+  useEffect(() => {
+    if (!errorMessage) return;
+    const timer = setTimeout(() => setErrorMessage(""), 2500);
+    return () => clearTimeout(timer);
+  }, [errorMessage]);
 
   /*
    * REDEEM
@@ -106,10 +120,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
     Keyboard.dismiss();
 
     if (!canRedeem) {
-      toast.warning(
-        "Profile Required",
-        "Please set up your profile before redeeming a code.",
-      );
+      setErrorMessage("Please set up your profile before redeeming a code.");
       return;
     }
 
@@ -121,18 +132,12 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
      * SELF REFERRAL
      */
     if (inputCode === myCode) {
-      toast.warning(
-        "Self-Referral",
-        "You cannot redeem your own referral code!",
-      );
-
+      setErrorMessage("You cannot redeem your own referral code!");
       setIsSubmitting(false);
       setCode("");
-
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
-
       return;
     }
 
@@ -142,24 +147,29 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
     const isValid = verifyReferralCode(inputCode) || inputCode === "ADMIN100";
 
     if (isValid) {
+      if (isCodeRedeemed(inputCode)) {
+        setErrorMessage("This code has already been used!");
+        setIsSubmitting(false);
+        setCode("");
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+        return;
+      }
+
       dispatch(updateCoins(REFERRAL_BONUS_COINS));
 
       incrementShares(REFERRAL_BONUS_COINS);
 
-      toast.success(
-        "Bonus Received!",
-        "100,000 coins have been added to your bag.",
-      );
+      markCodeAsRedeemed(inputCode);
 
+      setSuccessMessage("🎉 Congratulations! +100,000 coins added to your bag");
       setShowSuccess(true);
+      setErrorMessage("");
     } else {
-      toast.error(
-        "Invalid Code",
-        "This code doesn't match our records. Check for typos!",
-      );
-
+      setErrorMessage("This code doesn't match our records. Check for typos!");
+      setIsSubmitting(false);
       setCode("");
-
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -178,19 +188,35 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        {/* BACKDROP */}
-        <View className="flex-1 items-center justify-center bg-[#080817] px-4">
-          {/* OUTSIDE TAP */}
-          <Pressable
-            className="absolute inset-0 bg-black/45"
-            onPress={onClose}
-          />
+      {/* FULL-SCREEN BACKDROP - hides background content */}
+      <View className="absolute inset-0">
+        <Pressable
+          className="flex-1"
+          onPress={onClose}
+        />
+        <LinearGradient
+          colors={["#080817", "#0B1A17", "#071210"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="absolute inset-0"
+          style={{ opacity: 0.85 }}
+        />
+      </View>
 
-          {/* PREMIUM INDIGO / PURPLE MODAL */}
+      {/* KEYBOARD-AWARE MODAL */}
+      <KeyboardAvoidingView
+        className="flex-1 justify-center items-center px-4"
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        keyboardVerticalOffset={Platform.select({ 
+          ios: insets.top + 24, 
+          android: insets.bottom + 24 
+        })}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="flex-1 justify-center items-center"
+        >
           <MotiView
             from={{
               opacity: 0,
@@ -202,6 +228,11 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
               scale: 1,
               translateY: -35,
             }}
+            exit={{
+              opacity: 0,
+              scale: 0.92,
+              translateY: 5,
+            }}
             transition={{
               type: "spring",
               damping: 18,
@@ -209,46 +240,66 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
             }}
             style={{
               width: cardWidth,
-              maxHeight: Math.min(height - 40, 600),
+              maxHeight: Math.min(height - insets.top - insets.bottom - 60, 600),
             }}
-            className="overflow-hidden rounded-[28px] border border-indigo-400/35 bg-[#17162F]"
+            className="overflow-hidden rounded-[28px] border border-emerald-400/35 bg-[#0B1A17]"
           >
             {/* SOFT TOP ACCENT */}
-            <View className="h-1 w-full bg-indigo-400/70" />
+            <View className="h-1 w-full bg-emerald-400/70" />
 
             {/* SUCCESS BANNER */}
             {showSuccess && (
               <MotiView
-                from={{ opacity: 0, translateY: -10, scale: 0.95 }}
-                animate={{ opacity: 1, translateY: 0, scale: 1 }}
-                transition={{ type: "spring", damping: 16, stiffness: 180 }}
-                className="mx-5 mt-4 flex-row items-center rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3"
+                from={{ opacity: 0, scale: 0.8, translateY: -20 }}
+                animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                exit={{ opacity: 0, scale: 0.8, translateY: -20 }}
+                transition={{ type: "spring", damping: 15, stiffness: 180 }}
+                className="mx-5 mt-4 items-center rounded-2xl border border-emerald-400/40 bg-emerald-500/20 px-5 py-5"
               >
-                <View className="mr-3 h-8 w-8 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-500/20">
-                  <Ionicons name="checkmark" size={18} color="#34D399" />
+                <MotiView
+                  from={{ scale: 0, rotate: "-180deg" }}
+                  animate={{ scale: 1, rotate: "0deg" }}
+                  transition={{ type: "spring", damping: 12, stiffness: 180, delay: 100 }}
+                  className="mb-3 h-16 w-16 items-center justify-center rounded-full border-2 border-emerald-400/50 bg-emerald-500/30"
+                >
+                  <Sparkles size={28} color="#6ee7b7" />
+                </MotiView>
+                <Text className="font-main-bold text-base text-emerald-300 text-center">
+                  {successMessage}
+                </Text>
+                <Text className="mt-1 font-main text-[10px] text-emerald-200/70 text-center">
+                  Your coins are ready to use!
+                </Text>
+              </MotiView>
+            )}
+
+            {/* ERROR BANNER */}
+            {errorMessage && !showSuccess && (
+              <MotiView
+                from={{ opacity: 0, translateY: -10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: "timing", duration: 300 }}
+                className="mx-5 mt-4 flex-row items-center rounded-2xl border border-red-400/30 bg-red-500/15 px-4 py-3"
+              >
+                <View className="mr-3 h-8 w-8 items-center justify-center rounded-full border border-red-400/40 bg-red-500/20">
+                  <AlertCircle size={18} color="#f87171" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-main-bold text-sm text-emerald-300">
-                    Code Redeemed!
+                  <Text className="font-main-bold text-sm text-red-300">
+                    {errorMessage}
                   </Text>
-                  <Text className="font-main text-[10px] text-emerald-200/70">
-                    +100,000 coins added to your bag
-                  </Text>
-                </View>
-                <View className="h-8 w-8 items-center justify-center rounded-full border border-amber-400/40 bg-amber-500/15">
-                  <Text className="text-sm">🪙</Text>
                 </View>
               </MotiView>
             )}
 
             {/* HEADER */}
-            <View className="px-5 pb-4 pt-5">
+            <View className="px-5 pt-5 pb-4" style={{ paddingTop: Math.max(16, insets.top * 0.5) }}>
               <View className="flex-row items-start justify-between">
                 <View className="flex-1 pr-3">
                   <View className="mb-2 flex-row items-center">
                     {/* GIFT ICON */}
-                    <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-indigo-300/25 bg-indigo-500/15">
-                      <Ionicons name="gift-outline" size={21} color="#A5B4FC" />
+                    <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/25 bg-emerald-500/15">
+                      <Ionicons name="gift-outline" size={21} color="#6ee7b7" />
                     </View>
 
                     {/* TITLE */}
@@ -257,7 +308,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
                         Redeem Code
                       </Text>
 
-                      <Text className="mt-0.5 font-main text-[10px] uppercase tracking-[1.5px] text-indigo-200/50">
+                      <Text className="mt-0.5 font-main text-[10px] uppercase tracking-[1.5px] text-emerald-200/50">
                         Referral reward
                       </Text>
                     </View>
@@ -280,32 +331,11 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
             </View>
 
             {/* CONTENT */}
-            <View className="px-5 pb-5">
-              {/* REWARD BOX */}
-              <View className="mb-5 flex-row items-center rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] px-4 py-3">
-                {/* COIN ICON */}
-                <View className="h-10 w-10 items-center justify-center rounded-xl border border-amber-300/25 bg-amber-400/10">
-                  <Ionicons name="sparkles" size={20} color="#F6C85F" />
-                </View>
-
-                {/* REWARD TEXT */}
-                <View className="ml-3 flex-1">
-                  <Text className="font-main-bold text-[10px] uppercase tracking-[1.4px] text-amber-200/55">
-                    Instant Reward
-                  </Text>
-
-                  <Text className="mt-0.5 font-main-bold text-base text-amber-100">
-                    +100,000 Coins
-                  </Text>
-                </View>
-
-                <Ionicons name="chevron-forward" size={17} color="#A78343" />
-              </View>
-
+            <View className="px-5 pb-6" style={{ paddingBottom: Math.max(20, insets.bottom) }}>
               {/* INPUT LABEL */}
                <Text className="mb-3 font-main-bold text-[10px] uppercase tracking-[1.5px] text-white/45">
-                 Enter friend's 5-digit referral code
-               </Text>
+                  Enter friend's 5-digit referral code
+                </Text>
 
               {/* 5 DIGIT INPUT */}
               <Pressable
@@ -333,9 +363,9 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
                         }}
                         className={`items-center justify-center border ${
                           digit
-                            ? "border-indigo-300/50 bg-indigo-400/20"
+                            ? "border-emerald-300/50 bg-emerald-400/20"
                             : isCurrent
-                              ? "border-indigo-300/45 bg-indigo-500/15"
+                              ? "border-emerald-300/45 bg-emerald-500/15"
                               : "border-white/[0.10] bg-white/[0.035]"
                         }`}
                       >
@@ -356,7 +386,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
                               stiffness: 220,
                             }}
                           >
-                            <Text className="font-main-bold text-xl text-indigo-100">
+                            <Text className="font-main-bold text-xl text-emerald-100">
                               {digit}
                             </Text>
                           </MotiView>
@@ -370,7 +400,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
                               duration: 650,
                               loop: true,
                             }}
-                            className="h-5 w-[2px] rounded-full bg-indigo-300"
+                            className="h-5 w-[2px] rounded-full bg-emerald-300"
                           />
                         ) : null}
                       </View>
@@ -401,32 +431,52 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
               </Pressable>
 
               {/* CLAIM BUTTON */}
-              <TouchableOpacity
-                onPress={handleRedeem}
+              <Pressable
+                onPress={() => {
+                  if (!isReady || isSubmitting) return;
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  handleRedeem();
+                }}
                 disabled={!isReady}
-                activeOpacity={0.85}
-                className={`h-14 w-full items-center justify-center rounded-2xl border ${
-                  isReady
-                    ? "border-indigo-300/50 bg-indigo-500"
-                    : "border-white/10 bg-white/[0.06]"
-                }`}
+                className="h-14 w-full overflow-hidden rounded-2xl"
+                style={{
+                  shadowColor: isReady ? "#10b981" : "transparent",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: isReady ? 0.4 : 0,
+                  shadowRadius: 16,
+                  elevation: isReady ? 10 : 0,
+                }}
               >
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name={isSubmitting ? "sync-outline" : "sparkles"}
-                    size={19}
-                    color={isReady ? "#FFFFFF" : "#66677D"}
-                  />
-
-                  <Text
-                    className={`ml-2 font-main-bold text-sm uppercase tracking-[1.5px] ${
-                      isReady ? "text-white" : "text-white/35"
-                    }`}
+                {({ pressed }) => (
+                  <MotiView
+                    animate={{ scale: pressed && isReady ? 0.97 : 1 }}
+                    transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                    className="h-full w-full overflow-hidden rounded-2xl"
                   >
-                    {isSubmitting ? "Verifying..." : canRedeem ? "Claim 100,000 Coins" : "Profile Required"}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                     {isReady ? (
+                       <View className="h-full w-full flex-row items-center justify-center overflow-hidden rounded-2xl border border-emerald-400/40 bg-emerald-600">
+                         <View className="h-9 w-9 items-center justify-center rounded-xl border border-emerald-400/40 bg-emerald-500/25">
+                           <Gift size={18} color="#6ee7b7" />
+                         </View>
+                         <Text className="ml-3 font-main-bold text-sm uppercase tracking-[2px] text-emerald-50">
+                           {isSubmitting ? "Verifying..." : "Claim 100,000 Coins"}
+                         </Text>
+                       </View>
+                     ) : (
+                       <View className="h-full w-full flex-row items-center justify-center border border-white/10 bg-white/[0.06]">
+                         <Ionicons
+                           name="lock-closed"
+                           size={18}
+                           color="#66677D"
+                         />
+                         <Text className="ml-2.5 font-main-bold text-sm uppercase tracking-[1.5px] text-white/35">
+                           {canRedeem ? "Enter Code Above" : "Profile Required"}
+                         </Text>
+                       </View>
+                     )}
+                  </MotiView>
+                )}
+              </Pressable>
 
               {/* FOOTER */}
               <View className="mt-4 items-center">
@@ -444,7 +494,7 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
               </View>
             </View>
           </MotiView>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );

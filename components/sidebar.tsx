@@ -35,6 +35,7 @@ import {
   Volume2,
   VolumeX,
   Lightbulb,
+  Gift,
 } from "lucide-react-native";
 
 import { rf } from "@/utils/responsive";
@@ -105,6 +106,7 @@ export const FullScreenMenu = ({
     { label: "Earn", icon: Flashlight, path: "/earn" },
     { label: "Stats", icon: BarChart3, path: "/stats" },
     { label: "Profile", icon: User, path: "/profile" },
+    { label: "Referral", icon: Gift, path: "/earn" },
     {
       label: isMuted ? "Sound Off" : "Sound On",
       icon: isMuted ? VolumeX : Volume2,

@@ -11,8 +11,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 import { Text } from "@/components/Text";
 import useGalleryPicker from "@/hooks/useGalleryPicker";
@@ -27,16 +27,12 @@ import {
 import { playerImages } from "@/constants/playerData";
 import { useEarnLogic } from "@/hooks/useEarnLogic";
 import { useAppSelector, useAppDispatch } from "@/hooks/useAppRedux";
-import { RedeemModal } from "@/modal/RedeemModal";
 import { toast } from "@/components/feedback/toast";
 import SpinToWinModal from "@/modal/SpinToWinModal";
 import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
 import { SPIN_COOLDOWN_MS } from "@/constants/spinwheel";
 import { DevSpinToggle } from "@/components/DevSpinToggle";
-import { generateNumericCode } from "@/utils/referral";
 import { updateStreak } from "@/storage/streakStorage";
-import { handleShare } from "@/utils/share";
-import { loadReferralStats } from "@/storage/referralStatsStorage";
 
 // AnimatedNumber — tweens between value changes (counts up on mount too).
 const AnimatedNumber: React.FC<{ value: number; className?: string }> = ({
@@ -73,6 +69,7 @@ const AnimatedNumber: React.FC<{ value: number; className?: string }> = ({
 };
 
 const UserProfileCard = () => {
+  const router = useRouter();
   const { coins } = useEarnLogic();
   const scale = useSharedValue(1);
   const borderGlow = useSharedValue(0);
@@ -85,14 +82,11 @@ const UserProfileCard = () => {
   const [avatarId, setAvatarId] = useState(loadAvatarId());
   const [name, setName] = useState(loadUsername());
   const [isEditing, setIsEditing] = useState(false);
-  const [isRedeemVisible, setIsRedeemVisible] = useState(false);
   const [isSpinModalVisible, setIsSpinModalVisible] = useState(false);
   const [streak, setStreak] = useState(1);
 
   const localPlayerId = useAppSelector((s) => s.session.localPlayerId);
   const spinLock = useAppSelector((s) => s.lock.spin);
-  const referralCode = generateNumericCode(localPlayerId);
-  const referralStats = useMemo(() => loadReferralStats(), [coins]);
   const dispatch = useAppDispatch();
 
   const COOLDOWN_MS = SPIN_COOLDOWN_MS;
@@ -215,7 +209,7 @@ const UserProfileCard = () => {
           />
         </View>
       ) : (
-        /* 👤 INACTIVE SPIN WHEEL VIEW: Show full profile card, coins, streak & referral card */
+        /* 👤 INACTIVE SPIN WHEEL VIEW: Show full profile card, coins & streak */
         <>
           {/* COINS, STREAK & REFERRALS SINGLE ANIMATED TOP ROW */}
           <View className="mb-6 flex-row items-center justify-between gap-x-2">
@@ -255,22 +249,6 @@ const UserProfileCard = () => {
                 <AnimatedNumber
                   value={streak}
                   className="font-main-bold text-sm tracking-tight text-orange-300"
-                />
-              </View>
-            </View>
-
-            {/* 3. REFERRALS MADE */}
-            <View className="flex-1 flex-row items-center justify-center overflow-hidden rounded-2xl border border-indigo-400/40 bg-indigo-500/10 px-2.5 py-2 shadow-[0_0_16px_rgba(129,140,248,0.3)]">
-              <View className="mr-1.5 h-7 w-7 items-center justify-center rounded-full border border-indigo-400/80 bg-indigo-400/20">
-                <Text className="text-xs">👥</Text>
-              </View>
-              <View>
-                <Text className="font-main-bold text-[8px] uppercase tracking-wider text-indigo-300/70">
-                  Referrals
-                </Text>
-                <AnimatedNumber
-                  value={referralStats.totalShares}
-                  className="font-main-bold text-sm tracking-tight text-indigo-300"
                 />
               </View>
             </View>
@@ -355,7 +333,7 @@ const UserProfileCard = () => {
 
               <View className="mt-3 flex-row items-center">
                 <Pressable
-                  onPress={() => setIsRedeemVisible(true)}
+                  onPress={() => router.push("/earn")}
                   className="ml-3 flex-row items-center rounded-full border border-indigo-300/40 bg-indigo-500 px-4 py-2 shadow-[0_0_12px_rgba(124,92,255,0.6)] active:opacity-80"
                 >
                   <Ionicons
@@ -371,41 +349,8 @@ const UserProfileCard = () => {
               </View>
             </View>
           </View>
-
-          {/* REFERRAL CARD */}
-          {referralCode ? (
-            <Pressable
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                handleShare(referralCode);
-              }}
-              className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/5"
-            >
-              <BlurView intensity={15} tint="dark">
-                <View className="flex-row items-center p-5">
-                  <View className="h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/20">
-                    <Ionicons name="qr-code" size={20} color="#818cf8" />
-                  </View>
-                  <View className="ml-4 flex-1">
-                    <Text className="font-main-medium text-[9px] uppercase tracking-[2px] text-white/40">
-                      Personal Referral ID
-                    </Text>
-                    <Text className="font-main-bold text-xl tracking-[5px] text-indigo-400">
-                      {referralCode}
-                    </Text>
-                  </View>
-                  <Ionicons name="share-outline" size={20} color="#818cf8" />
-                </View>
-              </BlurView>
-            </Pressable>
-          ) : null}
         </>
       )}
-
-      <RedeemModal
-        visible={isRedeemVisible}
-        onClose={() => setIsRedeemVisible(false)}
-      />
 
       <SpinToWinModal
         isVisible={isSpinModalVisible}

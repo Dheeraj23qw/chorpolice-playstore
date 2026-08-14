@@ -1,10 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { View, TouchableOpacity } from "react-native";
-import { Trophy, Lock } from "lucide-react-native";
+import { MotiView } from "moti";
+import * as Haptics from "expo-haptics";
+import { Trophy, Lock, CheckCircle2, Flame } from "lucide-react-native";
 import { Text } from "@/components/Text";
 import { RewardTier } from "@/constants/RewardsConst";
 import { getOfferTimeData } from "@/utils/time";
 import { Alerts } from "@/utils/alert";
+import { formatCompactNumber } from "@/utils/formatCompactNumber";
+
+const ICON_MAP: Record<string, any> = {
+  Coins: Trophy,
+  Shield: Trophy,
+  Trophy: Trophy,
+  Crown: Trophy,
+  Gem: Trophy,
+  Vault: Trophy,
+  Flame: Flame,
+  Star: Trophy,
+};
 
 interface MilestoneCardProps {
   tier: RewardTier;
@@ -47,16 +61,12 @@ export const MilestoneCard = ({
   const formatTime = () => {
     if (expired) return "Expired";
     if (days > 1) return `${days}d left`;
-
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
       2,
       "0",
     )}:${String(seconds).padStart(2, "0")}`;
   };
 
-  /**
-   * 🎯 SMART TAP (INFO + UX)
-   */
   const handleCardPress = () => {
     if (isClaimed) {
       Alerts.success(
@@ -77,135 +87,173 @@ export const MilestoneCard = ({
       Alerts.error(
         isEndingSoon ? "Hurry Up!" : "Limited Offer",
         isEndingSoon
-          ? `Only ${formatTime()} left! Earn ${remaining.toLocaleString()} coins fast!`
-          : `You need ${remaining.toLocaleString()} more coins.\nTime left: ${formatTime()}`,
+          ? `Only ${formatTime()} left! Earn ${formatCompactNumber(remaining)} coins fast!`
+          : `You need ${formatCompactNumber(remaining)} more coins.\nTime left: ${formatTime()}`,
       );
       return;
     }
 
-    // Optional: hint instead of auto-claim
     Alerts.success("Ready to Claim", `You can unlock ${tier.reward} now 🎯`);
   };
 
+  const IconComponent = ICON_MAP[tier.icon] || Trophy;
+
+  const statusConfig = isClaimed
+    ? { label: "CLAIMED", color: "#94a3b8", bg: "bg-slate-500/20", border: "border-slate-500/30", icon: CheckCircle2 }
+    : expired
+    ? { label: "EXPIRED", color: "#ef4444", bg: "bg-red-500/20", border: "border-red-500/30", icon: Lock }
+    : unlocked
+    ? { label: "UNLOCKED", color: "#10b981", bg: "bg-emerald-500/20", border: "border-emerald-500/30", icon: Trophy }
+    : { label: formatTime(), color: "#818cf8", bg: "bg-indigo-500/20", border: "border-indigo-500/30", icon: Lock };
+
+  const StatusIcon = statusConfig.icon;
+
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={handleCardPress}
-      style={[
-        { width: cardWidth },
-        unlocked && !isDead
-          ? {
-              shadowColor: "#10b981",
-              shadowOffset: { width: 0, height: 12 },
-              shadowOpacity: 0.3,
-              shadowRadius: 20,
-              elevation: 10,
-            }
-          : !isDead
-          ? {
-              shadowColor: "#6366f1",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.2,
-              shadowRadius: 15,
-              elevation: 5,
-            }
-          : {}
-      ]}
-      className={`relative mr-5 overflow-hidden rounded-[40px] border-2 p-7 ${
-        isClaimed
-          ? "border-slate-800 bg-slate-900/60 opacity-60"
-          : expired
-          ? "border-red-900/30 bg-slate-900/40 opacity-50"
-          : unlocked
-          ? "border-emerald-500/40 bg-slate-900"
-          : "border-white/10 bg-slate-900"
-      }`}
+    <MotiView
+      from={{ opacity: 0, translateY: 20, scale: 0.95 }}
+      animate={{ opacity: 1, translateY: 0, scale: 1 }}
+      transition={{ type: "spring", damping: 16, delay: tier.id * 50 }}
+      style={{ width: cardWidth }}
+      className="mr-5"
     >
-      {/* Background Glows */}
-      {!isDead && (
-        <>
-          <View className={`absolute -right-10 -bottom-10 h-40 w-40 rounded-full blur-3xl opacity-20 ${unlocked ? "bg-emerald-500" : "bg-indigo-500"}`} />
-          <View className={`absolute -left-10 -top-10 h-32 w-32 rounded-full blur-2xl opacity-10 ${unlocked ? "bg-green-400" : "bg-blue-400"}`} />
-        </>
-      )}
-
-      {/* 🔝 Top */}
-      <View className="mb-6 flex-row items-center justify-between">
-        <View className="h-14 w-14 items-center justify-center rounded-[20px] border border-white/10 bg-white/5">
-          <Text className="text-3xl">{tier.emoji}</Text>
-        </View>
-
-        <View className={`h-10 w-10 items-center justify-center rounded-2xl ${unlocked && !isDead ? "bg-emerald-500/20" : "bg-white/5"}`}>
-          {isClaimed ? (
-            <Trophy size={16} color="#94a3b8" />
-          ) : expired ? (
-            <Lock size={16} color="#ef4444" />
-          ) : unlocked ? (
-            <Trophy size={20} color="#10b981" />
-          ) : (
-            <Lock size={16} color="#64748b" />
-          )}
-        </View>
-      </View>
-
-      {/* 🎁 Reward */}
-      <View className="mb-4">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-[10px] font-main-bold uppercase tracking-[3px] text-indigo-400/60">
-            Unlock Reward
-          </Text>
-          <Text className="font-main-bold text-xs text-emerald-400">
-            + {tier.rewardCoins.toLocaleString()} 🪙
-          </Text>
-        </View>
-        <Text className="font-main-bold text-xl text-white leading-tight mt-1">{tier.reward}</Text>
-      </View>
-
-      {/* 🎯 Goal */}
-      <View className="flex-row items-center justify-between rounded-2xl bg-black/40 p-3 border border-white/5">
-        <View className="flex-row items-center">
-           <Text className="mr-1.5 text-xs">🪙</Text>
-           <Text className="font-main-bold text-sm text-indigo-300">
-             {tier.coinsRequired.toLocaleString()}
-           </Text>
-        </View>
-        <View className="rounded-lg bg-indigo-500/10 px-2 py-1">
-          <Text className="font-main-bold text-[9px] text-indigo-300">
-            {isClaimed ? "CLAIMED" : expired ? "EXPIRED" : formatTime()}
-          </Text>
-        </View>
-      </View>
-
-      {/* 📊 Progress */}
-      <View className="mt-6">
-        <View className="mb-2 flex-row justify-between">
-          <Text className="text-[10px] uppercase tracking-widest text-slate-500">Progress</Text>
-          <Text className="font-main-bold text-xs text-slate-400">
-            {progress.toFixed(0)}%
-          </Text>
-        </View>
-
-        <View className="h-2 rounded-full bg-black/40 overflow-hidden">
-          <View
-            style={{ width: `${progress}%` }}
-            className={`h-full ${
-              unlocked ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-indigo-600 shadow-[0_0_8px_#6366f1]"
-            }`}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={handleCardPress}
+        className="relative overflow-hidden rounded-[32px] border-2 p-6"
+        style={{
+          borderColor: isClaimed
+            ? "rgba(148,163,184,0.2)"
+            : expired
+            ? "rgba(239,68,68,0.2)"
+            : unlocked
+            ? "rgba(16,185,129,0.4)"
+            : "rgba(255,255,255,0.08)",
+          backgroundColor: isClaimed
+            ? "rgba(15,23,42,0.6)"
+            : expired
+            ? "rgba(15,23,42,0.4)"
+            : "rgba(15,23,42,0.9)",
+          shadowColor: unlocked ? "#10b981" : "#6366f1",
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: unlocked ? 0.3 : 0.15,
+          shadowRadius: 20,
+          elevation: 8,
+        }}
+      >
+        {/* Animated Background Glow */}
+        {!isDead && (
+          <MotiView
+            from={{ scale: 1, opacity: 0.3 }}
+            animate={{ scale: 1.2, opacity: 0.5 }}
+            transition={{
+              loop: true,
+              duration: 3000,
+              type: "timing",
+            }}
+            className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full blur-3xl"
+            style={{ backgroundColor: unlocked ? "rgba(16,185,129,0.3)" : "rgba(99,102,241,0.3)" }}
           />
-        </View>
-      </View>
+        )}
 
-      {/* 🚀 Claim */}
-      {unlocked && !isDead && (
-        <TouchableOpacity
-          onPress={() => onClaim(tier)}
-          className="mt-6 items-center rounded-2xl bg-emerald-500 py-3 shadow-[0_4px_12px_rgba(16,185,129,0.3)] active:scale-95"
-        >
-          <Text className="font-main-bold text-[11px] uppercase tracking-widest text-white">
-            Claim Reward
-          </Text>
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
+        {/* Top Section */}
+        <View className="mb-5 flex-row items-center justify-between">
+          <View className="h-14 w-14 items-center justify-center rounded-[20px] border border-white/10 bg-white/5">
+            <Text className="text-3xl">{tier.emoji}</Text>
+          </View>
+
+          <View className={`h-10 w-10 items-center justify-center rounded-2xl border ${unlocked && !isDead ? "border-emerald-400/30 bg-emerald-500/20" : "border-white/10 bg-white/5"}`}>
+            {isClaimed ? (
+              <CheckCircle2 size={18} color="#94a3b8" />
+            ) : expired ? (
+              <Lock size={18} color="#ef4444" />
+            ) : unlocked ? (
+              <Trophy size={20} color="#10b981" />
+            ) : (
+              <Lock size={16} color="#64748b" />
+            )}
+          </View>
+        </View>
+
+        {/* Reward Info */}
+        <View className="mb-5">
+          <View className="flex-row items-center justify-between mb-1">
+            <Text className="text-[10px] font-main-bold uppercase tracking-[3px] text-indigo-400/60">
+              Unlock Reward
+            </Text>
+            <View className="flex-row items-center gap-1">
+              <Text className="text-xs">🪙</Text>
+              <Text className="font-main-bold text-xs text-emerald-400">
+                +{formatCompactNumber(tier.rewardCoins)}
+              </Text>
+            </View>
+          </View>
+          <Text className="font-main-bold text-xl text-white leading-tight">{tier.reward}</Text>
+        </View>
+
+        {/* Progress Section */}
+        <View className="mb-4">
+          <View className="flex-row justify-between mb-2">
+            <Text className="text-[10px] uppercase tracking-widest text-slate-500">Progress</Text>
+            <Text className="font-main-bold text-xs text-slate-400">
+              {progress.toFixed(0)}%
+            </Text>
+          </View>
+          <View className="h-2 rounded-full bg-black/40 overflow-hidden">
+            <MotiView
+              from={{ width: "0%" }}
+              animate={{ width: `${progress}%` }}
+              transition={{ type: "timing", duration: 800 }}
+              className={`h-full rounded-full ${unlocked ? "bg-emerald-500" : "bg-indigo-600"}`}
+              style={{ shadowColor: unlocked ? "#10b981" : "#6366f1", shadowRadius: 8 }}
+            />
+          </View>
+          <View className="flex-row justify-between mt-2">
+            <View className="flex-row items-center">
+              <Text className="mr-1 text-xs">🪙</Text>
+              <Text className="font-main-bold text-xs text-indigo-300">
+                {formatCompactNumber(tier.coinsRequired)}
+              </Text>
+            </View>
+            <Text className="text-[10px] text-slate-500">
+              {Math.round(progress)}% complete
+            </Text>
+          </View>
+        </View>
+
+        {/* Status Badge / Claim Button */}
+        {unlocked && !isDead ? (
+          <MotiView
+            from={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            transition={{
+              loop: true,
+              duration: 2000,
+              type: "timing",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onClaim(tier);
+              }}
+              className="flex-row items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-3.5 active:opacity-80"
+              style={{ shadowColor: "#10b981", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 6 }}
+            >
+              <Trophy size={16} color="white" />
+              <Text className="font-main-bold text-xs uppercase tracking-[2px] text-white">
+                Claim Reward
+              </Text>
+            </TouchableOpacity>
+          </MotiView>
+        ) : (
+          <View className={`flex-row items-center justify-center gap-2 rounded-2xl border px-4 py-3 ${statusConfig.bg} ${statusConfig.border}`}>
+            <StatusIcon size={14} color={statusConfig.color} />
+            <Text className="font-main-bold text-[10px] uppercase tracking-[2px]" style={{ color: statusConfig.color }}>
+              {statusConfig.label}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </MotiView>
   );
 };

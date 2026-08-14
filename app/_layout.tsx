@@ -2,7 +2,7 @@ import "../styles/global.css";
 import "@/utils/navAudit";
 import React, { useEffect, useCallback } from "react";
 import { Provider, useSelector } from "react-redux";
-import { SplashScreen, Stack, router, usePathname } from "expo-router";
+import { SplashScreen, Stack, router, usePathname, useRootNavigationState } from "expo-router";
 import { useFonts } from "expo-font";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -29,6 +29,7 @@ function AppLayout() {
   const appPhase = useSelector((state: RootState) => state.appFlow.phase);
   const isSoundLoaded = useSelector((state: RootState) => state.sound.isLoaded);
   const pathname = usePathname();
+  const rootNavigationState = useRootNavigationState();
 
   useEffect(() => {
     const handleAppState = (state: string) => {
@@ -57,6 +58,10 @@ function AppLayout() {
       ),
     [pathname],
   );
+
+  if (!rootNavigationState?.key) {
+    return null;
+  }
 
   return (
     <View className="flex-1 bg-background">

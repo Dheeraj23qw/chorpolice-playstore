@@ -39,7 +39,6 @@ import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import { EntryModal } from "@/modal/EntryModal";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
-import { PermissionGuardian } from "@/components/PermissionGuardian";
 import { checkAppUpdate } from "@/utils/versionCheck";
 import { UpdateAppModal } from "@/modal/UpdateAppModal";
 import {
@@ -132,7 +131,6 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
   );
 
   const [uiState, setUiState] = useState<UIState>("normal");
-  const [allPermissionsGranted, setAllPermissionsGranted] = useState(false);
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(!lobby.isHost);
   const [showDebug, setShowDebug] = useState(false);
 
@@ -315,23 +313,14 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
       }
     }
 
-    // 2️⃣ Read LIVE permission status from ref (not stale closure)
-    if (statusRef.current !== "granted") {
-      console.log(
-        `[LobbySetup] 🔒 Permissions not granted (${statusRef.current}) → showing PermissionGuardian`,
-      );
-      setUiState("permissions");
-      return;
-    }
-
-    // 3️⃣ Already have a QR payload → open share immediately (read from ref)
+    // 2️⃣ Already have a QR payload → open share immediately (read from ref)
     if (qrPayloadRef.current) {
       console.log(`[LobbySetup] ✅ QR payload ready → opening share modal`);
       setUiState("share");
       return;
     }
 
-    // 4️⃣ No QR yet — hotspot may still be initializing. Poll for IP.
+    // 3️⃣ No QR yet — hotspot may still be initializing. Poll for IP.
     console.log(
       `[LobbySetup] ⏳ No QR payload yet → starting 8s poll + retrying host bootstrap`,
     );
@@ -367,7 +356,7 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
 
     setIsInviteLoading(false);
 
-    // 5️⃣ Check ref again after polling
+    // 4️⃣ Check ref again after polling
     if (qrPayloadRef.current) {
       console.log(`[LobbySetup] ✅ Opening share modal (QR resolved)`);
       setUiState("share");
@@ -556,6 +545,7 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
         roomCode={lobby.roomCode}
         onCopyRoomCode={copyRoomCode}
         isHost={lobby.isHost}
+        onHelpPress={() => setUiState("help")}
       />
 
       <ApIsolationModal
@@ -595,49 +585,6 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
         updateUrl={updateInfo.url}
         latestVersion={updateInfo.version}
       />
-
-      <AnimatePresence>
-        {uiState === "permissions" && (
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 100,
-            }}
-          >
-            <View className="flex-1">
-              <PermissionGuardian
-                onAllGranted={() => {
-                  console.log(
-                    `[LobbySetup] 🔓 PermissionGuardian → all granted. Syncing status + retrying host bootstrap.`,
-                  );
-                  setAllPermissionsGranted(true);
-                  // ✅ FIX: Call retry() so useNetworkPermissions syncs to "granted".
-                  // Without this, status stays "denied" even after the user grants,
-                  // causing the next Invite tap to show the permission screen again.
-                  void retry();
-                  lobby.handleRetryHosting();
-                  setUiState("share");
-                }}
-                onSkip={() => {
-                  console.log(
-                    `[LobbySetup] ⏭️ PermissionGuardian → user skipped permissions`,
-                  );
-                  setUiState("normal");
-                }}
-                title="Invite Friends"
-                description="We need Location permissions to generate a room code and help your friends find you."
-              />
-            </View>
-          </MotiView>
-        )}
-      </AnimatePresence>
 
       {/* 🛠 DEBUG OVERLAY (Dev Only) */}
       {__DEV__ && (

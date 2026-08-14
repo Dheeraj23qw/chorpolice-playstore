@@ -891,7 +891,6 @@ export const useQuizGameLogic = () => {
         QuizEngine.reset();
         dispatch(resetDifficulty());
         requestAnimationFrame(() => {
-          router.dismissAll();
           router.replace("/mode-select" as any);
         });
         return;
@@ -929,7 +928,6 @@ export const useQuizGameLogic = () => {
               await stopSession();
               QuizEngine.reset();
               dispatch(resetDifficulty());
-              router.dismissAll();
               router.replace("/mode-select" as any);
             })();
           }
@@ -945,7 +943,6 @@ export const useQuizGameLogic = () => {
           QuizEngine.reset();
           dispatch(resetDifficulty());
           requestAnimationFrame(() => {
-            router.dismissAll();
             router.replace("/mode-select" as any);
           });
         }
@@ -1022,7 +1019,6 @@ export const useQuizGameLogic = () => {
         4000,
       );
       requestAnimationFrame(() => {
-        router.dismissAll();
         router.replace("/mode-select" as any);
       });
     }, 2000);
@@ -1075,7 +1071,6 @@ export const useQuizGameLogic = () => {
         dispatch(resetDifficulty());
 
         requestAnimationFrame(() => {
-          router.dismissAll();
           router.replace(targetRoute as any);
         });
       } catch (err) {
@@ -1184,7 +1179,6 @@ export const useQuizGameLogic = () => {
       dispatch(resetDifficulty());
 
       requestAnimationFrame(() => {
-        router.dismissAll();
         router.replace("/mode-select" as any);
       });
     } catch (error) {

@@ -14,6 +14,7 @@ import { CircleBtn } from "./CircleBtn"; // Import from new chunk
 import { useHeaderActions } from "@/hooks/useHeaderActions";
 import { useAppSelector } from "@/hooks/useAppRedux";
 import { generateNumericCode } from "@/utils/referral";
+import { hasRatingCompleted } from "@/hooks/useRatingPrompt";
 import { NarrationSettingsModal } from "./thinkAndCountScreen/NarrationSettingsModal";
 
 const SLATE_TRANSPARENT = "rgba(0, 0, 0, 0.1)";
@@ -59,6 +60,26 @@ const OptionHeader = memo(function OptionHeader() {
           color={ICON_COLOR}
         />
       </CircleBtn>
+
+      {hasRatingCompleted() ? (
+        <CircleBtn
+          btnDim={btnDim}
+          marginBetween={marginBetween}
+          backgroundColor={SLATE_TRANSPARENT}
+          onPress={() => handleShare(referralCode)}
+        >
+          <Ionicons name="gift-outline" size={iconSize} color={ICON_COLOR} />
+        </CircleBtn>
+      ) : (
+        <CircleBtn
+          btnDim={btnDim}
+          marginBetween={marginBetween}
+          backgroundColor={SLATE_TRANSPARENT}
+          onPress={() => setIsRatingVisible(true)}
+        >
+          <Ionicons name="star" size={iconSize} color={ICON_COLOR} />
+        </CircleBtn>
+      )}
 
       <CircleBtn
         btnDim={btnDim}

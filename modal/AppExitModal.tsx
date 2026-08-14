@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Modal, View, Pressable, Platform } from "react-native";
+import { Modal, View, Pressable } from "react-native";
 import { Text } from "@/components/Text";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -67,10 +67,7 @@ export default function AppExitModal({
             tint="dark"
             className="overflow-hidden rounded-[32px] border border-white/10"
             style={{
-              backgroundColor:
-                Platform.OS === "android"
-                  ? "rgba(15,15,25,0.85)"
-                  : "transparent",
+              backgroundColor: "rgba(15,15,25,0.85)",
             }}
           >
             {/* TOP ACCENT */}

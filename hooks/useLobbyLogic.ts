@@ -753,7 +753,6 @@ export const useLobbyLogic = (
       } catch (error) {
         console.warn("[Lobby] Cleanup failed while leaving:", error);
       } finally {
-        router.dismissAll();
         router.replace("/mode-select" as any);
       }
     })();

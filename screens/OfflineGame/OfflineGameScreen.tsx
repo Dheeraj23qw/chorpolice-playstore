@@ -143,7 +143,6 @@ const OfflineGameScreen = () => {
     if (g.currentRound < g.totalRounds) {
       g.nextRound();
     } else {
-      router.dismissAll();
       router.replace("/");
     }
   }, [g.currentRound, g.nextRound, g.totalRounds, router]);

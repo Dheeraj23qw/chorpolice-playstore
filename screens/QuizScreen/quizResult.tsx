@@ -116,7 +116,6 @@ export default function QuizResult() {
       dispatch(resetDifficulty());
 
       requestAnimationFrame(() => {
-        router.dismissAll();
         router.replace(targetRoute as any);
       });
     },

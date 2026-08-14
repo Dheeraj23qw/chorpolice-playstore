@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { Modal, Pressable, View, ScrollView, Dimensions, StyleSheet } from "react-native";
+import {
+  Modal,
+  Pressable,
+  View,
+  ScrollView,
+  Dimensions,
+  StyleSheet,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { MotiView, AnimatePresence } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { Text } from "@/components/Text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf } from "@/utils/responsive";
@@ -58,112 +66,126 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
                 }}
               >
                 <View className="w-full">
-                <BlurView
-                  intensity={70}
-                  tint="dark"
-                  className="overflow-hidden"
-                >
-                  <LinearGradient
-                    colors={[
-                      "rgba(99,102,241,0.24)",
-                      "rgba(15,23,42,0.94)",
-                      "rgba(2,6,23,0.98)",
-                    ]}
-                    style={StyleSheet.absoluteFill}
-                  />
+                  <BlurView
+                    intensity={70}
+                    tint="dark"
+                    className="overflow-hidden"
+                  >
+                    <LinearGradient
+                      colors={[
+                        "rgba(99,102,241,0.24)",
+                        "rgba(15,23,42,0.94)",
+                        "rgba(2,6,23,0.98)",
+                      ]}
+                      style={StyleSheet.absoluteFill}
+                    />
 
-                  <View className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-500/20" />
-                  <View className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-blue-500/10" />
-                  <View className="absolute inset-0 rounded-[36px] border border-white/10" />
+                    <View className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-500/20" />
+                    <View className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-blue-500/10" />
+                    <View className="absolute inset-0 rounded-[36px] border border-white/10" />
 
-                  <View className="p-6">
-                    {/* Header */}
-                    <View className="mb-6 flex-row items-center justify-between">
-                      <View className="flex-1 flex-row items-center pr-3">
-                        <View className="mr-3 h-12 w-12 items-center justify-center rounded-2xl border border-indigo-300/20 bg-indigo-500/15">
-                          <Ionicons
-                            name="game-controller"
-                            size={25}
-                            color="#C7D2FE"
-                          />
+                    <View className="p-6">
+                      {/* Header */}
+                      <View className="mb-6 flex-row items-center justify-between">
+                        <View className="flex-1 flex-row items-center pr-3">
+                          <View className="mr-3 h-12 w-12 items-center justify-center rounded-2xl border border-indigo-300/20 bg-indigo-500/15">
+                            <Ionicons
+                              name="game-controller"
+                              size={25}
+                              color="#C7D2FE"
+                            />
+                          </View>
+
+                          <View className="flex-1">
+                            <Text
+                              style={{ fontSize: rf(2.05) }}
+                              className="font-main-bold text-white"
+                              numberOfLines={1}
+                            >
+                              {content.headerTitle}
+                            </Text>
+
+                            <Text
+                              style={{ fontSize: rf(1.08) }}
+                              className="mt-0.5 font-main-md text-white/45"
+                              numberOfLines={2}
+                            >
+                              {content.headerSubtitle}
+                            </Text>
+                          </View>
                         </View>
 
-                        <View className="flex-1">
-                          <Text
-                            style={{ fontSize: rf(2.05) }}
-                            className="font-main-bold text-white"
-                            numberOfLines={1}
+                        <View className="flex-row items-center">
+                          <Pressable
+                            onPress={toggleLanguage}
+                            hitSlop={10}
+                            className="mr-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5"
                           >
-                            {content.headerTitle}
-                          </Text>
+                            <Text className="font-main-bold text-[10px] text-white/80">
+                              {content.toggleText}
+                            </Text>
+                          </Pressable>
 
-                          <Text
-                            style={{ fontSize: rf(1.08) }}
-                            className="mt-0.5 font-main-md text-white/45"
-                            numberOfLines={2}
+                          <Pressable
+                            onPress={onClose}
+                            hitSlop={12}
+                            className="h-9 w-9 items-center justify-center rounded-full bg-white/10"
                           >
-                            {content.headerSubtitle}
-                          </Text>
+                            <Ionicons name="close" size={20} color="white" />
+                          </Pressable>
                         </View>
                       </View>
 
-                      <View className="flex-row items-center">
-                        <Pressable
-                          onPress={toggleLanguage}
-                          hitSlop={10}
-                          className="mr-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5"
-                        >
-                          <Text className="font-main-bold text-[10px] text-white/80">
-                            {content.toggleText}
-                          </Text>
-                        </Pressable>
-
-                        <Pressable
-                          onPress={onClose}
-                          hitSlop={12}
-                          className="h-9 w-9 items-center justify-center rounded-full bg-white/10"
-                        >
-                          <Ionicons name="close" size={20} color="white" />
-                        </Pressable>
-                      </View>
-                    </View>
-
-                    {/* Content */}
-                    <ScrollView
-                      showsVerticalScrollIndicator={false}
-                      className="shrink"
-                      contentContainerStyle={{ paddingBottom: 4 }}
-                    >
-                      {content.items.map((item, index) => (
-                        <HelpItem key={item.title} {...item} index={index} />
-                      ))}
-                    </ScrollView>
-
-                    {/* Button */}
-                    <Pressable
-                      onPress={onClose}
-                      className="mt-6 overflow-hidden rounded-[22px]"
-                    >
-                      <LinearGradient
-                        colors={["#818cf8", "#6366f1", "#4f46e5"]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
+                      {/* Content */}
+                      <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        className="shrink"
+                        contentContainerStyle={{ paddingBottom: 4 }}
                       >
-                        <View className="h-14 flex-1 flex-row items-center justify-center">
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={20}
-                            color="white"
-                          />
+                        {content.items.map((item, index) => (
+                          <HelpItem key={item.title} {...item} index={index} />
+                        ))}
+                      </ScrollView>
 
-                          <Text className="ml-2 font-main-bold uppercase tracking-[2px] text-white">
-                            {content.buttonText}
-                          </Text>
-                        </View>
-                      </LinearGradient>
-                    </Pressable>
-                  </View>
-                </BlurView>
+                      {/* Report a Bug */}
+                      <Pressable
+                        onPress={() => {
+                          onClose();
+                          router.push("/report-bug");
+                        }}
+                        className="mt-4 flex-row items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3"
+                      >
+                        <Ionicons name="bug-outline" size={18} color="#FCA5A5" />
+                        <Text className="ml-2 font-main-bold text-sm text-red-200">
+                          Report a Bug
+                        </Text>
+                      </Pressable>
+
+                      {/* Button */}
+                      <Pressable
+                        onPress={onClose}
+                        className="mt-4 overflow-hidden rounded-[22px]"
+                      >
+                        <LinearGradient
+                          colors={["#818cf8", "#6366f1", "#4f46e5"]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                        >
+                          <View className="h-14 flex-1 flex-row items-center justify-center">
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={20}
+                              color="white"
+                            />
+
+                            <Text className="ml-2 font-main-bold uppercase tracking-[2px] text-white">
+                              {content.buttonText}
+                            </Text>
+                          </View>
+                        </LinearGradient>
+                      </Pressable>
+                    </View>
+                  </BlurView>
                 </View>
               </MotiView>
             )}
@@ -190,39 +212,39 @@ const HelpItem = ({
         duration: 260,
         delay: index * 60,
       }}
-      className="rounded-3xl border border-white/10 bg-white/5"
+      className="mb-3 rounded-3xl border border-white/10 bg-white/5"
     >
       <View className="mb-3 flex-row items-center p-4">
-      <View
-        className="h-13 w-13 mr-4 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
-        style={{
-          shadowColor: color,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.2,
-          shadowRadius: 12,
-          elevation: 6,
-        }}
-      >
-        <Ionicons name={icon} size={25} color={color} />
-      </View>
-
-      <View className="flex-1">
-        <Text
-          style={{ fontSize: rf(1.45) }}
-          className="font-main-bold text-white"
-          numberOfLines={1}
+        <View
+          className="h-13 w-13 mr-4 items-center justify-center rounded-2xl border border-white/10 bg-white/10"
+          style={{
+            shadowColor: color,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 6,
+          }}
         >
-          {title}
-        </Text>
+          <Ionicons name={icon} size={25} color={color} />
+        </View>
 
-        <Text
-          style={{ fontSize: rf(1.18), lineHeight: rf(1.75) }}
-          className="mt-1 font-main-md text-white/45"
-          numberOfLines={2}
-        >
-          {desc}
-        </Text>
-      </View>
+        <View className="flex-1">
+          <Text
+            style={{ fontSize: rf(1.45) }}
+            className="font-main-bold text-white"
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+
+          <Text
+            style={{ fontSize: rf(1.18), lineHeight: rf(1.75) }}
+            className="mt-1 font-main-md text-white/45"
+            numberOfLines={2}
+          >
+            {desc}
+          </Text>
+        </View>
       </View>
     </MotiView>
   );

@@ -57,8 +57,6 @@ export const useCPCleanup = ({
       dispatch(resetDifficulty());
 
       requestAnimationFrame(() => {
-        router.dismissAll();
-
         switch (target) {
           case "stats":
             router.replace("/stats" as any);
@@ -82,7 +80,6 @@ export const useCPCleanup = ({
   );
 
   const navigateToHome = useCallback(() => {
-    router.dismissAll();
     router.replace("/mode-select" as any);
     setTimeout(() => dispatch(resetGameState()), 100);
   }, [dispatch, router]);

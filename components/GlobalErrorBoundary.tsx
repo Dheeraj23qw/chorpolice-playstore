@@ -65,7 +65,6 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     });
 
     requestAnimationFrame(() => {
-      router.dismissAll();
       router.replace("/mode-select" as any);
     });
   };
@@ -91,6 +90,10 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
   private handleReport = () => {
     const crashId = this.state.crashId;
+    const errorMessage = this.state.error?.message ?? "Unknown error";
+    const errorStack = this.state.error?.stack
+      ? this.state.error.stack.slice(0, 800)
+      : "No stack available";
 
     this.setState({
       hasError: false,
@@ -101,7 +104,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     requestAnimationFrame(() => {
       router.push({
         pathname: "/report-bug" as any,
-        params: { crashId },
+        params: { crashId, errorMessage, errorStack },
       });
     });
   };

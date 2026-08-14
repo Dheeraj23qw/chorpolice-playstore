@@ -160,12 +160,12 @@ export default function UserProfile() {
                   Earned
                 </Text>
 
-                <Text
-                  numberOfLines={1}
-                  className="mt-1 font-main-bold text-base text-yellow-500"
-                >
-                  {referralStats.totalEarned.toLocaleString()} 🪙
-                </Text>
+                  <Text
+                    numberOfLines={1}
+                    className="mt-1 font-main-bold text-base text-yellow-500"
+                  >
+                    {referralStats.totalEarned.toLocaleString()} 🪙
+                  </Text>
               </View>
               </View>
             </BlurView>

@@ -4,6 +4,7 @@ import React from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
+import { Users, Share2 } from "lucide-react-native";
 
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
@@ -107,7 +108,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                   disabled={isInviteLoading}
                 >
                   {({ pressed }) => {
-                    // Show spinner when: parent is polling for IP, OR hotspot interface not yet ready
                     const showSpinner =
                       isInviteLoading || isHotspotInitializing;
                     const label =
@@ -117,28 +117,64 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                     return (
                       <MotiView
                         animate={{
-                          scale: pressed && !showSpinner ? 0.98 : 1,
+                          scale: pressed && !showSpinner ? 0.97 : 1,
                           opacity: showSpinner ? 0.7 : 1,
                         }}
-                        className="rounded-2xl border border-blue-500/30 bg-blue-500/10"
+                        transition={{
+                          type: "spring",
+                          damping: 15,
+                          stiffness: 200,
+                        }}
+                        className="overflow-hidden rounded-[28px]"
                       >
-                        <View className="flex-row items-center justify-center gap-2 py-4">
-                          {showSpinner ? (
-                            <ActivityIndicator size="small" color="#93c5fd" />
-                          ) : (
-                            <Ionicons
-                              name="share-outline"
-                              size={rf(2)}
-                              color="#93c5fd"
-                            />
-                          )}
-                          <Text
-                            style={{ fontSize: rf(1.5) }}
-                            className={`font-main-bold uppercase tracking-[2px] ${showSpinner ? "text-blue-300/60" : "text-blue-200"}`}
-                          >
-                            {label}
-                          </Text>
-                        </View>
+                        {/* Animated outer glow */}
+                        {!showSpinner && (
+                          <View className="absolute inset-0 rounded-[28px] bg-emerald-500/30 blur-xl" />
+                        )}
+
+                        <LinearGradient
+                          colors={
+                            showSpinner
+                              ? ["rgba(16,185,129,0.2)", "rgba(5,150,105,0.1)"]
+                              : [
+                                  "rgba(16,185,129,0.35)",
+                                  "rgba(5,150,105,0.2)",
+                                  "rgba(0,0,0,0.25)",
+                                ]
+                          }
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          className="rounded-[28px] border border-emerald-400/30"
+                        >
+                          <View className="flex-row items-center justify-center gap-3 py-4 px-6">
+                            {showSpinner ? (
+                              <ActivityIndicator size="small" color="#6ee7b7" />
+                            ) : (
+                              <View className="items-center justify-center rounded-full bg-emerald-500/20 p-2">
+                                <Users size={rf(2.2)} color="#6ee7b7" />
+                              </View>
+                            )}
+                            <View className="flex-row items-center gap-2">
+                              <Text
+                                style={{ fontSize: rf(1.6) }}
+                                className={`font-main-bold uppercase tracking-[3px] ${
+                                  showSpinner
+                                    ? "text-emerald-300/60"
+                                    : "text-emerald-100"
+                                }`}
+                              >
+                                {label}
+                              </Text>
+                              {!showSpinner && (
+                                <Share2
+                                  size={rf(1.4)}
+                                  color="#6ee7b7"
+                                  strokeWidth={2.5}
+                                />
+                              )}
+                            </View>
+                          </View>
+                        </LinearGradient>
                       </MotiView>
                     );
                   }}

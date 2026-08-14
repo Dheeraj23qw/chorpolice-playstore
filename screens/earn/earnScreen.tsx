@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import ScreenWrapper from "@/components/screenwrapper";
 import { useEarnLogic } from "@/hooks/useEarnLogic";
 import { EarnContent } from "@/components/EarnScreen/EarnContent";
+import { RedeemModal } from "@/modal/RedeemModal";
 
 export default function EarnScreen() {
   const {
@@ -9,6 +10,8 @@ export default function EarnScreen() {
     cardWidth,
     handleClaim,
   } = useEarnLogic();
+
+  const [isRedeemVisible, setIsRedeemVisible] = useState(false);
 
   return (
     <ScreenWrapper
@@ -20,6 +23,11 @@ export default function EarnScreen() {
         coins={coins}
         cardWidth={cardWidth}
         handleClaim={handleClaim}
+        onRedeemPress={() => setIsRedeemVisible(true)}
+      />
+      <RedeemModal
+        visible={isRedeemVisible}
+        onClose={() => setIsRedeemVisible(false)}
       />
     </ScreenWrapper>
   );

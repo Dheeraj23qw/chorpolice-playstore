@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
@@ -21,14 +21,34 @@ import ScreenWrapper from "@/components/screenwrapper";
 import { Text } from "@/components/Text";
 import { sendSupportEmail } from "@/utils/supportEmail";
 import Constants from "expo-constants";
+import { useLocalSearchParams } from "expo-router";
 
 const BugsScreen = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const params = useLocalSearchParams();
 
   const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+
+  useEffect(() => {
+    const crashId = params.crashId as string | undefined;
+    const errorMessage = params.errorMessage as string | undefined;
+    const errorStack = params.errorStack as string | undefined;
+
+    if (!crashId) return;
+
+    const defaultTitle = `Bug_${crashId}`;
+    const defaultDescription = [
+      errorMessage ? `Error: ${errorMessage}` : null,
+      errorStack ? `Stack:\n${errorStack}` : null,
+    ].filter(Boolean).join("\n\n") || "No error details available.";
+
+    setTitle(defaultTitle);
+    setDescription(defaultDescription);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+  }, [params.crashId, params.errorMessage, params.errorStack]);
 
   const handleSend = async () => {
     if (!title.trim() || !description.trim()) {
