@@ -103,3 +103,16 @@ cd android
 # 3. Or Cloud EAS Build
 eas build --platform android --profile production
 ```
+
+---
+
+## Pro Tip: Updating UI Without Uploading a New APK/AAB
+
+If your changes are **only JS/TS, React Native UI components, styling, or text fixes**, you do **NOT** need to build or upload a new APK/AAB to the Play Store!
+
+Run this command directly from your terminal:
+```bash
+eas update --branch production --message "Updated UI layout and colors"
+```
+Users will receive your UI update instantly over the air.
+

@@ -462,20 +462,34 @@ https://gist.githubusercontent.com/Dheeraj23qw/895f8ccc58542c3c997ca6ca299b819e/
 
 ---
 
-### Method 5: Local Testing & Debugging Updates in `__DEV__` Mode
-*Best for: Verifying modal UI layout, button actions, or animations without publishing builds.*
+---
 
-1. In `__DEV__`, Expo OTA automatic checking is disabled to avoid corrupting dev bundles.
-2. To test `UpdateAppModal` visually:
-   ```tsx
-   <UpdateAppModal
-     isVisible={true}
-     onClose={() => {}}
-     updateUrl="https://play.google.com/store"
-     latestVersion="7.1.0"
-     isMandatory={false}
-     isOta={true}
-     onApplyOta={async () => console.log("Apply OTA pressed")}
-   />
-   ```
+## 13. Updating App UI Without Re-uploading APK to Play Store (OTA Guide)
+
+You **do NOT need to upload a new APK/AAB to the Play Store** every time you update your app's UI, layouts, or colors. You can push live UI updates directly from your laptop to users' devices using Expo EAS Update.
+
+### Instant Command
+Run this command from your terminal inside the project directory:
+```bash
+eas update --branch production --message "Update home screen UI and colors"
+```
+
+### What CAN be updated instantly (No Play Store review needed)
+- **UI Components & Layouts**: All `.tsx` screens, buttons, cards, drawers, and modals.
+- **Styling**: Tailwind CSS / NativeWind styles, colors, margins, fonts, and dark mode themes.
+- **Assets & Media**: New images, audio files, icons, and Lottie / Moti animations.
+- **Business Logic**: Game state logic, Redux reducers, utility functions, and text content.
+
+### What CANNOT be updated Over-The-Air (Requires Play Store AAB upload)
+- Adding new native C++ or native Java/Kotlin Android libraries (e.g. modifying `android/` build files).
+- Modifying native Android permissions in `AndroidManifest.xml` or `app.config.ts`.
+- Upgrading Expo SDK version (e.g., SDK 56 → SDK 57).
+
+### User Experience when OTA is published
+1. User opens the app on their phone.
+2. The app checks for OTA updates in the background.
+3. If outside active gameplay, the bundle downloads silently.
+4. When the user opens Single Player or Multiplayer setup, `UpdateAppModal` prompts **"Restart Now"**.
+5. Upon tapping "Restart Now", the new UI loads instantly!
+
 
