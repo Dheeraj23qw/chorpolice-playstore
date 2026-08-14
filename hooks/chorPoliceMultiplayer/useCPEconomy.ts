@@ -38,8 +38,14 @@ export const useCPEconomy = ({
       const winners = leaderboard.filter((p: any) => p.totalScore === maxScore);
       const isLocalWinner = winners.some((p: any) => p.id === localPlayerId);
       
-      if (isLocalWinner) {
-        const splitPot = Math.floor(totalPot / winners.length);
+      if (isLocalWinner && winners.length > 0) {
+        // 🛡️ POT VALIDATION: Calculate legitimate pot locally to prevent host pot inflation
+        const stake = Math.max(0, reduxStake || 0);
+        const expectedPot = stake * 4; // ChorPolice always has 4 players
+        const rawPot = typeof totalPot === "number" && Number.isFinite(totalPot) && totalPot > 0 ? Math.floor(totalPot) : expectedPot;
+        const safePot = Math.min(rawPot, expectedPot);
+
+        const splitPot = Math.floor(safePot / winners.length);
         if (splitPot > 0) {
           dispatch(updateCoins(splitPot));
           const winMsg = winners.length > 1 
@@ -50,7 +56,7 @@ export const useCPEconomy = ({
       }
     }
     recordCPGame(dispatch, leaderboard[0]?.id === localPlayerId, "completed");
-  }, [dispatch, localPlayerId]);
+  }, [dispatch, localPlayerId, reduxStake]);
 
   const handleRefund = useCallback((refundAmount: number, reason: string) => {
     if (refundAmount > 0) {

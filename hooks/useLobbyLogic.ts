@@ -345,11 +345,25 @@ export const useLobbyLogic = (
       if (packet.type === MODES.THINK_AND_COUNT.GAME_START) {
         // PROD-5: only clients init QuizEngine from broadcast — host already called init() directly
         if (!isHost && packet.players?.length) {
+          const bet = packet.betAmount ?? 0;
+          if (
+            typeof bet !== "number" ||
+            !Number.isFinite(bet) ||
+            !Number.isInteger(bet) ||
+            bet < 0 ||
+            bet > userCoins
+          ) {
+            console.error(`🚨 [Lobby] Invalid bet received in GAME_START: ${bet}`);
+            toast.error("Invalid Match", "The match could not start due to an invalid bet amount.");
+            return;
+          }
+
           QuizEngine.init(
             packet.players,
             packet.difficulty,
-            packet.betAmount || 0,
+            bet,
             packet.totalRounds,
+            packet.matchId,
           );
         }
 
@@ -384,10 +398,24 @@ export const useLobbyLogic = (
       if (packet.type === MODES.CHOR_POLICE.GAME_START) {
         // PROD-5: only clients init ChorPoliceEngine from broadcast — host already called init()
         if (!isHost && packet.players?.length) {
+          const bet = packet.betAmount ?? 0;
+          if (
+            typeof bet !== "number" ||
+            !Number.isFinite(bet) ||
+            !Number.isInteger(bet) ||
+            bet < 0 ||
+            bet > userCoins
+          ) {
+            console.error(`🚨 [Lobby] Invalid bet received in GAME_START: ${bet}`);
+            toast.error("Invalid Match", "The match could not start due to an invalid bet amount.");
+            return;
+          }
+
           ChorPoliceEngine.init(
             packet.players,
-            packet.betAmount || 0,
+            bet,
             packet.totalRounds || 5,
+            packet.matchId,
           );
         }
         if (packet.players?.length) {
@@ -559,6 +587,8 @@ export const useLobbyLogic = (
         ),
       );
 
+      const matchId = `${gameType === "QUIZ" ? "TC" : "CP"}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
       if (gameType === "QUIZ") {
         // PROD-6: Ensure table is generated if host didn't change difficulty manually
         let finalTable = currentTable;
@@ -573,11 +603,12 @@ export const useLobbyLogic = (
         // Quiz always uses NUM_QUESTIONS as round count (not selectedRounds,
         // which is for ChorPolice). selectedRounds defaults to 1 in Redux
         // which would limit the quiz to a single question.
-        QuizEngine.init(finalPlayers, difficulty, stake, NUM_QUESTIONS);
+        QuizEngine.init(finalPlayers, difficulty, stake, NUM_QUESTIONS, matchId);
         if (!soloMode) {
           broadcastPacket(
             {
               type: MODES.THINK_AND_COUNT.GAME_START,
+              matchId,
               hostName: userName.trim() || "PLAYER_1",
               timestamp: Date.now(),
               difficulty,
@@ -592,13 +623,14 @@ export const useLobbyLogic = (
         }
       } else {
         // ChorPoliceEngine.init(finalPlayers, stake, selectedRounds || 3);
-        ChorPoliceEngine.init(finalPlayers, stake, 1);
+        ChorPoliceEngine.init(finalPlayers, stake, 1, matchId);
 
         ChorPoliceBotBehavior.init(botPlayers);
         if (!soloMode) {
           broadcastPacket(
             {
               type: MODES.CHOR_POLICE.GAME_START,
+              matchId,
               hostName: userName.trim() || "PLAYER_1",
               timestamp: Date.now(),
               betAmount: stake,

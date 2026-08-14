@@ -822,9 +822,15 @@ export const useQuizGameLogic = () => {
               const winners = leaderboard.filter((p: any) => p.correctCount === maxScore);
               const isLocalWinner = winners.some((p: any) => p.id === localPlayerId);
 
-              if (isLocalWinner) {
-                const totalPot = QuizEngine.state.totalPot;
-                const splitPot = Math.floor(totalPot / winners.length);
+              if (isLocalWinner && winners.length > 0) {
+                const stake = Math.max(0, economy.stakeAmount || QuizEngine.state.stake || 0);
+                const playerCount = Object.keys(QuizEngine.state.playerScores || {}).length || leaderboard.length || 4;
+                const expectedPot = stake * playerCount;
+                const rawPot = typeof QuizEngine.state.totalPot === "number" && Number.isFinite(QuizEngine.state.totalPot) && QuizEngine.state.totalPot > 0
+                  ? Math.floor(QuizEngine.state.totalPot)
+                  : expectedPot;
+                const safePot = Math.min(rawPot, expectedPot);
+                const splitPot = Math.floor(safePot / winners.length);
 
                 if (splitPot > 0) {
                   dispatch(updateCoins(splitPot));

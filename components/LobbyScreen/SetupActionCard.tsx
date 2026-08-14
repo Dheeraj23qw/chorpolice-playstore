@@ -10,7 +10,6 @@ import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { LobbyState } from "./types";
 import { PrimaryButton } from "./PrimaryButton";
-import { LanDebugPanel } from "./LanDebugPanel";
 
 interface SetupActionCardProps {
   lobby: LobbyState;
@@ -25,19 +24,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   isInviteLoading = false,
   isSolo = false,
 }) => {
-  const [showDebug, setShowDebug] = React.useState(false);
-
-  React.useEffect(() => {
-    if (
-      isInviteLoading ||
-      (lobby.connectionStatus === "HOSTING" && !lobby.hostIp)
-    ) {
-      const timer = setTimeout(() => setShowHotspotFix(true), 5000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowHotspotFix(false);
-    }
-  }, [isInviteLoading, lobby.connectionStatus, lobby.hostIp]);
   const playerNames = lobby.players.map((p) => p.name.trim().toLowerCase());
   const hasDuplicateNames = new Set(playerNames).size !== playerNames.length;
   const playerAvatars = lobby.players.map((p) => p.avatarId);

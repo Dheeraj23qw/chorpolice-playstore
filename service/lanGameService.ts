@@ -10,7 +10,8 @@ import {
   setLocalReconnecting, 
   tickReconnectTimeout,
   clearSession,
-  setConnectionStatus
+  setConnectionStatus,
+  setSettlementStatus
 } from "@/redux/reducers/sessionSlice";
 import { ChorPoliceEngine } from "./ChorPoliceEngine";
 import { QuizEngine } from "./QuizEngine";
@@ -617,6 +618,7 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
         if (stakeDebited) {
           console.log(`[RECONNECT] settlement refund player=${localId} amount=${stakeAmount}`);
           console.log("[LAN][MONEY] Innocent player refund guarded");
+          store.dispatch(setSettlementStatus("REFUNDED"));
           store.dispatch(refundCoins(stakeAmount));
           // 🔥 Add the requested "Safe Money" toast
           toast.success("Your Money is Safe", `Stake of ${stakeAmount} coins has been refunded to your wallet.`);

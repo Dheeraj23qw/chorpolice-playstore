@@ -1,7 +1,6 @@
 export const NETWORK = {
   // ───────── CORE PORTS ─────────
   TCP_SERVER_PORT: 41235,
-  ANDROID_HOTSPOT_IP: "192.168.43.1",
 
   // ───────── VERSIONING ─────────
   PROTOCOL_VERSION: "2.0.0",
