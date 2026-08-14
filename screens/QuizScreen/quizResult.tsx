@@ -26,6 +26,7 @@ import CustomRatingModal from "@/modal/RatingModal";
 import {
   hasRatingCompleted,
   markRatingCompleted,
+  incrementDismissCount,
 } from "@/hooks/useRatingPrompt";
 import { handleShare } from "@/utils/share";
 
@@ -206,7 +207,10 @@ export default function QuizResult() {
       {/* RATING MODAL */}
       <CustomRatingModal
         visible={isRatingModalVisible}
-        onClose={() => setIsRatingModalVisible(false)}
+        onClose={() => {
+          incrementDismissCount();
+          setIsRatingModalVisible(false);
+        }}
         onSuccess={handleRatingSuccess}
         title="Rate Chor Police"
       />

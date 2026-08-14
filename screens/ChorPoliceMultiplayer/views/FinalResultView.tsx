@@ -34,7 +34,7 @@ import { ActionButtons } from "@/screens/QuizScreen/components/renderButtons";
 import { cleanupAfterMatchCompleted } from "@/service/lanGameService";
 import { useAppSelector } from "@/hooks/useAppRedux";
 import CustomRatingModal from "@/modal/RatingModal";
-import { hasRatingCompleted, markRatingCompleted } from "@/hooks/useRatingPrompt";
+import { hasRatingCompleted, markRatingCompleted, incrementDismissCount } from "@/hooks/useRatingPrompt";
 import { handleShare } from "@/utils/share";
 
 const MemoizedLeaderboard = memo(Leaderboard);
@@ -337,7 +337,10 @@ const FinalResultView = ({
       </SafeAreaView>
       <CustomRatingModal
         visible={isRatingModalVisible}
-        onClose={() => setIsRatingModalVisible(false)}
+        onClose={() => {
+          incrementDismissCount();
+          setIsRatingModalVisible(false);
+        }}
         onSuccess={handleRatingSuccess}
         title="Rate Chor Police"
       />

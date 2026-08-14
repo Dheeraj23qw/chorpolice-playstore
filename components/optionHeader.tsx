@@ -14,7 +14,7 @@ import { CircleBtn } from "./CircleBtn";
 import { useHeaderActions } from "@/hooks/useHeaderActions";
 import { useAppSelector } from "@/hooks/useAppRedux";
 import { generateNumericCode } from "@/utils/referral";
-import { hasRatingCompleted } from "@/hooks/useRatingPrompt";
+import { hasRatingCompleted, markRatingCompleted, incrementDismissCount } from "@/hooks/useRatingPrompt";
 import { NarrationSettingsModal } from "./thinkAndCountScreen/NarrationSettingsModal";
 
 const SLATE_TRANSPARENT = "rgba(0, 0, 0, 0.1)";
@@ -112,8 +112,12 @@ const OptionHeader = memo(function OptionHeader() {
       <CustomRatingModal
         title="Rate Chor Police"
         visible={isRatingVisible}
-        onClose={() => setIsRatingVisible(false)}
+        onClose={() => {
+          incrementDismissCount();
+          setIsRatingVisible(false);
+        }}
         onSuccess={() => {
+          markRatingCompleted();
           setIsRatingVisible(false);
         }}
       />

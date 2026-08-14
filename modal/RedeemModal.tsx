@@ -10,6 +10,7 @@ import {
   Keyboard,
   useWindowDimensions,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -190,16 +191,15 @@ export const RedeemModal = ({ visible, onClose }: Props) => {
     >
       {/* FULL-SCREEN BACKDROP - hides background content */}
       <View className="absolute inset-0">
-        <Pressable
-          className="flex-1"
-          onPress={onClose}
-        />
         <LinearGradient
-          colors={["#080817", "#0B1A17", "#071210"]}
+          colors={["rgba(8,8,23,0.85)", "rgba(11,26,23,0.85)", "rgba(7,18,16,0.85)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Pressable
           className="absolute inset-0"
-          style={{ opacity: 0.85 }}
+          onPress={onClose}
         />
       </View>
 

@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Modal, TouchableOpacity, Pressable } from "react-native";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { View, Modal, Pressable } from "react-native";
 import { BlurView } from "expo-blur";
-import { MotiView } from "moti";
+import { MotiText, MotiView } from "moti";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { Text } from "@/components/Text";
@@ -38,110 +38,251 @@ export const BoostScoreModal: React.FC<BoostScoreModalProps> = ({
       statusBarTranslucent
       onRequestClose={handleDecline}
     >
-      <View className="flex-1 items-center justify-center bg-black/60 px-4">
+      <View className="flex-1 items-center justify-center px-6">
+        {/* BACKDROP */}
+        <View pointerEvents="none" className="absolute inset-0 bg-black/80" />
+
         <Pressable className="absolute inset-0" onPress={handleDecline} />
 
+        {/* MODAL */}
         <MotiView
-          from={{ opacity: 0, scale: 0.95, translateY: 20 }}
-          animate={{ opacity: 1, scale: 1, translateY: 0 }}
-          transition={{ type: "spring", damping: 20, stiffness: 100 }}
-          className="w-full max-w-md overflow-hidden rounded-[32px] border border-white/10 shadow-2xl shadow-black"
+          from={{
+            opacity: 0,
+            scale: 0.9,
+            translateY: 24,
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            translateY: 0,
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.96,
+            translateY: 12,
+          }}
+          transition={{
+            type: "spring",
+            damping: 22,
+            stiffness: 170,
+          }}
+          className="w-full max-w-[430px]"
+          style={{
+            shadowColor: "#F59E0B",
+            shadowOffset: {
+              width: 0,
+              height: 0,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 30,
+            elevation: 25,
+          }}
         >
-          <BlurView intensity={100} tint="dark">
-            <View className="bg-black/50 p-6">
-              {/* HEADER */}
-              <View className="mb-6 items-center">
+          {/* GLOWING OUTER BORDER */}
+          <View
+            className="overflow-hidden rounded-[40px] border border-amber-300/35 bg-amber-500/[0.05] p-[1px]"
+            style={{
+              shadowColor: "#FBBF24",
+              shadowOffset: {
+                width: 0,
+                height: 0,
+              },
+              shadowOpacity: 0.42,
+              shadowRadius: 20,
+              elevation: 18,
+            }}
+          >
+            {/* GLASS */}
+            <BlurView
+              intensity={95}
+              tint="dark"
+              className="overflow-hidden rounded-[39px]"
+            >
+              {/* CARD */}
+              <View className="rounded-[39px] bg-[#0F0F15]/90 px-7 pb-7 pt-7">
+                {/* HEADER ICON */}
                 <MotiView
-                  from={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", delay: 100 }}
+                  from={{
+                    scale: 0,
+                    opacity: 0,
+                    rotate: "-12deg",
+                  }}
+                  animate={{
+                    scale: 1,
+                    opacity: 1,
+                    rotate: "0deg",
+                  }}
+                  transition={{
+                    type: "spring",
+                    damping: 16,
+                    stiffness: 160,
+                    delay: 100,
+                  }}
+                  className="mb-6 self-start"
+                  style={{
+                    shadowColor: "#FBBF24",
+                    shadowOffset: {
+                      width: 0,
+                      height: 0,
+                    },
+                    shadowOpacity: 0.55,
+                    shadowRadius: 18,
+                    elevation: 12,
+                  }}
                 >
-                  <View className="h-16 w-16 items-center justify-center rounded-full border-2 border-amber-300 bg-amber-500 shadow-lg shadow-amber-500/30">
-                    <Ionicons name="rocket" size={26} color="black" />
+                  <View className="rounded-full border border-amber-300/35 bg-amber-500/[0.06] p-[2px]">
+                    <View className="h-16 w-16 items-center justify-center rounded-full border border-amber-400/25 bg-amber-500/[0.12]">
+                      <Ionicons name="rocket" size={29} color="#FBBF24" />
+                    </View>
                   </View>
                 </MotiView>
 
-                <Text className="mt-4 font-main-bold text-2xl tracking-widest text-white">
-                  BOOST SCORE
-                </Text>
-                <Text className="mt-1 text-[11px] uppercase tracking-[3px] text-amber-500/80">
-                  Special Reward
-                </Text>
-              </View>
+                {/* TITLE */}
+                <MotiText
+                  from={{
+                    opacity: 0,
+                    translateY: 10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateY: 0,
+                  }}
+                  transition={{
+                    type: "timing",
+                    duration: 300,
+                    delay: 170,
+                  }}
+                  className="mt-2 font-main-bold text-[28px] leading-[34px] text-white"
+                >
+                  Boost Your Score
+                </MotiText>
 
-              {/* REWARD UI (Modeled after EntryModal's Enhanced Balance UI) */}
-              <MotiView
-                from={{ opacity: 0, translateY: -10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: "timing", duration: 400, delay: 150 }}
-                className="mb-8"
-              >
-                <View className="overflow-hidden rounded-2xl border-x border-b border-t-2 border-x-amber-500/20 border-b-amber-500/20 border-t-amber-400 bg-amber-900/40 px-5 py-4 shadow-lg shadow-black/50">
-                  <View className="flex-row items-center justify-between">
+                {/* DESCRIPTION */}
+                <MotiText
+                  from={{
+                    opacity: 0,
+                    translateY: 10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateY: 0,
+                  }}
+                  transition={{
+                    type: "timing",
+                    duration: 300,
+                    delay: 210,
+                  }}
+                  className="font-main-medium mt-3 text-[15px] leading-[23px] text-white/50"
+                >
+                  Take the chance to increase your score and climb higher on the
+                  leaderboard.
+                </MotiText>
+
+                {/* DIVIDER */}
+                <View className="my-6 h-px w-full bg-white/[0.08]" />
+
+                {/* POTENTIAL REWARD */}
+                <MotiView
+                  from={{
+                    opacity: 0,
+                    translateY: 10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateY: 0,
+                  }}
+                  transition={{
+                    type: "timing",
+                    duration: 300,
+                    delay: 250,
+                  }}
+                >
+                  <View className="flex-row items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-4">
+                    {/* LEFT */}
                     <View className="flex-row items-center">
-                      <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/20">
-                        <Ionicons name="trophy" size={20} color="#FBBF24" />
+                      <View className="h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                        <Ionicons
+                          name="trophy-outline"
+                          size={20}
+                          color="#FBBF24"
+                        />
                       </View>
-                      <Text className="font-main-bold text-[12px] tracking-wider text-white/70">
-                        POTENTIAL REWARD
-                      </Text>
+
+                      <View className="ml-3">
+                        <Text className="font-main-bold text-[11px] uppercase tracking-[1.5px] text-white/50">
+                          Reward
+                        </Text>
+
+                        <Text className="mt-0.5 text-[11px] text-white/30">
+                          Score points
+                        </Text>
+                      </View>
                     </View>
 
+                    {/* RIGHT */}
                     <View className="items-end">
                       <Text
-                        className="font-main-bold text-2xl text-amber-400"
+                        className="font-main-bold text-[22px] text-amber-400"
                         numberOfLines={1}
                       >
                         +8,000
                       </Text>
-                      <Text className="mt-0.5 text-[11px] tracking-wide text-white/50">
+
+                      <Text className="text-[10px] uppercase tracking-[1.5px] text-white/30">
                         Points
                       </Text>
                     </View>
                   </View>
-                </View>
-              </MotiView>
-
-              {/* ACTIVATE BUTTON */}
-              <TouchableOpacity
-                onPress={handleAccept}
-                activeOpacity={0.8}
-                className="mt-2"
-              >
-                <MotiView
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring" }}
-                >
-                  <View
-                    className="rounded-2xl border border-amber-400 bg-amber-500"
-                    style={{
-                      shadowColor: "#FBBF24",
-                      shadowOpacity: 0.4,
-                      shadowRadius: 15,
-                      shadowOffset: { width: 0, height: 6 },
-                    }}
-                  >
-                    <View className="h-16 flex-row items-center justify-center">
-                      <Ionicons name="flash" size={18} color="black" />
-                      <Text className="ml-2 font-main-bold text-[14px] uppercase tracking-[3px] text-black">
-                        LET'S GO!
-                      </Text>
-                    </View>
-                  </View>
                 </MotiView>
-              </TouchableOpacity>
 
-              {/* CANCEL / SKIP */}
-              <TouchableOpacity
-                onPress={handleDecline}
-                className="mt-5 self-center p-2"
-              >
-                <Text className="text-[12px] uppercase tracking-[2px] text-white/40 hover:text-white/70">
-                  Skip
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </BlurView>
+                {/* ACTIVATE BUTTON */}
+                <Pressable
+                  onPress={handleAccept}
+                  className="mt-6 h-14 w-full items-center justify-center rounded-3xl border border-amber-300/40 bg-amber-400"
+                  style={({ pressed }) => [
+                    {
+                      shadowColor: "#FBBF24",
+                      shadowOffset: {
+                        width: 0,
+                        height: 7,
+                      },
+                      shadowOpacity: 0.42,
+                      shadowRadius: 15,
+                      elevation: 10,
+                    },
+                    pressed && {
+                      transform: [{ scale: 0.98 }],
+                      opacity: 0.88,
+                    },
+                  ]}
+                >
+                  <View className="flex-row items-center">
+                    <Ionicons name="flash" size={19} color="#111111" />
+
+                    <Text className="ml-2 font-main-bold text-[14px] uppercase tracking-[2.5px] text-black">
+                      Let's Go!
+                    </Text>
+                  </View>
+                </Pressable>
+
+                {/* SKIP */}
+                <Pressable
+                  onPress={handleDecline}
+                  className="mt-4 self-center px-5 py-2"
+                >
+                  {({ pressed }) => (
+                    <Text
+                      className={`text-[12px] uppercase tracking-[2px] ${
+                        pressed ? "text-white/70" : "text-white/35"
+                      }`}
+                    >
+                      Skip
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </BlurView>
+          </View>
         </MotiView>
       </View>
     </Modal>

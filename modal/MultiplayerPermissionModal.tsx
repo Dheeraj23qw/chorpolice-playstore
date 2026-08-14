@@ -203,11 +203,10 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
           onPress={onDeny}
         />
         <LinearGradient
-          colors={["#070714", "#0b0b18", "#070714"]}
+          colors={["rgba(7,7,20,0.7)", "rgba(11,11,24,0.7)", "rgba(7,7,20,0.7)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="absolute inset-0"
-          style={{ opacity: 0.7 }}
+          style={StyleSheet.absoluteFill}
         />
 
         <MotiView

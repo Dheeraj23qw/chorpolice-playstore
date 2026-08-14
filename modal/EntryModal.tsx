@@ -46,8 +46,14 @@ const SECTIONS = [
 ];
 
 const formatCoins = (val: number) => {
-  if (val >= 100000) return `${(val / 100000).toFixed(1)}L`;
-  if (val >= 1000) return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
+  if (val >= 100000) {
+    return `${(val / 100000).toFixed(1)}L`;
+  }
+
+  if (val >= 1000) {
+    return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
+  }
+
   return val.toString();
 };
 
@@ -61,7 +67,9 @@ export const EntryModal: React.FC<EntryModalProps> = ({
   minPlayerCoins,
 }) => {
   const userCoins = useSelector((state: RootState) => state.wallet.coins);
+
   const othersCoins = minPlayerCoins ?? userCoins;
+
   const [selected, setSelected] = useState(DEFAULT_STAKE);
 
   const [displayedCoins, setDisplayedCoins] = useState(
@@ -74,16 +82,21 @@ export const EntryModal: React.FC<EntryModalProps> = ({
 
   useEffect(() => {
     if (!isVisible) return;
+
     setSelected(DEFAULT_STAKE);
+
     const startingBalance = Math.max(0, userCoins - DEFAULT_STAKE);
+
     animatedCoins.stopAnimation();
     animatedCoins.setValue(startingBalance);
     setDisplayedCoins(startingBalance);
-  }, [isVisible, userCoins]);
+  }, [isVisible, userCoins, animatedCoins]);
 
   useEffect(() => {
     if (!isVisible) return;
+
     const targetBalance = Math.max(0, userCoins - selected);
+
     animatedCoins.stopAnimation();
 
     const listenerId = animatedCoins.addListener(({ value }) => {
@@ -96,21 +109,26 @@ export const EntryModal: React.FC<EntryModalProps> = ({
       useNativeDriver: false,
     }).start();
 
-    return () => animatedCoins.removeListener(listenerId);
-  }, [selected, userCoins, isVisible]);
+    return () => {
+      animatedCoins.removeListener(listenerId);
+    };
+  }, [selected, userCoins, isVisible, animatedCoins]);
 
-  const handleSelect = (val: number) => {
+  const handleSelect = (value: number) => {
     Haptics.selectionAsync();
-    setSelected(val);
+    setSelected(value);
   };
 
   const handleConfirm = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
     onConfirm(selected);
   };
 
   const players = playerCount > 0 ? playerCount : 1;
+
   const totalPrize = useMemo(() => selected * players, [selected, players]);
+
   const isTooExpensive = selected > userCoins || selected > othersCoins;
 
   if (!isVisible) return null;
@@ -123,66 +141,147 @@ export const EntryModal: React.FC<EntryModalProps> = ({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      {/* Background transparency adjusted so the game behind is clearly visible */}
-      <View className="flex-1 items-center justify-center bg-black/60 px-4">
+      <View className="flex-1 items-center justify-center bg-black/70 px-4">
+        {/* BACKDROP */}
         <Pressable className="absolute inset-0" onPress={onClose} />
 
+        {/* MODAL */}
         <MotiView
-          from={{ opacity: 0, scale: 0.95, translateY: 20 }}
-          animate={{ opacity: 1, scale: 1, translateY: 0 }}
-          transition={{ type: "spring", damping: 20, stiffness: 100 }}
-          className="w-full max-w-md overflow-hidden rounded-[32px] border border-white/10 shadow-2xl shadow-black"
+          from={{
+            opacity: 0,
+            scale: 0.92,
+            translateY: 24,
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            translateY: 0,
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.96,
+            translateY: 12,
+          }}
+          transition={{
+            type: "spring",
+            damping: 20,
+            stiffness: 120,
+          }}
+          className="w-full max-w-md overflow-hidden rounded-[34px] border border-amber-400/20 bg-[#0B0B12] shadow-2xl shadow-black"
         >
-          <BlurView intensity={100} tint="dark">
-            <View className="bg-black/50 p-6">
-              {/* HEADER */}
-              <View className="mb-6 items-center">
+          <BlurView intensity={100} tint="dark" className="w-full">
+            {/* PREMIUM BACKGROUND */}
+            <View className="absolute inset-0 bg-amber-500/[0.025]" />
+
+            {/* TOP GLOW */}
+            <View className="absolute left-0 right-0 top-0 h-[1px] bg-amber-300/70" />
+
+            <View className="p-6">
+              {/* ================= HEADER ================= */}
+
+              <View className="mb-7 items-center">
                 <MotiView
-                  from={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", delay: 100 }}
+                  from={{
+                    scale: 0.7,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    scale: 1,
+                    opacity: 1,
+                  }}
+                  transition={{
+                    type: "spring",
+                    damping: 16,
+                    stiffness: 180,
+                    delay: 80,
+                  }}
                 >
-                  <View className="h-16 w-16 items-center justify-center rounded-full border-2 border-amber-300 bg-amber-500 shadow-lg shadow-amber-500/30">
-                    <FontAwesome5 name="coins" size={24} color="black" />
+                  <View className="h-[72px] w-[72px] items-center justify-center rounded-[24px] border border-amber-300/80 bg-amber-500 shadow-xl shadow-amber-500/40">
+                    <FontAwesome5 name="coins" size={25} color="#111111" />
                   </View>
                 </MotiView>
 
-                <Text className="mt-4 font-main-bold text-2xl tracking-widest text-white">
-                  BET YOUR COINS
-                </Text>
-                <Text className="mt-1 text-[11px] uppercase tracking-[3px] text-amber-500/80">
-                  Choose your entry
-                </Text>
+                <MotiView
+                  from={{
+                    opacity: 0,
+                    translateY: 8,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    translateY: 0,
+                  }}
+                  transition={{
+                    type: "timing",
+                    duration: 300,
+                    delay: 150,
+                  }}
+                >
+                  <Text className="mt-5 font-main-bold text-[25px] tracking-[2px] text-white">
+                    BET YOUR COINS
+                  </Text>
+
+                  <Text className="mt-1 text-[10px] uppercase tracking-[3px] text-amber-400/70">
+                    Choose your entry
+                  </Text>
+                </MotiView>
               </View>
 
-              {/* ENHANCED BALANCE UI */}
+              {/* ================= BALANCE ================= */}
+
               <MotiView
-                from={{ opacity: 0, translateY: -10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: "timing", duration: 400, delay: 150 }}
+                from={{
+                  opacity: 0,
+                  translateY: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  translateY: 0,
+                }}
+                transition={{
+                  type: "timing",
+                  duration: 350,
+                  delay: 180,
+                }}
                 className="mb-6"
               >
-                <View className="overflow-hidden rounded-2xl border-x border-b border-t-2 border-x-amber-500/20 border-b-amber-500/20 border-t-amber-400 bg-amber-900/40 px-5 py-4 shadow-lg shadow-black/50">
-                  <View className="flex-row items-center justify-between">
+                <View className="overflow-hidden rounded-[20px] border border-amber-400/30 bg-amber-500/[0.07]">
+                  {/* GLOWING TOP BORDER */}
+                  <View className="h-[2px] w-full bg-amber-400/80" />
+
+                  <View className="flex-row items-center justify-between px-4 py-4">
+                    {/* LEFT */}
                     <View className="flex-row items-center">
-                      <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/20">
-                        <Ionicons name="wallet" size={20} color="#FBBF24" />
+                      <View className="mr-3 h-11 w-11 items-center justify-center rounded-[14px] border border-amber-400/25 bg-amber-500/10">
+                        <Ionicons
+                          name="wallet-outline"
+                          size={21}
+                          color="#FBBF24"
+                        />
                       </View>
-                      <Text className="font-main-bold text-[12px] tracking-wider text-white/70">
-                        YOUR COINS
-                      </Text>
+
+                      <View>
+                        <Text className="font-main-bold text-[11px] uppercase tracking-[1.5px] text-white/55">
+                          YOUR BALANCE
+                        </Text>
+
+                        <Text className="mt-0.5 text-[10px] text-white/30">
+                          Available coins
+                        </Text>
+                      </View>
                     </View>
 
+                    {/* RIGHT */}
                     <View className="items-end">
                       <Animated.Text
-                        className="font-main-bold text-2xl text-amber-400"
+                        className="font-main-bold text-[23px] text-amber-400"
                         numberOfLines={1}
                       >
                         {displayedCoins.toLocaleString()}
                       </Animated.Text>
+
                       {selected > 0 && (
-                        <Text className="mt-0.5 text-[11px] tracking-wide text-white/50">
-                          Entry: −{selected.toLocaleString()}
+                        <Text className="mt-0.5 text-[10px] text-white/35">
+                          Entry −{selected.toLocaleString()}
                         </Text>
                       )}
                     </View>
@@ -190,75 +289,100 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                 </View>
               </MotiView>
 
-              {/* COIN OPTIONS */}
+              {/* ================= STAKE OPTIONS ================= */}
+
               <ScrollView
-                style={{ maxHeight: SCREEN_HEIGHT * 0.38 }}
                 showsVerticalScrollIndicator={false}
+                style={{
+                  maxHeight: SCREEN_HEIGHT * 0.36,
+                }}
               >
                 {SECTIONS.map((section) => (
-                  <View key={section.title} className="mb-6">
+                  <View key={section.title} className="mb-5">
+                    {/* SECTION HEADER */}
+
                     <View className="mb-3 flex-row items-center">
-                      <View className="mr-3 h-[1px] w-6 bg-amber-600/50" />
+                      <View className="mr-2 h-[1px] w-5 bg-amber-500/40" />
+
                       <FontAwesome5
                         name={section.icon}
                         size={10}
                         color="#FBBF24"
                       />
-                      <Text className="ml-2 text-[11px] uppercase tracking-[3px] text-amber-500/80">
+
+                      <Text className="ml-2 font-main-bold text-[10px] uppercase tracking-[2.5px] text-amber-400/70">
                         {section.title}
                       </Text>
-                      <View className="ml-3 h-[1px] flex-1 bg-amber-600/20" />
+
+                      <View className="ml-3 h-[1px] flex-1 bg-white/5" />
                     </View>
 
+                    {/* OPTIONS */}
+
                     <View className="-mx-1.5 flex-row flex-wrap">
-                      {section.values.map((val) => {
-                        const isPicked = selected === val;
-                        const isDisabled = val > userCoins || val > othersCoins;
+                      {section.values.map((value) => {
+                        const isPicked = selected === value;
+
+                        const isDisabled =
+                          value > userCoins || value > othersCoins;
 
                         return (
-                          <View key={val} style={{ width: "50%", padding: 6 }}>
+                          <View key={value} className="w-1/2 p-1.5">
                             <TouchableOpacity
                               disabled={isDisabled}
-                              onPress={() => handleSelect(val)}
-                              activeOpacity={isDisabled ? 1 : 0.7}
+                              onPress={() => handleSelect(value)}
+                              activeOpacity={isDisabled ? 1 : 0.75}
                             >
-                              {/* Scale removed to prevent borders from looking cut off */}
                               <MotiView
                                 animate={{
                                   borderColor: isDisabled
-                                    ? "rgba(255,255,255,0.02)"
+                                    ? "rgba(255,255,255,0.04)"
                                     : isPicked
                                       ? "#FBBF24"
-                                      : "rgba(255,255,255,0.1)",
+                                      : "rgba(255,255,255,0.09)",
+
                                   backgroundColor: isDisabled
-                                    ? "rgba(255,255,255,0.02)"
+                                    ? "rgba(255,255,255,0.025)"
                                     : isPicked
-                                      ? "rgba(245,158,11,0.15)"
-                                      : "rgba(255,255,255,0.04)",
+                                      ? "rgba(245,158,11,0.13)"
+                                      : "rgba(255,255,255,0.035)",
                                 }}
-                                transition={{ type: "timing", duration: 150 }}
+                                transition={{
+                                  type: "timing",
+                                  duration: 160,
+                                }}
                                 style={{
                                   shadowColor: "#FBBF24",
                                   shadowOpacity:
-                                    isPicked && !isDisabled ? 0.4 : 0,
-                                  shadowRadius: 10,
+                                    isPicked && !isDisabled ? 0.35 : 0,
+                                  shadowRadius: 12,
+                                  elevation: isPicked && !isDisabled ? 4 : 0,
                                 }}
-                                className="overflow-hidden rounded-2xl border"
+                                className="overflow-hidden rounded-[18px] border"
                               >
-                                {/* Text positioned at the bottom of the card */}
-                                <View className="h-24 items-center justify-end pb-4">
+                                {/* SELECTED TOP GLOW */}
+
+                                {isPicked && !isDisabled && (
+                                  <View className="absolute left-0 right-0 top-0 h-[2px] bg-amber-300" />
+                                )}
+
+                                <View className="h-[82px] items-center justify-center">
+                                  {/* LOCK */}
+
                                   {isDisabled && (
-                                    <View className="absolute inset-0 z-10 items-center justify-center bg-black/60">
-                                      <Ionicons
-                                        name="lock-closed"
-                                        size={18}
-                                        color="rgba(255,255,255,0.4)"
-                                      />
+                                    <View className="absolute inset-0 z-10 items-center justify-center bg-black/45">
+                                      <View className="h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/30">
+                                        <Ionicons
+                                          name="lock-closed"
+                                          size={15}
+                                          color="#71717A"
+                                        />
+                                      </View>
                                     </View>
                                   )}
 
                                   <Text
-                                    className={`font-main-bold text-xl ${
+                                    className={`font-main-bold text-[20px] ${
                                       isDisabled
                                         ? "text-white/20"
                                         : isPicked
@@ -266,13 +390,16 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                                           : "text-white/90"
                                     }`}
                                   >
-                                    {formatCoins(val)}
+                                    {formatCoins(value)}
                                   </Text>
+
                                   <Text
-                                    className={`mt-1 text-[10px] uppercase tracking-widest ${
+                                    className={`mt-1 text-[9px] uppercase tracking-[2px] ${
                                       isDisabled
                                         ? "text-white/10"
-                                        : "text-white/40"
+                                        : isPicked
+                                          ? "text-amber-400/50"
+                                          : "text-white/30"
                                     }`}
                                   >
                                     Coins
@@ -288,61 +415,111 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                 ))}
               </ScrollView>
 
-              {/* TOTAL WINNING AMOUNT */}
-              <View className="mt-2 overflow-hidden rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-5">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-[11px] uppercase tracking-[2px] text-amber-300/80">
-                    Total Winning Amount
-                  </Text>
-                  <Text className="font-main-bold text-2xl text-amber-400 drop-shadow-md">
-                    {totalPrize.toLocaleString()}
-                  </Text>
-                </View>
-              </View>
+              {/* ================= PRIZE ================= */}
 
-              {/* START BUTTON */}
+              <MotiView
+                from={{
+                  opacity: 0,
+                  translateY: 8,
+                }}
+                animate={{
+                  opacity: 1,
+                  translateY: 0,
+                }}
+                transition={{
+                  type: "timing",
+                  duration: 300,
+                  delay: 250,
+                }}
+                className="mt-1"
+              >
+                <View className="overflow-hidden rounded-[20px] border border-amber-400/25 bg-amber-500/[0.07]">
+                  <View className="h-[1px] w-full bg-amber-400/50" />
+
+                  <View className="flex-row items-center justify-between px-4 py-4">
+                    <View className="flex-row items-center">
+                      <View className="mr-3 h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10">
+                        <Ionicons
+                          name="trophy-outline"
+                          size={18}
+                          color="#FBBF24"
+                        />
+                      </View>
+
+                      <Text className="font-main-bold text-[10px] uppercase tracking-[1.5px] text-white/50">
+                        TOTAL PRIZE
+                      </Text>
+                    </View>
+
+                    <Text className="font-main-bold text-[23px] text-amber-400">
+                      {totalPrize.toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+              </MotiView>
+
+              {/* ================= START ================= */}
+
               <TouchableOpacity
                 onPress={() => !isTooExpensive && handleConfirm()}
                 disabled={isTooExpensive}
                 activeOpacity={0.8}
-                className="mt-6"
+                className="mt-5"
               >
                 <MotiView
-                  animate={{ scale: isTooExpensive ? 1 : 1.02 }}
-                  transition={{ type: "spring" }}
+                  animate={{
+                    scale: isTooExpensive ? 1 : 1,
+                  }}
+                  transition={{
+                    type: "spring",
+                  }}
                 >
                   <View
-                    className={`rounded-2xl border ${
+                    className={`overflow-hidden rounded-[18px] border ${
                       isTooExpensive
-                        ? "border-white/5 bg-[#1A1A1A]"
-                        : "border-amber-400 bg-amber-500"
+                        ? "border-white/5 bg-white/5"
+                        : "border-amber-300 bg-amber-500"
                     }`}
                     style={{
                       shadowColor: "#FBBF24",
                       shadowOpacity: isTooExpensive ? 0 : 0.4,
-                      shadowRadius: 15,
-                      shadowOffset: { width: 0, height: 6 },
+                      shadowRadius: 16,
+                      shadowOffset: {
+                        width: 0,
+                        height: 7,
+                      },
+                      elevation: isTooExpensive ? 0 : 8,
                     }}
                   >
-                    <View className="h-16 items-center justify-center">
+                    {!isTooExpensive && (
+                      <View className="absolute left-0 right-0 top-0 h-[2px] bg-white/70" />
+                    )}
+
+                    <View className="h-[58px] flex-row items-center justify-center">
+                      {!isTooExpensive && (
+                        <Ionicons name="play" size={17} color="#111111" />
+                      )}
+
                       <Text
-                        className={`font-main-bold text-[14px] uppercase tracking-[3px] ${
-                          isTooExpensive ? "text-white/30" : "text-black"
+                        className={`ml-2 font-main-bold text-[13px] uppercase tracking-[2.5px] ${
+                          isTooExpensive ? "text-white/25" : "text-black"
                         }`}
                       >
-                        {isTooExpensive ? "Not Enough Coins" : "Start"}
+                        {isTooExpensive ? "Not Enough Coins" : "Start Game"}
                       </Text>
                     </View>
                   </View>
                 </MotiView>
               </TouchableOpacity>
 
-              {/* CANCEL */}
+              {/* ================= CANCEL ================= */}
+
               <TouchableOpacity
                 onPress={onClose}
-                className="mt-5 self-center p-2"
+                activeOpacity={0.7}
+                className="mt-4 self-center px-4 py-2"
               >
-                <Text className="text-[12px] uppercase tracking-[2px] text-white/40 hover:text-white/70">
+                <Text className="font-main-bold text-[11px] uppercase tracking-[2px] text-white/30">
                   Cancel
                 </Text>
               </TouchableOpacity>
