@@ -8,7 +8,6 @@ import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { logLanDebug } from "@/service/observability/DebugService";
 import { setSessionNetworkInfo, setLocalSessionIdentity } from "@/redux/reducers/sessionSlice";
-import { encodeRoomCode } from "@/utils/roomCode";
 import { GameSessionTransport } from "@/service/network/GameSessionTransport";
 import { toast } from "@/components/feedback/toast";
 
@@ -18,14 +17,12 @@ export const HotspotTroubleshootingCard: React.FC = () => {
 
   const handleFix = () => {
     const forcedIp = "192.168.43.1";
-    const port = GameSessionTransport.getListeningPort() || 8081;
-    const code = encodeRoomCode(forcedIp, port);
+    const port = GameSessionTransport.getListeningPort() || 41235;
     
     logLanDebug(`USER: Applied Hotspot Fix (IP -> ${forcedIp})`);
     
     dispatch(setSessionNetworkInfo({ 
       hostIp: forcedIp, 
-      roomCode: code,
       isFallback: true
     }));
     dispatch(setLocalSessionIdentity({ localIp: forcedIp }));

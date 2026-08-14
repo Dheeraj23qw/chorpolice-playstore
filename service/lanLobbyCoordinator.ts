@@ -21,12 +21,7 @@ import {
 } from "@/redux/reducers/sessionSlice";
 import store from "@/redux/store";
 import { createInitialLobbyPlayers } from "@/utils/lobbyPlayers";
-import { encodeRoomCode } from "@/utils/roomCode";
-import { LanRoomCodeService } from "./network/LanRoomCodeService";
-import { LanDiscoveryService } from "./network/LanDiscoveryService";
 import { normalizePeerIp } from "./network/normalizePeerIp";
-import { LanCandidateIpService } from "./network/LanCandidateIpService";
-import { DiscoveryResult } from "./network/LanDiscoveryStrategy";
 import {
   broadcastPacket,
   clearAllListeners,
@@ -48,10 +43,8 @@ import {
 } from "./network/LobbyPacketHandler";
 import { framePacket, extractFrames } from "./network/TcpFraming";
 import { isLobbyPresenceToastAllowed } from "./network/LobbyToastVisibility";
-import { startIpDetectionLoop } from "./HostIpDetector";
 
 // ── Module state ──
-let unsubscribeNetInfo: (() => void) | null = null;
 let unsubscribePackets: (() => void) | null = null;
 let stopCoordinatorPromise: Promise<void> | null = null;
 let joinRetryInterval: ReturnType<typeof setInterval> | null = null;
@@ -155,19 +148,13 @@ const stopCoordinator = async () => {
       unsubscribePackets();
       unsubscribePackets = null;
     }
-    if (unsubscribeNetInfo) {
-      unsubscribeNetInfo();
-      unsubscribeNetInfo = null;
-    }
 
-    // ── RECONNECT CLEANUP ──
+    // ── RECONNECT CLEANUP ─
     cleanupAllReconnectionTimers();
 
     // CRITICAL: Stop heartbeat BEFORE transport to prevent write-after-destroy
     HeartbeatService.stop();
     await GameSessionTransport.stop();
-    await LanDiscoveryService.stopBroadcasting();
-    LanDiscoveryService.stopListening();
 
     console.log("[TCP_DEBUG] STOP_COORDINATOR_DONE");
   })().finally(() => {
@@ -210,8 +197,6 @@ export const initHostLobby = async ({
 
   // 🔥 FIX: Clean up any previous stale network session before becoming a Host
   await cleanupStaleNetworkResources({ reason: "host_init" });
-  await LanDiscoveryService.stopBroadcasting();
-  LanDiscoveryService.stopListening();
 
   const announcementGeneration = ++lobbyAnnouncementGeneration;
   const players = createInitialLobbyPlayers({
@@ -286,14 +271,11 @@ export const hostLanLobby = async ({
   ) {
     return {
       hostIp: existing.hostIp,
-      roomCode: existing.roomCode,
       players: existing.players,
     };
   }
 
   pendingHostLobbyPromise = (async () => {
-    // Use a placeholder initially; HostIpDetector will calculate it from the IP
-    const roomCode = "000";
     ensurePacketSubscription();
 
     await GameSessionTransport.start({
@@ -306,19 +288,9 @@ export const hostLanLobby = async ({
     store.dispatch(setConnectionStatus("HOSTING"));
     store.dispatch(setSessionError(null));
 
-    // Start async IP detection (returns cleanup fn)
-    const cleanupIpDetection = startIpDetectionLoop({
-      roomCode,
-      actualPort: port,
-      hostName: name,
-      lobbyId: localPlayerId,
-    });
-    if (cleanupIpDetection) unsubscribeNetInfo = cleanupIpDetection;
-
     startHeartbeat(true);
     return {
       hostIp: null,
-      roomCode: null,
       players: store.getState().session.players,
       port,
     };
@@ -334,8 +306,6 @@ export const hostLanLobby = async ({
 export const joinLanLobby = async ({
   hostIp,
   hostPort,
-  candidateIps = [],
-  roomCode,
   localPlayerId,
   name,
   avatarId,
@@ -344,8 +314,6 @@ export const joinLanLobby = async ({
 }: {
   hostIp: string;
   hostPort?: number;
-  candidateIps?: string[];
-  roomCode?: string | null;
   localPlayerId: string;
   name: string;
   avatarId: number;
@@ -356,9 +324,6 @@ export const joinLanLobby = async ({
   ensurePacketSubscription();
   const actualPort = hostPort || NETWORK.TCP_SERVER_PORT;
 
-  // FIX: Initialize transport for client BEFORE connecting.
-  // Without this, packetHandler stays null (cleared by stopCoordinator→stop())
-  // and the client silently drops ALL incoming packets from host.
   await GameSessionTransport.start({
     isHost: false,
     localPlayerId,
@@ -367,25 +332,13 @@ export const joinLanLobby = async ({
     onPacket: (p, ip) => handleIncomingPacket(p, ip),
   });
 
-  const allCandidates = Array.from(
-    new Set([
-      ...(hostIp ? [hostIp] : []),
-      ...candidateIps,
-    ]),
-  );
-  const portsToTry = hostPort
-    ? [hostPort]
-    : [NETWORK.TCP_SERVER_PORT, 41236, 41237, 41238, 41239, 41240];
-  let connectedIp: string | null = null;
-  let finalPort = NETWORK.TCP_SERVER_PORT;
-
   const startSessionId = GameSessionTransport.getCurrentSessionId();
   console.log(
-    `[LAN_ORCH] starting join process candidates=${allCandidates.length} room=${roomCode || "manual"}`,
+    `[LAN_ORCH] starting join process host=${hostIp}:${actualPort}`,
   );
 
-  let result: { ip: string; port: number; socket: any } | null = null;
-  const allProbeSockets = new Set<any>();
+  let connectedIp: string | null = null;
+  let finalPort = actualPort;
 
   const probeOne = async (
     ip: string,
@@ -401,7 +354,6 @@ export const joinLanLobby = async ({
     let probeSocket: any = null;
     try {
       probeSocket = await GameSessionTransport.probeAsync(ip, port, 1000);
-      allProbeSockets.add(probeSocket);
 
       return new Promise((resolve, reject) => {
         let buffer: any = Buffer.alloc(0);
@@ -429,7 +381,7 @@ export const joinLanLobby = async ({
             for (const env of packets) {
               if (env.packet?.type === NETWORK.PONG) {
                 console.log(
-                  `[LAN_ORCH] marvel verified host at ${ip}:${port} ✓`,
+                  `[LAN_ORCH] verified host at ${ip}:${port} ✓`,
                 );
                 cleanup();
                 resolve({ ip, port, socket: probeSocket });
@@ -468,7 +420,6 @@ export const joinLanLobby = async ({
       });
     } catch (e: any) {
       if (probeSocket) {
-        allProbeSockets.delete(probeSocket);
         try {
           (probeSocket as any).__explicitlyDestroyed = true;
           probeSocket.destroy();
@@ -483,62 +434,30 @@ export const joinLanLobby = async ({
     }
   };
 
-  // ── MARVEL PROBING: Staggered Batches ───────────────────────────────────────
-  const localIp = store.getState().session.localIp;
-  const primaryCandidates = Array.from(
-    new Set([
-      ...(hostIp ? [hostIp] : []),
-      ...candidateIps.filter(ip => ip !== localIp)
-    ]),
-  );
-  
-  const fallbackCandidates = LanCandidateIpService.getCommonGateways().filter(
-    (ip) => !primaryCandidates.includes(ip) && ip !== localIp,
-  );
-
-  const runBatch = (ips: string[]) => {
-    const batchProbes: Promise<{ ip: string; port: number; socket: any }>[] =
-      [];
-    ips.forEach((ip) =>
-      portsToTry.forEach((port) => batchProbes.push(probeOne(ip, port))),
-    );
-    return batchProbes;
-  };
+  let result: { ip: string; port: number; socket: any } | null = null;
+  const allProbeSockets = new Set<any>();
 
   try {
-    const primaryProbes = runBatch(primaryCandidates);
+    const probes: Promise<{ ip: string; port: number; socket: any }>[] = [];
+    [hostIp].forEach((ip) =>
+      [actualPort].forEach((port) => probes.push(probeOne(ip, port))),
+    );
 
-    const fallbackPromise = new Promise<{
-      ip: string;
-      port: number;
-      socket: any;
-    }>((resolve, reject) => {
-      setTimeout(async () => {
-        if (result || stopCoordinatorPromise !== null) return;
-        try {
-          const res = await Promise.any(runBatch(fallbackCandidates));
-          resolve(res);
-        } catch (e) {
-          reject(e);
-        }
-      }, 300);
-    });
-
-    result = await Promise.any([...primaryProbes, fallbackPromise]);
+    result = await Promise.any(probes);
     connectedIp = result.ip;
     finalPort = result.port;
 
     console.log(
-      `[LAN_ORCH] marvel join successful! host=${connectedIp}:${finalPort}`,
+      `[LAN_ORCH] join successful! host=${connectedIp}:${finalPort}`,
     );
   } catch (err: any) {
     if (
       err.name === "AggregateError" ||
       err.message === "All promises were rejected"
     ) {
-      console.warn("[LAN_ORCH] marvel join: all candidates failed");
+      console.warn("[LAN_ORCH] join: all candidates failed");
     } else if (err.message !== "ABORTED") {
-      console.log("[LAN_ORCH] marvel join error:", err.message);
+      console.log("[LAN_ORCH] join error:", err.message);
     }
   } finally {
     if (result) {
@@ -558,7 +477,7 @@ export const joinLanLobby = async ({
     store.dispatch(setConnectionStatus("ERROR"));
     store.dispatch(
       setSessionError(
-        "No rooms found. If you're on a public/college WiFi, they might block game connections (AP Isolation). Try using a Mobile Hotspot instead!",
+        "Could not connect to host. Make sure both devices are on the same WiFi or hotspot.",
       ),
     );
     return;
@@ -571,11 +490,10 @@ export const joinLanLobby = async ({
   store.dispatch(
     configureSessionState({ isHost: false, localPlayerId, gameType }),
   );
-  store.dispatch(setLocalSessionIdentity({ localPlayerId, name, avatarId }));
+  store.dispatch(setLocalSessionIdentity({ localPlayerId: name, avatarId }));
   store.dispatch(
     setSessionNetworkInfo({
       hostIp: connectedIp,
-      roomCode: roomCode || encodeRoomCode(connectedIp, finalPort),
     }),
   );
   store.dispatch(setLobbyPlayers([]));
@@ -595,7 +513,6 @@ export const joinLanLobby = async ({
       clearJoinAttempts();
       return;
     }
-    // FIX-6: Don't resend PLAYER_JOIN if we're already confirmed in the player list
     const alreadyInList = s.players.some((p) => p.id === localPlayerId);
     if (alreadyInList) {
       if (__DEV__)
@@ -612,7 +529,6 @@ export const joinLanLobby = async ({
   setTimeout(sendJoin, 100);
   startHeartbeat(false);
 
-  // FIX-6: Retry only until confirmed in player list or status is CONNECTED
   joinRetryInterval = setInterval(() => {
     const s = store.getState().session;
     const inList = s.players.some((p) => p.id === localPlayerId);
@@ -639,7 +555,7 @@ export const joinLanLobby = async ({
       store.dispatch(setConnectionStatus("ERROR"));
       store.dispatch(
         setSessionError(
-          "Make sure all players are connected to the same hotspot or same WiFi router.",
+          "Could not connect to host. Make sure both devices are on the same WiFi or hotspot.",
         ),
       );
     }
@@ -764,9 +680,3 @@ export const leaveLanLobby = async () => {
     store.dispatch(clearSession());
   }
 };
-
-export { getCandidateIpsForRoomCode } from "@/utils/roomCode";
-export const startLanDiscovery = (
-  onDiscovery: (result: DiscoveryResult) => void,
-) => LanDiscoveryService.startListening(onDiscovery);
-export const stopLanDiscovery = () => LanDiscoveryService.stopListening();

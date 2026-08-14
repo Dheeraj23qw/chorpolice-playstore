@@ -13,7 +13,7 @@ import { selectIsModalOpenUI } from "@/redux/reducers/uiStateSlice";
 
 import {
   HeaderSection,
-  UserProfilecard,
+  DailyBonusProfileCard,
   GameModeList,
 } from "@/components/GameModeScreen";
 
@@ -79,7 +79,7 @@ const GameModeScreen: React.FC = () => {
 
         {/* Profile Card */}
         <View className="px-5 mb-4">
-            <UserProfilecard />
+            <DailyBonusProfileCard />
         </View>
 
         {/* Game List */}

@@ -37,8 +37,6 @@ import {
   syncLocalLobbyProfile,
 } from "@/service/lanLobbyCoordinator";
 import { saveUsername } from "@/storage/userStorage";
-import { getLocalIpAddress } from "@/utils/NetworkUtils";
-import { encodeRoomCode } from "@/utils/roomCode";
 
 const ROOM_MAX_PLAYERS = 4;
 const DEFAULT_GAME_TYPE = "CHOR_POLICE";
@@ -107,7 +105,7 @@ export const useLobbyLogic = (
   const localIp = session.localIp || "unknown";
   const lobbyStage = session.lobbyStage;
   const isLocalOnlyLobby =
-    isHost && connectionStatus === "HOSTING" && !hostIp && !roomCode;
+    isHost && connectionStatus === "HOSTING" && !hostIp;
 
   const minPlayerCoins = useMemo(() => {
     // Only count human players for the bet limit
@@ -122,30 +120,6 @@ export const useLobbyLogic = (
     );
     return min;
   }, [players]);
-
-  useEffect(() => {
-    if (lanReady) {
-      void (async () => {
-        const result = await getLocalIpAddress();
-        dispatch(setLocalSessionIdentity({ localIp: result.ip || null }));
-      })();
-    }
-  }, [dispatch, lanReady]);
-
-  useEffect(() => {
-    if (
-      preselectedAvatarId &&
-      session.connectionStatus === "IDLE" &&
-      preselectedAvatarId !== session.localAvatarId
-    ) {
-      dispatch(setLocalSessionIdentity({ avatarId: preselectedAvatarId }));
-    }
-  }, [
-    dispatch,
-    preselectedAvatarId,
-    session.connectionStatus,
-    session.localAvatarId,
-  ]);
 
   useEffect(() => {
     BotEngine.reset();
@@ -327,65 +301,7 @@ export const useLobbyLogic = (
     }
   }, [bootstrapHostLobby, lanReady]);
 
-  // 🚀 BACKGROUND IP MONITOR: If we are hosting but hostIp is missing (due to slow hotspot startup),
-  // keep checking for it every few seconds.
-  useEffect(() => {
-    if (!isHost || connectionStatus !== "HOSTING" || (hostIp && roomCode)) {
-      if (isHost && connectionStatus === "HOSTING" && hostIp && roomCode) {
-        console.log(
-          `[Lobby] 📡 Host ready: IP=${hostIp}, roomCode=${roomCode}, ` +
-            `port=${GameSessionTransport.getListeningPort()}, players=${players.length}`,
-        );
-      }
-      return;
-    }
-
-    console.log(
-      `[Lobby] ⏳ Starting background IP monitor (hostIp=${hostIp || "null"}, ` +
-        `roomCode=${roomCode || "null"}, status=${connectionStatus})`,
-    );
-    let pollCount = 0;
-    const startTime = Date.now();
-
-    const interval = setInterval(async () => {
-      pollCount++;
-      const elapsed = Date.now() - startTime;
-      const useFallback = elapsed > 5000;
-
-      console.log(
-        `[Lobby] 🔄 Background IP poll #${pollCount} (elapsed: ${elapsed}ms)...`,
-      );
-      const result = await getLocalIpAddress({ useFallback });
-
-      if (result.ip) {
-        const port = GameSessionTransport.getListeningPort();
-        const code = encodeRoomCode(result.ip, port);
-
-        if (result.ip !== hostIp) {
-          console.log(
-            `[Lobby] ✅ IP resolved after ${pollCount} polls: IP=${result.ip}, ` +
-              `port=${port}, roomCode=${code}, fallback=${useFallback}`,
-          );
-
-          dispatch(
-            setSessionNetworkInfo({
-              hostIp: result.ip,
-              roomCode: code,
-            }),
-          );
-
-          dispatch(setLocalSessionIdentity({ localIp: result.ip }));
-        }
-
-        // Stop polling if we have a real (non-fallback) IP, or after many attempts
-        if (!useFallback || pollCount > 60) {
-          clearInterval(interval);
-        }
-      }
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [isHost, connectionStatus, hostIp, roomCode, dispatch]);
+  // Background IP monitor removed — QR provides host connection info directly
 
   useEffect(() => {
     // Call instantly. The coordinator handles debouncing the network broadcast.
@@ -776,19 +692,13 @@ export const useLobbyLogic = (
     qrPayload: useMemo(() => {
       if (!hostIp) return "";
       const payload = JSON.stringify({
-        ip: hostIp,
+        version: "1.0",
+        sessionId: localPlayerId,
+        host: hostIp,
         port: GameSessionTransport.getListeningPort(),
-        roomCode,
-        candidateIps: [
-          hostIp,
-          "192.168.43.1",
-          "192.168.49.1",
-          "172.20.10.1",
-          "192.168.1.1",
-        ],
       });
       return payload;
-    }, [hostIp, roomCode]),
+    }, [hostIp, localPlayerId]),
     showAvatarGrid,
     setShowAvatarGrid,
     difficulty,

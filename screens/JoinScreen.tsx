@@ -1,30 +1,21 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, ScrollView, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable } from "react-native";
 
 import { LobbyBackdrop } from "@/components/LobbyScreen/LobbyBackdrop";
 import { LobbyHeader } from "@/components/LobbyScreen/LobbyHeader";
 import { toast } from "@/components/feedback/toast";
-import { useNetworkPermissions } from "@/hooks/useNetworkPermissions";
 import {
-  getCandidateIpsForRoomCode,
   joinLanLobby,
   leaveLanLobby,
 } from "@/service/lanLobbyCoordinator";
-import { NETWORK } from "@/constants/Networking";
-import { getGatewayIpAddress } from "@/utils/NetworkUtils";
 import { setLocalSessionIdentity, setSessionError } from "@/redux/reducers/sessionSlice";
 import store, { AppDispatch, RootState } from "@/redux/store";
 import { JoinQRSection } from "@/components/JoinScreen/JoinQRSection";
-import { JoinCodeSection } from "@/components/JoinScreen/JoinCodeSection";
-import { DiscoveredRoomsSection } from "@/components/JoinScreen/DiscoveredRoomsSection";
 import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
-import { useLanDiscovery } from "@/hooks/useLanDiscovery";
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
@@ -43,70 +34,6 @@ const isValidIpv4 = (value: string) => {
   );
 };
 
-/* ─────────────────── PILL TOGGLE ─────────────────── */
-const MethodToggle = ({
-  method,
-  onChange,
-}: {
-  method: "scan" | "code";
-  onChange: (m: "scan" | "code") => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      backgroundColor: "rgba(255,255,255,0.06)",
-      borderRadius: 20,
-      padding: 4,
-      borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.08)",
-    }}
-  >
-    {(["scan", "code"] as const).map((m) => {
-      const active = method === m;
-      return (
-        <Pressable
-          key={m}
-          onPress={() => onChange(m)}
-          style={{ flex: 1 }}
-        >
-          <MotiView
-            animate={{
-              backgroundColor: active
-                ? "rgba(99,102,241,0.9)"
-                : "transparent",
-            }}
-            transition={{ type: "timing", duration: 200 }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: 10,
-              borderRadius: 16,
-              gap: 6,
-            }}
-          >
-            <Ionicons
-              name={m === "scan" ? "qr-code-outline" : "keypad-outline"}
-              size={rf(1.8)}
-              color={active ? "#fff" : "rgba(255,255,255,0.4)"}
-            />
-            <Text
-              style={{
-                fontSize: rf(1.5),
-                color: active ? "#fff" : "rgba(255,255,255,0.4)",
-                fontWeight: active ? "700" : "400",
-                letterSpacing: 0.5,
-              }}
-            >
-              {m === "scan" ? "Scan QR" : "Room Code"}
-            </Text>
-          </MotiView>
-        </Pressable>
-      );
-    })}
-  </View>
-);
-
 /* ─────────────────── MAIN ─────────────────── */
 const JoinScreen = () => {
   const router = useRouter();
@@ -117,26 +44,9 @@ const JoinScreen = () => {
   const selectedImages = useSelector((state: RootState) => state.player.selectedImages);
   const userCoins = useSelector((state: RootState) => state.wallet.coins);
 
-  const [isLanModeRequested, setIsLanModeRequested] = useState(false);
-
-  const { status, retry, errorMessage, openSettings, networkContext } =
-    useNetworkPermissions({
-      enabled: isLanModeRequested,
-      requireWifiIpAddress: false,
-      requireAndroidWifiPermissions: false,
-    });
-
-  const [roomCode, setRoomCode] = useState("");
-  const [joinMethod, setJoinMethod] = useState<"scan" | "code">("scan");
-  const [showHelp, setShowHelp] = useState(false);
-
-  const { discoveredRooms, isSearching } = useLanDiscovery(true);
-
-  const gameType = String(params.gameType || "CHOR_POLICE");
-
-  const isConnecting = session.connectionStatus === "CONNECTING";
   const [isSmartJoining, setIsSmartJoining] = useState(false);
   const [joiningRoomIp, setJoiningRoomIp] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const isLeavingRef = useRef(false);
   const joinAttemptRef = useRef(false);
@@ -150,9 +60,6 @@ const JoinScreen = () => {
     router.back();
   }, [router]);
 
-  // The header already performs lobby cleanup before navigating. Intercept the
-  // Android/device back event so it follows that same path instead of falling
-  // through to the root router.back() handler with a live join session.
   useFocusEffect(
     useCallback(() => {
       isJoinScreenFocusedRef.current = true;
@@ -171,18 +78,14 @@ const JoinScreen = () => {
     }, [handleBack]),
   );
 
-  // ✨ FIRST TIME HELP: Auto-show help if not shown before
   useEffect(() => {
     console.log("[JoinScreen] Entered Screen");
     if (!getJoinHelpShown()) {
       setShowHelp(true);
     }
     
-    // Cleanup on unmount (Hardware back, Swipe back, etc.)
     return () => {
       const s = store.getState().session;
-      // 🔥 FIX: DO NOT leave if we are transitioning to the lobby!
-      // Only cleanup if we are NOT connected or connecting.
       if (!isLeavingRef.current && s.connectionStatus !== "CONNECTED" && s.connectionStatus !== "CONNECTING") {
         console.log("[JoinScreen] Exiting Screen - triggering cleanup (status=" + s.connectionStatus + ")");
         leaveLanLobby();
@@ -191,14 +94,11 @@ const JoinScreen = () => {
       }
     };
   }, []);
-  // 🔥 FRESH ENTRY: Reset UI state every time JoinScreen gains focus.
-  // This guarantees re-entry after leaving always starts clean,
-  // regardless of previous join attempt results.
+
   useFocusEffect(
     useCallback(() => {
       setIsSmartJoining(false);
       setJoiningRoomIp(null);
-      setRoomCode("");
       dispatch(setSessionError(null));
       console.log("[JoinScreen] Focus: UI state reset for fresh entry");
     }, [dispatch])
@@ -212,43 +112,14 @@ const JoinScreen = () => {
     }
   }, [selectedImages, session.connectionStatus]);
 
-  /* ── Status toasts ── */
-  const prevStatusRef = useRef(status);
-  useEffect(() => {
-    const prev = prevStatusRef.current;
-    prevStatusRef.current = status;
-    if (prev === status) return;
-    if (status === "no_wifi" && networkContext === "none") {
-      toast.error("No Network", "Connect to the host's WiFi or Hotspot.");
-    } else if (status === "denied") {
-      toast.error("Permission Needed", "Grant Location permission to find local games.");
-    } else if (status === "granted" && (prev === "no_wifi" || prev === "denied" || prev === "error")) {
-      toast.success("Ready! ✓", "You can now join your friends.");
-    }
-  }, [status, networkContext]);
-
-  /* ── Session error toasts ── */
-  useEffect(() => {
-    if (session.connectionStatus === "ERROR" && session.errorMessage) {
-      toast.error("Connection Failed", session.errorMessage);
-    }
-  }, [session.connectionStatus, session.errorMessage]);
-
   /* ── Connect ── */
   const handleConnectToIp = useCallback(
     async (
       ip: string,
       port?: number,
-      candidateIps: string[] = [],
-      targetRoomCode: string | null = null,
     ) => {
       if (isSmartJoining) return;
-      if (!isLanModeRequested) setIsLanModeRequested(true);
 
-      if (status === "no_wifi" && networkContext === "none") {
-        toast.error("No Network", "Make sure everyone is on the same hotspot or WiFi.");
-        return;
-      }
       if (!isValidIpv4(ip)) {
         toast.error("Invalid Code", "Couldn't decode a valid address.");
         return;
@@ -259,9 +130,6 @@ const JoinScreen = () => {
       }
 
       toast.info("Connecting...", "Joining your friend's room.");
-      // The connection redirect belongs only to a request started by this
-      // screen. A persisted connection from an earlier flow must not take
-      // control of navigation after the user chose another mode.
       joinAttemptRef.current = true;
       setIsSmartJoining(true);
       setJoiningRoomIp(ip);
@@ -270,20 +138,18 @@ const JoinScreen = () => {
         await joinLanLobby({
           hostIp: ip,
           hostPort: port,
-          candidateIps,
-          roomCode: targetRoomCode,
           localPlayerId: session.localPlayerId,
           name: session.localPlayerName,
           avatarId: session.localAvatarId,
           coins: userCoins,
-          gameType,
+          gameType: String(params.gameType || "CHOR_POLICE"),
         });
       } finally {
         setIsSmartJoining(false);
         setJoiningRoomIp(null);
       }
     },
-    [status, networkContext, session, userCoins, gameType, isLanModeRequested],
+    [session, userCoins, params.gameType, isSmartJoining],
   );
 
   /* ── Auto-nav on connected ── */
@@ -297,34 +163,16 @@ const JoinScreen = () => {
       if (__DEV__) {
         console.log("[NAV][JOIN] connection effect → /lobby", {
           connectionStatus: session.connectionStatus,
-          gameType,
+          gameType: params.gameType,
           isHost: session.isHost,
-          roomCode: session.roomCode,
         });
       }
       if (session.connectionStatus === "CONNECTED") {
         toast.success("Connected! 🎉", "You joined the lobby.");
       }
-      router.replace({ pathname: "/lobby", params: { gameType } } as any);
+      router.replace({ pathname: "/lobby", params: { gameType: params.gameType } } as any);
     }
   }, [session.connectionStatus]);
-
-  /* ── Room code connect ── */
-  const handleRoomCodeConnect = useCallback(async () => {
-    if (!roomCode || roomCode.length < 3) {
-      toast.error("Invalid Code", "Enter the 3-digit code on the host's screen.");
-      return;
-    }
-    const gateway = await getGatewayIpAddress();
-    console.log(`[LAN_ORCH] room code connect triggered code=${roomCode}`);
-    
-    const candidates = getCandidateIpsForRoomCode(roomCode, session.localIp, gateway);
-    if (candidates.length === 0) {
-      toast.error("Invalid Code", "Please enter a valid 3-digit room code.");
-      return;
-    }
-    await handleConnectToIp(candidates[0], undefined, candidates, roomCode);
-  }, [roomCode, handleConnectToIp, session.localIp]);
 
   /* ─────────────────── UI ─────────────────── */
   return (
@@ -364,111 +212,21 @@ const JoinScreen = () => {
             style={{ fontSize: rf(1.55), color: "rgba(255,255,255,0.4)", marginTop: 4 }}
             className="font-main-md"
           >
-            Find a nearby game or scan the host&apos;s QR
+            Scan the host&apos;s QR code to join
           </Text>
         </View>
 
-        {/* ── Network error banner (only when active + broken) ── */}
-        <AnimatePresence>
-          {isLanModeRequested && status !== "granted" && status !== "pending" && (
-            <MotiView
-              from={{ opacity: 0, translateY: -6 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              exit={{ opacity: 0, translateY: -6 }}
-              transition={{ type: "timing", duration: 250 }}
-              style={{
-                marginBottom: 16,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: "rgba(239,68,68,0.3)",
-                backgroundColor: "rgba(239,68,68,0.08)",
-                padding: 14,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Ionicons name="alert-circle-outline" size={rf(2)} color="#ef4444" />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: rf(1.55), color: "#ef4444" }} className="font-main-bold">
-                    {status === "no_wifi" ? "No connection found" : "Permission needed"}
-                  </Text>
-                  <Text style={{ fontSize: rf(1.35), color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
-                    {errorMessage || "Connect to the same WiFi or hotspot as the host."}
-                  </Text>
-                </View>
-                <Pressable
-                  onPress={() => status === "denied" ? openSettings() : retry()}
-                  style={{
-                    backgroundColor: "rgba(239,68,68,0.15)",
-                    borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 7,
-                  }}
-                >
-                  <Text style={{ fontSize: rf(1.3), color: "#ef4444" }} className="font-main-bold">
-                    {status === "denied" ? "Settings" : "Retry"}
-                  </Text>
-                </Pressable>
-              </View>
-            </MotiView>
-          )}
-        </AnimatePresence>
-
-        {/* ── Discovered Rooms (UDP) ── */}
-        <DiscoveredRoomsSection
-          rooms={discoveredRooms}
-          isSearching={isSearching}
-          joiningIp={joiningRoomIp}
-          onJoin={(room) => {
-            console.log(`[LAN_ORCH] auto-discovery join selected ip=${room.ip}`);
-            handleConnectToIp(room.ip, room.port, [], room.roomCode || null);
+        {/* ── QR Scan Section ── */}
+        <JoinQRSection
+          session={session}
+          onScan={(payload: any) => {
+            if (!payload.host) return;
+            handleConnectToIp(
+              payload.host,
+              payload.port,
+            );
           }}
         />
-
-        {/* ── Method Toggle ── */}
-        <View style={{ marginBottom: 16 }}>
-          <MethodToggle method={joinMethod} onChange={setJoinMethod} />
-        </View>
-
-        {/* ── Content Panel ── */}
-        <AnimatePresence exitBeforeEnter>
-          {joinMethod === "scan" ? (
-            <MotiView
-              key="scan"
-              from={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              transition={{ type: "timing", duration: 220 }}
-            >
-              <JoinQRSection
-                session={session}
-                onScan={(payload: any) => {
-                  if (!payload.ip) return;
-                  handleConnectToIp(
-                    payload.ip,
-                    payload.port,
-                    payload.candidateIps,
-                    payload.roomCode,
-                  );
-                }}
-              />
-            </MotiView>
-          ) : (
-            <MotiView
-              key="code"
-              from={{ opacity: 0, translateY: 8 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              exit={{ opacity: 0, translateY: 8 }}
-              transition={{ type: "timing", duration: 220 }}
-            >
-              <JoinCodeSection
-                roomCode={roomCode}
-                setRoomCode={setRoomCode}
-                onSubmit={handleRoomCodeConnect}
-                isConnecting={isConnecting || isSmartJoining}
-              />
-            </MotiView>
-          )}
-        </AnimatePresence>
       </ScrollView>
 
       {/* ── Debug overlay (dev only) ── */}

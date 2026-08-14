@@ -19,9 +19,6 @@ import { rf } from "@/utils/responsive";
 import { Text } from "@/components/Text";
 import WifiHint from "@/components/WifiHint";
 import { openModalUI, closeModalUI } from "@/redux/reducers/uiStateSlice";
-import { usePermissionGuard } from "@/hooks/usePermissionGuard";
-import { PermissionReminderModal } from "./PermissionReminderModal";
-import { getPermissionReminderSuppressed } from "@/storage/appStorage";
 
 interface GameModeModalProps {
   isVisible: boolean;
@@ -37,14 +34,9 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const { state, openSettings, checkAllPermissions } = usePermissionGuard();
-  const [showReminder, setShowReminder] = React.useState(false);
-  const [pendingMode, setPendingMode] = React.useState<"host" | "join" | null>(null);
 
-  // ✅ Responsive glow size
   const glowSize = Math.min(width * 1.2, 500);
 
-  // ✅ Lifecycle + haptics + navigation hide
   useEffect(() => {
     if (__DEV__) {
       console.log("[NAV][MODE_MODAL] visibility changed", {
@@ -63,14 +55,13 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
     } else {
       dispatch(closeModalUI());
     }
-  }, [isVisible]);
+  }, [isVisible, gameType, navigation, dispatch]);
 
-  // ✅ Cleanup safety
   useEffect(() => {
     return () => {
       dispatch(closeModalUI());
     };
-  }, []);
+  }, [dispatch]);
 
   const handleSelection = async (mode: "host" | "join") => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -95,7 +86,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
 
   return (
     <Modal visible={isVisible} transparent animationType="fade">
-      {/* BACKDROP */}
       <Pressable className="flex-1 bg-black/60" onPress={onClose}>
         <BlurView
           intensity={25}
@@ -103,7 +93,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
           style={StyleSheet.absoluteFill}
         />
 
-        {/* ATMOSPHERIC GRADIENT */}
         <LinearGradient
           colors={[
             "rgba(10, 0, 20, 0.4)",
@@ -115,7 +104,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
           style={StyleSheet.absoluteFill}
         />
 
-        {/* ✅ RESPONSIVE CENTER GLOW */}
         <MotiView
           from={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -140,12 +128,8 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
           </View>
         </MotiView>
 
-        {/* CONTENT */}
         <View className="flex-1 justify-center px-6">
-          {/* WIFI HINT */}
-          <View className="mb-4">
-            <WifiHint />
-          </View>
+          <WifiHint />
 
           <Pressable
             onPress={(e) => e.stopPropagation()}
@@ -158,7 +142,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
             >
               <BlurView intensity={80} tint="dark">
                 <View className="p-6">
-                {/* HEADER */}
                 <View className="mb-6 items-center">
                   <View className="h-16 w-16 items-center justify-center rounded-full bg-white/5">
                     <Ionicons
@@ -176,7 +159,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
                   </Text>
                 </View>
 
-                {/* HOST */}
                 <MotiView
                   from={{ opacity: 0, translateY: 20 }}
                   animate={{ opacity: 1, translateY: 0 }}
@@ -219,7 +201,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
                   </TouchableOpacity>
                 </MotiView>
 
-                {/* JOIN */}
                 <MotiView
                   from={{ opacity: 0, translateY: 20 }}
                   animate={{ opacity: 1, translateY: 0 }}
@@ -267,23 +248,6 @@ const GameModeModal: React.FC<GameModeModalProps> = ({
           </Pressable>
         </View>
       </Pressable>
-
-      <PermissionReminderModal
-        isVisible={showReminder}
-        onClose={() => setShowReminder(false)}
-        onGrant={() => {
-          setShowReminder(false);
-          if (state === "blocked") {
-            openSettings();
-          } else {
-            checkAllPermissions();
-          }
-        }}
-        onContinue={() => {
-          setShowReminder(false);
-          if (pendingMode) proceedWithSelection(pendingMode);
-        }}
-      />
     </Modal>
   );
 };

@@ -8,7 +8,6 @@ import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { useDebugData, logLanDebug } from "@/service/observability/DebugService";
 import { setSessionNetworkInfo, setLocalSessionIdentity } from "@/redux/reducers/sessionSlice";
-import { encodeRoomCode } from "@/utils/roomCode";
 import { GameSessionTransport } from "@/service/network/GameSessionTransport";
 import { toast } from "@/components/feedback/toast";
 

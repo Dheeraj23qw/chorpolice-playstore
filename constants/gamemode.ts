@@ -5,12 +5,12 @@ export interface GameModeType {
   title: string;
   subtitle: string;
   difficulty: string;
-  route: Href; 
+  route: Href;
   image: any;
   accentColor: string;
   icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap;
   buttonText: string;
-  gameType?: string; 
+  gameType?: string;
 }
 
 export const optionsGameMode: GameModeType[] = [
@@ -42,7 +42,7 @@ export const singlePlayerModes: GameModeType[] = [
   {
     id: "chor_online",
     title: "CHOR POLICE",
-    subtitle: "Assemble your crew, rule the city",
+    subtitle: "Play Raja Mantri Chor Sipahi",
     difficulty: "ELITE",
     route: "/lobby" as any,
     image: require("@/assets/modalImages/intro.webp"),
@@ -54,7 +54,7 @@ export const singlePlayerModes: GameModeType[] = [
   {
     id: "think_online",
     title: "THINK & COUNT",
-    subtitle: "Outsmart your friends, count it down",
+    subtitle: "Test Your Brain",
     difficulty: "SMART",
     route: "/lobby" as any,
     image: require("@/assets/images/chorsipahi/thief.webp"),

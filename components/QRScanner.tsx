@@ -14,49 +14,34 @@ import { rf } from "@/utils/responsive";
 export const QRScanner = ({
   onScan,
 }: {
-  onScan: (payload: { ip?: string; port?: number }) => void;
+  onScan: (payload: { host?: string; port?: number; version?: string; sessionId?: string }) => void;
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const hasAutoRequestedRef = useRef(false);
-
-  // ✅ AUTO PERMISSION FLOW
-  useEffect(() => {
-    if (hasAutoRequestedRef.current || permission?.granted) return;
-
-    if (permission?.canAskAgain === false) {
-      hasAutoRequestedRef.current = true;
-      return;
-    }
-
-    hasAutoRequestedRef.current = true;
-    void requestPermission();
-  }, [permission]);
-
-  // ✅ RESET SCAN AFTER DELAY (important UX)
-  useEffect(() => {
-    if (!scanned) return;
-
-    const t = setTimeout(() => setScanned(false), 2500);
-    return () => clearTimeout(t);
-  }, [scanned]);
+  const [isActive, setIsActive] = useState(false);
 
   const handleScan = async ({ data }: { data: string }) => {
-    if (scanned) return;
+    if (scanned || !isActive) return;
 
     try {
       const parsed = JSON.parse(data);
-      if (!parsed?.ip) return;
+      if (!parsed?.host || !parsed?.port) return;
+      if (parsed.version && parsed.version !== "1.0") return;
 
       setScanned(true);
+      setIsActive(false);
 
-      // 🔥 success haptic
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       onScan(parsed);
     } catch {
       if (__DEV__) console.warn("Invalid QR");
     }
+  };
+
+  const handleStartScan = () => {
+    setIsActive(true);
+    setScanned(false);
   };
 
   // 🔒 LOADING
@@ -102,6 +87,20 @@ export const QRScanner = ({
           </Text>
         </Pressable>
       </View>
+    );
+  }
+
+  // ✅ READY TO SCAN
+  if (!isActive) {
+    return (
+      <Pressable
+        onPress={handleStartScan}
+        className="items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-6"
+      >
+        <Text style={{ fontSize: rf(1.6) }} className="text-center text-white/70">
+          Tap to start scanning
+        </Text>
+      </Pressable>
     );
   }
 

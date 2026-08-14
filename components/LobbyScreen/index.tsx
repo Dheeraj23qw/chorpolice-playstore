@@ -4,7 +4,6 @@ export * from "./HostInviteCard";
 export * from "./HostStartErrorCard";
 export * from "./LobbyBackdrop";
 export * from "./LobbyHeader";
-export * from "./PermissionFallbackCard";
 export * from "./PlayersList";
 export * from "./PrimaryButton";
 export * from "./types";

@@ -15,8 +15,6 @@ import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
 import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { CharacterDrawerContext } from "@/constants/characterDrawerData";
 import AppUpdateBanner from "@/components/GameModeScreen/AppUpdateBanner";
-import { NotificationPermissionBanner } from "@/components/GameModeScreen/NotificationPermissionBanner";
-import { NetworkPermissionBanner } from "@/components/GameModeScreen/NetworkPermissionBanner";
 import { useOTAUpdate } from "@/hooks/useOTAUpdate";
 import { toast } from "@/components/feedback/toast";
 
@@ -38,21 +36,6 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
   const pathname = usePathname();
   const { nativeUpdate, otaAvailable } = useOTAUpdate();
   const hasUpdateBanner = __DEV__ || !!nativeUpdate?.isAvailable || otaAvailable;
-
-  const [devBannerIndex, setDevBannerIndex] = useState(0);
-  const devBanners = [
-    "update",
-    "network",
-    "notification",
-    "none",
-  ] as const;
-  const cycleDevBanner = () => {
-    setDevBannerIndex((prev) => (prev + 1) % devBanners.length);
-    toast.info(
-      "Dev Banner",
-      `Showing: ${devBanners[devBannerIndex] === "none" ? "hidden" : devBanners[devBannerIndex]}`,
-    );
-  };
 
   useEffect(() => {
     console.log(`[NAV_DEBUG] [MODE SELECT] mounted: title="${title}", drawerContext="${drawerContext}", pathname="${pathname}"`);
@@ -166,21 +149,9 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
 
             {/* Bottom Banners */}
             <View className="mt-auto pt-4 gap-y-3">
-              {__DEV__ && devBannerIndex === 0 ? (
-                <AppUpdateBanner forceVisible />
-              ) : __DEV__ && devBannerIndex === 1 && drawerContext === "multiplayer" ? (
-                <NetworkPermissionBanner forceVisible />
-              ) : __DEV__ && devBannerIndex === 2 ? (
-                <NotificationPermissionBanner forceVisible />
-              ) : __DEV__ && devBannerIndex === 3 ? (
-                <></>
-              ) : !__DEV__ && hasUpdateBanner ? (
+              {!__DEV__ && hasUpdateBanner ? (
                 <AppUpdateBanner />
-              ) : !__DEV__ && drawerContext === "multiplayer" ? (
-                <NetworkPermissionBanner />
-              ) : (
-                <NotificationPermissionBanner />
-              )}
+              ) : null}
             </View>
             </ScrollView>
           </MotiView>
@@ -193,18 +164,6 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
         onClose={() => setSelectedGame(null)}
         gameType={selectedGame?.gameType || selectedGame?.id || ""}
       />
-
-      {__DEV__ && (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={cycleDevBanner}
-          className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-5 py-3"
-        >
-          <Text className="font-main-bold text-xs uppercase tracking-wider text-white">
-            Dev Banner: {devBanners[devBannerIndex]}
-          </Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };

@@ -17,22 +17,14 @@ interface SetupActionCardProps {
   lobby: LobbyState;
   onOpenShare: () => void;
   isInviteLoading?: boolean;
-  networkStatus?: string;
-  networkContext?: string;
-  networkErrorMessage?: string | null;
   isSolo?: boolean;
-  isLanModeRequested?: boolean;
 }
 
 export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   lobby,
   onOpenShare,
   isInviteLoading = false,
-  networkStatus,
-  networkContext,
-  networkErrorMessage,
   isSolo = false,
-  isLanModeRequested = false,
 }) => {
   const [showHotspotFix, setShowHotspotFix] = React.useState(false);
   const [showDebug, setShowDebug] = React.useState(false);
@@ -55,8 +47,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
     new Set(playerAvatars).size !== playerAvatars.length;
 
   const humanCount = lobby.players.filter((p) => !p.isBot).length;
-  const permissionsOk =
-    isSolo || networkStatus === "granted" || !isLanModeRequested;
   const connectionOk =
     isSolo ||
     lobby.connectionStatus === "HOSTING" ||
@@ -66,10 +56,8 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   const canStart =
     connectionOk &&
     !isBlockedByDuplicates &&
-    (isSolo || humanCount >= 2) &&
-    permissionsOk;
+    (isSolo || humanCount >= 2);
 
-  // Is the host still bootstrapping (IP not yet resolved)?
   const isHotspotInitializing =
     lobby.connectionStatus === "HOSTING" && !lobby.hostIp && !lobby.roomCode;
 
@@ -77,8 +65,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
     if (!isSolo && humanCount < 2) return "add 1 more human..";
     if (hasDuplicateNames) return "All players must have unique names";
     if (hasDuplicateAvatars) return "All players must have unique avatars";
-    if (!isSolo && isLanModeRequested && networkStatus !== "granted")
-      return "Grant all permissions to start";
     return "Ready to play";
   };
 
@@ -98,7 +84,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
         <View className="p-6">
           {lobby.isHost && (
             <View className="gap-4">
-              {/* Invite / Share Section */}
               {canShare && (
                 <Pressable
                   onPress={() => {
@@ -127,7 +112,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                         }}
                         className="overflow-hidden rounded-[28px]"
                       >
-                        {/* Animated outer glow */}
                         {!showSpinner && (
                           <View className="absolute inset-0 rounded-[28px] bg-emerald-500/30 blur-xl" />
                         )}
@@ -180,12 +164,10 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                   }}
                 </Pressable>
               )}
-              {/* 🚀 LAN GUIDANCE: Only shown if Invite was clicked but IP/Server not ready */}
               {lobby.isHost &&
                 !isSolo &&
                 (isInviteLoading ||
-                  isHotspotInitializing ||
-                  (networkStatus && networkStatus !== "granted")) && (
+                  isHotspotInitializing) && (
                   <MotiView
                     from={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
@@ -194,30 +176,21 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
                     <View className="p-3">
                       <View className="flex-row items-center gap-2">
                         <Ionicons
-                          name={
-                            networkStatus === "denied"
-                              ? "lock-closed-outline"
-                              : "wifi-outline"
-                          }
+                          name="wifi-outline"
                           size={rf(1.6)}
-                          color={
-                            networkStatus === "denied" ? "#ef4444" : "#93c5fd"
-                          }
+                          color="#93c5fd"
                         />
                         <Text
                           style={{ fontSize: rf(1.3) }}
                           className="flex-1 font-main-md text-white/70"
                         >
-                          {networkStatus === "denied"
-                            ? "Permission required for LAN play."
-                            : "Searching for network... Please make sure your hotspot or WiFi is ON."}
+                          Searching for network... Please make sure your hotspot or WiFi is ON.
                         </Text>
                       </View>
                     </View>
                   </MotiView>
                 )}
 
-              {/* Start Game Section */}
               <PrimaryButton
                 title="Start Match"
                 subtitle={getSubtitle()}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   Modal,
   PermissionsAndroid,
   Platform,
@@ -10,17 +11,17 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Location from "expo-location";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { Text } from "@/components/Text";
-import { usePermissionGuard } from "@/hooks/usePermissionGuard";
 
 /* ============================================================
    TYPES
-============================================================ */
+ ============================================================ */
 
 interface Props {
   isVisible: boolean;
@@ -30,15 +31,14 @@ interface Props {
 
 /* ============================================================
    ANDROID PERMISSIONS
-============================================================ */
+ ============================================================ */
 
-const LOCATION_PERMISSION = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
-
-const NEARBY_WIFI_PERMISSION = "android.permission.NEARBY_WIFI_DEVICES";
+const ANDROID_LOCATION = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
+const ANDROID_NEARBY = "android.permission.NEARBY_WIFI_DEVICES";
 
 /* ============================================================
    PERMISSION ROW
-============================================================ */
+ ============================================================ */
 
 interface PermissionRowProps {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -59,8 +59,6 @@ const PermissionRow: React.FC<PermissionRowProps> = ({
 }) => {
   return (
     <View className="mb-3 w-full flex-row items-center rounded-[20px] border border-white/[0.08] bg-white/[0.045] px-4 py-3.5">
-      {/* ICON */}
-
       <View
         className={`mr-3.5 h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] ${iconBackground}`}
       >
@@ -71,17 +69,12 @@ const PermissionRow: React.FC<PermissionRowProps> = ({
         />
       </View>
 
-      {/* CONTENT */}
-
       <View className="min-w-0 flex-1 pr-2">
         <Text className="font-main-bold text-[14px] text-white">{title}</Text>
-
         <Text className="mt-1 font-main text-[11px] leading-[16px] text-white/40">
           {description}
         </Text>
       </View>
-
-      {/* STATUS */}
 
       <View
         className={`h-7 w-7 items-center justify-center rounded-full border ${
@@ -102,7 +95,7 @@ const PermissionRow: React.FC<PermissionRowProps> = ({
 
 /* ============================================================
    MAIN MODAL
-============================================================ */
+ ============================================================ */
 
 const MultiplayerPermissionModal: React.FC<Props> = ({
   isVisible,
@@ -112,8 +105,6 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const { state, checkAllPermissions, openSettings } = usePermissionGuard();
-
   const [androidPermissionsGranted, setAndroidPermissionsGranted] = useState<
     boolean | null
   >(null);
@@ -122,8 +113,8 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
   const [checkingInitial, setCheckingInitial] = useState(true);
 
   /* ============================================================
-     RESPONSIVE DIMENSIONS
-  ============================================================ */
+      RESPONSIVE DIMENSIONS
+   ============================================================ */
 
   const cardWidth = useMemo(() => {
     return Math.min(width - 32, 410);
@@ -136,21 +127,13 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
   const cardMaxHeight = Math.min(availableHeight, 720);
 
   /* ============================================================
-     PERMISSION STATE
-  ============================================================ */
+      PLATFORM
+   ============================================================ */
 
-  const expoGranted = state === "granted";
-
-  const allGranted = androidPermissionsGranted === true && expoGranted;
-
-  const isBlocked = state === "blocked";
-
-  /* ============================================================
-     ANDROID API
-  ============================================================ */
+  const isAndroid = Platform.OS === "android";
 
   const androidApiLevel = useMemo(() => {
-    if (Platform.OS !== "android") {
+    if (!isAndroid) {
       return 0;
     }
 
@@ -160,31 +143,38 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
   }, []);
 
   /* ============================================================
-     CHECK ANDROID PERMISSIONS
-  ============================================================ */
+      PERMISSION STATE
+   ============================================================ */
+
+  const allGranted = isAndroid
+    ? androidPermissionsGranted === true
+    : androidPermissionsGranted === true;
+
+  /* ============================================================
+      CHECK ANDROID PERMISSIONS
+   ============================================================ */
 
   const checkAndroidPermissions = useCallback(async (): Promise<boolean> => {
-    if (Platform.OS !== "android") {
+    if (!isAndroid) {
       return true;
     }
 
     try {
-      const locationGranted =
-        await PermissionsAndroid.check(LOCATION_PERMISSION);
+      const locationGranted = await PermissionsAndroid.check(ANDROID_LOCATION);
 
-      let nearbyWifiGranted = true;
-
-      /*
-       * NEARBY_WIFI_DEVICES exists from Android 13 / API 33.
-       */
-
-      if (androidApiLevel >= 33) {
-        nearbyWifiGranted = await PermissionsAndroid.check(
-          NEARBY_WIFI_PERMISSION as any,
-        );
+      if (!locationGranted) {
+        return false;
       }
 
-      return locationGranted && nearbyWifiGranted;
+      if (androidApiLevel >= 33) {
+        const nearbyWifiGranted = await PermissionsAndroid.check(
+          ANDROID_NEARBY as any,
+        );
+
+        return nearbyWifiGranted;
+      }
+
+      return true;
     } catch (error) {
       console.warn(
         "[MultiplayerPermissionModal] Failed to check Android permissions:",
@@ -193,11 +183,34 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
 
       return false;
     }
-  }, [androidApiLevel]);
+  }, [isAndroid, androidApiLevel]);
 
   /* ============================================================
-     CHECK WHEN MODAL OPENS
-  ============================================================ */
+      CHECK iOS PERMISSIONS
+   ============================================================ */
+
+  const checkIosPermissions = useCallback(async (): Promise<boolean> => {
+    if (isAndroid) {
+      return true;
+    }
+
+    try {
+      const { status } = await Location.getForegroundPermissionsAsync();
+
+      return status === "granted";
+    } catch (error) {
+      console.warn(
+        "[MultiplayerPermissionModal] Failed to check iOS permissions:",
+        error,
+      );
+
+      return false;
+    }
+  }, [isAndroid]);
+
+  /* ============================================================
+      CHECK WHEN MODAL OPENS
+   ============================================================ */
 
   useEffect(() => {
     if (!isVisible) {
@@ -210,11 +223,17 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
     setChecking(false);
 
     const runCheck = async () => {
-      const result = await checkAndroidPermissions();
+      const result = isAndroid
+        ? await checkAndroidPermissions()
+        : await checkIosPermissions();
 
       if (!cancelled) {
         setAndroidPermissionsGranted(result);
         setCheckingInitial(false);
+
+        if (result) {
+          onGrant();
+        }
       }
     };
 
@@ -223,11 +242,11 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
     return () => {
       cancelled = true;
     };
-  }, [isVisible, checkAndroidPermissions]);
+  }, [isVisible, isAndroid, checkAndroidPermissions, checkIosPermissions, onGrant]);
 
   /* ============================================================
-     AUTO-CLOSE WHEN EVERYTHING IS GRANTED
-  ============================================================ */
+      AUTO-CLOSE WHEN EVERYTHING IS GRANTED
+   ============================================================ */
 
   useEffect(() => {
     if (!isVisible) {
@@ -238,18 +257,12 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
       return;
     }
 
-    /*
-     * Parent is responsible for closing the modal.
-     * This effect only fires when permission state transitions
-     * into the fully granted state.
-     */
-
     onGrant();
   }, [isVisible, allGranted, onGrant]);
 
   /* ============================================================
-     ALLOW PERMISSIONS
-  ============================================================ */
+      ALLOW PERMISSIONS
+   ============================================================ */
 
   const handleAllow = useCallback(async () => {
     if (checking || checkingInitial) {
@@ -261,64 +274,47 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      if (Platform.OS === "android") {
+      if (isAndroid) {
         const permissionsToRequest: string[] = [];
 
-        const locationGranted =
-          await PermissionsAndroid.check(LOCATION_PERMISSION);
+        const locationGranted = await PermissionsAndroid.check(ANDROID_LOCATION);
 
         if (!locationGranted) {
-          permissionsToRequest.push(LOCATION_PERMISSION);
+          permissionsToRequest.push(ANDROID_LOCATION);
         }
-
-        /*
-         * Android 13+
-         */
 
         if (androidApiLevel >= 33) {
           const nearbyWifiGranted = await PermissionsAndroid.check(
-            NEARBY_WIFI_PERMISSION as any,
+            ANDROID_NEARBY as any,
           );
 
           if (!nearbyWifiGranted) {
-            permissionsToRequest.push(NEARBY_WIFI_PERMISSION);
+            permissionsToRequest.push(ANDROID_NEARBY);
           }
         }
-
-        /*
-         * Request only missing permissions.
-         */
 
         if (permissionsToRequest.length > 0) {
           await PermissionsAndroid.requestMultiple(permissionsToRequest as any);
         }
 
-        /*
-         * Always re-check actual OS state after request.
-         * Do not rely solely on requestMultiple result.
-         */
-
         const androidResult = await checkAndroidPermissions();
 
         setAndroidPermissionsGranted(androidResult);
 
-        /*
-         * Let the existing guard validate its own
-         * permission requirements as well.
-         */
+        if (androidResult) {
+          onGrant();
+        }
+      } else {
+        const { status } = await Location.requestForegroundPermissionsAsync();
 
-        await checkAllPermissions(true);
+        const granted = status === "granted";
 
-        return;
+        setAndroidPermissionsGranted(granted);
+
+        if (granted) {
+          onGrant();
+        }
       }
-
-      /*
-       * iOS / non-Android
-       */
-
-      setAndroidPermissionsGranted(true);
-
-      await checkAllPermissions(true);
     } catch (error) {
       console.warn(
         "[MultiplayerPermissionModal] Permission request failed:",
@@ -332,14 +328,15 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
   }, [
     checking,
     checkingInitial,
+    isAndroid,
     androidApiLevel,
     checkAndroidPermissions,
-    checkAllPermissions,
+    onGrant,
   ]);
 
   /* ============================================================
-     SETTINGS
-  ============================================================ */
+      SETTINGS
+   ============================================================ */
 
   const handleOpenSettings = useCallback(async () => {
     if (checking) {
@@ -349,18 +346,18 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      await openSettings();
+      await Linking.openSettings();
     } catch (error) {
       console.warn(
         "[MultiplayerPermissionModal] Failed to open settings:",
         error,
       );
     }
-  }, [checking, openSettings]);
+  }, [checking]);
 
   /* ============================================================
-     DENY
-  ============================================================ */
+      DENY
+   ============================================================ */
 
   const handleDeny = useCallback(async () => {
     if (checking) {
@@ -373,8 +370,8 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
   }, [checking, onDeny]);
 
   /* ============================================================
-     RENDER
-  ============================================================ */
+      RENDER
+   ============================================================ */
 
   return (
     <Modal
@@ -384,10 +381,6 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
       statusBarTranslucent
       onRequestClose={handleDeny}
     >
-      {/* ======================================================
-          BACKDROP
-      ====================================================== */}
-
       <View className="flex-1">
         <LinearGradient
           colors={[
@@ -401,8 +394,6 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
           pointerEvents="none"
         />
 
-        {/* Ambient purple glow */}
-
         <View
           className="absolute -right-24 -top-20 h-72 w-72 rounded-full bg-indigo-500/10"
           pointerEvents="none"
@@ -413,13 +404,7 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
           pointerEvents="none"
         />
 
-        {/* Tap outside */}
-
         <Pressable className="absolute inset-0" onPress={handleDeny} />
-
-        {/* ====================================================
-            CENTER AREA
-        ==================================================== */}
 
         <View
           className="flex-1 items-center justify-center px-4"
@@ -457,10 +442,6 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
             }}
             className="overflow-hidden rounded-[30px] border border-indigo-400/20 bg-[#0A0B18]"
           >
-            {/* =================================================
-                TOP ACCENT
-            ================================================= */}
-
             <LinearGradient
               colors={["#818CF8", "#6366F1", "#8B5CF6"]}
               start={{ x: 0, y: 0 }}
@@ -474,13 +455,7 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
               keyboardShouldPersistTaps="handled"
               contentContainerClassName="px-5 pb-5"
             >
-              {/* =================================================
-                  HEADER
-              ================================================= */}
-
               <View className="items-center px-2 pb-5 pt-6">
-                {/* ICON */}
-
                 <MotiView
                   from={{
                     opacity: 0,
@@ -507,29 +482,19 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
                   </View>
                 </MotiView>
 
-                {/* EYEBROW */}
-
                 <Text className="mb-1 font-main-bold text-[10px] uppercase tracking-[2.5px] text-indigo-300/55">
                   Multiplayer setup
                 </Text>
 
-                {/* TITLE */}
-
                 <Text className="text-center font-main-bold text-[24px] leading-[30px] text-white">
                   Multiplayer Permissions
                 </Text>
-
-                {/* DESCRIPTION */}
 
                 <Text className="mt-2.5 max-w-[330px] text-center font-main text-[12px] leading-[18px] text-white/40">
                   A few permissions are needed to discover nearby players and
                   connect your game.
                 </Text>
               </View>
-
-              {/* =================================================
-                  CHECKING STATE
-              ================================================= */}
 
               {checkingInitial ? (
                 <MotiView
@@ -555,153 +520,50 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
                 </MotiView>
               ) : (
                 <>
-                  {/* =================================================
-                      PERMISSION LIST
-                  ================================================= */}
-
                   <View className="mb-2">
-                    <PermissionRow
-                      icon="map-marker-radius"
-                      iconColor="#818CF8"
-                      iconBackground="bg-indigo-500/10"
-                      title="Location"
-                      description="Helps discover friends nearby on the same WiFi."
-                      granted={
-                        Platform.OS === "android"
-                          ? androidPermissionsGranted === true
-                          : expoGranted
-                      }
-                    />
+                    {isAndroid ? (
+                      <>
+                        <PermissionRow
+                          icon="map-marker-radius"
+                          iconColor="#818CF8"
+                          iconBackground="bg-indigo-500/10"
+                          title="Location"
+                          description="Helps discover friends nearby on the same WiFi."
+                          granted={androidPermissionsGranted === true}
+                        />
 
-                    <PermissionRow
-                      icon="wifi"
-                      iconColor="#38BDF8"
-                      iconBackground="bg-sky-500/10"
-                      title="Nearby WiFi"
-                      description="Allows the game to discover nearby devices."
-                      granted={
-                        Platform.OS === "android"
-                          ? androidPermissionsGranted === true
-                          : expoGranted
-                      }
-                    />
-
-                    <PermissionRow
-                      icon="qrcode-scan"
-                      iconColor="#A78BFA"
-                      iconBackground="bg-violet-500/10"
-                      title="Camera"
-                      description="Used to scan QR codes and join rooms quickly."
-                      granted={expoGranted}
-                    />
+                        <PermissionRow
+                          icon="wifi"
+                          iconColor="#38BDF8"
+                          iconBackground="bg-sky-500/10"
+                          title="Nearby WiFi"
+                          description="Allows the game to discover nearby devices."
+                          granted={androidPermissionsGranted === true}
+                        />
+                      </>
+                    ) : (
+                      <PermissionRow
+                        icon="map-marker-radius"
+                        iconColor="#818CF8"
+                        iconBackground="bg-indigo-500/10"
+                        title="Location"
+                        description="Helps discover friends nearby on the same WiFi."
+                        granted={androidPermissionsGranted === true}
+                      />
+                    )}
                   </View>
 
-                  {/* =================================================
-                      STATUS MESSAGE
-                  ================================================= */}
+                  <View className="mb-4 flex-row items-center justify-center">
+                    <MaterialCommunityIcons
+                      name="lock-outline"
+                      size={13}
+                      color="rgba(255,255,255,0.25)"
+                    />
 
-                  {isBlocked ? (
-                    <MotiView
-                      from={{
-                        opacity: 0,
-                        translateY: 6,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        translateY: 0,
-                      }}
-                      className="mb-4 flex-row items-center rounded-2xl border border-orange-400/20 bg-orange-500/[0.08] px-3.5 py-3"
-                    >
-                      <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-orange-400/10">
-                        <MaterialCommunityIcons
-                          name="alert-outline"
-                          size={18}
-                          color="#FDBA74"
-                        />
-                      </View>
-
-                      <View className="flex-1">
-                        <Text className="font-main-bold text-xs text-orange-200">
-                          Permission blocked
-                        </Text>
-
-                        <Text className="mt-0.5 font-main text-[10px] leading-4 text-orange-100/45">
-                          Enable the required permissions in Android Settings.
-                        </Text>
-                      </View>
-                    </MotiView>
-                  ) : (
-                    <View className="mb-4 flex-row items-center justify-center">
-                      <MaterialCommunityIcons
-                        name="lock-outline"
-                        size={13}
-                        color="rgba(255,255,255,0.25)"
-                      />
-
-                      <Text className="ml-1.5 font-main text-[10px] text-white/25">
-                        Your permissions stay on your device.
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* =================================================
-                      SETTINGS BUTTON
-                  ================================================= */}
-
-                  {isBlocked && (
-                    <Pressable
-                      onPress={handleOpenSettings}
-                      disabled={checking}
-                      className="mb-3 h-14 w-full overflow-hidden rounded-[20px]"
-                    >
-                      {({ pressed }) => (
-                        <MotiView
-                          animate={{
-                            scale: pressed ? 0.97 : 1,
-                          }}
-                          transition={{
-                            type: "spring",
-                            damping: 16,
-                            stiffness: 220,
-                          }}
-                          className="h-full w-full overflow-hidden rounded-[20px]"
-                          style={{
-                            shadowColor: "#F97316",
-                            shadowOffset: {
-                              width: 0,
-                              height: 7,
-                            },
-                            shadowOpacity: pressed ? 0.15 : 0.3,
-                            shadowRadius: 14,
-                            elevation: 7,
-                          }}
-                        >
-                          <LinearGradient
-                            colors={["#FB923C", "#F97316", "#EA580C"]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            className="h-full w-full"
-                          >
-                            <View className="h-full flex-row items-center justify-center">
-                              <MaterialCommunityIcons
-                                name="cog-outline"
-                                size={20}
-                                color="white"
-                              />
-
-                              <Text className="ml-2.5 font-main-bold text-[13px] uppercase tracking-[2.5px] text-white">
-                                Open Settings
-                              </Text>
-                            </View>
-                          </LinearGradient>
-                        </MotiView>
-                      )}
-                    </Pressable>
-                  )}
-
-                  {/* =================================================
-                      ALLOW BUTTON
-                  ================================================= */}
+                    <Text className="ml-1.5 font-main text-[10px] text-white/25">
+                      Your permissions stay on your device.
+                    </Text>
+                  </View>
 
                   <Pressable
                     onPress={handleAllow}
@@ -754,19 +616,13 @@ const MultiplayerPermissionModal: React.FC<Props> = ({
                             <Text className="ml-2.5 font-main-bold text-[13px] uppercase tracking-[2.5px] text-white">
                               {checking
                                 ? "Checking..."
-                                : isBlocked
-                                  ? "Try Again"
-                                  : "Allow & Play"}
+                                : "Allow & Play"}
                             </Text>
                           </View>
                         </LinearGradient>
                       </MotiView>
                     )}
                   </Pressable>
-
-                  {/* =================================================
-                      NOT NOW
-                  ================================================= */}
 
                   <Pressable
                     onPress={handleDeny}

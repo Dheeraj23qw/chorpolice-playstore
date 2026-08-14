@@ -1,7 +1,6 @@
 import { storage } from "@/storage/mmkv";
 
 const ONBOARDING_DONE_KEY = "onboarding_done";
-const PERMISSION_REMINDER_SUPPRESSED = "permission_reminder_suppressed";
 const LOBBY_HELP_SHOWN = "lobby_help_shown";
 const SOLO_TUTORIAL_SHOWN = "solo_tutorial_shown";
 const JOIN_HELP_SHOWN = "join_help_shown";
@@ -20,13 +19,6 @@ export const getForceOnboardingEveryLaunch = () =>
 
 export const setForceOnboardingEveryLaunch = (value: boolean) => {
   storage.set(FORCE_ONBOARDING_DEV_KEY, value);
-};
-
-export const getPermissionReminderSuppressed = () =>
-  storage.getBoolean(PERMISSION_REMINDER_SUPPRESSED) ?? false;
-
-export const setPermissionReminderSuppressed = (value: boolean) => {
-  storage.set(PERMISSION_REMINDER_SUPPRESSED, value);
 };
 
 export const getLobbyHelpShown = () =>

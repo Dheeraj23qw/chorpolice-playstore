@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, Pressable, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -38,24 +38,18 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
   const [permission, requestPermission] = useCameraPermissions();
 
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
-
   const [showHotspotFix, setShowHotspotFix] = React.useState(false);
-
   const [showDebug, setShowDebug] = React.useState(false);
-
   const [scanned, setScanned] = React.useState(false);
-
   const [copied, setCopied] = React.useState(false);
+  const [isScanning, setIsScanning] = React.useState(false);
 
   useEffect(() => {
-    if (visible && !isHost && !permission?.granted) {
-      requestPermission();
-    }
-
     if (visible) {
       setScanned(false);
       setCopied(false);
       setShowDebug(false);
+      setIsScanning(false);
 
       const troubleshootingTimer = setTimeout(() => {
         setShowTroubleshooting(true);
@@ -74,7 +68,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
     setShowTroubleshooting(false);
     setShowHotspotFix(false);
     setShowDebug(false);
-  }, [visible, isHost, permission?.granted, requestPermission]);
+  }, [visible]);
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(roomCode || "");
@@ -88,6 +82,21 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
     }, 2000);
   };
 
+  const handleScanPress = async () => {
+    if (isScanning) return;
+
+    if (!permission?.granted) {
+      setIsScanning(true);
+      const result = await requestPermission();
+      setIsScanning(false);
+
+      if (!result.granted) {
+        toast.error("Camera Required", "Camera permission is needed to scan QR codes.");
+        return;
+      }
+    }
+  };
+
   if (!visible) return null;
 
   return (
@@ -99,12 +108,10 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
       onRequestClose={onClose}
     >
       <View className="flex-1 items-center justify-center px-5">
-        {/* BACKDROP */}
         <View pointerEvents="none" className="absolute inset-0 bg-black/85" />
 
         <Pressable className="absolute inset-0" onPress={onClose} />
 
-        {/* MODAL ANIMATION */}
         <MotiView
           from={{
             opacity: 0,
@@ -138,7 +145,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
             elevation: 25,
           }}
         >
-          {/* GLOWING BORDER */}
           <View
             className="overflow-hidden rounded-[38px] border border-indigo-400/25 bg-indigo-500/[0.04] p-[1px]"
             style={{
@@ -152,14 +158,12 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
               elevation: 18,
             }}
           >
-            {/* GLASS */}
             <BlurView
               intensity={95}
               tint="dark"
               className="overflow-hidden rounded-[37px]"
             >
               <View className="rounded-[37px] bg-[#0B0B14]/90">
-                {/* HEADER */}
                 <View className="w-full flex-row items-center justify-between border-b border-white/[0.07] px-5 py-5">
                   <View className="mr-4 flex-1">
                     <MotiText
@@ -191,7 +195,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                     </Text>
                   </View>
 
-                  {/* HEADER ACTIONS */}
                   <View className="flex-row items-center gap-2">
                     {onHelpPress && (
                       <Pressable
@@ -213,12 +216,9 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                   </View>
                 </View>
 
-                {/* CONTENT */}
                 <View className="w-full px-5 pb-6 pt-5">
                   {isHost ? (
-                    /* ================= HOST ================= */
                     <View className="items-center">
-                      {/* QR HEADER */}
                       <View className="mb-4 flex-row items-center">
                         <View className="h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10">
                           <Ionicons
@@ -228,12 +228,11 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                           />
                         </View>
 
-                        <Text className="ml-2 font-main-bold text-[11px] uppercase tracking-[2px] text-white/40">
+                        <Text className="ml-2 font-main-bold text-[11px] uppercase tracking-[2px] text-zinc-500">
                           Scan to Join
                         </Text>
                       </View>
 
-                      {/* QR CODE */}
                       <View
                         className="rounded-[28px] border border-white/10 bg-white p-4"
                         style={{
@@ -270,7 +269,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                         )}
                       </View>
 
-                      {/* ROOM CODE */}
                       <View className="mt-5 w-full overflow-hidden rounded-2xl border border-indigo-400/15 bg-indigo-500/[0.05]">
                         <View className="items-center px-5 pb-3 pt-4">
                           <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-zinc-500">
@@ -306,7 +304,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                         </Pressable>
                       </View>
 
-                      {/* TROUBLESHOOTING */}
                       <View className="mt-4 w-full">
                         {showTroubleshooting && <LanTroubleshootingCard />}
 
@@ -318,9 +315,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                       </View>
                     </View>
                   ) : (
-                    /* ================= CLIENT ================= */
                     <View className="items-center">
-                      {/* CAMERA */}
                       <View className="h-[320px] w-full overflow-hidden rounded-[28px] border border-white/15 bg-black">
                         {permission?.granted ? (
                           <CameraView
@@ -338,34 +333,44 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                           />
                         ) : (
                           <View className="flex-1 items-center justify-center px-8">
-                            <View className="h-16 w-16 items-center justify-center rounded-full bg-white/[0.05]">
-                              <Ionicons
-                                name="camera-outline"
-                                size={32}
-                                color="#71717A"
-                              />
-                            </View>
+                            <Pressable
+                              onPress={handleScanPress}
+                              disabled={isScanning}
+                              className="items-center"
+                            >
+                              <View className="h-16 w-16 items-center justify-center rounded-full bg-white/[0.05]">
+                                <Ionicons
+                                  name="camera-outline"
+                                  size={32}
+                                  color="#71717A"
+                                />
+                              </View>
 
-                            <Text className="mt-4 text-center font-main-md text-sm leading-5 text-zinc-400">
-                              Camera access is required to scan the room QR.
-                            </Text>
+                              <Text className="mt-4 text-center font-main-md text-sm leading-5 text-zinc-400">
+                                Camera access is required to scan the room QR.
+                              </Text>
+
+                              <View className="mt-4 rounded-xl bg-indigo-500/20 px-5 py-2.5 border border-indigo-400/30">
+                                <Text className="font-main-bold text-sm text-indigo-200">
+                                  {isScanning ? "Requesting..." : "Tap to enable camera"}
+                                </Text>
+                              </View>
+                            </Pressable>
                           </View>
                         )}
 
-                        {/* CAMERA DARK OVERLAY */}
                         <View
                           pointerEvents="none"
                           className="absolute inset-0 bg-black/10"
                         />
 
-                        {/* VIEWFINDER */}
                         <View
                           pointerEvents="none"
                           className="absolute inset-0 items-center justify-center"
                         >
                           <View className="h-48 w-48 rounded-[28px] border-[1.5px] border-white/50 bg-white/[0.03]" />
 
-                          {!scanned && (
+                          {!scanned && permission?.granted && (
                             <MotiView
                               from={{
                                 translateY: -80,
@@ -395,7 +400,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                           )}
                         </View>
 
-                        {/* SCAN LABEL */}
                         {!scanned && permission?.granted && (
                           <View className="absolute bottom-5 left-0 right-0 items-center">
                             <View className="rounded-full border border-white/10 bg-black/50 px-4 py-2">
@@ -406,7 +410,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                           </View>
                         )}
 
-                        {/* SUCCESS */}
                         {scanned && (
                           <MotiView
                             from={{
@@ -450,7 +453,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                         )}
                       </View>
 
-                      {/* CAMERA FOOTER */}
                       {!scanned && permission?.granted && (
                         <View className="mt-4 flex-row items-center">
                           <Ionicons
@@ -465,7 +467,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                         </View>
                       )}
 
-                      {/* TROUBLESHOOTING */}
                       <View className="mt-4 w-full">
                         {showTroubleshooting && <LanTroubleshootingCard />}
 
