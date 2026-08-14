@@ -1,5 +1,6 @@
 import { loadOrCreateClientPlayerId, loadUsername, loadAvatarId } from "@/storage/userStorage";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { ensureUniquePlayerAvatars } from "@/utils/lobbyPlayers";
 
 export type PlayerConnectionStatus =
   | "CONNECTED"
@@ -259,7 +260,7 @@ export const sessionSlice = createSlice({
     },
 
     setLobbyPlayers: (state, action: PayloadAction<SessionPlayer[]>) => {
-      state.players = action.payload.slice(0, 4);
+      state.players = ensureUniquePlayerAvatars(action.payload.slice(0, 4));
 
       const localPlayer = state.localPlayerId
         ? state.players.find(

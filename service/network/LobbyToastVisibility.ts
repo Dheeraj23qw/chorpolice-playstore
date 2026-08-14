@@ -7,18 +7,8 @@ type LobbyToastSession = {
 };
 
 export const isLobbyPresenceToastAllowed = (
-  session: LobbyToastSession,
+  _session: LobbyToastSession,
 ) => {
-  const isLobbyStage =
-    session.lobbyStage === "room" || session.lobbyStage === "setup";
-  const hasActiveLobbyPlayers =
-    Array.isArray(session.players) && session.players.length > 1;
-
-  return (
-    session.connectionStatus !== "ERROR" &&
-    session.gamePhase === "idle" &&
-    isLobbyStage &&
-    Boolean(session.gameType) &&
-    hasActiveLobbyPlayers
-  );
+  // Presence toasts disabled (LateJoinQrModal host dashboard handles live monitoring)
+  return false;
 };

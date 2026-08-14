@@ -60,11 +60,51 @@ export const createInitialLobbyPlayers = (hostPlayer: {
   return players;
 };
 
+export const ensureUniquePlayerAvatars = (
+  players: SessionPlayer[],
+): SessionPlayer[] => {
+  const usedAvatars = new Set<number>();
+  const usedNames = new Set<string>();
+
+  return players.map((player, idx) => {
+    let currentAvatar = player.avatarId;
+    let currentName = player.name;
+
+    if (player.isBot) {
+      if (
+        !currentAvatar ||
+        usedAvatars.has(currentAvatar) ||
+        usedNames.has(currentName)
+      ) {
+        const bot = createBotPlayer(idx, usedAvatars, usedNames);
+        currentAvatar = bot.avatarId;
+        currentName = bot.name;
+      }
+    } else {
+      // 🔥 Human player duplicate avatar auto-switch
+      if (!currentAvatar || usedAvatars.has(currentAvatar)) {
+        currentAvatar = getNextAvailableAvatar(usedAvatars);
+      }
+    }
+
+    usedAvatars.add(currentAvatar);
+    usedNames.add(currentName);
+
+    return {
+      ...player,
+      avatarId: currentAvatar,
+      name: currentName,
+    };
+  });
+};
+
 export const replaceFirstBotWithPlayer = (
   players: SessionPlayer[],
   joiningPlayer: SessionPlayer,
 ): SessionPlayer[] | null => {
-  const existingIndex = players.findIndex((player) => player.id === joiningPlayer.id);
+  const existingIndex = players.findIndex(
+    (player) => player.id === joiningPlayer.id,
+  );
 
   let nextPlayers = [...players];
   if (existingIndex >= 0) {
@@ -74,7 +114,9 @@ export const replaceFirstBotWithPlayer = (
       isBot: false,
     };
   } else {
-    const botIndex = players.findIndex((player, index) => index > 0 && player.isBot);
+    const botIndex = players.findIndex(
+      (player, index) => index > 0 && player.isBot,
+    );
     if (botIndex < 0) return null;
     nextPlayers[botIndex] = {
       ...joiningPlayer,
@@ -82,27 +124,7 @@ export const replaceFirstBotWithPlayer = (
     };
   }
 
-  // 🔥 SMART CONFLICT RESOLUTION
-  // Ensure NO other bots have the same avatar or name as humans
-  const humanAvatars = new Set(nextPlayers.filter(p => !p.isBot).map(p => p.avatarId));
-  const humanNames = new Set(nextPlayers.filter(p => !p.isBot).map(p => p.name));
-  
-  // Track all used attributes to ensure bots are also unique from each other
-  const usedAvatars = new Set(humanAvatars);
-  const usedNames = new Set(humanNames);
-
-  return nextPlayers.map((player, idx) => {
-    if (!player.isBot) return player;
-
-    // If this bot conflicts with a human (or previous bot), re-randomize
-    if (usedAvatars.has(player.avatarId) || usedNames.has(player.name)) {
-      return createBotPlayer(idx, usedAvatars, usedNames);
-    }
-
-    usedAvatars.add(player.avatarId);
-    usedNames.add(player.name);
-    return player;
-  });
+  return ensureUniquePlayerAvatars(nextPlayers);
 };
 
 export const replacePlayerWithBot = (
