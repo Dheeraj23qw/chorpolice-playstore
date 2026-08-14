@@ -1,4 +1,3 @@
-import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, {
   useCallback,
@@ -135,12 +134,6 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
       ? imgData.src
       : require("@/assets/images/chorsipahi/kid1.webp");
   }, []);
-
-  const copyRoomCode = useCallback(async () => {
-    if (!lobby.roomCode) return;
-    await Clipboard.setStringAsync(lobby.roomCode);
-    toast.success("Room Code Copied", lobby.roomCode);
-  }, [lobby.roomCode]);
 
   const [isInviteLoading, setIsInviteLoading] = useState(false);
 
@@ -368,10 +361,12 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
         visible={uiState === "share"}
         onClose={() => setUiState("normal")}
         qrPayload={lobby.qrPayload}
-        roomCode={lobby.roomCode}
-        onCopyRoomCode={copyRoomCode}
         isHost={lobby.isHost}
         onHelpPress={() => setUiState("help")}
+        onStartMatch={() => {
+          setUiState("normal");
+          lobby.setIsBettingModalVisible(true);
+        }}
       />
 
       <ApIsolationModal

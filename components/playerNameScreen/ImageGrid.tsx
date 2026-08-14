@@ -1,5 +1,5 @@
 import React, { memo, useEffect } from "react";
-import { View, Image, Pressable } from "react-native";
+import { View, Image, Pressable, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -229,7 +229,7 @@ const AvatarCard = ({
             </View>
           )}
 
-          {/* 🔥 FULL SCREEN "TAKEN" POSTER */}
+          {/* 🔥 FULL SCREEN "TAKEN" POSTER - CENTERED IN MIDDLE */}
           <AnimatePresence>
             {isTaken && (
               <MotiView
@@ -240,21 +240,20 @@ const AvatarCard = ({
                   type: "timing",
                   duration: 250,
                 }}
-                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+                style={StyleSheet.absoluteFill}
+                className="flex-1 items-center justify-center"
               >
-                <View className="items-center justify-center">
-                {/* BIG CENTER STAMP */}
-                <View className="items-center">
-                  <View className="rounded-2xl bg-black/60 px-5 py-2">
-                    <Text className="font-main-bold text-sm tracking-[3px] text-white">
+                <View className="items-center justify-center px-3">
+                  {/* BIG CENTER STAMP */}
+                  <View className="rounded-2xl border border-white/10 bg-black/75 px-4 py-2 shadow-lg">
+                    <Text className="font-main-bold text-center text-xs tracking-[2px] text-red-400">
                       ALREADY TAKEN
                     </Text>
                   </View>
 
-                  <Text className="mt-2 text-xs text-white/60">
+                  <Text className="mt-1.5 text-center text-[10px] text-white/60">
                     Choose another avatar
                   </Text>
-                </View>
                 </View>
               </MotiView>
             )}
@@ -264,4 +263,5 @@ const AvatarCard = ({
     </View>
   );
 };
+
 export const ImageGrid = memo(ImageGridComponent);

@@ -27,6 +27,7 @@ import {
 } from "@/redux/reducers/reconnectSlice";
 import { refundCoins, forfeitCoins } from "@/features/wallet/walletSlice";
 import { router } from "expo-router";
+import { stopIpDetectionLoop } from "./HostIpDetector";
 
 const reconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 const reconnectIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
@@ -241,6 +242,7 @@ let isMatchCleaningUp = false;
 export const cleanupStaleNetworkResources = async (opts: { reason: string }) => {
   console.log(`[LAN][CLEANUP] Cleaning stale network resources (reason=${opts.reason})`);
   try {
+    stopIpDetectionLoop();
     HeartbeatService.stop();
     cleanupAllReconnectionTimers();
     if (unsubscribeNetInfo) {

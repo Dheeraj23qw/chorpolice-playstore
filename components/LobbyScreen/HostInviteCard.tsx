@@ -5,32 +5,21 @@ import { Pressable, View, Modal } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
-import { Users, Copy, Check, QrCode } from "lucide-react-native";
+import { Users, QrCode } from "lucide-react-native";
 
 import { Text } from "@/components/Text";
 import { LobbyState } from "./types";
 
 interface HostInviteCardProps {
   lobby: LobbyState;
-  onCopyRoomCode: () => void;
 }
 
-const QR_SIZE = 120;
+const QR_SIZE = 180;
 
 export const HostInviteCard: React.FC<HostInviteCardProps> = ({
   lobby,
-  onCopyRoomCode,
 }) => {
   const [isQRFull, setIsQRFull] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const roomCodeParts = (lobby.roomCode || "---- ----").split("-");
-
-  const handleCopy = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await onCopyRoomCode();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
 
   /* ---------------- LOCAL MODE ---------------- */
   if (lobby.isLocalOnlyLobby || !lobby.qrPayload) {
@@ -99,7 +88,7 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
           </View>
 
           {/* CONTENT */}
-          <View className="mt-5 flex-row items-center gap-5">
+          <View className="mt-5 items-center">
             {/* QR */}
             <View className="items-center">
               <Pressable
@@ -118,74 +107,15 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
                   }}
                   className="rounded-[24px] bg-white shadow-lg shadow-indigo-500/20"
                 >
-                  <View className="p-3">
+                  <View className="p-4">
                   <QRCode value={lobby.qrPayload} size={QR_SIZE} />
                   </View>
                 </MotiView>
               </Pressable>
 
-              <Text className="mt-2 text-[10px] text-white/40">
+              <Text className="mt-3 text-xs text-white/50">
                 Tap to enlarge
               </Text>
-            </View>
-
-            {/* RIGHT SIDE */}
-            <View className="flex-1">
-              <Text className="font-main-bold text-xl text-white">
-                Join my room
-              </Text>
-
-              <Text className="mt-2 text-sm text-white/60">
-                Scan the code or enter manually
-              </Text>
-
-              {/* ROOM CODE */}
-              <View className="mt-4 flex-row gap-2">
-                {roomCodeParts.map((part, index) => (
-                  <MotiView
-                    key={`${part}-${index}`}
-                    from={{ opacity: 0, translateY: 10 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ delay: index * 80 }}
-                  >
-                    <View className="flex-1">
-                    <View className="rounded-2xl border border-white/10 bg-black/25 px-3 py-3">
-                      <Text className="text-center font-main-bold text-base tracking-[2px] text-white">
-                        {part}
-                      </Text>
-                    </View>
-                    </View>
-                  </MotiView>
-                ))}
-              </View>
-
-              {/* COPY */}
-              <Pressable onPress={handleCopy}>
-                {({ pressed }) => (
-                  <MotiView
-                    animate={{ scale: pressed ? 0.96 : 1 }}
-                    className="overflow-hidden rounded-2xl"
-                  >
-                    <View className="mt-3">
-                    <LinearGradient
-                      colors={["rgba(99,102,241,0.3)", "rgba(79,70,229,0.1)"]}
-                      className="rounded-2xl border border-indigo-400/20"
-                    >
-                      <View className="flex-row items-center justify-center gap-2 px-4 py-3">
-                        {copied ? (
-                          <Check size={16} color="#6ee7b7" />
-                        ) : (
-                          <Copy size={16} color="#a5b4fc" />
-                        )}
-                        <Text className="text-center font-main-bold text-xs uppercase tracking-[2px] text-indigo-200">
-                          {copied ? "Copied!" : "Copy Room Code"}
-                        </Text>
-                      </View>
-                    </LinearGradient>
-                    </View>
-                  </MotiView>
-                )}
-              </Pressable>
             </View>
           </View>
           </View>
@@ -208,12 +138,8 @@ export const HostInviteCard: React.FC<HostInviteCardProps> = ({
             >
               <View className="items-center">
               <View className="rounded-[32px] bg-white p-6 shadow-2xl shadow-indigo-500/30">
-                <QRCode value={lobby.qrPayload} size={260} />
+                <QRCode value={lobby.qrPayload} size={300} />
               </View>
-
-              <Text className="mt-4 text-sm text-white/70">
-                Scan this QR to join
-              </Text>
 
               <Pressable
                 onPress={() => setIsQRFull(false)}

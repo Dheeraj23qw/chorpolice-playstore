@@ -15,7 +15,7 @@ const WifiHint = () => {
       from={{ opacity: 0, translateY: 20 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 400 }}
-      className="overflow-hidden rounded-3xl border border-white/10 bg-white/5"
+      className="mb-5 overflow-hidden rounded-3xl border border-white/10 bg-white/5"
     >
       <View className="mb-6 flex-row items-center p-4">
         {/* 🔮 Responsive Glow */}

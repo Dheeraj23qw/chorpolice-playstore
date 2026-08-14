@@ -1,58 +1,79 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
   Image,
   ImageSourcePropType,
   LayoutChangeEvent,
+  View,
   useWindowDimensions,
 } from "react-native";
 import Animated, {
-  useSharedValue,
+  Easing,
+  runOnJS,
   useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
   withSpring,
   withTiming,
-  withRepeat,
-  withDelay,
-  runOnJS,
-  Easing,
 } from "react-native-reanimated";
 import { MotiView } from "moti";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "@/components/Text";
 
-// ─── Props ──────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Props
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface CharacterDrawerProps {
-  /** The dialogue message to display. */
+  /** Dialogue message to display. */
   message: string;
-  /** The character image source (kid1–kid13). */
+
+  /** Character image source. */
   avatarSource: ImageSourcePropType;
 
-  /** If true the drawer auto-dismisses after `autoHideDurationMs`. */
+  /** Automatically dismiss the overlay drawer. */
   autoHide?: boolean;
-  /** Milliseconds before auto-hide (default 3000). */
+
+  /** Duration the drawer remains visible before dismissing. */
   autoHideDurationMs?: number;
 
-  /** If true renders inline (fade-in, no overlay). */
+  /** Render inline instead of as an overlay. */
   persistent?: boolean;
 
   /** Called after the drawer finishes hiding. */
   onDismiss?: () => void;
 }
 
-// ─── Constants ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
 
-const SPRING_CONFIG = { damping: 16, stiffness: 120, mass: 0.8 };
+const SPRING_CONFIG = {
+  damping: 17,
+  stiffness: 125,
+  mass: 0.8,
+};
 
-// Design is based on a 390pt-wide phone; sizes scale from there (0.85x–1.15x).
-function useDrawerScale() {
+const ENTER_DELAY = 100;
+const ENTER_SETTLE_TIME = 500;
+const EXIT_DURATION = 350;
+
+const DESIGN_WIDTH = 390;
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+const useDrawerScale = () => {
   const { width } = useWindowDimensions();
-  return Math.min(Math.max(width / 390, 0.85), 1.15);
-}
 
-// ─── Component ──────────────────────────────────────────────────────────────
+  return clamp(width / DESIGN_WIDTH, 0.85, 1.15);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
 
 const CharacterDrawer: React.FC<CharacterDrawerProps> = ({
   message,
@@ -62,17 +83,10 @@ const CharacterDrawer: React.FC<CharacterDrawerProps> = ({
   persistent = false,
   onDismiss,
 }) => {
-  // ── Persistent (inline) mode ────────────────────────────────────────────
   if (persistent) {
-    return (
-      <PersistentDrawer
-        message={message}
-        avatarSource={avatarSource}
-      />
-    );
+    return <PersistentDrawer message={message} avatarSource={avatarSource} />;
   }
 
-  // ── Overlay (animated slide-up) mode ────────────────────────────────────
   return (
     <OverlayDrawer
       message={message}
@@ -84,9 +98,9 @@ const CharacterDrawer: React.FC<CharacterDrawerProps> = ({
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Persistent drawer — inline layout, fade-in + translateY, stays forever
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Persistent drawer
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface PersistentDrawerProps {
   message: string;
@@ -102,17 +116,25 @@ const PersistentDrawer: React.FC<PersistentDrawerProps> = ({
 
   return (
     <MotiView
-      from={{ opacity: 0, translateY: 30, scale: 0.96 }}
-      animate={{ opacity: 1, translateY: 0, scale: 1 }}
+      from={{
+        opacity: 0,
+        translateY: 24,
+        scale: 0.97,
+      }}
+      animate={{
+        opacity: 1,
+        translateY: 0,
+        scale: 1,
+      }}
       transition={{
         type: "timing",
-        duration: 500,
-        delay: 200,
+        duration: 450,
+        delay: 100,
       }}
-      className="px-5 items-center w-full"
+      className="w-full items-center px-5"
       style={{
-        paddingTop: 44 * scale,
-        paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
+        paddingTop: 32 * scale,
+        paddingBottom: Math.max(insets.bottom, 12),
       }}
     >
       <DrawerCard message={message} avatarSource={avatarSource} />
@@ -120,9 +142,9 @@ const PersistentDrawer: React.FC<PersistentDrawerProps> = ({
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Overlay drawer — absolute positioned, slides from bottom, auto-hides
-// ═══════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// Overlay drawer
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface OverlayDrawerProps {
   message: string;
@@ -142,75 +164,106 @@ const OverlayDrawer: React.FC<OverlayDrawerProps> = ({
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
 
-  // We measure the drawer's actual height via onLayout and use that for the
-  // initial off-screen translateY so we're never guessing.
   const [drawerHeight, setDrawerHeight] = useState(0);
-  const translateY = useSharedValue(screenHeight); // start off-screen
 
-  const handleDismissJS = useCallback(() => {
+  const translateY = useSharedValue(screenHeight + 200);
+
+  const handleDismiss = useCallback(() => {
     onDismiss?.();
   }, [onDismiss]);
 
-  // When we know the drawer height → spring it into view
+  // ─────────────────────────────────────────────────────────────────────────
+  // Entrance / auto-hide animation
+  // ─────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    if (drawerHeight === 0) return;
-
-    // Slide in
-    translateY.value = withDelay(
-      100,
-      withSpring(0, SPRING_CONFIG),
-    );
-
-    if (autoHide) {
-      // After the visible duration, slide back down then call dismiss
-      const totalDelay = 100 + 500 + autoHideDurationMs; // entrance delay + spring settle + visible time
-      translateY.value = withDelay(
-        totalDelay,
-        withTiming(
-          drawerHeight + 100,
-          { duration: 350, easing: Easing.inOut(Easing.ease) },
-          (finished) => {
-            if (finished) {
-              runOnJS(handleDismissJS)();
-            }
-          },
-        ),
-      );
+    if (drawerHeight <= 0) {
+      return;
     }
-  }, [drawerHeight]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    translateY.value = withDelay(ENTER_DELAY, withSpring(0, SPRING_CONFIG));
+
+    if (!autoHide) {
+      return;
+    }
+
+    const totalDelay =
+      ENTER_DELAY + ENTER_SETTLE_TIME + Math.max(autoHideDurationMs, 0);
+
+    translateY.value = withDelay(
+      totalDelay,
+      withTiming(
+        drawerHeight + 120,
+        {
+          duration: EXIT_DURATION,
+          easing: Easing.inOut(Easing.ease),
+        },
+        (finished) => {
+          if (finished) {
+            runOnJS(handleDismiss)();
+          }
+        },
+      ),
+    );
+  }, [drawerHeight, autoHide, autoHideDurationMs, handleDismiss, translateY]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Animated style
+  // ─────────────────────────────────────────────────────────────────────────
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [
+      {
+        translateY: translateY.value,
+      },
+    ],
   }));
 
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const h = e.nativeEvent.layout.height;
-    if (h > 0) setDrawerHeight(h);
-  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
+  // Measure card
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const height = event.nativeEvent.layout.height;
+
+      if (height > 0 && Math.abs(height - drawerHeight) > 1) {
+        setDrawerHeight(height);
+      }
+    },
+    [drawerHeight],
+  );
 
   return (
     <Animated.View
-      onLayout={onLayout}
+      onLayout={handleLayout}
+      pointerEvents="box-none"
       className="absolute left-5 right-5 z-[999] items-center"
       style={[
-        { bottom: insets.bottom > 0 ? insets.bottom + 8 : 16 },
+        {
+          bottom: Math.max(insets.bottom, 12),
+        },
         animatedStyle,
       ]}
-      pointerEvents="box-none"
     >
       <DrawerCard message={message} avatarSource={avatarSource} />
     </Animated.View>
   );
 };
 
-// ─── CharacterAvatar — idle "alive" animations (bob, breathe, pulsing glow) ───
+// ─────────────────────────────────────────────────────────────────────────────
+// Character avatar
+// ─────────────────────────────────────────────────────────────────────────────
 
-const CharacterAvatar: React.FC<{ avatarSource: ImageSourcePropType }> = ({
-  avatarSource,
-}) => {
+interface CharacterAvatarProps {
+  avatarSource: ImageSourcePropType;
+}
+
+const CharacterAvatar: React.FC<CharacterAvatarProps> = ({ avatarSource }) => {
   const scale = useDrawerScale();
-  const charSize = 152 * scale;
-  const glowSize = charSize + 8;
+
+  const characterSize = 148 * scale;
+  const glowSize = characterSize + 10;
 
   const bob = useSharedValue(0);
   const breathe = useSharedValue(1);
@@ -218,61 +271,105 @@ const CharacterAvatar: React.FC<{ avatarSource: ImageSourcePropType }> = ({
 
   useEffect(() => {
     const LOOP = -1;
-    bob.value = withRepeat(
-      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-      LOOP,
-      true,
-    );
-    breathe.value = withRepeat(
-      withTiming(1.05, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-      LOOP,
-      true,
-    );
-    glow.value = withRepeat(
-      withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-      LOOP,
-      true,
-    );
-  }, []);
 
-  const bodyStyle = useAnimatedStyle(() => ({
+    bob.value = withRepeat(
+      withTiming(1, {
+        duration: 1300,
+        easing: Easing.inOut(Easing.ease),
+      }),
+      LOOP,
+      true,
+    );
+
+    breathe.value = withRepeat(
+      withTiming(1.035, {
+        duration: 1400,
+        easing: Easing.inOut(Easing.ease),
+      }),
+      LOOP,
+      true,
+    );
+
+    glow.value = withRepeat(
+      withTiming(1, {
+        duration: 1800,
+        easing: Easing.inOut(Easing.ease),
+      }),
+      LOOP,
+      true,
+    );
+
+    return () => {
+      bob.value = 0;
+      breathe.value = 1;
+      glow.value = 0;
+    };
+  }, [bob, breathe, glow]);
+
+  const characterStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateY: -7 * bob.value },
-      { scale: breathe.value },
+      {
+        translateY: -6 * bob.value,
+      },
+      {
+        scale: breathe.value,
+      },
     ],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: 0.6 + 0.4 * glow.value,
-    transform: [{ scale: 1 + 0.1 * glow.value }],
+    opacity: 0.35 + glow.value * 0.3,
+    transform: [
+      {
+        scale: 1 + glow.value * 0.08,
+      },
+    ],
   }));
 
   return (
-    <Animated.View style={bodyStyle}>
-      {/* Filled glow hugging the avatar edge (no gap) */}
+    <Animated.View style={characterStyle}>
+      {/* Soft character glow */}
       <Animated.View
-        className="absolute rounded-full bg-indigo-500/20"
+        className="absolute rounded-full bg-indigo-400/20"
         style={[
           glowStyle,
           {
             width: glowSize,
             height: glowSize,
-            left: (charSize - glowSize) / 2,
-            top: (charSize - glowSize) / 2,
+            left: (characterSize - glowSize) / 2,
+            top: (characterSize - glowSize) / 2,
           },
         ]}
       />
+
+      {/* Outer glow ring */}
+      <View
+        className="absolute rounded-full border border-indigo-300/20"
+        style={{
+          width: characterSize + 4,
+          height: characterSize + 4,
+          left: -2,
+          top: -2,
+        }}
+      />
+
+      {/* Character */}
       <Image
         source={avatarSource}
-        className="rounded-full border-[3px] border-white/30"
-        style={{ width: charSize, height: charSize }}
         resizeMode="cover"
+        className="rounded-full border-[3px] border-white/25"
+        style={{
+          width: characterSize,
+          height: characterSize,
+        }}
       />
     </Animated.View>
   );
 };
 
-// ─── DrawerCard — shared card with overlapping character (NativeWind styled) ───
+// ─────────────────────────────────────────────────────────────────────────────
+// Drawer card
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface DrawerCardProps {
   message: string;
@@ -282,65 +379,107 @@ interface DrawerCardProps {
 const DrawerCard: React.FC<DrawerCardProps> = ({ message, avatarSource }) => {
   const scale = useDrawerScale();
 
-  const cardTopPad = 100 * scale;
-  const wrapperTopPad = 80 * scale;
-  const cardPadX = 24 * scale;
-  const fontSize = Math.max(13, Math.min(17, 15 * scale));
-  const lineHeight = Math.round(fontSize * 1.5);
+  const cardTopPadding = 96 * scale;
+  const characterWrapperPadding = 76 * scale;
+  const horizontalPadding = 22 * scale;
+
+  const fontSize = clamp(15 * scale, 13, 17);
+  const lineHeight = Math.round(fontSize * 1.45);
 
   return (
     <View
       className="w-full max-w-[460px] items-center"
-      style={{ paddingTop: wrapperTopPad }}
+      style={{
+        paddingTop: characterWrapperPadding,
+      }}
     >
-      {/* ── Character (overlaps above the card) ── */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* CHARACTER */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+
       <MotiView
-        from={{ opacity: 0, translateY: 20, scale: 0.85 }}
-        animate={{ opacity: 1, translateY: 0, scale: 1 }}
+        from={{
+          opacity: 0,
+          translateY: 18,
+          scale: 0.88,
+        }}
+        animate={{
+          opacity: 1,
+          translateY: 0,
+          scale: 1,
+        }}
         transition={{
           type: "spring",
-          damping: 12,
-          stiffness: 150,
-          delay: 300,
+          damping: 13,
+          stiffness: 145,
+          delay: 200,
         }}
-        className="absolute top-0 z-10 items-center justify-center"
+        className="absolute top-0 z-20 items-center justify-center"
       >
-        {/* Glow ring behind character */}
         <CharacterAvatar avatarSource={avatarSource} />
       </MotiView>
 
-      {/* ── Card (glassy) ── */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* CARD */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+
       <View
-        className="w-full rounded-[28px] overflow-hidden border border-white/15 shadow-2xl"
+        className="w-full overflow-hidden rounded-[30px] border border-white/[0.10]"
         style={{
-          paddingTop: cardTopPad,
-          paddingHorizontal: cardPadX,
-          paddingBottom: 16 * scale,
-          minHeight: 115 * scale,
+          minHeight: 112 * scale,
+          paddingTop: cardTopPadding,
+          paddingHorizontal: horizontalPadding,
+          paddingBottom: 18 * scale,
+
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 14,
+          },
+          shadowOpacity: 0.35,
+          shadowRadius: 24,
+          elevation: 12,
         }}
       >
-        {/* Frosted glass backdrop */}
-        <BlurView
-          intensity={40}
-          tint="dark"
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-        />
-        {/* Slight dark overlay for text contrast */}
-        <View className="absolute inset-0 bg-slate-900/40" />
+        {/* Glass background */}
+        <BlurView intensity={45} tint="dark" className="absolute inset-0" />
 
-        {/* Border highlight (top edge) */}
-        <View className="absolute top-0 left-6 right-6 h-[1px] bg-white/20" />
+        {/* Clean dark glass layer */}
+        <View className="absolute inset-0 bg-[#11131A]/75" />
 
-        {/* Message text */}
+        {/* Subtle top highlight */}
+        <View className="absolute left-8 right-8 top-0 h-px bg-white/15" />
+
+        {/* Subtle bottom gradient-like layer */}
+        <View className="absolute bottom-0 left-0 right-0 h-10 bg-black/10" />
+
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {/* MESSAGE */}
+        {/* ──────────────────────────────────────────────────────────────── */}
+
         <View className="items-center">
           <MotiView
-            from={{ opacity: 0, translateY: 8 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 400, delay: 500 }}
+            from={{
+              opacity: 0,
+              translateY: 8,
+            }}
+            animate={{
+              opacity: 1,
+              translateY: 0,
+            }}
+            transition={{
+              type: "timing",
+              duration: 350,
+              delay: 350,
+            }}
           >
             <Text
-              className="font-main-bold text-white/90 text-center tracking-[0.2px]"
-              style={{ fontSize, lineHeight }}
+              className="text-center font-main-bold text-white/90"
+              style={{
+                fontSize,
+                lineHeight,
+                letterSpacing: 0.15,
+              }}
             >
               {message}
             </Text>

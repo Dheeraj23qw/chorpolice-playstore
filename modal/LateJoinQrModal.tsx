@@ -1,27 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Pressable, View } from "react-native";
+import { Image, Modal, Pressable, View } from "react-native";
+import { useSelector } from "react-redux";
 import QRCode from "react-native-qrcode-svg";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { BlurView } from "expo-blur";
 import { MotiText, MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 
 import { Text } from "@/components/Text";
-import { LanTroubleshootingCard } from "@/components/LobbyScreen/LanTroubleshootingCard";
 import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
+import { PrimaryButton } from "@/components/LobbyScreen/PrimaryButton";
 import { toast } from "@/components/feedback/toast";
 import { rf } from "@/utils/responsive";
+import { RootState } from "@/redux/store";
 
 interface LateJoinQrModalProps {
   visible: boolean;
   onClose: () => void;
   qrPayload: string;
-  roomCode: string | null;
-  onCopyRoomCode: () => void;
+  roomCode?: string | null;
+  onCopyRoomCode?: () => Promise<void>;
   isHost: boolean;
   onScanSuccess?: (data: string) => void;
   onHelpPress?: () => void;
+  onStartMatch?: () => void;
 }
 
 export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
@@ -33,46 +35,30 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
   isHost,
   onScanSuccess,
   onHelpPress,
+  onStartMatch,
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
 
-  const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
   const [showDebug, setShowDebug] = React.useState(false);
-  const [scanned, setScanned] = React.useState(false);
-  const [copied, setCopied] = React.useState(false);
   const [isScanning, setIsScanning] = React.useState(false);
+  const [scanned, setScanned] = React.useState(false);
+
+  const session = useSelector((state: RootState) => state.session);
+  const playerImages = useSelector((state: RootState) => state.playerImages.images);
+
+  const humanPlayers = session.players.filter((p) => !p.isBot);
 
   useEffect(() => {
     if (visible) {
-      setScanned(false);
-      setCopied(false);
       setShowDebug(false);
       setIsScanning(false);
+      setScanned(false);
 
-      const troubleshootingTimer = setTimeout(() => {
-        setShowTroubleshooting(true);
-      }, 5000);
-
-      return () => {
-        clearTimeout(troubleshootingTimer);
-      };
+      return () => {};
     }
 
-    setShowTroubleshooting(false);
     setShowDebug(false);
   }, [visible]);
-
-  const handleCopy = async () => {
-    await Clipboard.setStringAsync(roomCode || "");
-
-    setCopied(true);
-
-    toast.success("Copied!", "Room code copied to clipboard");
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  };
 
   const handleScanPress = async () => {
     if (isScanning) return;
@@ -103,6 +89,74 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
         <View pointerEvents="none" className="absolute inset-0 bg-black/85" />
 
         <Pressable className="absolute inset-0" onPress={onClose} />
+
+        {/* 👑 LIVE HOST DASHBOARD (Positioned ABOVE the QR Card) */}
+        {isHost && (
+          <MotiView
+            from={{ opacity: 0, translateY: -20, scale: 0.95 }}
+            animate={{ opacity: 1, translateY: 0, scale: 1 }}
+            transition={{ type: "spring", damping: 20, stiffness: 180 }}
+            className="mb-4 w-full max-w-[430px] overflow-hidden rounded-[26px] border border-amber-400/30 bg-[#0F0F1D]/95 p-4 shadow-2xl"
+          >
+            {/* Header row: Title & Human Counter Badge */}
+            <View className="mb-3 flex-row items-center justify-between border-b border-white/10 pb-2.5">
+              <View className="flex-row items-center gap-2">
+                <View className="h-7 w-7 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-500/20">
+                  <Ionicons name="trophy" size={15} color="#FBBF24" />
+                </View>
+                <View>
+                  <Text className="font-main-bold text-xs uppercase tracking-wider text-amber-400">
+                    Host Dashboard
+                  </Text>
+                  <Text className="font-main-md text-[10px] text-white/50">
+                    Live Room Monitor
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/15 px-3 py-1">
+                <View className="h-2 w-2 rounded-full bg-emerald-400" />
+                <Text className="font-main-bold text-xs text-indigo-200">
+                  {humanPlayers.length} / 4 Humans
+                </Text>
+              </View>
+            </View>
+
+            {/* Joined Players Pill List */}
+            <View className="flex-row flex-wrap gap-2">
+              {humanPlayers.map((player) => {
+                const isSelfHost = player.id === session.localPlayerId;
+                const avatarSrc = playerImages[player.avatarId || 1]?.src;
+
+                return (
+                  <View
+                    key={player.id}
+                    className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-1.5"
+                  >
+                    <View className="relative h-7 w-7 overflow-hidden rounded-full border border-white/20 bg-black/30">
+                      {avatarSrc && (
+                        <Image
+                          source={avatarSrc}
+                          className="h-full w-full"
+                          resizeMode="cover"
+                        />
+                      )}
+                      <View className="absolute bottom-0 right-0 h-2 w-2 rounded-full border border-slate-900 bg-emerald-400" />
+                    </View>
+                    <View>
+                      <Text className="font-main-bold text-xs text-white">
+                        {player.name || "Player"}
+                      </Text>
+                      <Text className="font-main-md text-[9px] text-emerald-400/90">
+                        {isSelfHost ? "Host (You)" : "Joined 🟢"}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </MotiView>
+        )}
 
         <MotiView
           from={{
@@ -241,7 +295,7 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                         {qrPayload ? (
                           <QRCode
                             value={qrPayload}
-                            size={160}
+                            size={200}
                             quietZone={8}
                             color="#000000"
                             backgroundColor="#FFFFFF"
@@ -261,43 +315,21 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                         )}
                       </View>
 
-                      <View className="mt-5 w-full overflow-hidden rounded-2xl border border-indigo-400/15 bg-indigo-500/[0.05]">
-                        <View className="items-center px-5 pb-3 pt-4">
-                          <Text className="font-main-bold text-[10px] uppercase tracking-[4px] text-zinc-500">
-                            Room Code
-                          </Text>
-
-                          <Text className="mt-1 font-main-bold text-3xl tracking-[6px] text-white">
-                            {roomCode || "---"}
-                          </Text>
-                        </View>
-
-                        <Pressable
-                          onPress={handleCopy}
-                          className={`flex-row items-center justify-center border-t py-3 ${
-                            copied
-                              ? "border-emerald-500/20 bg-emerald-500/10"
-                              : "border-white/[0.06] bg-white/[0.03]"
-                          }`}
-                        >
-                          <Ionicons
-                            name={copied ? "checkmark-circle" : "copy-outline"}
-                            size={17}
-                            color={copied ? "#34D399" : "#A1A1AA"}
-                          />
-
-                          <Text
-                            className={`ml-2 font-main-bold text-sm ${
-                              copied ? "text-emerald-400" : "text-zinc-400"
-                            }`}
-                          >
-                            {copied ? "Copied" : "Copy Code"}
-                          </Text>
-                        </Pressable>
-                      </View>
-
-                      <View className="mt-4 w-full">
-                        {showTroubleshooting && <LanTroubleshootingCard />}
+                      {/* 🔥 START MATCH BUTTON FOR HOST AT BOTTOM OF QR MODAL */}
+                      <View className="mt-5 w-full">
+                        <PrimaryButton
+                          title="Start Match"
+                          subtitle={
+                            humanPlayers.length >= 2
+                              ? "Ready to play"
+                              : "add 1 more human.."
+                          }
+                          disabled={humanPlayers.length < 2}
+                          onPress={() => {
+                            onClose();
+                            onStartMatch?.();
+                          }}
+                        />
                       </View>
                     </View>
                   ) : (
@@ -453,15 +485,11 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                         </View>
                       )}
 
-                      <View className="mt-4 w-full">
-                        {showTroubleshooting && <LanTroubleshootingCard />}
-
-                        {showDebug && (
-                          <View className="mt-3">
-                            <LanDebugPanel />
-                          </View>
-                        )}
-                      </View>
+                      {showDebug && (
+                        <View className="mt-3">
+                          <LanDebugPanel />
+                        </View>
+                      )}
                     </View>
                   )}
                 </View>

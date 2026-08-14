@@ -1,5 +1,4 @@
 import NetInfo from "@react-native-community/netinfo";
-import TcpSocket from "react-native-tcp-socket";
 import store from "@/redux/store";
 import {
   setSessionError,
@@ -38,59 +37,21 @@ const isValidLocalIPv4 = (ip: string): boolean => {
   return isPrivateIPv4(normalized);
 };
 
-const normalizeIp = (ip: string | null | undefined): string | null => {
-  if (!ip) return null;
-  return ip.replace(/^::ffff:/, "");
-};
-
-const probeLocalAddressViaTcp = async (
-  timeoutMs = 1500
-): Promise<string | null> => {
-  return new Promise((resolve) => {
-    let settled = false;
-
-    const finish = (ip: string | null) => {
-      if (settled) return;
-      settled = true;
-      resolve(ip);
-    };
-
+const tryHotspotInterfaces = async (): Promise<string | null> => {
+  const candidates = ["ap0", "wlan0", "wlan1", "wifi"];
+  for (const iface of candidates) {
     try {
-      const socket = TcpSocket.createConnection(
-        { port: 53, host: "8.8.8.8" },
-        () => {
-          const localAddress = normalizeIp(socket.localAddress);
-          finish(localAddress);
-          try {
-            socket.destroy();
-          } catch {}
-        }
-      );
-
-      socket.on("error", () => {
-        finish(null);
-        try {
-          socket.destroy();
-        } catch {}
-      });
-
-      socket.on("close", () => {
-        if (!settled) finish(null);
-      });
-
-      setTimeout(() => {
-        if (!settled) {
-          const localAddress = normalizeIp(socket.localAddress);
-          finish(localAddress);
-          try {
-            socket.destroy();
-          } catch {}
-        }
-      }, timeoutMs);
+      const state = await NetInfo.fetch(iface);
+      const details = state.details as { ipAddress?: string | null } | null;
+      const raw = details?.ipAddress;
+      if (raw && isValidLocalIPv4(raw)) {
+        return raw;
+      }
     } catch {
-      finish(null);
+      // interface not available, continue
     }
-  });
+  }
+  return null;
 };
 
 const tryNetInfoIp = async (): Promise<string | null> => {
@@ -109,21 +70,19 @@ const tryNetInfoIp = async (): Promise<string | null> => {
   return null;
 };
 
-const tryHotspotInterfaces = async (): Promise<string | null> => {
-  const candidates = ["ap0", "wlan0", "wlan1", "wifi"];
-  for (const iface of candidates) {
-    try {
-      const state = await NetInfo.fetch(iface);
-      const details = state.details as { ipAddress?: string | null } | null;
-      const raw = details?.ipAddress;
-      if (raw && isValidLocalIPv4(raw)) {
-        return raw;
-      }
-    } catch {
-      // interface not available, continue
-    }
+// ── IP Detection / Monitoring State ──
+let isIpDetectionActive = false;
+let currentDetectionTimer: ReturnType<typeof setTimeout> | null = null;
+let activeLoopInstanceId = 0;
+
+export const stopIpDetectionLoop = () => {
+  isIpDetectionActive = false;
+  activeLoopInstanceId++;
+  if (currentDetectionTimer) {
+    clearTimeout(currentDetectionTimer);
+    currentDetectionTimer = null;
   }
-  return null;
+  console.log("[HostIpDetector] Stopped IP detection loop.");
 };
 
 export const startIpDetectionLoop = (opts: {
@@ -131,42 +90,60 @@ export const startIpDetectionLoop = (opts: {
   actualPort: number;
   hostName: string;
   lobbyId: string;
-}): (() => void) | null => {
-  void (async () => {
-    let attempts = 0;
-    const maxAttempts = 10;
-    const startTime = Date.now();
+}): (() => void) => {
+  // Ensure any previous loop is cancelled before starting a new one
+  stopIpDetectionLoop();
 
-    console.log("[HostIpDetector] Starting local IP detection loop...");
+  isIpDetectionActive = true;
+  const thisInstanceId = ++activeLoopInstanceId;
+  let attemptsWithoutIp = 0;
+  const startTime = Date.now();
 
-    while (attempts < maxAttempts) {
-      attempts++;
-      const elapsed = Date.now() - startTime;
+  console.log("[HostIpDetector] Starting local IP monitoring loop...");
 
-      try {
-        let detectedIp: string | null = null;
+  const runDetectionStep = async () => {
+    // Stop if loop was cancelled or host is no longer hosting
+    if (
+      !isIpDetectionActive ||
+      thisInstanceId !== activeLoopInstanceId ||
+      store.getState().session.connectionStatus !== "HOSTING"
+    ) {
+      isIpDetectionActive = false;
+      return;
+    }
 
+    try {
+      // 1. Explicit hotspot/local interfaces first
+      let detectedIp: string | null = await tryHotspotInterfaces();
+
+      // 2. Normal NetInfo connected interface (Wi-Fi / Ethernet) second
+      if (!detectedIp) {
         detectedIp = await tryNetInfoIp();
+      }
 
-        if (!detectedIp) {
-          detectedIp = await tryHotspotInterfaces();
-        }
+      if (
+        !isIpDetectionActive ||
+        thisInstanceId !== activeLoopInstanceId ||
+        store.getState().session.connectionStatus !== "HOSTING"
+      ) {
+        return;
+      }
 
-        if (!detectedIp) {
-          detectedIp = await probeLocalAddressViaTcp();
-        }
+      if (detectedIp && isValidLocalIPv4(detectedIp)) {
+        attemptsWithoutIp = 0;
+        const currentHostIp = store.getState().session.hostIp;
 
-        if (detectedIp) {
+        if (detectedIp !== currentHostIp) {
           const finalRoomCode =
             opts.roomCode === "000" || !opts.roomCode
               ? detectedIp.split(".")[3].padStart(3, "0")
               : opts.roomCode;
 
+          const elapsed = Date.now() - startTime;
           logLanDebug(`selected IP: ${detectedIp} (code=${finalRoomCode})`);
           updateDebugMetric("hostIp", detectedIp);
-
           console.log(
-            `[HostIpDetector] IP: ${detectedIp} (code=${finalRoomCode}, ${elapsed}ms)`
+            `[HostIpDetector] Host IP updated: ${detectedIp} (code=${finalRoomCode}, ${elapsed}ms)`
           );
 
           store.dispatch(
@@ -176,33 +153,45 @@ export const startIpDetectionLoop = (opts: {
               isFallback: false,
             })
           );
-          store.dispatch(
-            setLocalSessionIdentity({ localIp: detectedIp })
-          );
-          return;
+          store.dispatch(setLocalSessionIdentity({ localIp: detectedIp }));
         }
+      } else {
+        // No valid private LAN IP detected in this tick
+        attemptsWithoutIp++;
+        const currentHostIp = store.getState().session.hostIp;
 
-        logLanDebug(`No local IP found on attempt ${attempts}`);
-      } catch (e) {
-        console.warn("[HostIpDetector] IP detection failed:", e);
+        // If network has been unavailable and we never got a valid IP yet, report error after 10 attempts
+        if (attemptsWithoutIp === 10 && !currentHostIp) {
+          console.warn(
+            "[HostIpDetector] Failed to detect local IP after initial attempts"
+          );
+          store.dispatch(
+            setSessionError(
+              "Could not detect local network IP. Ensure Wi-Fi or hotspot is ON."
+            )
+          );
+        }
       }
-
-      const delay = attempts <= 5 ? 500 : 2000;
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      if (store.getState().session.connectionStatus !== "HOSTING") break;
+    } catch (e) {
+      console.warn("[HostIpDetector] IP detection step error:", e);
     }
 
-    if (store.getState().session.connectionStatus === "HOSTING") {
-      console.warn(
-        "[HostIpDetector] Failed to detect local IP after all attempts"
-      );
-      store.dispatch(
-        setSessionError(
-          "Could not detect local network IP. Ensure Wi-Fi or hotspot is ON."
-        )
-      );
+    // Schedule next tick
+    if (
+      isIpDetectionActive &&
+      thisInstanceId === activeLoopInstanceId &&
+      store.getState().session.connectionStatus === "HOSTING"
+    ) {
+      // Poll faster (1000ms) until initial IP is found, then 5000ms (5s) for lightweight monitoring
+      const hasIp = !!store.getState().session.hostIp;
+      const delay = hasIp ? 5000 : 1000;
+      currentDetectionTimer = setTimeout(runDetectionStep, delay);
     }
-  })();
+  };
 
-  return null;
+  // Run the first step immediately
+  void runDetectionStep();
+
+  return stopIpDetectionLoop;
 };
+

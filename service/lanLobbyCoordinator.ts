@@ -43,7 +43,7 @@ import {
 } from "./network/LobbyPacketHandler";
 import { framePacket, extractFrames } from "./network/TcpFraming";
 import { isLobbyPresenceToastAllowed } from "./network/LobbyToastVisibility";
-import { startIpDetectionLoop } from "./HostIpDetector";
+import { startIpDetectionLoop, stopIpDetectionLoop } from "./HostIpDetector";
 
 // ── Module state ──
 let unsubscribePackets: (() => void) | null = null;
@@ -149,6 +149,9 @@ const stopCoordinator = async () => {
       unsubscribePackets();
       unsubscribePackets = null;
     }
+
+    // Stop IP detection monitor loop
+    stopIpDetectionLoop();
 
     // ── RECONNECT CLEANUP ─
     cleanupAllReconnectionTimers();
