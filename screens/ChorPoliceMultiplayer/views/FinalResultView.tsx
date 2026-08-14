@@ -61,14 +61,12 @@ const FinalResultView = ({
 
   // 🔥 BACKUP: Ensure sockets are cleaned up when result screen mounts/unmounts
   useEffect(() => {
-    // Mount: Backup cleanup in case economyHandlers path was missed
     cleanupAfterMatchCompleted({
       reason: "final_result_mount_backup",
       preserveResult: true,
     });
 
     return () => {
-      // Unmount: Final safety net (e.g. hardware back, swipe, forced navigation)
       cleanupAfterMatchCompleted({
         reason: "final_result_unmount_backup",
         preserveResult: true,

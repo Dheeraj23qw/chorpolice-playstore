@@ -291,22 +291,24 @@ const CustomRatingModal: React.FC<CustomRatingModalProps> = ({
                     width: "100%",
                   }}
                 >
-                  <TextInput
-                    key={commentKey}
-                    placeholder={
-                      rating <= 2
-                        ? "Tell us what went wrong..."
-                        : rating === 3
-                          ? "How can we improve?"
-                          : "Want to add something extra?"
-                    }
-                    placeholderTextColor="#475569"
-                    value={comment}
-                    onChangeText={setComment}
-                    className="min-h-[100px] rounded-3xl border border-white/10 bg-white/[0.03] p-4 text-white"
-                    multiline
-                    textAlignVertical="top"
-                  />
+                  <View className="w-full">
+                    <TextInput
+                      key={commentKey}
+                      placeholder={
+                        rating <= 2
+                          ? "Tell us what went wrong..."
+                          : rating === 3
+                            ? "How can we improve?"
+                            : "Want to add something extra?"
+                      }
+                      placeholderTextColor="#475569"
+                      value={comment}
+                      onChangeText={setComment}
+                      className="min-h-[100px] rounded-3xl border border-white/10 bg-white/[0.03] p-4 text-white"
+                      multiline
+                      textAlignVertical="top"
+                    />
+                  </View>
 
                   {/* GENERATE ANOTHER COMMENT */}
                   {rating >= 4 && (

@@ -36,6 +36,7 @@ import {
   VolumeX,
   Lightbulb,
   Gift,
+  RotateCcw,
 } from "lucide-react-native";
 
 import { rf } from "@/utils/responsive";
@@ -46,6 +47,7 @@ import {
 } from "@/storage/notificationStorage";
 import { toast } from "@/components/feedback/toast";
 import { hasRatingCompleted } from "@/hooks/useRatingPrompt";
+import { resetAllAppData } from "@/utils/resetAppData";
 
 export const FullScreenMenu = ({
   visible,
@@ -122,6 +124,21 @@ export const FullScreenMenu = ({
       ? { label: "share", icon: Share2, action: onSharePress }
       : { label: "Rate Us", icon: Star, action: onRatePress },
     { label: "Bugs", icon: Bug, path: "/report-bug" },
+    ...(process.env.NODE_ENV !== "production"
+      ? [
+          {
+            label: "Reset All",
+            icon: RotateCcw,
+            action: () => {
+              resetAllAppData();
+              toast.success(
+                "Dev Reset",
+                "All app data has been cleared successfully.",
+              );
+            },
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -180,35 +197,40 @@ export const FullScreenMenu = ({
                     .damping(20)}
                   className="mb-5 aspect-square w-[30%]"
                 >
-                  <Pressable
-                    onPress={() => {
-                      if (item.action) {
-                        // 1. Execute the special action (onRatePress or onSharePress)
-                        item.action();
-                        // 2. Close the menu so the user can see the Share sheet or Rating Modal
-                        onClose();
-                      } else if (item.path) {
-                        // 3. Normal navigation for items with paths
-                        router.push(item.path);
-                        onClose();
-                      }
-                    }}
-                    className="flex-1 items-center justify-center rounded-[32px] border border-white/5 bg-slate-800/40 active:bg-indigo-600"
-                  >
-                    <View className="mb-2">
-                      <item.icon
-                        size={isTablet ? 32 : 24}
-                        color="white"
-                        strokeWidth={2}
-                      />
-                    </View>
-                    <Text
-                      numberOfLines={1}
-                      className="px-1 text-center font-main-bold text-[9px] uppercase tracking-widest text-white"
-                    >
-                      {item.label}
-                    </Text>
-                  </Pressable>
+                   <Pressable
+                     onPress={() => {
+                       if (item.action) {
+                         item.action();
+                         onClose();
+                       } else if (item.path) {
+                         router.push(item.path);
+                         onClose();
+                       }
+                     }}
+                     className={`flex-1 items-center justify-center rounded-[32px] border ${
+                       item.label === "Reset All"
+                         ? "border-red-500/30 bg-red-500/10 active:bg-red-500/30"
+                         : "border-white/5 bg-slate-800/40 active:bg-indigo-600"
+                     }`}
+                   >
+                     <View className="mb-2">
+                       <item.icon
+                         size={isTablet ? 32 : 24}
+                         color={item.label === "Reset All" ? "#ef4444" : "white"}
+                         strokeWidth={2}
+                       />
+                     </View>
+                     <Text
+                       numberOfLines={1}
+                       className={`px-1 text-center font-main-bold text-[9px] uppercase tracking-widest ${
+                         item.label === "Reset All"
+                           ? "text-red-400"
+                           : "text-white"
+                       }`}
+                     >
+                       {item.label}
+                     </Text>
+                   </Pressable>
                 </Animated.View>
               ))}
 

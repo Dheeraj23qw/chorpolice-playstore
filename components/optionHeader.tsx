@@ -10,7 +10,7 @@ import {
 import { handleShare } from "@/utils/share";
 import { FullScreenMenu } from "@/components/sidebar";
 import CustomRatingModal from "@/modal/RatingModal";
-import { CircleBtn } from "./CircleBtn"; // Import from new chunk
+import { CircleBtn } from "./CircleBtn";
 import { useHeaderActions } from "@/hooks/useHeaderActions";
 import { useAppSelector } from "@/hooks/useAppRedux";
 import { generateNumericCode } from "@/utils/referral";
@@ -39,6 +39,7 @@ const OptionHeader = memo(function OptionHeader() {
 
   const localPlayerId = useAppSelector((s) => s.session.localPlayerId);
   const referralCode = generateNumericCode(localPlayerId);
+  const rated = hasRatingCompleted();
 
   return (
     <View
@@ -61,7 +62,7 @@ const OptionHeader = memo(function OptionHeader() {
         />
       </CircleBtn>
 
-      {hasRatingCompleted() ? (
+      {rated ? (
         <CircleBtn
           btnDim={btnDim}
           marginBetween={marginBetween}
@@ -112,6 +113,9 @@ const OptionHeader = memo(function OptionHeader() {
         title="Rate Chor Police"
         visible={isRatingVisible}
         onClose={() => setIsRatingVisible(false)}
+        onSuccess={() => {
+          setIsRatingVisible(false);
+        }}
       />
 
       <FullScreenMenu

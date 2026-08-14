@@ -61,5 +61,6 @@ export const {
   claimFirstLaunchBonus,
   refundCoins,
   forfeitCoins,
+  resetWallet,
 } = walletSlice.actions;
 export default walletSlice.reducer;

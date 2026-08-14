@@ -61,13 +61,6 @@ export default function QuizResult() {
 
   const accuracy = Total > 0 ? Math.round((Correct / Total) * 100) : 0;
 
-  /*
-   * IMPORTANT:
-   * These two values must come from wherever your game stores
-   * the accuracy bonus and the player's bet amount.
-   *
-   * Replace these with your actual source.
-   */
   const accuracyBonus = coinsAwarded;
   const betAmount = QuizEngine.state.stake;
 
