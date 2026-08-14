@@ -2,6 +2,7 @@ import React from "react";
 import { View } from "react-native";
 import BoardWithPopups from "../components/BoardWithPopups";
 import RoleWaitingDrawer from "../components/RoleWaitingDrawer";
+import { PoliceInvestigationOverlay } from "../components/PoliceInvestigationOverlay";
 
 const WAITING_MESSAGES: Record<string, string> = {
   Thief: "Stay quiet... the Police is investigating! 🤫",
@@ -18,11 +19,20 @@ const WAITING_MESSAGES: Record<string, string> = {
  *
  * Every player gets a bottom role drawer (role icon + message) while the
  * Police investigates — Police sees "Catch the Thief!", others wait.
+ *
+ * Non-Police players additionally see a full-screen transparent overlay
+ * with a lock icon and "Wait, Police is investigating..." message. The
+ * overlay is dim but transparent so the shuffling cards remain visible.
+ * It stays until the Police picks a card (gamePhase → result unmounts this
+ * view, which removes the overlay).
  */
 const PoliceTurnView = ({ g, setIsRulesVisible }: any) => {
   const role = g.myRole;
   const showWaitingDrawer =
     role === "Thief" || role === "Advisor" || role === "King" || role === "Police";
+
+  const showInvestigationOverlay =
+    role === "Thief" || role === "Advisor" || role === "King";
 
   return (
     <View className="flex-1">
@@ -32,6 +42,9 @@ const PoliceTurnView = ({ g, setIsRulesVisible }: any) => {
           role={role}
           message={WAITING_MESSAGES[role]}
         />
+      )}
+      {showInvestigationOverlay && (
+        <PoliceInvestigationOverlay visible={showInvestigationOverlay} />
       )}
     </View>
   );

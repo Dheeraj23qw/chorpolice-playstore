@@ -449,7 +449,6 @@ export const useCPScoreQuiz = ({
       completedRoundsRef.current.add(questionIndex);
       roundStateRef.current = "complete";
       deadlineRef.current = 0;
-      quizOptionDisabledRef.current = true;
       transitionInFlightRef.current = false;
 
       if (guessTimerRef.current) {
@@ -457,14 +456,12 @@ export const useCPScoreQuiz = ({
         guessTimerRef.current = null;
       }
 
-      setQuizOptionDisabled(true);
+      setIsQuizRoundComplete?.(true);
+      setShowQuizLeaderboard?.(true);
       return true;
     },
     [
-      quizOptionDisabledRef,
       setIsQuizRoundComplete,
-      setQuizCountdown,
-      setQuizOptionDisabled,
       setShowQuizLeaderboard,
     ],
   );

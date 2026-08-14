@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { Linking, View, TouchableOpacity, StyleSheet } from "react-native";
+import { View } from "react-native";
 
 import { runtimeConfig } from "@/constants/runtime";
 import { useAppDispatch, useAppSelector } from "@/hooks/useAppRedux";
@@ -19,37 +19,31 @@ import {
   getOnboardingDone,
   setOnboardingDone,
   getForceOnboardingEveryLaunch,
-  getUpdateDismissCount,
-  incrementUpdateDismissCount,
 } from "@/storage/appStorage";
-import { canShowLowCoinModal } from "@/storage/lowCoinStorage";
 import { runAfterUI } from "@/utils/runAfterUI";
-
 
 import { useOTAUpdate } from "@/hooks/useOTAUpdate";
 import { warmupSpeech } from "@/service/QuizNarrationService";
 import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
-import { LinearGradient } from "expo-linear-gradient";
-import { ReconnectOverlay } from "./ReconnectOverlay";
 import { UpdateAppModal } from "@/modal/UpdateAppModal";
 
 let hasWarmupFired = false;
 
 export default function AppController() {
   const {
+    updateState,
     isUpdating,
-    nativeUpdate,
-    otaAvailable,
+    latestVersion,
+    updateUrl,
+    isMandatory,
     applyUpdate,
-    setOtaAvailable,
   } = useOTAUpdate();
 
   const [skippedUpdate, setSkippedUpdate] = React.useState(false);
 
   const dispatch = useAppDispatch();
   const phase = useAppSelector((state) => state.appFlow.phase);
-  const activeModal = useAppSelector((state) => state.modalQueue.activeModal);
   const coins = useAppSelector((state) => state.wallet.coins);
   const firstLaunch = useAppSelector((state) => state.wallet.firstLaunch);
   const isSoundLoaded = useAppSelector((state) => state.sound.isLoaded);
@@ -107,12 +101,10 @@ export default function AppController() {
   }, [dispatch, prepareIntroFlow, phase]);
 
   useEffect(() => {
-    // Enable global audio lifecycle protection
     AudioEngine.enableBackgroundProtection();
   }, []);
 
   useEffect(() => {
-    // Auto-grant the 25k app-download bonus once, silently (no modal).
     if (phase === "HOME" && firstLaunch && !firstLaunchBonusRef.current) {
       firstLaunchBonusRef.current = true;
       dispatch(claimFirstLaunchBonus());
@@ -131,8 +123,6 @@ export default function AppController() {
       void warmupSpeech();
     }
   }, [phase]);
-
-
 
   const handleOnboardingComplete = useCallback(() => {
     setOnboardingDone(true);
@@ -154,16 +144,12 @@ export default function AppController() {
     </Animated.View>
   );
 
-
-
   const isInitialFlow = phase === "SPLASH" || phase === "VIDEO" || phase === "ONBOARDING";
-  
-  const isNativeUpdate = nativeUpdate?.isAvailable;
-  const isMandatory = nativeUpdate?.isMandatory || false;
-  
-  // Only show the modal if there's an update, we haven't skipped it (unless it's mandatory),
-  // and we are either in initial flow or it's a mandatory update that interrupts gameplay.
-  const showUpdateModal = !!((otaAvailable || isNativeUpdate) && (!skippedUpdate || isMandatory) && (isInitialFlow || isMandatory));
+
+  const showUpdateModal =
+    (updateState.status === "native-update" || updateState.status === "ota-ready") &&
+    (!skippedUpdate || isMandatory) &&
+    (isInitialFlow || isMandatory);
 
   const renderedPhase = (() => {
     if (isUpdating) {
@@ -231,11 +217,11 @@ export default function AppController() {
       <UpdateAppModal
         isVisible={showUpdateModal}
         onClose={() => setSkippedUpdate(true)}
-        updateUrl={nativeUpdate?.updateUrl || ""}
-        latestVersion={nativeUpdate?.latestVersion || ""}
+        updateUrl={updateUrl}
+        latestVersion={latestVersion}
         isMandatory={isMandatory}
-        isOta={otaAvailable && !isNativeUpdate}
-        onApplyOta={() => applyUpdate()}
+        isOta={updateState.status === "ota-ready"}
+        onApplyOta={applyUpdate}
       />
     </>
   );

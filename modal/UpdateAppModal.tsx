@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { View, Modal, Pressable, Linking } from "react-native";
 import { BlurView } from "expo-blur";
 import { AnimatePresence, MotiText, MotiView } from "moti";
@@ -13,7 +13,7 @@ interface UpdateAppModalProps {
   latestVersion: string;
   isMandatory?: boolean;
   isOta?: boolean;
-  onApplyOta?: () => void;
+  onApplyOta?: () => Promise<void> | void;
 }
 
 export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
@@ -25,20 +25,39 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
   isOta = false,
   onApplyOta,
 }) => {
-  const handleUpdate = async () => {
+  const [isApplying, setIsApplying] = React.useState(false);
+
+  const handleUpdate = useCallback(async () => {
+    if (isApplying) return;
+    setIsApplying(true);
+
     if (isOta && onApplyOta) {
-      onApplyOta();
+      try {
+        await onApplyOta();
+      } catch {
+        setIsApplying(false);
+      }
       return;
     }
-    
+
     if (!updateUrl) return;
 
     try {
       await Linking.openURL(updateUrl);
     } catch {
-      // Ignore invalid/unavailable update URLs.
+      setIsApplying(false);
     }
-  };
+  }, [isApplying, isOta, onApplyOta, updateUrl]);
+
+  const handleMaybeLater = useCallback(() => {
+    if (isMandatory) return;
+    onClose();
+  }, [isMandatory, onClose]);
+
+  const handleBackPress = useCallback(() => {
+    if (isMandatory) return;
+    onClose();
+  }, [isMandatory, onClose]);
 
   return (
     <Modal
@@ -46,13 +65,18 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
       visible={isVisible}
       animationType="none"
       statusBarTranslucent
-      onRequestClose={onClose}
+      onRequestClose={handleBackPress}
     >
       <View className="flex-1 items-center justify-center px-6">
-        {/* BACKDROP */}
-        <View pointerEvents="none" className="absolute inset-0 bg-black/80" />
+        {/* BACKDROP - mandatory means no backdrop dismiss */}
+        <View
+          pointerEvents={isMandatory ? "auto" : "none"}
+          className="absolute inset-0 bg-black/80"
+        />
 
-        <Pressable className="absolute inset-0" onPress={onClose} />
+        {!isMandatory && (
+          <Pressable className="absolute inset-0" onPress={onClose} />
+        )}
 
         <AnimatePresence>
           {isVisible && (
@@ -80,10 +104,7 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
               className="w-full max-w-[430px]"
               style={{
                 shadowColor: "#8B5CF6",
-                shadowOffset: {
-                  width: 0,
-                  height: 0,
-                },
+                shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.25,
                 shadowRadius: 32,
                 elevation: 25,
@@ -94,24 +115,17 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
                 className="overflow-hidden rounded-[40px] border border-violet-400/35 bg-violet-500/[0.05] p-[1px]"
                 style={{
                   shadowColor: "#A78BFA",
-                  shadowOffset: {
-                    width: 0,
-                    height: 0,
-                  },
+                  shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: 0.45,
                   shadowRadius: 20,
                   elevation: 18,
                 }}
               >
                 {/* GLASS */}
-                <BlurView
-                  intensity={90}
-                  tint="dark"
-                  className="overflow-hidden rounded-[39px]"
-                >
+                <BlurView intensity={90} tint="dark" className="overflow-hidden rounded-[39px]">
                   {/* CARD */}
                   <View className="rounded-[39px] bg-[#0F0F15]/90 px-7 pb-7 pt-7">
-                    {/* CLOSE BUTTON */}
+                    {/* CLOSE BUTTON - hidden for mandatory */}
                     {!isMandatory && (
                       <Pressable
                         onPress={onClose}
@@ -131,29 +145,13 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
 
                     {/* ICON */}
                     <MotiView
-                      from={{
-                        scale: 0,
-                        opacity: 0,
-                        rotate: "-10deg",
-                      }}
-                      animate={{
-                        scale: 1,
-                        opacity: 1,
-                        rotate: "0deg",
-                      }}
-                      transition={{
-                        type: "spring",
-                        damping: 16,
-                        stiffness: 160,
-                        delay: 100,
-                      }}
+                      from={{ scale: 0, opacity: 0, rotate: "-10deg" }}
+                      animate={{ scale: 1, opacity: 1, rotate: "0deg" }}
+                      transition={{ type: "spring", damping: 16, stiffness: 160, delay: 100 }}
                       className="mb-6 self-start"
                       style={{
                         shadowColor: "#8B5CF6",
-                        shadowOffset: {
-                          width: 0,
-                          height: 0,
-                        },
+                        shadowOffset: { width: 0, height: 0 },
                         shadowOpacity: 0.55,
                         shadowRadius: 18,
                         elevation: 12,
@@ -168,19 +166,9 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
 
                     {/* EYEBROW */}
                     <MotiText
-                      from={{
-                        opacity: 0,
-                        translateY: 8,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        translateY: 0,
-                      }}
-                      transition={{
-                        type: "timing",
-                        duration: 250,
-                        delay: 140,
-                      }}
+                      from={{ opacity: 0, translateY: 8 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      transition={{ type: "timing", duration: 250, delay: 140 }}
                       className="font-main-bold text-[10px] uppercase tracking-[3px] text-violet-400/70"
                     >
                       New Update
@@ -188,19 +176,9 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
 
                     {/* TITLE */}
                     <MotiText
-                      from={{
-                        opacity: 0,
-                        translateY: 10,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        translateY: 0,
-                      }}
-                      transition={{
-                        type: "timing",
-                        duration: 300,
-                        delay: 170,
-                      }}
+                      from={{ opacity: 0, translateY: 10 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      transition={{ type: "timing", duration: 300, delay: 170 }}
                       className="mt-2 font-main-bold text-[28px] leading-[34px] text-white"
                     >
                       New Version Available!
@@ -208,19 +186,9 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
 
                     {/* DESCRIPTION */}
                     <MotiText
-                      from={{
-                        opacity: 0,
-                        translateY: 10,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        translateY: 0,
-                      }}
-                      transition={{
-                        type: "timing",
-                        duration: 300,
-                        delay: 210,
-                      }}
+                      from={{ opacity: 0, translateY: 10 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      transition={{ type: "timing", duration: 300, delay: 210 }}
                       className="font-main-medium mt-3 text-[15px] leading-[23px] text-white/50"
                     >
                       Update now for the latest features, improvements, and a
@@ -232,52 +200,34 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
 
                     {/* VERSION CARD */}
                     <MotiView
-                      from={{
-                        opacity: 0,
-                        translateY: 10,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        translateY: 0,
-                      }}
-                      transition={{
-                        type: "timing",
-                        duration: 350,
-                        delay: 250,
-                      }}
+                      from={{ opacity: 0, translateY: 10 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      transition={{ type: "timing", duration: 350, delay: 250 }}
                     >
                       <View
                         className="rounded-2xl border border-amber-400/20 bg-amber-500/[0.07] px-4 py-4"
                         style={{
                           shadowColor: "#FBBF24",
-                          shadowOffset: {
-                            width: 0,
-                            height: 0,
-                          },
+                          shadowOffset: { width: 0, height: 0 },
                           shadowOpacity: 0.1,
                           shadowRadius: 12,
                           elevation: 4,
                         }}
                       >
                         <View className="flex-row items-center justify-between">
-                          {/* LEFT */}
                           <View className="flex-row items-center">
                             <View className="h-11 w-11 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-500/[0.10]">
                               <Sparkles size={19} color="#FBBF24" />
                             </View>
-
                             <View className="ml-3">
                               <Text className="font-main-bold text-[11px] uppercase tracking-[1.5px] text-white/45">
                                 Latest Version
                               </Text>
-
                               <Text className="font-main-medium mt-1 text-[11px] text-white/35">
                                 Ready to install
                               </Text>
                             </View>
                           </View>
-
-                          {/* VERSION */}
                           <Text className="font-main-bold text-[21px] text-amber-400">
                             v{latestVersion}
                           </Text>
@@ -287,36 +237,23 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
 
                     {/* FEATURES */}
                     <MotiView
-                      from={{
-                        opacity: 0,
-                        translateY: 10,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        translateY: 0,
-                      }}
-                      transition={{
-                        type: "timing",
-                        duration: 350,
-                        delay: 300,
-                      }}
+                      from={{ opacity: 0, translateY: 10 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      transition={{ type: "timing", duration: 350, delay: 300 }}
                       className="mt-4"
                     >
                       <View className="flex-row items-center">
                         <View className="h-8 w-8 items-center justify-center rounded-lg bg-violet-500/[0.10]">
                           <Check size={15} color="#A78BFA" strokeWidth={2.5} />
                         </View>
-
                         <Text className="font-main-medium ml-3 text-[12px] text-white/45">
                           Improved stability & performance
                         </Text>
                       </View>
-
                       <View className="mt-2 flex-row items-center">
                         <View className="h-8 w-8 items-center justify-center rounded-lg bg-violet-500/[0.10]">
                           <Zap size={15} color="#A78BFA" strokeWidth={2.5} />
                         </View>
-
                         <Text className="font-main-medium ml-3 text-[12px] text-white/45">
                           Better multiplayer experience
                         </Text>
@@ -326,37 +263,35 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
                     {/* UPDATE BUTTON */}
                     <Pressable
                       onPress={handleUpdate}
-                      className="mt-6 h-14 w-full items-center justify-center rounded-3xl border border-violet-300/30 bg-violet-600"
+                      disabled={isApplying}
+                      className={`mt-6 h-14 w-full items-center justify-center rounded-3xl border border-violet-300/30 bg-violet-600 ${
+                        isApplying ? "opacity-60" : ""
+                      }`}
                       style={({ pressed }) => [
                         {
                           shadowColor: "#8B5CF6",
-                          shadowOffset: {
-                            width: 0,
-                            height: 7,
-                          },
+                          shadowOffset: { width: 0, height: 7 },
                           shadowOpacity: 0.42,
                           shadowRadius: 15,
                           elevation: 10,
                         },
-                        pressed && {
-                          transform: [{ scale: 0.98 }],
-                          opacity: 0.88,
-                        },
+                        pressed && !isApplying
+                          ? { transform: [{ scale: 0.98 }], opacity: 0.88 }
+                          : {},
                       ]}
                     >
                       <View className="flex-row items-center">
                         <Rocket size={18} color="white" strokeWidth={2.4} />
-
                         <Text className="ml-2 font-main-bold text-[14px] uppercase tracking-[2.5px] text-white">
-                          {isOta ? "Restart Now" : "Update Now"}
+                          {isApplying ? "Opening..." : isOta ? "Restart Now" : "Update Now"}
                         </Text>
                       </View>
                     </Pressable>
 
-                    {/* MAYBE LATER */}
-                    {!isMandatory && (
+                    {/* MAYBE LATER - only for optional native updates */}
+                    {!isMandatory && !isOta && (
                       <Pressable
-                        onPress={onClose}
+                        onPress={handleMaybeLater}
                         className="mt-4 self-center px-5 py-2"
                       >
                         {({ pressed }) => (

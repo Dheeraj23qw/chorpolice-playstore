@@ -11,6 +11,7 @@ import {
   tickReconnectTimeout,
   clearSession,
   setConnectionStatus,
+  setSessionError,
   setSettlementStatus
 } from "@/redux/reducers/sessionSlice";
 import { ChorPoliceEngine } from "./ChorPoliceEngine";
@@ -557,6 +558,20 @@ export const handleIncomingPacket = (packet: any, rawSourceIp?: string) => {
 
   if (packet.type === "RECONNECT_STATUS") {
     store.dispatch(setPlayerConnectionStatus({ playerId: packet.playerId, status: packet.status }));
+    return;
+  }
+
+  if (packet.type === NETWORK.UPDATE_REQUIRED) {
+    console.warn(`[LAN] Update required received: ${packet.latestVersion}`);
+    store.dispatch(setConnectionStatus("ERROR"));
+    store.dispatch(setSessionError(
+      "Update required: Please update to v" + (packet.latestVersion || "latest") + " to join multiplayer."
+    ));
+    void cleanupStaleNetworkResources({ reason: "update_required" });
+    setTimeout(() => {
+      store.dispatch(clearSession());
+      router.replace("/mode-select");
+    }, 1500);
     return;
   }
 

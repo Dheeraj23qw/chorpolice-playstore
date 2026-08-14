@@ -16,7 +16,6 @@ import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
 import { CharacterDrawerContext } from "@/constants/characterDrawerData";
 import AppUpdateBanner from "@/components/GameModeScreen/AppUpdateBanner";
 import { useOTAUpdate } from "@/hooks/useOTAUpdate";
-import { toast } from "@/components/feedback/toast";
 
 interface GameModeSelectScreenProps {
   title: string;
@@ -34,8 +33,8 @@ export const GameModeSelectScreen: React.FC<GameModeSelectScreenProps> = ({
 }) => {
   const [selectedGame, setSelectedGame] = useState<GameModeType | null>(null);
   const pathname = usePathname();
-  const { nativeUpdate, otaAvailable } = useOTAUpdate();
-  const hasUpdateBanner = __DEV__ || !!nativeUpdate?.isAvailable || otaAvailable;
+  const { isNativeUpdate, otaAvailable } = useOTAUpdate();
+  const hasUpdateBanner = __DEV__ || isNativeUpdate || otaAvailable;
 
   useEffect(() => {
     console.log(`[NAV_DEBUG] [MODE SELECT] mounted: title="${title}", drawerContext="${drawerContext}", pathname="${pathname}"`);

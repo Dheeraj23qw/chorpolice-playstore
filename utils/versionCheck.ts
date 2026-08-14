@@ -1,59 +1,120 @@
 import Constants from "expo-constants";
+import { isValidSemver, normalizeSemver } from "@/utils/semver";
 
-// The Raw URL you provided
 const UPDATE_CONFIG_URL =
   "https://gist.githubusercontent.com/Dheeraj23qw/895f8ccc58542c3c997ca6ca299b819e/raw/version.json";
 
-export const checkAppUpdate = async (): Promise<{
+const ALLOWED_UPDATE_DOMAINS = [
+  "play.google.com",
+  "apps.apple.com",
+  "expo.dev",
+];
+
+function isValidHttpsUrl(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "https:") return false;
+    return ALLOWED_UPDATE_DOMAINS.some((domain) =>
+      url.hostname === domain || url.hostname.endsWith(`.${domain}`),
+    );
+  } catch {
+    return false;
+  }
+}
+
+interface RawRemoteVersionConfig {
+  latestVersion?: unknown;
+  updateUrl?: unknown;
+  isMandatory?: unknown;
+}
+
+export interface RemoteVersionConfig {
+  latestVersion: string;
+  updateUrl: string;
+  isMandatory: boolean;
+}
+
+export function validateRemoteVersionConfig(
+  data: unknown,
+): RemoteVersionConfig | null {
+  if (!data || typeof data !== "object") return null;
+
+  const raw = data as RawRemoteVersionConfig;
+
+  const latestVersion = typeof raw.latestVersion === "string"
+    ? normalizeSemver(raw.latestVersion)
+    : "";
+
+  if (!latestVersion || !isValidSemver(latestVersion)) {
+    console.warn("[VersionCheck] Invalid latestVersion in remote config");
+    return null;
+  }
+
+  if (!isValidHttpsUrl(raw.updateUrl)) {
+    console.warn("[VersionCheck] Invalid updateUrl in remote config");
+    return null;
+  }
+
+  const updateUrl = String(raw.updateUrl).trim();
+
+  const isMandatory =
+    typeof raw.isMandatory === "boolean" ? raw.isMandatory : false;
+
+  return {
+    latestVersion,
+    updateUrl,
+    isMandatory,
+  };
+}
+
+export async function checkAppUpdate(): Promise<{
   isAvailable: boolean;
   latestVersion: string;
   updateUrl: string;
   isMandatory: boolean;
-}> => {
+}> {
   try {
-    // Append a timestamp to prevent the app from caching an old version.json
-    const response = await fetch(`${UPDATE_CONFIG_URL}?t=${Date.now()}`, {
-      cache: "no-store",
-    });
+    const response = await fetch(
+      `${UPDATE_CONFIG_URL}?t=${Date.now()}`,
+      {
+        cache: "no-store",
+      },
+    );
 
     if (!response.ok) throw new Error("Failed to fetch version info");
 
     const data = await response.json();
+    const config = validateRemoteVersionConfig(data);
 
-    // Get the current version (prioritize expoConfig which reflects OTA updates)
+    if (!config) {
+      console.warn("[VersionCheck] Remote config invalid");
+      return {
+        isAvailable: false,
+        latestVersion: "1.0.0",
+        updateUrl: "",
+        isMandatory: false,
+      };
+    }
+
     const currentVersion = Constants.expoConfig?.version || "7.0.0";
-    const latestVersion = data.latestVersion;
-    const updateUrl = data.updateUrl;
-
-    const isAvailable = compareVersions(currentVersion, latestVersion) < 0;
-    const isMandatory = data.isMandatory !== undefined ? data.isMandatory : true; // Default to true for native updates
+    const normalizedCurrent = normalizeSemver(currentVersion);
 
     return {
-      isAvailable,
-      latestVersion,
-      updateUrl,
-      isMandatory,
+      isAvailable: normalizedCurrent !== config.latestVersion,
+      latestVersion: config.latestVersion,
+      updateUrl: config.updateUrl,
+      isMandatory: config.isMandatory,
     };
   } catch (error) {
-    console.error("Error checking for app update:", error);
-    // Fallback: assume no update is available if the network request fails
-    return { isAvailable: false, latestVersion: "1.0.0", updateUrl: "", isMandatory: false };
+    console.error("[VersionCheck] Update check failed:", error);
+    return {
+      isAvailable: false,
+      latestVersion: "1.0.0",
+      updateUrl: "",
+      isMandatory: false,
+    };
   }
-};
-
-/**
- * Compares two version strings (e.g., "1.2.3" and "1.2.4").
- * Returns -1 if v1 < v2, 1 if v1 > v2, 0 if v1 == v2.
- */
-function compareVersions(v1: string, v2: string): number {
-  const parts1 = v1.split(".").map(Number);
-  const parts2 = v2.split(".").map(Number);
-
-  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-    const part1 = parts1[i] || 0;
-    const part2 = parts2[i] || 0;
-    if (part1 < part2) return -1;
-    if (part1 > part2) return 1;
-  }
-  return 0;
 }

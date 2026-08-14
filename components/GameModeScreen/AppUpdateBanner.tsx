@@ -1,34 +1,36 @@
 import React from "react";
-import { View, TouchableOpacity, Linking, StyleSheet } from "react-native";
-import { MotiView } from "moti";
+import { Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { Text } from "@/components/Text";
 import { useOTAUpdate } from "@/hooks/useOTAUpdate";
 import { toast } from "@/components/feedback/toast";
 import { AppBannerCard } from "./AppBannerCard";
 
 export const AppUpdateBanner: React.FC<{ forceVisible?: boolean }> = ({ forceVisible }) => {
-  const { nativeUpdate, otaAvailable, applyUpdate } = useOTAUpdate();
+  const { isNativeUpdate, otaAvailable, applyUpdate, latestVersion, updateUrl } = useOTAUpdate();
 
-  const isAvailable = nativeUpdate?.isAvailable || otaAvailable || __DEV__;
+  const isAvailable = isNativeUpdate || otaAvailable || __DEV__;
   if (!forceVisible && !isAvailable) return null;
 
-  const versionText = nativeUpdate?.latestVersion
-    ? `v${nativeUpdate.latestVersion}`
+  const versionText = latestVersion
+    ? `v${latestVersion}`
     : __DEV__
     ? "v2.4.0 [DEV]"
     : "LATEST";
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (__DEV__) {
       toast.info("DEV Update", "Triggered App Update action in dev mode.");
       return;
     }
     if (otaAvailable) {
-      applyUpdate();
-    } else if (nativeUpdate?.updateUrl) {
-      Linking.openURL(nativeUpdate.updateUrl);
+      try {
+        await applyUpdate();
+      } catch {
+        // applyUpdate already logs and resets its own state.
+      }
+    } else if (updateUrl) {
+      Linking.openURL(updateUrl);
     }
   };
 

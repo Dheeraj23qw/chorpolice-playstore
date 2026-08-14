@@ -2,9 +2,10 @@
  * LobbyPacketHandler — Handles all incoming lobby-level packets.
  * Extracted from lanLobbyCoordinator for Single Responsibility.
  * 
- * Contains: PLAYER_JOIN, PLAYER_LIST_UPDATE, PLAYER_LEAVE, PLAYER_JOIN_REJECT
+ * Contains: PLAYER_JOIN, PLAYER_LIST_UPDATE, PLAYER_LEAVE, PLAYER_JOIN_REJECT, UPDATE_REQUIRED
  * All bug fixes (idempotent join, room code validation, game termination) preserved.
  */
+import Constants from "expo-constants";
 import { NETWORK } from "@/constants/Networking";
 import { toast } from "@/components/feedback/toast";
 import {
@@ -31,6 +32,7 @@ import {
 import { isLobbyPresenceToastAllowed } from "./LobbyToastVisibility";
 import { BotEngine as QuizBotEngine } from "../QuizBotEngine";
 import { logLanDebug, updateDebugMetric } from "../observability/DebugService";
+import { isNewerVersion, isValidSemver } from "@/utils/semver";
 
 type SyncFn = (players: SessionPlayer[]) => void;
 type BroadcastFn = (players: SessionPlayer[]) => void;
@@ -47,6 +49,8 @@ export type LobbyPacketDeps = {
   checkAndTriggerProfileSync: () => void;
 };
 
+const hostAppVersion = Constants.expoConfig?.version || "7.0.0";
+
 export const handleLobbyPacket = (
   packet: any,
   rawSourceIp: string | undefined,
@@ -54,6 +58,23 @@ export const handleLobbyPacket = (
 ) => {
   if (!packet?.type) return;
   const sourceIp = normalizePeerIp(rawSourceIp);
+
+  // ── UPDATE_REQUIRED (client-side reaction to host rejection) ──
+  if (packet.type === NETWORK.UPDATE_REQUIRED) {
+    store.dispatch(setConnectionStatus("ERROR"));
+    store.dispatch(
+      setSessionError(
+        "Update required: Please update the app to v" +
+          (packet.latestVersion || "latest") +
+          " to join this session.",
+      ),
+    );
+    toast.error(
+      "Update Required",
+      "Your app version is outdated. Please update to continue.",
+    );
+    return;
+  }
 
   // ── PLAYER_JOIN (host only) ──
   if (packet.type === NETWORK.PLAYER_JOIN) {
@@ -66,6 +87,27 @@ export const handleLobbyPacket = (
       console.warn(`[Lobby] Rejecting join: room code mismatch`);
       if (sourceIp) {
         sendPacketToPeer(sourceIp, { type: NETWORK.PLAYER_JOIN_REJECT, reason: "invalid_room_code" });
+      }
+      return;
+    }
+
+    // Version enforcement: reject clients with incompatible app version
+    const clientAppVersion =
+      typeof packet.appVersion === "string" ? packet.appVersion : "";
+
+    if (
+      clientAppVersion &&
+      isValidSemver(clientAppVersion) &&
+      isNewerVersion(hostAppVersion, clientAppVersion)
+    ) {
+      console.warn(
+        `[Lobby] Rejecting join: client v${clientAppVersion} older than host v${hostAppVersion}`,
+      );
+      if (sourceIp) {
+        sendPacketToPeer(sourceIp, {
+          type: NETWORK.UPDATE_REQUIRED,
+          latestVersion: hostAppVersion,
+        });
       }
       return;
     }
@@ -90,7 +132,6 @@ export const handleLobbyPacket = (
 
     if (existingIndex >= 0) {
       const existing = state.players[existingIndex];
-      // IDEMPOTENCY: Only update and broadcast if data actually changed
       if (checkLobbyDataChanged(existing, joiningPlayer)) {
         console.log(`[LAN_ORCH] [HOST] Data changed for ${joiningPlayer.id}: ${existing.name} -> ${joiningPlayer.name}, avatar ${existing.avatarId} -> ${joiningPlayer.avatarId}`);
         nextPlayers = [...state.players];
@@ -112,12 +153,10 @@ export const handleLobbyPacket = (
       }
       nextPlayers = replaced;
 
-      // 🔥 THINK AND COUNT SPECIAL RULE: If 2 humans, remove all bots
       const newHumansCount = nextPlayers.filter(p => !p.isBot).length;
       if (state.gameType === "THINK_AND_COUNT" && newHumansCount >= 2) {
         console.log(`[Lobby] Think and Count: ${newHumansCount} humans detected. Removing all bots.`);
         nextPlayers = nextPlayers.filter(p => !p.isBot);
-        // Explicitly notify bot engine to clear timers
         QuizBotEngine.updateActiveBots(nextPlayers);
       }
 
@@ -125,7 +164,6 @@ export const handleLobbyPacket = (
       isNewJoin = true;
     }
 
-    // FIX-5: Only register peer on new joins or data changes to avoid registration spam
     if (sourceIp && (isNewJoin || isDataChanged)) {
       console.log(`[LAN_ORCH] [HOST] Registered new peer ${joiningPlayer.id} at ${sourceIp}`);
       registerRemotePeer(joiningPlayer.id, sourceIp);
@@ -138,24 +176,19 @@ export const handleLobbyPacket = (
       }
     }
 
-    // 1. Host side: Update local state first
     if (isDataChanged) {
       console.log(`[LAN_ORCH] [HOST] Updating local list (new count: ${nextPlayers.length})`);
       deps.syncPlayerListLocally(nextPlayers);
-      
-      // 2. Host side: Broadcast to all clients
       console.log(`[LAN_ORCH] [HOST] Broadcasting updated list to all clients.`);
       deps.broadcastPlayerList(nextPlayers);
 
-      // Sync bot engine state
       const freshState = store.getState().session;
       if (freshState.gameType === "THINK_AND_COUNT") {
         QuizBotEngine.updateActiveBots(nextPlayers);
       }
     } else if (sourceIp) {
-      // Re-send current state to confirm the duplicate join without broadcasting
       const freshState = store.getState().session;
-      console.log(`[LAN_ORCH] [HOST] Re-sending current list to 192.168.1.30 (no data change)`);
+      console.log(`[LAN_ORCH] [HOST] Re-sending current list to ${sourceIp} (no data change)`);
       sendPacketToPeer(sourceIp, {
         type: NETWORK.PLAYER_LIST_UPDATE,
         players: freshState.players,
@@ -166,18 +199,17 @@ export const handleLobbyPacket = (
   }
 
   if (packet.type === NETWORK.PLAYER_LIST_UPDATE && Array.isArray(packet.players)) {
-    const state = store.getState().session; // Fetch fresh state
+    const state = store.getState().session;
     console.log(`[LAN_ORCH] [CLIENT] Received player list update (count=${packet.players.length})`);
     deps.clearJoinAttempts();
     deps.syncPlayerListLocally(packet.players);
     deps.checkAndTriggerProfileSync();
     store.dispatch(setLobbyStage(packet.lobbyStage === "setup" ? "setup" : "room"));
-    
+
     if (!state.isHost) {
       const wasConnecting = state.connectionStatus === "CONNECTING";
       const isInList = packet.players.some((p: SessionPlayer) => p.id === state.localPlayerId);
-      
-      // 🔥 SELF-HEALING: If host sent a list but I'm NOT in it, I need to re-join
+
       if (!isInList && state.localPlayerId) {
         console.warn(`[LAN_ORCH] [CLIENT] Received list WITHOUT myself. Triggering re-join...`);
         deps.triggerJoin();
@@ -199,8 +231,7 @@ export const handleLobbyPacket = (
   if (packet.type === NETWORK.PLAYER_LEAVE && packet.playerId) {
     deps.clearJoinAttempts();
 
-    const state = store.getState().session; // Fetch fresh state
-    // TERMINATE GAME IF IN PROGRESS — human leaving mid-game ends session
+    const state = store.getState().session;
     if (state.gamePhase !== "idle") {
       const leaver = state.players.find(p => p.id === packet.playerId);
       if (!(leaver?.isBot ?? false)) {
@@ -229,7 +260,6 @@ export const handleLobbyPacket = (
       return;
     }
 
-    // PROD-2 FIX: Only show ERROR if this was NOT a self-initiated leave
     if (packet.playerId === state.localPlayerId && packet.reason !== "player_quit" && packet.reason !== "user_exit") {
       store.dispatch(setConnectionStatus("ERROR"));
       store.dispatch(setSessionError("Lost connection to the room."));

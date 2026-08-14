@@ -347,11 +347,8 @@ export const useChorPoliceMultiplayer = () => {
   useEffect(() => {
     if (reduxGamePhase !== "score_quiz" || quizCountdown === null || showQuizLeaderboard) return;
     if (quizCountdown <= 0) {
-      if (!quizResponseSubmittedRef.current && !quizOptionDisabledRef.current) {
+      if (!quizResponseSubmittedRef.current) {
         quizResponseSubmittedRef.current = true;
-        quizOptionDisabledRef.current = true;
-        setQuizOptionDisabled(true);
-        setHasGuessedThisRound(true);
 
         setMediaId(8); // MEDIA.TIMEUP
         setMediaType("gif");
