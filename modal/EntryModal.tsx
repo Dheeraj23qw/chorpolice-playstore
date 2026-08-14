@@ -121,7 +121,6 @@ export const EntryModal: React.FC<EntryModalProps> = ({
 
   const handleConfirm = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
     onConfirm(selected);
   };
 
@@ -344,26 +343,31 @@ export const EntryModal: React.FC<EntryModalProps> = ({
                                   backgroundColor: isDisabled
                                     ? "rgba(255,255,255,0.025)"
                                     : isPicked
-                                      ? "rgba(245,158,11,0.13)"
+                                      ? "rgba(245,158,11,0.075)"
                                       : "rgba(255,255,255,0.035)",
                                 }}
                                 transition={{
                                   type: "timing",
                                   duration: 160,
                                 }}
-                                style={{
-                                  shadowColor: "#FBBF24",
-                                  shadowOpacity:
-                                    isPicked && !isDisabled ? 0.35 : 0,
-                                  shadowRadius: 12,
-                                  elevation: isPicked && !isDisabled ? 4 : 0,
-                                }}
                                 className="overflow-hidden rounded-[18px] border"
                               >
-                                {/* SELECTED TOP GLOW */}
+                                {/* SELECTED TOP ACCENT */}
 
                                 {isPicked && !isDisabled && (
-                                  <View className="absolute left-0 right-0 top-0 h-[2px] bg-amber-300" />
+                                  <View className="absolute left-0 right-0 top-0 z-10 h-[2px] bg-amber-300" />
+                                )}
+
+                                {/* SELECTED CHECK */}
+
+                                {isPicked && !isDisabled && (
+                                  <View className="absolute right-2.5 top-2.5 z-10 h-5 w-5 items-center justify-center rounded-full bg-amber-400">
+                                    <Ionicons
+                                      name="checkmark"
+                                      size={12}
+                                      color="#111111"
+                                    />
+                                  </View>
                                 )}
 
                                 <View className="h-[82px] items-center justify-center">
@@ -468,7 +472,7 @@ export const EntryModal: React.FC<EntryModalProps> = ({
               >
                 <MotiView
                   animate={{
-                    scale: isTooExpensive ? 1 : 1,
+                    scale: 1,
                   }}
                   transition={{
                     type: "spring",
