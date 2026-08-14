@@ -24,7 +24,7 @@ export const OfflineRulesModal: React.FC<OfflineRulesModalProps> = ({
   onClose,
 }) => {
   const insets = useSafeAreaInsets();
-  const [language, setLanguage] = useState<OfflineRulesLanguage>("EN");
+  const [language, setLanguage] = useState<OfflineRulesLanguage>("HI");
 
   const content = OFFLINE_RULES_CONTENT[language];
 

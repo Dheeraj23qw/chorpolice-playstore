@@ -28,8 +28,8 @@ import { toast } from "@/components/feedback/toast";
 import { playerImages } from "@/constants/playerData";
 import { useLobbyLogic } from "@/hooks/useLobbyLogic";
 import { EntryModal } from "@/modal/EntryModal";
-import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 import { OfflineRulesModal } from "@/modal/OfflineRulesModal";
+import { MultiplayerHelpModal } from "@/modal/MultiplayerHelpModal";
 import {
   getLobbyHelpShown,
   setLobbyHelpShown,
@@ -41,7 +41,7 @@ import { FloatingDebugToggle } from "@/components/LobbyScreen/FloatingDebugToggl
 import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
 
 type UIState =
-  "normal" | "betting" | "share" | "apIsolation" | "help" | "permissions";
+  "normal" | "betting" | "share" | "apIsolation" | "help" | "permissions" | "connectionHelp";
 
 const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
   const router = useRouter();
@@ -98,20 +98,6 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
   useEffect(() => {
     if (lobby.showApIsolation) setUiState("apIsolation");
   }, [lobby.showApIsolation]);
-
-  // ✨ FIRST TIME HELP: Auto-show help (solo tutorial) if not shown before
-  useEffect(() => {
-    // Never override an active betting modal.
-    if (lobby.isBettingModalVisible) return;
-
-    if (isSolo) {
-      if (!getSoloTutorialShown()) {
-        setUiState("help");
-      }
-    } else if (!getLobbyHelpShown()) {
-      setUiState("help");
-    }
-  }, [isSolo, lobby.isBettingModalVisible]);
 
   // ── Toast message when joiner fully connects ──────────────────
   const prevConnectionStatusRef = React.useRef(lobby.connectionStatus);
@@ -362,7 +348,7 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
         onClose={() => setUiState("normal")}
         qrPayload={lobby.qrPayload}
         isHost={lobby.isHost}
-        onHelpPress={() => setUiState("help")}
+        onHelpPress={() => setUiState("connectionHelp")}
         onStartMatch={() => {
           setUiState("normal");
           lobby.setIsBettingModalVisible(true);
@@ -387,7 +373,7 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
           }}
         />
       ) : (
-        <MultiplayerHelpModal
+        <OfflineRulesModal
           visible={uiState === "help"}
           onClose={() => {
             setLobbyHelpShown(true);
@@ -395,6 +381,11 @@ const LobbySetupScreen = ({ forcedMode, routeGameType }: any) => {
           }}
         />
       )}
+
+      <MultiplayerHelpModal
+        visible={uiState === "connectionHelp"}
+        onClose={() => setUiState("share")}
+      />
 
       {/* 🛠 DEBUG OVERLAY (Dev Only) */}
       {__DEV__ && (

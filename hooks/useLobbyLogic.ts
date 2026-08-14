@@ -414,7 +414,7 @@ export const useLobbyLogic = (
           ChorPoliceEngine.init(
             packet.players,
             bet,
-            packet.totalRounds || 5,
+            packet.totalRounds || 3,
             packet.matchId,
           );
         }

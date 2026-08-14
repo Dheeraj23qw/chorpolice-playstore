@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Image, Modal, Pressable, View } from "react-native";
 import { useSelector } from "react-redux";
 import QRCode from "react-native-qrcode-svg";
@@ -242,16 +242,14 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
                   </View>
 
                   <View className="flex-row items-center gap-2">
-                    {onHelpPress && (
-                      <Pressable
-                        onPress={onHelpPress}
-                        className="rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-2 active:bg-white/10"
-                      >
-                        <Text className="font-main-bold text-xs text-zinc-300">
-                          Help
-                        </Text>
-                      </Pressable>
-                    )}
+                    <Pressable
+                      onPress={() => onHelpPress?.()}
+                      className="rounded-full border border-white/10 bg-white/[0.05] px-3.5 py-2 active:bg-white/10"
+                    >
+                      <Text className="font-main-bold text-xs text-zinc-300">
+                        Help
+                      </Text>
+                    </Pressable>
 
                     <Pressable
                       onPress={onClose}

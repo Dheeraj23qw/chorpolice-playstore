@@ -33,7 +33,7 @@ export const MultiplayerHelpModal: React.FC<MultiplayerHelpModalProps> = ({
   onClose,
 }) => {
   const insets = useSafeAreaInsets();
-  const [language, setLanguage] = useState<HelpLanguage>("EN");
+  const [language, setLanguage] = useState<HelpLanguage>("HI");
 
   const content = MULTIPLAYER_HELP_CONTENT[language];
 
@@ -232,15 +232,13 @@ const HelpItem = ({
           <Text
             style={{ fontSize: rf(1.45) }}
             className="font-main-bold text-white"
-            numberOfLines={1}
           >
             {title}
           </Text>
 
           <Text
             style={{ fontSize: rf(1.18), lineHeight: rf(1.75) }}
-            className="mt-1 font-main-md text-white/45"
-            numberOfLines={2}
+            className="mt-1 font-main-md text-white/60"
           >
             {desc}
           </Text>
