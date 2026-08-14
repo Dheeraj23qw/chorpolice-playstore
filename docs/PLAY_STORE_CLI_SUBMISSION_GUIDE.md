@@ -1,6 +1,6 @@
 # Google Play Store CLI Automated Submission Guide 🚀
 
-> Step-by-step guide for automated Play Store app submissions using **EAS Submit**, **Fastlane Supply**, and **Google Play Developer Service Accounts**.
+> Production-tested guide for automated Play Store app submissions using **EAS Submit**, **Fastlane Supply**, and **Google Play Developer Service Accounts**.
 
 ---
 
@@ -17,92 +17,86 @@ graph LR
 
 ---
 
-## Prerequisites
+## Verified Project Architecture & Configuration
 
-1. **EAS CLI**: Installed globally (`npm i -g eas-cli`) or via project (`npx eas-cli`).
-2. **Google Play Developer Account**: Active owner/admin access to [play.google.com/console](https://play.google.com/console).
-3. **EAS Account**: Logged in as `@dheeraj_kumar_yadav`.
-
----
-
-## Complete Setup Architecture
-
-### Step 1: Google Cloud Service Account Setup
-
-1. Open [Google Cloud Console IAM Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts).
-2. Click **+ CREATE SERVICE ACCOUNT**.
-   - **Name**: `eas-auto-submission`
-   - **Service Account ID**: `eas-auto-submission@chor-police-playstore.iam.gserviceaccount.com`
-3. Grant Role: **Service Account User** / **Editor**.
-4. Create & download JSON key:
-   - Go to **KEYS** tab → **ADD KEY** → **Create new key** → Select **JSON**.
-   - Save key securely as `service-account.json`.
+| Parameter | Value |
+| :--- | :--- |
+| **App Identifier** | `com.dheeraj.chorpolice` |
+| **EAS Owner** | `@dheeraj_kumar_yadav` |
+| **Google Cloud Org** | `rahulkumar9508820247-org` |
+| **Google Cloud Project** | `expo submit bot` (`expo-submit-bot`) |
+| **Service Account Email** | `eas-auto-submission@chor-police-playstore.iam.gserviceaccount.com` |
+| **API Name** | `Google Play Android Developer API` (`androidpublisher.googleapis.com`) |
+| **API Link** | [https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com?project=expo-submit-bot](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com?project=expo-submit-bot) |
 
 ---
 
-### Step 2: Google Play Console Permissions Assignment
+## Complete Setup & Verification Checklist
+
+### Step 1: Google Cloud Service Account (`expo submit bot`)
+
+1. Open [Google Cloud Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts?project=expo-submit-bot).
+2. Service Account created: `eas-auto-submission@chor-police-playstore.iam.gserviceaccount.com`.
+3. Key source: Stored securely on EAS Cloud servers.
+
+---
+
+### Step 2: Google Play Console Permissions
 
 1. Open [Google Play Console Users & Permissions](https://play.google.com/console/developers/users).
-2. Click **Invite new users**.
-3. Paste Service Account Email: `eas-auto-submission@chor-police-playstore.iam.gserviceaccount.com`.
-4. **App Permissions**:
-   - Add App: **Chor Police** (`com.dheeraj.chorpolice`).
-   - Select permissions: **Release to main track**, **Release to testing tracks**, **View app information**.
-5. **Account Permissions**:
-   - Enable: **Admin (all permissions)** or **Manage production releases**.
-6. Click **Invite user** → **Save changes** (Ensure changes are saved!).
+2. Active user: `eas-auto-submission@chor-police-playstore.iam.gserviceaccount.com`.
+3. **App Permissions**:
+   - App: `Raja Mantri chor sipahi` (`com.dheeraj.chorpolice`).
+   - Granted permissions: **13 permissions** (Release to main track, testing tracks, view app info).
+4. **Important**: Click the blue **Save changes** button at the bottom right corner of Google Play Console to commit permission updates.
 
 ---
 
 ### Step 3: Google Play Android Developer API Activation
 
-Ensure the Google Play Developer API is enabled on your Google Cloud Project:
+1. Open [Google Play Android Developer API for `expo submit bot`](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com?project=expo-submit-bot).
+2. Status: **`Enabled`**.
 
-1. Open [Google Play Android Developer API Library](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com).
-2. Select your project.
-3. Click **ENABLE**.
-
-> **Note**: Google Cloud permissions can take **3–5 minutes** to propagate across authentication servers after initial activation.
+> **Note**: After enabling the API, Google Cloud auth servers require **3–5 minutes** to propagate changes globally.
 
 ---
 
 ## Submission Commands
 
-### Standard Automated Submission (Latest EAS Build)
+### 1. Primary Automated CLI Submission (Latest EAS Build)
 
 ```bash
-# Submit latest production build from EAS Cloud
 eas submit --platform android --latest
 ```
 
-### Non-Interactive Mode (for CI/CD Pipelines)
+### 2. Non-Interactive Mode (For CI/CD Pipelines)
 
 ```bash
 eas submit --platform android --latest --non-interactive
 ```
 
-### Submitting a Specific Local AAB File
+### 3. Submitting a Specific Local AAB File
 
 ```bash
 eas submit --platform android --path ./build-output.aab
 ```
 
-### Overwriting Stale Credentials with a New Key
+### 4. Overwriting Credentials with a Custom Key JSON File
 
 ```bash
-eas submit --platform android --latest --service-account-key-path ./path-to-key.json
+eas submit --platform android --latest --service-account-key-path C:\path\to\service-account.json
 ```
 
 ---
 
-## Troubleshooting Guide
+## Troubleshooting & Verification Matrix
 
-| Error Message | Cause | Resolution |
+| Error Code / Message | Verified Root Cause | Exact Resolution |
 | :--- | :--- | :--- |
-| `PERMISSION_DENIED: Google Play Android Developer API has not been used...` | API disabled or recently enabled and still propagating | Click **Enable** on [Google Cloud API Page](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com) and wait 3–5 minutes. |
-| `Google Api Error: Invalid credentials` | Service Account email not invited to Play Console | Invite `eas-auto-submission@...` under Play Console **Users & Permissions**. |
-| `Unsaved changes on Google Play Console` | Permissions added but **Save changes** button wasn't clicked | Go to Play Console → **Users & Permissions** → Select Service Account → Click **Save changes** at bottom right. |
-| `User does not have access to this app` | Service Account user lacks App Permissions | Add `com.dheeraj.chorpolice` to the service account's App Permissions list. |
+| `PERMISSION_DENIED: Google Play Android Developer API has not been used in project...` | API is disabled on the GCP project or permission propagation delay | Open [GCP Console for `expo submit bot`](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com?project=expo-submit-bot), click **ENABLE**, and wait 3–5 minutes. |
+| `Google Api Error: Invalid credentials` | Service Account email not invited to Play Console | Add `eas-auto-submission@...` under Play Console **Users & Permissions**. |
+| `Unsaved changes on Google Play Console` | App permissions selected but **Save changes** was not clicked | Open Play Console → **Users & Permissions** → Select `eas-auto-submission` → Click blue **Save changes** at bottom right. |
+| `User does not have access to this app` | Service Account lacks explicit app assignment | Add `com.dheeraj.chorpolice` to the Service Account's **App permissions** list. |
 
 ---
 
@@ -122,4 +116,4 @@ eas submit --platform android --latest --service-account-key-path ./path-to-key.
 ```
 
 ---
-*Created for Chor Police Automated Production Pipeline.*
+*Verified Production Pipeline Guide for Chor Police.*
