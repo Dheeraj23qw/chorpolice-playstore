@@ -13,6 +13,8 @@ import {
 } from "@/features/locks/lockSlice";
 import {
   claimFirstLaunchBonus,
+  forfeitCoins,
+  refundCoins,
   setCoins,
   setFirstLaunch,
   updateCoins,
@@ -35,6 +37,8 @@ listenerMiddleware.startListening({
     setCoins,
     setFirstLaunch,
     claimFirstLaunchBonus,
+    refundCoins,
+    forfeitCoins,
   ),
   effect: (_, api) => {
     const state = api.getState() as RootState;

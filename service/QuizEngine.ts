@@ -102,6 +102,7 @@ export const QuizEngine = {
     difficulty: any,
     stake: number = 0,
     totalRounds: number = DEFAULT_TOTAL_ROUNDS,
+    matchId?: string,
   ) => {
     QuizEngine.reset();
 
@@ -112,10 +113,11 @@ export const QuizEngine = {
     QuizEngine.state.totalPot = stake * players.length;
 
     const isHost = GameSessionTransport.getSnapshot().isHost || store.getState().session.isHost;
-    if (isHost) {
-      QuizEngine.state.matchId = `TC_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const finalMatchId = matchId || (isHost ? `TC_${Date.now()}_${Math.floor(Math.random() * 1000)}` : null);
+    if (finalMatchId) {
+      QuizEngine.state.matchId = finalMatchId;
       store.dispatch(initMatchEconomy({
-        matchId: QuizEngine.state.matchId,
+        matchId: finalMatchId,
         stakeAmount: stake,
       }));
     }
@@ -152,18 +154,10 @@ export const QuizEngine = {
         {
           const players = packet.players || [];
           const diff = packet.difficulty || "easy";
-          const stake = packet.stake || 0;
+          const stake = packet.stake || packet.betAmount || 0;
           const totalRounds = packet.totalRounds || DEFAULT_TOTAL_ROUNDS;
 
-          QuizEngine.init(players, diff, stake, totalRounds);
-
-          if (packet.matchId) {
-            QuizEngine.state.matchId = packet.matchId;
-            store.dispatch(initMatchEconomy({
-              matchId: packet.matchId,
-              stakeAmount: stake,
-            }));
-          }
+          QuizEngine.init(players, diff, stake, totalRounds, packet.matchId);
         }
         break;
 

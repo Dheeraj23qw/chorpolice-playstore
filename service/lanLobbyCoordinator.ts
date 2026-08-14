@@ -43,6 +43,7 @@ import {
 } from "./network/LobbyPacketHandler";
 import { framePacket, extractFrames } from "./network/TcpFraming";
 import { isLobbyPresenceToastAllowed } from "./network/LobbyToastVisibility";
+import { startIpDetectionLoop } from "./HostIpDetector";
 
 // ── Module state ──
 let unsubscribePackets: (() => void) | null = null;
@@ -287,6 +288,13 @@ export const hostLanLobby = async ({
 
     store.dispatch(setConnectionStatus("HOSTING"));
     store.dispatch(setSessionError(null));
+
+    startIpDetectionLoop({
+      roomCode: store.getState().session.roomCode || "000",
+      actualPort: port,
+      hostName: name,
+      lobbyId: localPlayerId,
+    });
 
     startHeartbeat(true);
     return {

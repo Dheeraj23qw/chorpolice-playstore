@@ -690,7 +690,7 @@ export const useLobbyLogic = (
     selectedHostIp: isHost ? null : hostIp,
     localAvatarId: currentAvatarId,
     qrPayload: useMemo(() => {
-      if (!hostIp) return "";
+      if (!hostIp || hostIp === "0.0.0.0" || hostIp === "127.0.0.1") return "";
       const payload = JSON.stringify({
         version: "1.0",
         sessionId: localPlayerId,

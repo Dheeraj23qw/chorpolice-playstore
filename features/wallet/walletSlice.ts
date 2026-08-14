@@ -10,17 +10,23 @@ const initialState: WalletState = {
   firstLaunch: true,
 };
 
+const sanitizeCoins = (value: number): number => {
+  if (typeof value !== "number" || !Number.isFinite(value) || Number.isNaN(value)) return 0;
+  return Math.max(0, Math.floor(value));
+};
+
 const walletSlice = createSlice({
   name: "wallet",
   initialState,
 
   reducers: {
     updateCoins: (state, action: PayloadAction<number>) => {
-      state.coins += action.payload;
+      const delta = Number.isFinite(action.payload) ? action.payload : 0;
+      state.coins = sanitizeCoins(state.coins + delta);
     },
 
     setCoins: (state, action: PayloadAction<number>) => {
-      state.coins = action.payload;
+      state.coins = sanitizeCoins(action.payload);
     },
 
     setFirstLaunch: (state, action: PayloadAction<boolean>) => {
@@ -28,7 +34,7 @@ const walletSlice = createSlice({
     },
 
     claimFirstLaunchBonus: (state) => {
-      state.coins += 25000;
+      state.coins = sanitizeCoins(state.coins + 25000);
       state.firstLaunch = false;
     },
 
@@ -39,7 +45,8 @@ const walletSlice = createSlice({
      * Innocent players get refunded ONLY if the stake was already debited.
      */
     refundCoins: (state, action: PayloadAction<number>) => {
-      state.coins += action.payload;
+      const refund = Math.max(0, Number.isFinite(action.payload) ? action.payload : 0);
+      state.coins = sanitizeCoins(state.coins + refund);
     },
 
     /**
@@ -49,7 +56,8 @@ const walletSlice = createSlice({
      * Use ONLY if stake was NOT yet debited.
      */
     forfeitCoins: (state, action: PayloadAction<number>) => {
-      state.coins -= action.payload;
+      const forfeit = Math.max(0, Number.isFinite(action.payload) ? action.payload : 0);
+      state.coins = sanitizeCoins(state.coins - forfeit);
     },
   },
 });

@@ -10,7 +10,6 @@ import * as Clipboard from "expo-clipboard";
 import { Text } from "@/components/Text";
 import { LanTroubleshootingCard } from "@/components/LobbyScreen/LanTroubleshootingCard";
 import { LanDebugPanel } from "@/components/LobbyScreen/LanDebugPanel";
-import { HotspotTroubleshootingCard } from "@/components/LobbyScreen/HotspotTroubleshootingCard";
 import { toast } from "@/components/feedback/toast";
 import { rf } from "@/utils/responsive";
 
@@ -38,7 +37,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
   const [permission, requestPermission] = useCameraPermissions();
 
   const [showTroubleshooting, setShowTroubleshooting] = React.useState(false);
-  const [showHotspotFix, setShowHotspotFix] = React.useState(false);
   const [showDebug, setShowDebug] = React.useState(false);
   const [scanned, setScanned] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
@@ -55,18 +53,12 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
         setShowTroubleshooting(true);
       }, 5000);
 
-      const hotspotTimer = setTimeout(() => {
-        setShowHotspotFix(true);
-      }, 5000);
-
       return () => {
         clearTimeout(troubleshootingTimer);
-        clearTimeout(hotspotTimer);
       };
     }
 
     setShowTroubleshooting(false);
-    setShowHotspotFix(false);
     setShowDebug(false);
   }, [visible]);
 
@@ -306,12 +298,6 @@ export const LateJoinQrModal: React.FC<LateJoinQrModalProps> = ({
 
                       <View className="mt-4 w-full">
                         {showTroubleshooting && <LanTroubleshootingCard />}
-
-                        {showHotspotFix && (
-                          <View className="mt-3">
-                            <HotspotTroubleshootingCard />
-                          </View>
-                        )}
                       </View>
                     </View>
                   ) : (

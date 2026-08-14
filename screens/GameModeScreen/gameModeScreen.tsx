@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,6 +17,9 @@ import {
   GameModeList,
 } from "@/components/GameModeScreen";
 
+import { useSpinWheel } from "@/features/SpinWheel/useSpinWheel";
+import { SpinToWinCard } from "@/components/EarnScreen/SpinToWinCard";
+import SpinToWinModal from "@/modal/SpinToWinModal";
 import SpinLiveBanner from "@/components/GameModeScreen/SpinLiveBanner";
 import CharacterDrawer from "@/components/CharacterDrawer/CharacterDrawer";
 import { useCharacterDrawer } from "@/hooks/useCharacterDrawer";
@@ -30,6 +33,13 @@ const GameModeScreen: React.FC = () => {
 
   const { message, avatarSource, shouldShow, dismiss, show } =
     useCharacterDrawer("home");
+
+  const { isLocked, formattedTime } = useSpinWheel();
+  const [isSpinModalVisible, setIsSpinModalVisible] = useState(false);
+
+  const toggleSpinModal = useCallback(() => {
+    setIsSpinModalVisible((prev) => !prev);
+  }, []);
 
   // Re-show the character popup each time Home comes into focus (3s auto-hide)
   useFocusEffect(
@@ -77,9 +87,17 @@ const GameModeScreen: React.FC = () => {
         {/* Header Section */}
         <HeaderSection />
 
-        {/* Profile Card */}
+        {/* Profile / Spin Card */}
         <View className="px-5 mb-4">
+          {!isLocked ? (
+            <SpinToWinCard
+              isLocked={isLocked}
+              formattedTime={formattedTime}
+              onPress={toggleSpinModal}
+            />
+          ) : (
             <DailyBonusProfileCard />
+          )}
         </View>
 
         {/* Game List */}
@@ -101,6 +119,11 @@ const GameModeScreen: React.FC = () => {
           onDismiss={dismiss}
         />
       )}
+
+      <SpinToWinModal
+        isVisible={isSpinModalVisible}
+        onClose={() => setIsSpinModalVisible(false)}
+      />
     </View>
   );
 };

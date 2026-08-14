@@ -465,7 +465,7 @@ export const ChorPoliceEngine = {
   },
 
   /* ─── Initialize a new session ─── */
-  init: (players: CPPlayer[], stake: number, totalRounds: number = 3): void => {
+  init: (players: CPPlayer[], stake: number, totalRounds: number = 3, matchId?: string): void => {
     ChorPoliceEngine.reset();
 
     // 🛡️ VALIDATION: Chor Police requires EXACTLY 4 players
@@ -501,9 +501,9 @@ export const ChorPoliceEngine = {
     ChorPoliceEngine.state.totalRounds = totalRounds;
     ChorPoliceEngine.state.currentRound = 1;
 
-    const matchId = `CP_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    ChorPoliceEngine.state.matchId = matchId;
-    dispatch(initMatchEconomy({ matchId, stakeAmount: stake }));
+    const finalMatchId = matchId || `CP_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    ChorPoliceEngine.state.matchId = finalMatchId;
+    dispatch(initMatchEconomy({ matchId: finalMatchId, stakeAmount: stake }));
 
     // Initialize score entries
     players.forEach((p) => {

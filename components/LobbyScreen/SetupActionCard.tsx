@@ -11,7 +11,6 @@ import { rf } from "@/utils/responsive";
 import { LobbyState } from "./types";
 import { PrimaryButton } from "./PrimaryButton";
 import { LanDebugPanel } from "./LanDebugPanel";
-import { HotspotTroubleshootingCard } from "./HotspotTroubleshootingCard";
 
 interface SetupActionCardProps {
   lobby: LobbyState;
@@ -26,7 +25,6 @@ export const SetupActionCard: React.FC<SetupActionCardProps> = ({
   isInviteLoading = false,
   isSolo = false,
 }) => {
-  const [showHotspotFix, setShowHotspotFix] = React.useState(false);
   const [showDebug, setShowDebug] = React.useState(false);
 
   React.useEffect(() => {
