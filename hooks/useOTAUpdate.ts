@@ -6,7 +6,7 @@ import { checkAppUpdate } from "@/utils/versionCheck";
 export const useOTAUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
-  const [nativeUpdate, setNativeUpdate] = useState<{ isAvailable: boolean; latestVersion: string; updateUrl: string } | null>(null);
+  const [nativeUpdate, setNativeUpdate] = useState<{ isAvailable: boolean; latestVersion: string; updateUrl: string; isMandatory: boolean } | null>(null);
   const [otaAvailable, setOtaAvailable] = useState(false);
 
   const hasCheckedRef = useRef(false);

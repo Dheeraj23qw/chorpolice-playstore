@@ -11,6 +11,9 @@ interface UpdateAppModalProps {
   onClose: () => void;
   updateUrl: string;
   latestVersion: string;
+  isMandatory?: boolean;
+  isOta?: boolean;
+  onApplyOta?: () => void;
 }
 
 export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
@@ -18,8 +21,16 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
   onClose,
   updateUrl,
   latestVersion,
+  isMandatory = false,
+  isOta = false,
+  onApplyOta,
 }) => {
   const handleUpdate = async () => {
+    if (isOta && onApplyOta) {
+      onApplyOta();
+      return;
+    }
+    
     if (!updateUrl) return;
 
     try {
@@ -101,20 +112,22 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
                   {/* CARD */}
                   <View className="rounded-[39px] bg-[#0F0F15]/90 px-7 pb-7 pt-7">
                     {/* CLOSE BUTTON */}
-                    <Pressable
-                      onPress={onClose}
-                      className="absolute right-5 top-5 z-20 h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.05]"
-                    >
-                      {({ pressed }) => (
-                        <View
-                          className={`items-center justify-center ${
-                            pressed ? "scale-90 opacity-70" : ""
-                          }`}
-                        >
-                          <X size={18} color="rgba(255,255,255,0.55)" />
-                        </View>
-                      )}
-                    </Pressable>
+                    {!isMandatory && (
+                      <Pressable
+                        onPress={onClose}
+                        className="absolute right-5 top-5 z-20 h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.05]"
+                      >
+                        {({ pressed }) => (
+                          <View
+                            className={`items-center justify-center ${
+                              pressed ? "scale-90 opacity-70" : ""
+                            }`}
+                          >
+                            <X size={18} color="rgba(255,255,255,0.55)" />
+                          </View>
+                        )}
+                      </Pressable>
+                    )}
 
                     {/* ICON */}
                     <MotiView
@@ -335,26 +348,28 @@ export const UpdateAppModal: React.FC<UpdateAppModalProps> = ({
                         <Rocket size={18} color="white" strokeWidth={2.4} />
 
                         <Text className="ml-2 font-main-bold text-[14px] uppercase tracking-[2.5px] text-white">
-                          Update Now
+                          {isOta ? "Restart Now" : "Update Now"}
                         </Text>
                       </View>
                     </Pressable>
 
                     {/* MAYBE LATER */}
-                    <Pressable
-                      onPress={onClose}
-                      className="mt-4 self-center px-5 py-2"
-                    >
-                      {({ pressed }) => (
-                        <Text
-                          className={`text-[12px] uppercase tracking-[2px] ${
-                            pressed ? "text-white/70" : "text-white/35"
-                          }`}
-                        >
-                          Maybe Later
-                        </Text>
-                      )}
-                    </Pressable>
+                    {!isMandatory && (
+                      <Pressable
+                        onPress={onClose}
+                        className="mt-4 self-center px-5 py-2"
+                      >
+                        {({ pressed }) => (
+                          <Text
+                            className={`text-[12px] uppercase tracking-[2px] ${
+                              pressed ? "text-white/70" : "text-white/35"
+                            }`}
+                          >
+                            Maybe Later
+                          </Text>
+                        )}
+                      </Pressable>
+                    )}
                   </View>
                 </BlurView>
               </View>

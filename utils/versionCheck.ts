@@ -8,6 +8,7 @@ export const checkAppUpdate = async (): Promise<{
   isAvailable: boolean;
   latestVersion: string;
   updateUrl: string;
+  isMandatory: boolean;
 }> => {
   try {
     // Append a timestamp to prevent the app from caching an old version.json
@@ -25,16 +26,18 @@ export const checkAppUpdate = async (): Promise<{
     const updateUrl = data.updateUrl;
 
     const isAvailable = compareVersions(currentVersion, latestVersion) < 0;
+    const isMandatory = data.isMandatory !== undefined ? data.isMandatory : true; // Default to true for native updates
 
     return {
       isAvailable,
       latestVersion,
       updateUrl,
+      isMandatory,
     };
   } catch (error) {
     console.error("Error checking for app update:", error);
     // Fallback: assume no update is available if the network request fails
-    return { isAvailable: false, latestVersion: "1.0.0", updateUrl: "" };
+    return { isAvailable: false, latestVersion: "1.0.0", updateUrl: "", isMandatory: false };
   }
 };
 

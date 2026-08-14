@@ -458,9 +458,6 @@ export const useCPScoreQuiz = ({
       }
 
       setQuizOptionDisabled(true);
-      setQuizCountdown?.(0);
-      setIsQuizRoundComplete?.(true);
-      setShowQuizLeaderboard?.(true);
       return true;
     },
     [

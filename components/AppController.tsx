@@ -32,6 +32,7 @@ import { Text } from "@/components/Text";
 import { rf } from "@/utils/responsive";
 import { LinearGradient } from "expo-linear-gradient";
 import { ReconnectOverlay } from "./ReconnectOverlay";
+import { UpdateAppModal } from "@/modal/UpdateAppModal";
 
 let hasWarmupFired = false;
 
@@ -156,125 +157,86 @@ export default function AppController() {
 
 
   const isInitialFlow = phase === "SPLASH" || phase === "VIDEO" || phase === "ONBOARDING";
+  
+  const isNativeUpdate = nativeUpdate?.isAvailable;
+  const isMandatory = nativeUpdate?.isMandatory || false;
+  
+  // Only show the modal if there's an update, we haven't skipped it (unless it's mandatory),
+  // and we are either in initial flow or it's a mandatory update that interrupts gameplay.
+  const showUpdateModal = !!((otaAvailable || isNativeUpdate) && (!skippedUpdate || isMandatory) && (isInitialFlow || isMandatory));
 
-  if (otaAvailable && !skippedUpdate && isInitialFlow) {
-    return wrapPhase(
-      "otaUpdate",
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#050508",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-        }}
-      >
-        <PremiumSplashCard
-          source={require("@/assets/modalImages/intro.webp")}
-        />
-        <View className="absolute inset-0 bg-black/60" />
-
-        <View className="items-center">
-          <View className="mb-6 h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500 shadow-xl shadow-emerald-500/40">
-            <Text className="text-4xl">✨</Text>
+  const renderedPhase = (() => {
+    if (isUpdating) {
+      return wrapPhase(
+        "applyingUpdate",
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "#050508",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <PremiumSplashCard
+            source={require("@/assets/modalImages/intro.webp")}
+          />
+          <View style={{ position: "absolute", bottom: 100, alignItems: "center" }}>
+            <Text
+              style={{ fontSize: rf(2), color: "#fff" }}
+              className="font-main-bold uppercase tracking-widest"
+            >
+              Applying Update...
+            </Text>
+            <Text
+              style={{
+                fontSize: rf(1.4),
+                color: "rgba(255,255,255,0.5)",
+                marginTop: 8,
+              }}
+            >
+              The app will reload in a moment.
+            </Text>
           </View>
-          <Text
-            style={{ fontSize: rf(2.4) }}
-            className="mb-2 text-center font-main-bold text-white"
-          >
-            Quick Update Ready!
-          </Text>
-          <Text
-            style={{ fontSize: rf(1.1) }}
-            className="mb-8 text-center leading-5 text-white/50"
-          >
-            We&apos;ve prepared some improvements for you. A quick restart is
-            required to apply them.
-          </Text>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => applyUpdate()}
-            className="h-16 w-64 items-center justify-center overflow-hidden rounded-2xl"
-          >
-            <LinearGradient
-              colors={["#10B981", "#059669"]}
-              style={StyleSheet.absoluteFill}
-            />
-            <Text className="font-main-bold text-lg text-white">
-              RESTART NOW
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setSkippedUpdate(true)}
-            className="mt-4 h-12 w-64 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
-          >
-            <Text className="font-main-bold text-sm text-white/60">
-              NOT NOW
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>,
-    );
-  }
-
-  if (isUpdating) {
-    return wrapPhase(
-      "applyingUpdate",
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#050508",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <PremiumSplashCard
-          source={require("@/assets/modalImages/intro.webp")}
-        />
-        <View style={{ position: "absolute", bottom: 100, alignItems: "center" }}>
-          <Text
-            style={{ fontSize: rf(2), color: "#fff" }}
-            className="font-main-bold uppercase tracking-widest"
-          >
-            Applying Update...
-          </Text>
-          <Text
-            style={{
-              fontSize: rf(1.4),
-              color: "rgba(255,255,255,0.5)",
-              marginTop: 8,
-            }}
-          >
-            The app will reload in a moment.
-          </Text>
-        </View>
-      </View>,
-    );
-  }
-
-  switch (phase) {
-    case "ONBOARDING":
-      return wrapPhase(
-        "onboarding",
-        <OnboardingScreen onComplete={handleOnboardingComplete} />,
+        </View>,
       );
-    case "VIDEO":
-      return wrapPhase(
-        "video",
-        <VideoScreen onComplete={handleVideoComplete} />,
-      );
-    case "HOME":
-      return wrapPhase("home", <HomeScreen />);
-    case "SPLASH":
-    default:
-      return wrapPhase(
-        "splash",
-        <PremiumSplashCard
-          source={require("@/assets/modalImages/intro.webp")}
-        />,
-      );
-  }
+    }
+
+    switch (phase) {
+      case "ONBOARDING":
+        return wrapPhase(
+          "onboarding",
+          <OnboardingScreen onComplete={handleOnboardingComplete} />,
+        );
+      case "VIDEO":
+        return wrapPhase(
+          "video",
+          <VideoScreen onComplete={handleVideoComplete} />,
+        );
+      case "HOME":
+        return wrapPhase("home", <HomeScreen />);
+      case "SPLASH":
+      default:
+        return wrapPhase(
+          "splash",
+          <PremiumSplashCard
+            source={require("@/assets/modalImages/intro.webp")}
+          />,
+        );
+    }
+  })();
+
+  return (
+    <>
+      {renderedPhase}
+      <UpdateAppModal
+        isVisible={showUpdateModal}
+        onClose={() => setSkippedUpdate(true)}
+        updateUrl={nativeUpdate?.updateUrl || ""}
+        latestVersion={nativeUpdate?.latestVersion || ""}
+        isMandatory={isMandatory}
+        isOta={otaAvailable && !isNativeUpdate}
+        onApplyOta={() => applyUpdate()}
+      />
+    </>
+  );
 }
