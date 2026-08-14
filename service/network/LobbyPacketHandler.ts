@@ -49,7 +49,7 @@ export type LobbyPacketDeps = {
   checkAndTriggerProfileSync: () => void;
 };
 
-const hostAppVersion = Constants.expoConfig?.version || "7.0.0";
+const hostAppVersion = Constants.expoConfig?.version || "7.5.0";
 
 export const handleLobbyPacket = (
   packet: any,

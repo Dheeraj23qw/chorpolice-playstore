@@ -4,7 +4,7 @@ import { SessionPlayer } from "@/redux/reducers/sessionSlice";
 
 export const buildJoinPacket = (state: any, walletCoins: number) => {
   if (!state.localPlayerId) return null;
-  const appVersion = Constants.expoConfig?.version || "7.0.0";
+  const appVersion = Constants.expoConfig?.version || "7.5.0";
   return {
     type: NETWORK.PLAYER_JOIN,
     roomCode: state.roomCode,

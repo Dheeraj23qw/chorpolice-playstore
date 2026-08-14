@@ -49,8 +49,8 @@ updates: {
 - **`appVersionSource: "local"`** — Version is managed locally in `app.config.ts` (currently `7.0.0`), not auto-incremented by EAS.
 
 ### Current Version
-- **App version**: `7.0.0` (set in `app.config.ts`)
-- **Android versionCode**: `107` (set in `app.config.ts` → `android.versionCode`)
+- **App version**: `7.5.0` (set in `app.config.ts`)
+- **Android versionCode**: `110` (set in `app.config.ts` → `android.versionCode`)
 
 ---
 

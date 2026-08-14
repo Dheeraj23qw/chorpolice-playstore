@@ -99,7 +99,7 @@ export async function checkAppUpdate(): Promise<{
       };
     }
 
-    const currentVersion = Constants.expoConfig?.version || "7.0.0";
+    const currentVersion = Constants.expoConfig?.version || "7.5.0";
     const normalizedCurrent = normalizeSemver(currentVersion);
 
     return {

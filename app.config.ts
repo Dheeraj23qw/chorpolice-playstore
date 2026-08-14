@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "Chor Police",
   slug: "chorpolice",
-  version: "7.0.0",
+  version: "7.5.0",
   platforms: ["android"],
   orientation: "portrait",
   scheme: "chorpolice",
@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     userInterfaceStyle: "dark",
     allowBackup: false,
     softwareKeyboardLayoutMode: "pan",
-    versionCode: 107,
+    versionCode: 110,
     googleServicesFile:
       process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
     permissions: [
